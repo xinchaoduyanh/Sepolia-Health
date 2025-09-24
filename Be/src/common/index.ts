@@ -45,6 +45,7 @@ export { ResponseInterceptor } from './interceptors/response.interceptor';
 
 // Services
 export { JwtAuthService } from './services/jwt.service';
+export { MailService } from './services/mail.service';
 
 // Strategies
 export { JwtStrategy } from './strategies/jwt.strategy';
@@ -52,3 +53,6 @@ export { JwtStrategy } from './strategies/jwt.strategy';
 // Utils
 export { DateUtil } from './utils/date.util';
 export { StringUtil } from './utils/string.util';
+
+// Constants
+export { MESSAGES } from './constants/messages';

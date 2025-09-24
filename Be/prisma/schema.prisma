@@ -19,16 +19,20 @@ enum Role {
 
 /// Bảng người dùng chung cho toàn hệ thống
 model User {
-  id          String    @id @default(uuid())
+  id          Int       @id @default(autoincrement()) @unique
   email       String    @unique
   phone       String?   @unique
   password    String
   role        Role
-  fullName    String
+  firstName   String
+  lastName    String
   avatar      String?
   address     String?
   dateOfBirth DateTime?
   gender      String?
+  isVerified  Boolean   @default(false)
+  verifiedAt  DateTime?
+  lastLoginAt DateTime?
 
   // Quan hệ
   doctorProfile       DoctorProfile?
@@ -42,6 +46,16 @@ model User {
   updatedAt DateTime @updatedAt
 }
 
+/// Bảng OTP đăng ký tạm thời
+model RegistrationOtp {
+  id               Int      @id @default(autoincrement())
+  email            String
+  otp              String
+  expiresAt        DateTime
+  registrationData Json
+  createdAt        DateTime @default(now())
+}
+
 /// Hồ sơ bác sĩ, gắn 1-1 với User (role = DOCTOR)
 model DoctorProfile {
   id           String  @id @default(uuid())
@@ -50,8 +64,8 @@ model DoctorProfile {
   contactInfo  String?
   workingHours String?
 
-  userId String @unique
-  user   User   @relation(fields: [userId], references: [id])
+  userId Int @unique
+  user   User @relation(fields: [userId], references: [id])
 
   appointments  Appointment[]  @relation("DoctorAppointments")
   feedbacks     Feedback[]     @relation("DoctorFeedbacks")
@@ -64,8 +78,8 @@ model ReceptionistProfile {
   shift   String?
   contact String?
 
-  userId String @unique
-  user   User   @relation(fields: [userId], references: [id])
+  userId Int @unique
+  user   User @relation(fields: [userId], references: [id])
 }
 
 /// Dịch vụ khám (khám tổng quát, khám tim mạch, ...)
@@ -86,8 +100,8 @@ model Appointment {
   status        String // scheduled, completed, cancelled
   paymentStatus String // pending, paid, refunded
 
-  patientId String
-  patient   User   @relation("PatientAppointments", fields: [patientId], references: [id])
+  patientId Int
+  patient   User @relation("PatientAppointments", fields: [patientId], references: [id])
 
   doctorId String
   doctor   DoctorProfile @relation("DoctorAppointments", fields: [doctorId], references: [id])
@@ -115,8 +129,8 @@ model Prescription {
   doctorId String
   doctor   DoctorProfile @relation(fields: [doctorId], references: [id])
 
-  patientId String
-  patient   User   @relation("PatientPrescriptions", fields: [patientId], references: [id])
+  patientId Int
+  patient   User @relation("PatientPrescriptions", fields: [patientId], references: [id])
 
   items PrescriptionItem[]
 }
@@ -140,8 +154,8 @@ model Feedback {
   rating  Int // số sao (1-5)
   comment String?
 
-  patientId String
-  patient   User   @relation("PatientFeedbacks", fields: [patientId], references: [id])
+  patientId Int
+  patient   User @relation("PatientFeedbacks", fields: [patientId], references: [id])
 
   doctorId String
   doctor   DoctorProfile @relation("DoctorFeedbacks", fields: [doctorId], references: [id])
@@ -156,8 +170,8 @@ model Transaction {
   method String // online, cash, card
   status String // pending, success, failed
 
-  userId String
-  user   User   @relation(fields: [userId], references: [id])
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
 
   createdAt DateTime @default(now())
 }
