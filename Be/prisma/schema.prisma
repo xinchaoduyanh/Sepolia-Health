@@ -1,0 +1,184 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Enum vai trò người dùng trong hệ thống
+enum Role {
+  PATIENT // Bệnh nhân
+  DOCTOR // Bác sĩ
+  RECEPTIONIST // Lễ tân
+  ADMIN // Quản trị viên
+}
+
+/// Bảng người dùng chung cho toàn hệ thống
+model User {
+  id          String    @id @default(uuid())
+  email       String    @unique
+  phone       String?   @unique
+  password    String
+  role        Role
+  fullName    String
+  avatar      String?
+  address     String?
+  dateOfBirth DateTime?
+  gender      String?
+
+  // Quan hệ
+  doctorProfile       DoctorProfile?
+  receptionistProfile ReceptionistProfile?
+  appointments        Appointment[]        @relation("PatientAppointments")
+  feedbacks           Feedback[]           @relation("PatientFeedbacks")
+  prescriptions       Prescription[]       @relation("PatientPrescriptions")
+  transactions        Transaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/// Hồ sơ bác sĩ, gắn 1-1 với User (role = DOCTOR)
+model DoctorProfile {
+  id           String  @id @default(uuid())
+  specialty    String
+  experience   String?
+  contactInfo  String?
+  workingHours String?
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id])
+
+  appointments  Appointment[]  @relation("DoctorAppointments")
+  feedbacks     Feedback[]     @relation("DoctorFeedbacks")
+  prescriptions Prescription[]
+}
+
+/// Hồ sơ lễ tân, gắn 1-1 với User (role = RECEPTIONIST)
+model ReceptionistProfile {
+  id      String  @id @default(uuid())
+  shift   String?
+  contact String?
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id])
+}
+
+/// Dịch vụ khám (khám tổng quát, khám tim mạch, ...)
+model Service {
+  id          String  @id @default(uuid())
+  name        String
+  price       Float
+  duration    Int // thời lượng (phút)
+  description String?
+
+  appointments Appointment[]
+}
+
+/// Lịch hẹn khám bệnh
+model Appointment {
+  id            String   @id @default(uuid())
+  date          DateTime
+  status        String // scheduled, completed, cancelled
+  paymentStatus String // pending, paid, refunded
+
+  patientId String
+  patient   User   @relation("PatientAppointments", fields: [patientId], references: [id])
+
+  doctorId String
+  doctor   DoctorProfile @relation("DoctorAppointments", fields: [doctorId], references: [id])
+
+  serviceId String
+  service   Service @relation(fields: [serviceId], references: [id])
+}
+
+/// Thuốc trong hệ thống
+model Medicine {
+  id     String  @id @default(uuid())
+  name   String
+  dosage String?
+  stock  Int
+  price  Float
+
+  prescriptionItems PrescriptionItem[]
+}
+
+/// Đơn thuốc do bác sĩ kê cho bệnh nhân
+model Prescription {
+  id    String  @id @default(uuid())
+  notes String?
+
+  doctorId String
+  doctor   DoctorProfile @relation(fields: [doctorId], references: [id])
+
+  patientId String
+  patient   User   @relation("PatientPrescriptions", fields: [patientId], references: [id])
+
+  items PrescriptionItem[]
+}
+
+/// Chi tiết từng loại thuốc trong đơn thuốc
+model PrescriptionItem {
+  id           String  @id @default(uuid())
+  quantity     Int
+  instructions String?
+
+  prescriptionId String
+  prescription   Prescription @relation(fields: [prescriptionId], references: [id])
+
+  medicineId String
+  medicine   Medicine @relation(fields: [medicineId], references: [id])
+}
+
+/// Feedback từ bệnh nhân cho bác sĩ
+model Feedback {
+  id      String  @id @default(uuid())
+  rating  Int // số sao (1-5)
+  comment String?
+
+  patientId String
+  patient   User   @relation("PatientFeedbacks", fields: [patientId], references: [id])
+
+  doctorId String
+  doctor   DoctorProfile @relation("DoctorFeedbacks", fields: [doctorId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+/// Giao dịch thanh toán (SEPAY, tiền mặt, ...)
+model Transaction {
+  id     String @id @default(uuid())
+  amount Float
+  method String // online, cash, card
+  status String // pending, success, failed
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+/// Bài viết do admin tạo (tin tức, bài sức khỏe, ...)
+model Article {
+  id      String  @id @default(uuid())
+  title   String
+  content String
+  image   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/// Khuyến mãi / voucher
+model Promotion {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  description String?
+  discount    Float
+  validFrom   DateTime
+  validTo     DateTime
+}

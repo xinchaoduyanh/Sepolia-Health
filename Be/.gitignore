@@ -1,0 +1,14 @@
+/node_modules
+/dist
+/build
+/logs
+/temp
+/uploads
+/public
+/config
+/env
+/logs
+/temp
+/uploads
+.env
+/generated/prisma

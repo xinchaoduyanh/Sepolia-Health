@@ -1,0 +1,41 @@
+{
+  "compilerOptions": {
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "resolvePackageJsonExports": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "target": "ES2023",
+    "sourceMap": true,
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "incremental": true,
+    "skipLibCheck": true,
+    "strictNullChecks": true,
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitAny": false,
+    "strictBindCallApply": false,
+    "noFallthroughCasesInSwitch": false,
+    "typeRoots": ["./node_modules/@types", "./src/common/types"],
+    "paths": {
+      "@/*": ["src/*"],
+      "@/common/*": ["src/common/*"],
+      "@/guards/*": ["src/common/guards/*"],
+      "@/decorators/*": ["src/common/decorators/*"],
+      "@/pipes/*": ["src/common/pipes/*"],
+      "@/dto/*": ["src/common/dto/*"],
+      "@/types/*": ["src/common/types/*"],
+      "@/filters/*": ["src/common/filters/*"],
+      "@/interceptors/*": ["src/common/interceptors/*"],
+      "@/exceptions/*": ["src/common/exceptions/*"],
+      "@/services/*": ["src/common/services/*"],
+      "@/strategies/*": ["src/common/strategies/*"],
+      "@/utils/*": ["src/common/utils/*"]
+    }
+  }
+}
