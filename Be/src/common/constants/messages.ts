@@ -70,17 +70,18 @@ export const MESSAGES = {
 } as const;
 export const ERROR_MESSAGES = {
   AUTH: {
-    USER_NOT_FOUND: 'User not found',
+    USER_NOT_FOUND: 'Không tìm thấy người dùng',
+    REFRESH_TOKEN_INVALID: 'Refresh token không hợp lệ',
   },
   USER: {
-    USER_NOT_FOUND: 'User not found',
+    USER_NOT_FOUND: 'Không tìm thấy người dùng',
   },
   COMMON: {
-    USER_NOT_FOUND: 'User not found',
-    USER_ALREADY_EXISTS: 'User already exists',
-    USER_NOT_VERIFIED: 'User not verified',
-    USER_NOT_AUTHORIZED: 'User not authorized',
-    USER_NOT_AUTHENTICATED: 'User not authenticated',
+    USER_NOT_FOUND: 'Không tìm thấy người dùng',
+    USER_ALREADY_EXISTS: 'Người dùng đã tồn tại',
+    USER_NOT_VERIFIED: 'Người dùng chưa được xác thực',
+    USER_NOT_AUTHORIZED: 'Không có quyền truy cập',
+    USER_NOT_AUTHENTICATED: 'Không đăng nhập',
   },
 };
 export type MessageKey = keyof typeof MESSAGES;

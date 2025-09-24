@@ -19,7 +19,7 @@ import {
   VerifyEmailResponseDtoType,
   CompleteRegisterResponseDtoType,
 } from './auth.dto';
-
+import { ERROR_MESSAGES } from '@/common/constants/messages';
 @Injectable()
 export class AuthService {
   constructor(
@@ -233,7 +233,7 @@ export class AuthService {
       });
 
       if (!user) {
-        throw new UnauthorizedException('Người dùng không tồn tại');
+        throw new UnauthorizedException(ERROR_MESSAGES.AUTH.USER_NOT_FOUND);
       }
 
       // Generate new tokens
@@ -252,8 +252,10 @@ export class AuthService {
           role: user.role,
         },
       };
-    } catch (error) {
-      throw new UnauthorizedException('Refresh token không hợp lệ');
+    } catch {
+      throw new UnauthorizedException(
+        ERROR_MESSAGES.AUTH.REFRESH_TOKEN_INVALID,
+      );
     }
   }
 }

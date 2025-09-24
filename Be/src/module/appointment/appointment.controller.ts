@@ -28,11 +28,7 @@ import {
   ApiResponseCreated,
 } from '@/common';
 import { MESSAGES } from '@/common/constants';
-import {
-  CreateAppointmentDto,
-  UpdateAppointmentDto,
-  GetAppointmentsQueryDto,
-} from './swagger';
+import { CreateAppointmentDto, UpdateAppointmentDto } from './swagger';
 import { AppointmentService } from './appointment.service';
 import type {
   CreateAppointmentDtoType,
