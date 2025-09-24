@@ -4,7 +4,7 @@ import {
   ConflictException,
   BadRequestException,
 } from '@nestjs/common';
-import { PrismaService } from '@/prisma/prisma.service';
+import { PrismaService } from '@/common/prisma/prisma.service';
 import { JwtAuthService } from '@/common';
 import { MailService } from '@/common/services/mail.service';
 import { StringUtil } from '@/common/utils';
