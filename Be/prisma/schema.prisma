@@ -46,15 +46,6 @@ model User {
   updatedAt DateTime @updatedAt
 }
 
-/// Bảng OTP đăng ký tạm thời
-model RegistrationOtp {
-  id               Int      @id @default(autoincrement())
-  email            String
-  otp              String
-  expiresAt        DateTime
-  registrationData Json
-  createdAt        DateTime @default(now())
-}
 
 /// Hồ sơ bác sĩ, gắn 1-1 với User (role = DOCTOR)
 model DoctorProfile {

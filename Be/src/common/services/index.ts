@@ -1,1 +1,2 @@
-export { JwtAuthService } from './jwt.service';
+// This file is deprecated - use modules instead
+// Import from: @/common/modules

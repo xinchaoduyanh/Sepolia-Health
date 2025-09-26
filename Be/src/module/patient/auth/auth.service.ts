@@ -5,8 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '@/common/prisma/prisma.service';
-import { JwtAuthService } from '@/common';
-import { MailService } from '@/common/services/mail.service';
+import { CustomJwtService, MailService } from '@/common';
 import { StringUtil } from '@/common/utils';
 import {
   LoginDtoType,
@@ -20,12 +19,14 @@ import {
   CompleteRegisterResponseDtoType,
 } from './auth.dto';
 import { ERROR_MESSAGES } from '@/common/constants/messages';
+import { AuthRepository } from '@/module/patient/auth/auth.repository';
 @Injectable()
 export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly jwtAuthService: JwtAuthService,
+    private readonly jwtAuthService: CustomJwtService,
     private readonly mailService: MailService,
+    private readonly authRepository: AuthRepository,
   ) {}
 
   /**
@@ -34,30 +35,25 @@ export class AuthService {
   async login(loginDto: LoginDtoType): Promise<LoginResponseDtoType> {
     const { email, password } = loginDto;
 
-    // Find user by email
-    const user = await this.prisma.user.findUnique({
-      where: { email },
-    });
+    const user = await this.authRepository.findByEmail(email);
 
     if (!user) {
-      throw new UnauthorizedException('Email hoặc mật khẩu không đúng');
+      throw new UnauthorizedException(ERROR_MESSAGES.AUTH.INVALID_PASSWORD);
     }
 
-    // Check if user is verified
     if (!user.isVerified) {
-      throw new UnauthorizedException(
-        'Tài khoản chưa được xác thực. Vui lòng kiểm tra email',
-      );
+      throw new UnauthorizedException(ERROR_MESSAGES.AUTH.USER_NOT_VERIFIED);
     }
 
-    // Verify password (you should use bcrypt in production)
     if (user.password !== password) {
-      throw new UnauthorizedException('Email hoặc mật khẩu không đúng');
+      throw new UnauthorizedException(ERROR_MESSAGES.AUTH.INVALID_PASSWORD);
     }
 
     // Generate tokens
     const tokens = this.jwtAuthService.generateTokens({
-      userId: user.id,
+      userId: user.id.toString(),
+      type: 'access',
+      role: user.role,
     });
 
     // Update last login
@@ -69,13 +65,6 @@ export class AuthService {
     return {
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
-      user: {
-        id: user.id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        role: user.role,
-      },
     };
   }
 

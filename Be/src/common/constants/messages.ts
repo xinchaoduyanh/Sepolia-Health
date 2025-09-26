@@ -72,6 +72,8 @@ export const ERROR_MESSAGES = {
   AUTH: {
     USER_NOT_FOUND: 'Không tìm thấy người dùng',
     REFRESH_TOKEN_INVALID: 'Refresh token không hợp lệ',
+    USER_NOT_VERIFIED: 'Người dùng chưa được xác thực',
+    INVALID_PASSWORD: 'Email hoặc mật khẩu không hợp lệ',
   },
   USER: {
     USER_NOT_FOUND: 'Không tìm thấy người dùng',

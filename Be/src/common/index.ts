@@ -43,9 +43,22 @@ export {
 // Interceptors
 export { ResponseInterceptor } from './interceptors/response.interceptor';
 
-// Services
-export { JwtAuthService } from './services/jwt.service';
-export { MailService } from './services/mail.service';
+// Modules
+export {
+  UploadModule,
+  MailModule,
+  JwtAuthModule,
+  RedisModule,
+} from './modules';
+export {
+  UploadService,
+  MailService,
+  CustomJwtService,
+  RedisService,
+} from './modules';
+
+// Config
+export { ConfigService } from './config';
 
 // Strategies
 export { JwtStrategy } from './strategies/jwt.strategy';

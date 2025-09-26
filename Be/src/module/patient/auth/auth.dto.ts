@@ -53,13 +53,6 @@ export const RefreshTokenDto = z.object({
 export const LoginResponseDto = z.object({
   accessToken: z.string(),
   refreshToken: z.string(),
-  user: z.object({
-    id: z.number(),
-    email: z.string(),
-    firstName: z.string(),
-    lastName: z.string(),
-    role: z.string(),
-  }),
 });
 
 export const RegisterResponseDto = z.object({
