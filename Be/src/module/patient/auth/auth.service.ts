@@ -5,7 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '@/common/prisma/prisma.service';
-import { CustomJwtService, MailService } from '@/common';
+import { CustomJwtService, MailService, RedisService } from '@/common';
 import { StringUtil } from '@/common/utils';
 import {
   LoginDtoType,
@@ -27,6 +27,7 @@ export class AuthService {
     private readonly jwtAuthService: CustomJwtService,
     private readonly mailService: MailService,
     private readonly authRepository: AuthRepository,
+    private readonly redisService: RedisService,
   ) {}
 
   /**
@@ -52,15 +53,11 @@ export class AuthService {
     // Generate tokens
     const tokens = this.jwtAuthService.generateTokens({
       userId: user.id.toString(),
-      type: 'access',
       role: user.role,
     });
 
     // Update last login
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: { lastLoginAt: new Date() },
-    });
+    await this.authRepository.updateLastLogin(user.id);
 
     return {
       accessToken: tokens.accessToken,
@@ -77,46 +74,16 @@ export class AuthService {
     const { email, password, firstName, lastName, phone } = registerDto;
 
     // Check if user already exists
-    const existingUser = await this.prisma.user.findUnique({
-      where: { email },
-    });
+    const existingUser = await this.authRepository.findByEmail(email);
 
     if (existingUser) {
-      throw new ConflictException('Email đã được sử dụng');
+      throw new ConflictException(ERROR_MESSAGES.AUTH.EMAIL_ALREADY_EXISTS);
     }
 
     // Generate OTP
     const otp = StringUtil.random(6, '0123456789');
-    const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-
-    // Store registration data in database (temporary)
-    await this.prisma.registrationOtp.create({
-      data: {
-        email,
-        otp,
-        expiresAt: otpExpiresAt,
-        registrationData: {
-          email,
-          password, // In production, hash this password
-          firstName,
-          lastName,
-          phone,
-        },
-      },
-    });
-
+    await this.redisService.setOtp(email, otp, 5 * 60, 'register');
     // Send verification email
-    const mailResult = await this.mailService.sendRegisterMail(
-      email,
-      otp,
-      firstName,
-    );
-
-    if (!mailResult.success) {
-      throw new BadRequestException(
-        'Không thể gửi email xác thực. Vui lòng thử lại',
-      );
-    }
 
     return {
       message: 'Đăng ký thành công, vui lòng kiểm tra email để xác thực',

@@ -14,7 +14,7 @@ export const RegisterDto = z
     confirmPassword: z.string(),
     firstName: z.string().min(2, 'Tên phải có ít nhất 2 ký tự'),
     lastName: z.string().min(2, 'Họ phải có ít nhất 2 ký tự'),
-    phone: z.string().min(10, 'Số điện thoại không hợp lệ'),
+    phone: z.string().min(10, 'Số điện thoại không hợp lệ').optional(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: 'Mật khẩu xác nhận không khớp',

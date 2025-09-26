@@ -116,7 +116,6 @@ export class CustomJwtService {
     const payload: Omit<TokenPayload, 'exp' | 'iat'> = {
       userId: options.userId,
       role: options.role,
-      type: options.type || 'access',
     };
 
     switch (options.type) {

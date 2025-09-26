@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/common/prisma/prisma.service';
-import { User, RegistrationOtp } from '@prisma/client';
+import { User } from '@prisma/client';
 import { ERROR_MESSAGES } from '@/common/constants/messages';
 import { Role } from '@prisma/client';
 @Injectable()
@@ -43,66 +43,29 @@ export class AuthRepository {
     lastName: string;
     phone: string;
     role: Role;
-  }): Promise<User> {}
+  }): Promise<User> {
+    return await this.prisma.user.create({
+      data: userData,
+    });
+  }
 
   /**
    * Update user
    */
   async updateUser(id: number, userData: Partial<User>): Promise<User> {
-    return this.prisma.user.update({
+    return await this.prisma.user.update({
       where: { id },
       data: userData,
     });
   }
 
   /**
-   * Create registration OTP
+   * Update last login
    */
-  async createRegistrationOtp(otpData: {
-    email: string;
-    otp: string;
-    expiresAt: Date;
-    registrationData: any;
-  }): Promise<RegistrationOtp> {
-    return this.prisma.registrationOtp.create({
-      data: otpData,
-    });
-  }
-
-  /**
-   * Find registration OTP
-   */
-  async findRegistrationOtp(
-    email: string,
-    otp: string,
-  ): Promise<RegistrationOtp> {
-    return this.prisma.registrationOtp.findFirst({
-      where: {
-        email,
-        otp,
-        expiresAt: { gt: new Date() },
-      },
-    });
-  }
-
-  /**
-   * Delete registration OTP
-   */
-  async deleteRegistrationOtp(id: number): Promise<void> {
-    await this.prisma.registrationOtp.delete({
+  async updateLastLogin(id: number): Promise<void> {
+    await this.prisma.user.update({
       where: { id },
+      data: { lastLoginAt: new Date() },
     });
-  }
-
-  /**
-   * Clean expired OTPs
-   */
-  async cleanExpiredOtps(): Promise<number> {
-    const result = await this.prisma.registrationOtp.deleteMany({
-      where: {
-        expiresAt: { lt: new Date() },
-      },
-    });
-    return result.count;
   }
 }

@@ -74,6 +74,7 @@ export const ERROR_MESSAGES = {
     REFRESH_TOKEN_INVALID: 'Refresh token không hợp lệ',
     USER_NOT_VERIFIED: 'Người dùng chưa được xác thực',
     INVALID_PASSWORD: 'Email hoặc mật khẩu không hợp lệ',
+    EMAIL_ALREADY_EXISTS: 'Email đã được sử dụng',
   },
   USER: {
     USER_NOT_FOUND: 'Không tìm thấy người dùng',
