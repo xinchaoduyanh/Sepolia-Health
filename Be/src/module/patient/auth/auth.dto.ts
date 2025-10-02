@@ -56,17 +56,14 @@ export const LoginResponseDto = z.object({
 });
 
 export const RegisterResponseDto = z.object({
-  message: z.string(),
   email: z.string(),
 });
 
 export const VerifyEmailResponseDto = z.object({
-  message: z.string(),
   success: z.boolean(),
 });
 
 export const CompleteRegisterResponseDto = z.object({
-  message: z.string(),
   user: z.object({
     id: z.number(),
     email: z.string(),
@@ -75,7 +72,9 @@ export const CompleteRegisterResponseDto = z.object({
     role: z.string(),
   }),
 });
-
+export const LogoutDto = z.object({
+  userId: z.number(),
+});
 // Export types
 export type LoginDtoType = z.infer<typeof LoginDto>;
 export type RegisterDtoType = z.infer<typeof RegisterDto>;
@@ -88,3 +87,4 @@ export type VerifyEmailResponseDtoType = z.infer<typeof VerifyEmailResponseDto>;
 export type CompleteRegisterResponseDtoType = z.infer<
   typeof CompleteRegisterResponseDto
 >;
+export type LogoutDtoType = z.infer<typeof LogoutDto>;

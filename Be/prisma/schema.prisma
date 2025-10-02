@@ -27,6 +27,7 @@ model User {
   firstName   String
   lastName    String
   avatar      String?
+  status      String?
   address     String?
   dateOfBirth DateTime?
   gender      String?
@@ -45,7 +46,7 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
-
+ 
 
 /// Hồ sơ bác sĩ, gắn 1-1 với User (role = DOCTOR)
 model DoctorProfile {

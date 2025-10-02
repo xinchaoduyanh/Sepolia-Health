@@ -22,6 +22,9 @@ const configSchema = z.object({
   JWT_EXPIRES_IN: z.string(),
   JWT_REFRESH_SECRET: z.string(),
   JWT_REFRESH_EXPIRES_IN: z.string(),
+  // Token storage expiration times (in seconds)
+  TOKEN_ACCESS_EXPIRES_IN_SECONDS: z.string().default('900'), // 15 minutes
+  TOKEN_REFRESH_EXPIRES_IN_SECONDS: z.string().default('604800'), // 7 days
   AWS_ACCESS_KEY_ID: z.string(),
   AWS_SECRET_ACCESS_KEY: z.string(),
   AWS_REGION: z.string(),

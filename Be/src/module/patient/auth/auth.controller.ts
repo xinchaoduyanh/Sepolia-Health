@@ -1,6 +1,12 @@
 import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
-import { Public, ApiResponseOk, ApiResponseCreated } from '@/common';
+import {
+  Public,
+  ApiResponseOk,
+  ApiResponseCreated,
+  CurrentUser,
+} from '@/common';
+import type { TokenPayload } from '@/common/types/jwt.type';
 import { MESSAGES } from '@/common/constants';
 import {
   LoginDto,
@@ -23,7 +29,6 @@ import type {
   RefreshTokenDtoType,
   LoginResponseDtoType,
   RegisterResponseDtoType,
-  VerifyEmailResponseDtoType,
   CompleteRegisterResponseDtoType,
 } from './auth.dto';
 
@@ -81,9 +86,7 @@ export class AuthController {
     description: 'Mã OTP không hợp lệ hoặc đã hết hạn',
   })
   @ApiResponseOk(MESSAGES.AUTH.VERIFY_EMAIL_SUCCESS)
-  async verifyEmail(
-    @Body() verifyEmailDto: VerifyEmailDtoType,
-  ): Promise<VerifyEmailResponseDtoType> {
+  async verifyEmail(@Body() verifyEmailDto: VerifyEmailDtoType): Promise<void> {
     return this.authService.verifyEmail(verifyEmailDto);
   }
 
@@ -124,5 +127,14 @@ export class AuthController {
     @Body() refreshTokenDto: RefreshTokenDtoType,
   ): Promise<LoginResponseDtoType> {
     return this.authService.refreshToken(refreshTokenDto);
+  }
+
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Đăng xuất tài khoản' })
+  @ApiResponse({ status: 200, description: 'Đăng xuất thành công' })
+  @ApiResponseOk(MESSAGES.AUTH.LOGOUT_SUCCESS)
+  async logout(@CurrentUser() user: TokenPayload): Promise<void> {
+    return this.authService.logout(user.userId);
   }
 }

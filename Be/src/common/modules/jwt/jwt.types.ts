@@ -4,7 +4,7 @@ export interface JwtTokens {
 }
 
 export interface TokenPayload {
-  userId: string;
+  userId: number;
   role: string;
   exp: number;
   iat: number;
@@ -18,7 +18,7 @@ export interface JwtConfig {
 }
 
 export interface GenerateTokenOptions {
-  userId: string;
+  userId: number;
   role: string;
   type?: 'access' | 'refresh';
 }

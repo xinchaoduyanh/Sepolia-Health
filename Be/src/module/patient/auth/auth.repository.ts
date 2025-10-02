@@ -43,6 +43,8 @@ export class AuthRepository {
     lastName: string;
     phone: string;
     role: Role;
+    isVerified: boolean;
+    verifiedAt: Date;
   }): Promise<User> {
     return await this.prisma.user.create({
       data: userData,

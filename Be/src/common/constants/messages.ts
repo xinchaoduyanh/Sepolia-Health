@@ -75,6 +75,8 @@ export const ERROR_MESSAGES = {
     USER_NOT_VERIFIED: 'Người dùng chưa được xác thực',
     INVALID_PASSWORD: 'Email hoặc mật khẩu không hợp lệ',
     EMAIL_ALREADY_EXISTS: 'Email đã được sử dụng',
+    INVALID_OTP: 'Mã OTP không hợp lệ hoặc đã hết hạn',
+    COMPLETE_REGISTER_SUCCESS: 'Đăng ký hoàn tất thành công',
   },
   USER: {
     USER_NOT_FOUND: 'Không tìm thấy người dùng',

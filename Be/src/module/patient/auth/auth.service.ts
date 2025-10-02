@@ -5,7 +5,12 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '@/common/prisma/prisma.service';
-import { CustomJwtService, MailService, RedisService } from '@/common';
+import {
+  CustomJwtService,
+  MailService,
+  RedisService,
+  ConfigService,
+} from '@/common';
 import { StringUtil } from '@/common/utils';
 import {
   LoginDtoType,
@@ -15,7 +20,6 @@ import {
   RefreshTokenDtoType,
   LoginResponseDtoType,
   RegisterResponseDtoType,
-  VerifyEmailResponseDtoType,
   CompleteRegisterResponseDtoType,
 } from './auth.dto';
 import { ERROR_MESSAGES } from '@/common/constants/messages';
@@ -28,6 +32,7 @@ export class AuthService {
     private readonly mailService: MailService,
     private readonly authRepository: AuthRepository,
     private readonly redisService: RedisService,
+    private readonly configService: ConfigService,
   ) {}
 
   /**
@@ -52,9 +57,27 @@ export class AuthService {
 
     // Generate tokens
     const tokens = this.jwtAuthService.generateTokens({
-      userId: user.id.toString(),
+      userId: user.id,
       role: user.role,
     });
+
+    // Store tokens in Redis with expiration
+    const tokenConfig = this.configService.getTokenStorageConfig();
+    const accessTokenKey = `token:${user.id}:access:${Date.now()}`;
+    const refreshTokenKey = `token:${user.id}:refresh:${Date.now()}`;
+
+    // Store access token with configured expiration
+    await this.redisService.setToken(
+      accessTokenKey,
+      tokens.accessToken,
+      tokenConfig.accessTokenExpiresInSeconds,
+    );
+    // Store refresh token with configured expiration
+    await this.redisService.setToken(
+      refreshTokenKey,
+      tokens.refreshToken,
+      tokenConfig.refreshTokenExpiresInSeconds,
+    );
 
     // Update last login
     await this.authRepository.updateLastLogin(user.id);
@@ -71,7 +94,7 @@ export class AuthService {
   async register(
     registerDto: RegisterDtoType,
   ): Promise<RegisterResponseDtoType> {
-    const { email, password, firstName, lastName, phone } = registerDto;
+    const { email } = registerDto;
 
     // Check if user already exists
     const existingUser = await this.authRepository.findByEmail(email);
@@ -83,10 +106,44 @@ export class AuthService {
     // Generate OTP
     const otp = StringUtil.random(6, '0123456789');
     await this.redisService.setOtp(email, otp, 5 * 60, 'register');
-    // Send verification email
+
+    // Send OTP via email
+    await this.mailService.sendEmail({
+      to: email,
+      subject: 'Mã xác thực đăng ký - Phòng khám Sepolia',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #2c3e50;">Phòng khám Sepolia</h1>
+            <h2 style="color: #3498db;">Xác thực tài khoản</h2>
+          </div>
+          
+          <div style="background-color: #f8f9fa; padding: 20px; border-radius: 10px; margin: 20px 0;">
+            <p>Xin chào,</p>
+            <p>Bạn đã yêu cầu đăng ký tài khoản tại <strong>Phòng khám Sepolia</strong>.</p>
+            <p>Mã xác thực của bạn là:</p>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <span style="font-size: 32px; font-weight: bold; color: #e74c3c; background-color: #fff; padding: 15px 30px; border-radius: 10px; border: 2px dashed #e74c3c;">${otp}</span>
+            </div>
+            
+            <p><strong>Lưu ý:</strong></p>
+            <ul>
+              <li>Mã xác thực có hiệu lực trong <strong>5 phút</strong></li>
+              <li>Không chia sẻ mã này với bất kỳ ai</li>
+              <li>Nếu bạn không yêu cầu đăng ký, vui lòng bỏ qua email này</li>
+            </ul>
+          </div>
+          
+          <div style="text-align: center; margin-top: 30px; font-size: 12px; color: #7f8c8d;">
+            <p>Email này được gửi tự động từ hệ thống Phòng khám Sepolia</p>
+            <p>Cảm ơn bạn đã tin tưởng dịch vụ của chúng tôi!</p>
+          </div>
+        </div>
+      `,
+    });
 
     return {
-      message: 'Đăng ký thành công, vui lòng kiểm tra email để xác thực',
       email,
     };
   }
@@ -94,28 +151,21 @@ export class AuthService {
   /**
    * Verify email with OTP
    */
-  async verifyEmail(
-    verifyEmailDto: VerifyEmailDtoType,
-  ): Promise<VerifyEmailResponseDtoType> {
+  async verifyEmail(verifyEmailDto: VerifyEmailDtoType): Promise<void> {
     const { email, otp } = verifyEmailDto;
 
     // Find OTP record
-    const otpRecord = await this.prisma.registrationOtp.findFirst({
-      where: {
-        email,
-        otp,
-        expiresAt: { gt: new Date() },
-      },
-    });
+    const isOtpValid = await this.redisService.verifyOtp(
+      email,
+      otp,
+      'register',
+    );
 
-    if (!otpRecord) {
-      throw new BadRequestException('Mã OTP không hợp lệ hoặc đã hết hạn');
+    if (!isOtpValid) {
+      throw new BadRequestException(ERROR_MESSAGES.AUTH.INVALID_OTP);
     }
 
-    return {
-      message: 'Xác thực email thành công',
-      success: true,
-    };
+    return;
   }
 
   /**
@@ -128,39 +178,29 @@ export class AuthService {
       completeRegisterDto;
 
     // Verify OTP again
-    const otpRecord = await this.prisma.registrationOtp.findFirst({
-      where: {
-        email,
-        otp,
-        expiresAt: { gt: new Date() },
-      },
-    });
+    const isOtpValid = await this.redisService.verifyOtp(
+      email,
+      otp,
+      'register',
+    );
 
-    if (!otpRecord) {
-      throw new BadRequestException('Mã OTP không hợp lệ hoặc đã hết hạn');
+    if (!isOtpValid) {
+      throw new BadRequestException(ERROR_MESSAGES.AUTH.INVALID_OTP);
     }
 
     // Create user
-    const user = await this.prisma.user.create({
-      data: {
-        email,
-        password, // In production, hash this password
-        firstName,
-        lastName,
-        phone,
-        role,
-        isVerified: true,
-        verifiedAt: new Date(),
-      },
-    });
-
-    // Clean up OTP record
-    await this.prisma.registrationOtp.delete({
-      where: { id: otpRecord.id },
+    const user = await this.authRepository.createUser({
+      email,
+      password,
+      firstName,
+      lastName,
+      phone,
+      role,
+      isVerified: true,
+      verifiedAt: new Date(),
     });
 
     return {
-      message: 'Đăng ký hoàn tất thành công',
       user: {
         id: user.id,
         email: user.email,
@@ -178,40 +218,52 @@ export class AuthService {
     refreshTokenDto: RefreshTokenDtoType,
   ): Promise<LoginResponseDtoType> {
     const { refreshToken } = refreshTokenDto;
+    const payload = this.jwtAuthService.verifyToken(refreshToken);
 
-    try {
-      // Verify refresh token
-      const payload = this.jwtAuthService.verifyToken(refreshToken);
-
-      // Find user
-      const user = await this.prisma.user.findUnique({
-        where: { id: payload.userId },
-      });
-
-      if (!user) {
-        throw new UnauthorizedException(ERROR_MESSAGES.AUTH.USER_NOT_FOUND);
-      }
-
-      // Generate new tokens
-      const tokens = this.jwtAuthService.generateTokens({
-        userId: user.id,
-      });
-
-      return {
-        accessToken: tokens.accessToken,
-        refreshToken: tokens.refreshToken,
-        user: {
-          id: user.id,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          role: user.role,
-        },
-      };
-    } catch {
+    if (!payload.valid || !payload.payload?.userId) {
       throw new UnauthorizedException(
         ERROR_MESSAGES.AUTH.REFRESH_TOKEN_INVALID,
       );
     }
+
+    const user = await this.authRepository.findById(payload.payload.userId);
+    if (!user) {
+      throw new UnauthorizedException(ERROR_MESSAGES.AUTH.USER_NOT_FOUND);
+    }
+    const tokens = this.jwtAuthService.generateTokens({
+      userId: user.id,
+      role: user.role,
+    });
+
+    // Store new tokens in Redis with expiration
+    const tokenConfig = this.configService.getTokenStorageConfig();
+    const accessTokenKey = `token:${user.id}:access:${Date.now()}`;
+    const refreshTokenKey = `token:${user.id}:refresh:${Date.now()}`;
+
+    // Store access token with configured expiration
+    await this.redisService.setToken(
+      accessTokenKey,
+      tokens.accessToken,
+      tokenConfig.accessTokenExpiresInSeconds,
+    );
+    // Store refresh token with configured expiration
+    await this.redisService.setToken(
+      refreshTokenKey,
+      tokens.refreshToken,
+      tokenConfig.refreshTokenExpiresInSeconds,
+    );
+
+    return {
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+    };
+  }
+  /**
+   * Logout user
+   */
+  async logout(userId: number): Promise<void> {
+    const tokens = await this.redisService.findAllTokens(userId);
+    await this.redisService.deleteTokens(tokens);
+    return;
   }
 }

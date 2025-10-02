@@ -62,6 +62,20 @@ export class ConfigService {
   }
 
   /**
+   * Get token storage configuration
+   */
+  getTokenStorageConfig() {
+    return {
+      accessTokenExpiresInSeconds: parseInt(
+        this.config.TOKEN_ACCESS_EXPIRES_IN_SECONDS,
+      ),
+      refreshTokenExpiresInSeconds: parseInt(
+        this.config.TOKEN_REFRESH_EXPIRES_IN_SECONDS,
+      ),
+    };
+  }
+
+  /**
    * Generic method to get any config value
    */
   get<T = string>(key: keyof typeof this.config): T {

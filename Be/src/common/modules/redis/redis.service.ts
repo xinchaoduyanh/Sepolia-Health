@@ -156,6 +156,7 @@ export class RedisService implements OnModuleDestroy {
 
   /**
    * Set OTP with expiration
+   * Kiểm tra và xóa OTP cũ trước khi set OTP mới
    */
   async setOtp(
     email: string,
@@ -164,13 +165,30 @@ export class RedisService implements OnModuleDestroy {
     type: 'register' | 'reset_password',
   ): Promise<boolean> {
     const key = `otp:${type}:${email}`;
+
+    // Kiểm tra xem có OTP cũ tồn tại không
+    const existingOtp = await this.exists(key);
+    if (existingOtp) {
+      // Xóa OTP cũ trước khi set OTP mới
+      await this.del(key);
+      this.logger.log(`Deleted existing OTP for ${email} with type ${type}`);
+    }
+
     const value = JSON.stringify({
       email,
       otp,
       type,
       createdAt: new Date().toISOString(),
     });
-    return await this.set(key, value, { ex: expiresInSeconds });
+
+    const result = await this.set(key, value, { ex: expiresInSeconds });
+    if (result) {
+      this.logger.log(
+        `Set new OTP for ${email} with type ${type}, expires in ${expiresInSeconds}s`,
+      );
+    }
+
+    return result;
   }
 
   /**
@@ -261,5 +279,19 @@ export class RedisService implements OnModuleDestroy {
    */
   async info(): Promise<string> {
     return await this.client.info();
+  }
+
+  /**
+   * Find all tokens by user ID
+   */
+  async findAllTokens(userId: number): Promise<string[]> {
+    return await this.client.keys(`token:${userId}:*`);
+  }
+
+  /**
+   * Delete tokens
+   */
+  async deleteTokens(tokens: string[]): Promise<void> {
+    await this.client.del(tokens);
   }
 }
