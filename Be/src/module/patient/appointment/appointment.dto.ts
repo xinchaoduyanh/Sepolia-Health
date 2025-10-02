@@ -18,8 +18,14 @@ export const UpdateAppointmentDto = z.object({
 
 // Get Appointments Query DTO
 export const GetAppointmentsQueryDto = z.object({
-  page: z.string().transform(Number).default('1'),
-  limit: z.string().transform(Number).default('10'),
+  page: z
+    .string()
+    .transform(Number)
+    .default(() => 1),
+  limit: z
+    .string()
+    .transform(Number)
+    .default(() => 10),
   status: z.enum(['scheduled', 'completed', 'cancelled']).optional(),
   paymentStatus: z.enum(['pending', 'paid', 'refunded']).optional(),
   doctorId: z.string().optional(),

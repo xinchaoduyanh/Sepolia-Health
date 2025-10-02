@@ -1,5 +1,5 @@
 // Guards
-export { AccessTokenGuard } from './guards/acess-token.guard';
+export { AccessTokenGuard } from './guards/access-token.guard';
 export { JwtAuthGuard } from './guards/jwt-auth.guard';
 export { RolesGuard } from './guards/roles.guard';
 

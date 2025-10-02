@@ -3,9 +3,9 @@ import {
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
-import { PrismaService } from '@/prisma/prisma.service';
+import { PrismaService } from '@/common/prisma/prisma.service';
 import { CurrentUser } from '@/common';
-import { TokenPayload } from '@/common/types';
+import type { TokenPayload } from '@/common/types';
 import type {
   CreateAppointmentDtoType,
   UpdateAppointmentDtoType,

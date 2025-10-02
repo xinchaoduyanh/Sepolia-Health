@@ -38,7 +38,7 @@ import type {
   AppointmentsListResponseDtoType,
 } from './appointment.dto';
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
-import { TokenPayload } from '@/common/types/jwt.type';
+import type { TokenPayload } from '@/common/types/jwt.type';
 @ApiTags('Appointments')
 @Controller('appointments')
 @UseGuards(JwtAuthGuard)
@@ -129,8 +129,11 @@ export class AppointmentController {
   @ApiResponse({ status: 404, description: 'Không tìm thấy lịch hẹn' })
   @HttpCode(HttpStatus.OK)
   @ApiResponseOk(MESSAGES.APPOINTMENT.DELETE_SUCCESS)
-  async remove(@Param('id') id: string): Promise<{ message: string }> {
-    return this.appointmentService.remove(id);
+  async remove(
+    @Param('id') id: string,
+    @CurrentUser() user: TokenPayload,
+  ): Promise<{ message: string }> {
+    return this.appointmentService.remove(id, user);
   }
 
   @Get('patient/my-appointments')
@@ -146,8 +149,9 @@ export class AppointmentController {
   @ApiResponseOk(MESSAGES.PATIENT.GET_APPOINTMENTS_SUCCESS)
   async getMyAppointments(
     @Query() query: GetAppointmentsQueryDtoType,
+    @CurrentUser() user: TokenPayload,
   ): Promise<AppointmentsListResponseDtoType> {
-    return this.appointmentService.getMyAppointments(query);
+    return this.appointmentService.getMyAppointments(query, user);
   }
 
   @Get('doctor/my-appointments')
@@ -165,7 +169,8 @@ export class AppointmentController {
   @ApiResponseOk(MESSAGES.DOCTOR.GET_APPOINTMENTS_SUCCESS)
   async getDoctorAppointments(
     @Query() query: GetAppointmentsQueryDtoType,
+    @CurrentUser() user: TokenPayload,
   ): Promise<AppointmentsListResponseDtoType> {
-    return this.appointmentService.getDoctorAppointments(query);
+    return this.appointmentService.getDoctorAppointments(query, user);
   }
 }

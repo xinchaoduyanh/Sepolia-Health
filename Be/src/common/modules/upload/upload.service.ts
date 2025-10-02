@@ -77,13 +77,11 @@ export class UploadService {
       }
 
       // Convert stream to buffer
-      const chunks: Uint8Array[] = [];
+      const chunks: Buffer[] = [];
       const reader = response.Body.transformToByteArray();
       const result = await reader;
 
-      for await (const chunk of result) {
-        chunks.push(chunk);
-      }
+      chunks.push(Buffer.from(result));
 
       return Buffer.concat(chunks);
     } catch (error) {

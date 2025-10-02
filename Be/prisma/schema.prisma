@@ -91,6 +91,7 @@ model Appointment {
   date          DateTime
   status        String // scheduled, completed, cancelled
   paymentStatus String // pending, paid, refunded
+  notes         String?
 
   patientId Int
   patient   User @relation("PatientAppointments", fields: [patientId], references: [id])
