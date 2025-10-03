@@ -20,14 +20,6 @@ import {
   ApiQuery,
   ApiBody,
 } from '@nestjs/swagger';
-import {
-  JwtAuthGuard,
-  RolesGuard,
-  Roles,
-  ApiResponseOk,
-  ApiResponseCreated,
-} from '@/common';
-import { MESSAGES } from '@/common/constants';
 import { CreateAppointmentDto, UpdateAppointmentDto } from './swagger';
 import { AppointmentService } from './appointment.service';
 import type {
@@ -39,6 +31,9 @@ import type {
 } from './appointment.dto';
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import type { TokenPayload } from '@/common/types/jwt.type';
+import { JwtAuthGuard, RolesGuard } from '@/common/guards';
+import { Roles } from '@/common/decorators';
+
 @ApiTags('Appointments')
 @Controller('appointments')
 @UseGuards(JwtAuthGuard)
@@ -53,7 +48,7 @@ export class AppointmentController {
   @ApiResponse({ status: 400, description: 'Dữ liệu không hợp lệ' })
   @ApiResponse({ status: 401, description: 'Không có quyền truy cập' })
   @HttpCode(HttpStatus.CREATED)
-  @ApiResponseCreated(MESSAGES.APPOINTMENT.CREATE_SUCCESS)
+  // @ApiResponseCreated(MESSAGES.APPOINTMENT.CREATE_SUCCESS)
   async create(
     @Body() createAppointmentDto: CreateAppointmentDtoType,
     @CurrentUser() user: TokenPayload,
@@ -90,7 +85,7 @@ export class AppointmentController {
   @ApiQuery({ name: 'dateFrom', required: false, type: String })
   @ApiQuery({ name: 'dateTo', required: false, type: String })
   @ApiResponse({ status: 200, description: 'Lấy danh sách thành công' })
-  @ApiResponseOk(MESSAGES.APPOINTMENT.LIST_SUCCESS)
+  // @ApiResponseOk(MESSAGES.APPOINTMENT.LIST_SUCCESS)
   async findAll(
     @Query() query: GetAppointmentsQueryDtoType,
   ): Promise<AppointmentsListResponseDtoType> {
@@ -102,7 +97,7 @@ export class AppointmentController {
   @ApiParam({ name: 'id', description: 'ID lịch hẹn' })
   @ApiResponse({ status: 200, description: 'Lấy thông tin thành công' })
   @ApiResponse({ status: 404, description: 'Không tìm thấy lịch hẹn' })
-  @ApiResponseOk(MESSAGES.APPOINTMENT.GET_SUCCESS)
+  // @ApiResponseOk(MESSAGES.APPOINTMENT.GET_SUCCESS)
   async findOne(@Param('id') id: string): Promise<AppointmentResponseDtoType> {
     return this.appointmentService.findOne(id);
   }
@@ -113,7 +108,7 @@ export class AppointmentController {
   @ApiBody({ type: UpdateAppointmentDto })
   @ApiResponse({ status: 200, description: 'Cập nhật thành công' })
   @ApiResponse({ status: 404, description: 'Không tìm thấy lịch hẹn' })
-  @ApiResponseOk(MESSAGES.APPOINTMENT.UPDATE_SUCCESS)
+  // @ApiResponseOk(MESSAGES.APPOINTMENT.UPDATE_SUCCESS)
   async update(
     @Param('id') id: string,
     @Body() updateAppointmentDto: UpdateAppointmentDtoType,
@@ -128,7 +123,7 @@ export class AppointmentController {
   @ApiResponse({ status: 200, description: 'Xóa thành công' })
   @ApiResponse({ status: 404, description: 'Không tìm thấy lịch hẹn' })
   @HttpCode(HttpStatus.OK)
-  @ApiResponseOk(MESSAGES.APPOINTMENT.DELETE_SUCCESS)
+  // @ApiResponseOk(MESSAGES.APPOINTMENT.DELETE_SUCCESS)
   async remove(
     @Param('id') id: string,
     @CurrentUser() user: TokenPayload,
@@ -146,7 +141,7 @@ export class AppointmentController {
     enum: ['scheduled', 'completed', 'cancelled'],
   })
   @ApiResponse({ status: 200, description: 'Lấy danh sách thành công' })
-  @ApiResponseOk(MESSAGES.PATIENT.GET_APPOINTMENTS_SUCCESS)
+  // @ApiResponseOk(MESSAGES.PATIENT.GET_APPOINTMENTS_SUCCESS)
   async getMyAppointments(
     @Query() query: GetAppointmentsQueryDtoType,
     @CurrentUser() user: TokenPayload,
@@ -166,7 +161,7 @@ export class AppointmentController {
     enum: ['scheduled', 'completed', 'cancelled'],
   })
   @ApiResponse({ status: 200, description: 'Lấy danh sách thành công' })
-  @ApiResponseOk(MESSAGES.DOCTOR.GET_APPOINTMENTS_SUCCESS)
+  // @ApiResponseOk(MESSAGES.DOCTOR.GET_APPOINTMENTS_SUCCESS)
   async getDoctorAppointments(
     @Query() query: GetAppointmentsQueryDtoType,
     @CurrentUser() user: TokenPayload,

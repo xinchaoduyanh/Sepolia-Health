@@ -3,6 +3,7 @@ import { PrismaService } from '@/common/prisma/prisma.service';
 import { User } from '@prisma/client';
 import { ERROR_MESSAGES } from '@/common/constants/messages';
 import { Role } from '@prisma/client';
+
 @Injectable()
 export class AuthRepository {
   constructor(private readonly prisma: PrismaService) {}

@@ -4,7 +4,6 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '@/common/prisma/prisma.service';
-import { CurrentUser } from '@/common';
 import type { TokenPayload } from '@/common/types';
 import type {
   CreateAppointmentDtoType,
@@ -13,6 +12,7 @@ import type {
   AppointmentResponseDtoType,
   AppointmentsListResponseDtoType,
 } from './appointment.dto';
+import { CurrentUser } from '@/common/decorators';
 
 @Injectable()
 export class AppointmentService {

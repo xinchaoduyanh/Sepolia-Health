@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 // Login DTO
 export const LoginDto = z.object({
-  email: z.string().email('Email không hợp lệ'),
+  email: z.email({ error: 'Email không hợp lệ' }),
   password: z.string().min(6, 'Mật khẩu phải có ít nhất 6 ký tự'),
 });
 
@@ -23,7 +23,7 @@ export const RegisterDto = z
 
 // Verify Email DTO
 export const VerifyEmailDto = z.object({
-  email: z.string().email('Email không hợp lệ'),
+  email: z.email({ error: 'Email không hợp lệ' }),
   otp: z.string().length(6, 'Mã OTP phải có 6 ký tự'),
 });
 

@@ -1,11 +1,5 @@
 import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
-import {
-  Public,
-  ApiResponseOk,
-  ApiResponseCreated,
-  CurrentUser,
-} from '@/common';
 import type { TokenPayload } from '@/common/types/jwt.type';
 import { MESSAGES } from '@/common/constants';
 import {
@@ -31,6 +25,7 @@ import type {
   RegisterResponseDtoType,
   CompleteRegisterResponseDtoType,
 } from './auth.dto';
+import { CurrentUser, Public } from '@/common/decorators';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -48,7 +43,7 @@ export class AuthController {
     type: LoginResponseDto,
   })
   @ApiResponse({ status: 401, description: 'Email hoặc mật khẩu không đúng' })
-  @ApiResponseOk(MESSAGES.AUTH.LOGIN_SUCCESS)
+  // @ApiResponseOk(MESSAGES.AUTH.LOGIN_SUCCESS)
   async login(@Body() loginDto: LoginDtoType): Promise<LoginResponseDtoType> {
     return this.authService.login(loginDto);
   }
@@ -64,7 +59,7 @@ export class AuthController {
     type: RegisterResponseDto,
   })
   @ApiResponse({ status: 409, description: 'Email đã được sử dụng' })
-  @ApiResponseCreated(MESSAGES.AUTH.REGISTER_SUCCESS)
+  // @ApiResponseCreated(MESSAGES.AUTH.REGISTER_SUCCESS)
   async register(
     @Body() registerDto: RegisterDtoType,
   ): Promise<RegisterResponseDtoType> {
@@ -85,7 +80,7 @@ export class AuthController {
     status: 400,
     description: 'Mã OTP không hợp lệ hoặc đã hết hạn',
   })
-  @ApiResponseOk(MESSAGES.AUTH.VERIFY_EMAIL_SUCCESS)
+  // @ApiResponseOk(MESSAGES.AUTH.VERIFY_EMAIL_SUCCESS)
   async verifyEmail(@Body() verifyEmailDto: VerifyEmailDtoType): Promise<void> {
     return this.authService.verifyEmail(verifyEmailDto);
   }
@@ -104,7 +99,7 @@ export class AuthController {
     status: 400,
     description: 'Mã OTP không hợp lệ hoặc đã hết hạn',
   })
-  @ApiResponseCreated(MESSAGES.AUTH.VERIFY_EMAIL_SUCCESS)
+  // @ApiResponseCreated(MESSAGES.AUTH.VERIFY_EMAIL_SUCCESS)
   async completeRegister(
     @Body() completeRegisterDto: CompleteRegisterDtoType,
   ): Promise<CompleteRegisterResponseDtoType> {
@@ -122,7 +117,7 @@ export class AuthController {
     type: LoginResponseDto,
   })
   @ApiResponse({ status: 401, description: 'Refresh token không hợp lệ' })
-  @ApiResponseOk(MESSAGES.AUTH.REFRESH_TOKEN_SUCCESS)
+  // @ApiResponseOk(MESSAGES.AUTH.REFRESH_TOKEN_SUCCESS)
   async refreshToken(
     @Body() refreshTokenDto: RefreshTokenDtoType,
   ): Promise<LoginResponseDtoType> {
@@ -133,7 +128,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Đăng xuất tài khoản' })
   @ApiResponse({ status: 200, description: 'Đăng xuất thành công' })
-  @ApiResponseOk(MESSAGES.AUTH.LOGOUT_SUCCESS)
+  // @ApiResponseOk(MESSAGES.AUTH.LOGOUT_SUCCESS)
   async logout(@CurrentUser() user: TokenPayload): Promise<void> {
     return this.authService.logout(user.userId);
   }

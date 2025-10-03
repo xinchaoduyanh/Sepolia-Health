@@ -5,17 +5,10 @@ import {
   JwtAuthModule,
   RedisModule,
 } from './modules';
-import { ConfigService } from './config';
 
 @Module({
   imports: [UploadModule, MailModule, JwtAuthModule, RedisModule],
-  providers: [ConfigService],
-  exports: [
-    UploadModule,
-    MailModule,
-    JwtAuthModule,
-    RedisModule,
-    ConfigService,
-  ],
+  providers: [],
+  exports: [UploadModule, MailModule, JwtAuthModule, RedisModule],
 })
 export class CommonModule {}
