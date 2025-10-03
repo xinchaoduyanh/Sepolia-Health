@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { router } from 'expo-router';
 
 interface User {
   id: string;
@@ -79,8 +80,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       await AsyncStorage.removeItem('user');
       setUser(null);
+      console.log('User logged out successfully');
+      // Auto redirect to login after logout
+      router.replace('/(auth)/login');
     } catch (error) {
       console.error('Logout error:', error);
+      throw error; // Re-throw để component có thể handle
     }
   };
 

@@ -9,6 +9,7 @@ import {
   Platform,
   ScrollView,
   StatusBar,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -90,8 +91,15 @@ export default function RegisterScreen() {
               {/* Family Illustration */}
               <View className="items-center px-6 py-8">
                 <View className="h-64 w-80 items-center justify-center rounded-full bg-amber-50">
-                  {/* Placeholder for family illustration - using emoji for now */}
-                  <Text className="text-8xl">👨‍👩‍👧</Text>
+                  <Image
+                    source={require('../../assets/Doctor-pana.png')}
+                    style={{
+                      width: 280,
+                      height: 200,
+                      resizeMode: 'contain',
+                    }}
+                    fadeDuration={200}
+                  />
                 </View>
               </View>
 
@@ -124,8 +132,16 @@ export default function RegisterScreen() {
           {step === 'otp' && (
             <View className="px-6">
               <View className="mb-10 items-center">
-                <View className="mb-6 h-24 w-24 items-center justify-center rounded-full bg-amber-50">
-                  <Ionicons name="shield-checkmark" size={40} color="#000000" />
+                <View className="mb-6 h-32 w-32 items-center justify-center rounded-full bg-amber-50">
+                  <Image
+                    source={require('../../assets/Doctors-bro.png')}
+                    style={{
+                      width: 120,
+                      height: 120,
+                      resizeMode: 'contain',
+                    }}
+                    fadeDuration={200}
+                  />
                 </View>
                 <Text className="mb-3 text-3xl font-bold text-gray-800">Xác thực email</Text>
                 <Text className="text-center text-base leading-6 text-gray-500">
@@ -196,8 +212,16 @@ export default function RegisterScreen() {
           {step === 'info' && (
             <View className="px-6">
               <View className="mb-10 items-center">
-                <View className="mb-6 h-24 w-24 items-center justify-center rounded-full bg-amber-50">
-                  <Ionicons name="person" size={40} color="#000000" />
+                <View className="mb-6 h-32 w-32 items-center justify-center rounded-full bg-amber-50">
+                  <Image
+                    source={require('../../assets/Medicine-bro.png')}
+                    style={{
+                      width: 120,
+                      height: 120,
+                      resizeMode: 'contain',
+                    }}
+                    fadeDuration={200}
+                  />
                 </View>
                 <Text className="mb-3 text-3xl font-bold text-gray-800">Thông tin cá nhân</Text>
                 <Text className="text-center text-base leading-6 text-gray-500">

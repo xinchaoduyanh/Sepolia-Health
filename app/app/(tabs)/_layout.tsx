@@ -1,5 +1,3 @@
-'use client';
-
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { View, TouchableOpacity } from 'react-native';
@@ -42,7 +40,7 @@ export default function TabLayout() {
           title: '',
           tabBarIcon: ({ color, size }) => (
             <View className="items-center justify-center">
-              <View className="h-12 w-12 items-center justify-center rounded-lg bg-red-600">
+              <View className="h-12 w-12 items-center justify-center rounded-lg bg-blue-600">
                 <Ionicons name="qr-code" size={24} color="white" />
               </View>
             </View>

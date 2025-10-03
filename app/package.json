@@ -4,6 +4,7 @@
   "main": "expo-router/entry",
   "scripts": {
     "android": "expo start --android",
+    "tunnel": "expo start --tunnel",
     "ios": "expo start --ios",
     "start": "expo start",
     "prebuild": "expo prebuild",

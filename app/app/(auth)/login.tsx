@@ -10,6 +10,7 @@ import {
   ScrollView,
   StatusBar,
   Alert,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -62,8 +63,15 @@ export default function LoginScreen() {
           {/* Family Illustration */}
           <View className="items-center px-6 py-8">
             <View className="h-64 w-80 items-center justify-center rounded-full bg-amber-50">
-              {/* Placeholder for family illustration - using emoji for now */}
-              <Text className="text-8xl">👨‍👩‍👧</Text>
+              <Image
+                source={require('../../assets/Doctor-pana.png')}
+                style={{
+                  width: 280,
+                  height: 200,
+                  resizeMode: 'contain',
+                }}
+                fadeDuration={200}
+              />
             </View>
           </View>
 
