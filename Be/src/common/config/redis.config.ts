@@ -1,5 +1,6 @@
 import { registerAs } from '@nestjs/config';
+import parsed from './config.validation';
 
 export default registerAs('redis', () => ({
-  redisUrl: process.env.REDIS_URL,
+  redisUrl: parsed.REDIS_URL,
 }));

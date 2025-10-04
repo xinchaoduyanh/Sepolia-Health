@@ -8,15 +8,14 @@ import {
 import { PrismaService } from '@/common/prisma/prisma.service';
 import { StringUtil } from '@/common/utils';
 import {
-  LoginDtoType,
-  RegisterDtoType,
-  VerifyEmailDtoType,
-  CompleteRegisterDtoType,
-  RefreshTokenDtoType,
-  LoginResponseDtoType,
-  RegisterResponseDtoType,
-  CompleteRegisterResponseDtoType,
+  CompleteRegisterDto,
+  CompleteRegisterResponseDto,
   LoginDto,
+  LoginResponseDto,
+  RefreshTokenDto,
+  RegisterDto,
+  RegisterResponseDto,
+  VerifyEmailDto,
 } from './auth.dto';
 import { ERROR_MESSAGES } from '@/common/constants/messages';
 import { AuthRepository } from './auth.repository';
@@ -39,7 +38,7 @@ export class AuthService {
   /**
    * Login user
    */
-  async login(loginDto: LoginDto): Promise<LoginResponseDtoType> {
+  async login(loginDto: LoginDto): Promise<LoginResponseDto> {
     const { email, password } = loginDto;
 
     const user = await this.authRepository.findByEmail(email);
@@ -91,9 +90,7 @@ export class AuthService {
   /**
    * Register user - send verification email
    */
-  async register(
-    registerDto: RegisterDtoType,
-  ): Promise<RegisterResponseDtoType> {
+  async register(registerDto: RegisterDto): Promise<RegisterResponseDto> {
     const { email } = registerDto;
 
     // Check if user already exists
@@ -151,7 +148,7 @@ export class AuthService {
   /**
    * Verify email with OTP
    */
-  async verifyEmail(verifyEmailDto: VerifyEmailDtoType): Promise<void> {
+  async verifyEmail(verifyEmailDto: VerifyEmailDto): Promise<void> {
     const { email, otp } = verifyEmailDto;
 
     // Find OTP record
@@ -172,8 +169,8 @@ export class AuthService {
    * Complete registration after email verification
    */
   async completeRegister(
-    completeRegisterDto: CompleteRegisterDtoType,
-  ): Promise<CompleteRegisterResponseDtoType> {
+    completeRegisterDto: CompleteRegisterDto,
+  ): Promise<CompleteRegisterResponseDto> {
     const { email, otp, firstName, lastName, phone, password, role } =
       completeRegisterDto;
 
@@ -215,8 +212,8 @@ export class AuthService {
    * Refresh access token
    */
   async refreshToken(
-    refreshTokenDto: RefreshTokenDtoType,
-  ): Promise<LoginResponseDtoType> {
+    refreshTokenDto: RefreshTokenDto,
+  ): Promise<LoginResponseDto> {
     const { refreshToken } = refreshTokenDto;
     const payload = this.jwtAuthService.verifyToken(refreshToken);
 

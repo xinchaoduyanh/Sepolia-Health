@@ -5,19 +5,23 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { AuthRepository } from './auth.repository';
 import { PrismaModule } from '@/common/prisma/prisma.module';
-import { MailService } from '@/common/modules';
+import { JwtAuthModule, MailModule, RedisModule } from '@/common/modules';
+import { tokenStorageConfig } from '@/common/config';
 
 @Module({
   imports: [
-    ConfigModule,
+    ConfigModule.forFeature(tokenStorageConfig),
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'your-secret-key',
       signOptions: { expiresIn: '15m' },
     }),
     PrismaModule,
+    JwtAuthModule,
+    RedisModule,
+    MailModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, AuthRepository, MailService],
+  providers: [AuthService, AuthRepository],
   exports: [AuthService, AuthRepository],
 })
 export class AuthModule {}

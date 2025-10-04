@@ -4,16 +4,16 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from '@/common/prisma/prisma.module';
 import { CommonModule } from '@/common/common.module';
-import validationSchema from '../common/config/config.validation';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [],
     }),
     PrismaModule,
     CommonModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

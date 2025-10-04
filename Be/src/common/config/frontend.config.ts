@@ -1,5 +1,6 @@
 import { registerAs } from '@nestjs/config';
+import parsed from './config.validation';
 
 export default registerAs('frontend', () => ({
-  frontendUrl: process.env.FRONTEND_URL,
+  frontendUrl: parsed.FRONTEND_URL,
 }));

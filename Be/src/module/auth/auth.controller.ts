@@ -1,28 +1,17 @@
 import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import type { TokenPayload } from '@/common/types/jwt.type';
-import { MESSAGES } from '@/common/constants';
-import {
-  RegisterDto,
-  VerifyEmailDto,
-  CompleteRegisterDto,
-  RefreshTokenDto,
-  LoginResponseDto,
-  RegisterResponseDto,
-  VerifyEmailResponseDto,
-  CompleteRegisterResponseDto,
-} from './swagger';
 import { AuthService } from './auth.service';
-
 import {
-  type RegisterDtoType,
-  type VerifyEmailDtoType,
-  type CompleteRegisterDtoType,
-  type RefreshTokenDtoType,
-  type LoginResponseDtoType,
-  type RegisterResponseDtoType,
-  type CompleteRegisterResponseDtoType,
+  CompleteRegisterDto,
+  CompleteRegisterResponseDto,
   LoginDto,
+  LoginResponseDto,
+  RefreshTokenDto,
+  RegisterDto,
+  RegisterResponseDto,
+  VerifyEmailDto,
+  VerifyEmailResponseDto,
 } from './auth.dto';
 import { CurrentUser, Public } from '@/common/decorators';
 
@@ -43,7 +32,7 @@ export class AuthController {
   })
   @ApiResponse({ status: 401, description: 'Email hoặc mật khẩu không đúng' })
   // @ApiResponseOk(MESSAGES.AUTH.LOGIN_SUCCESS)
-  async login(@Body() loginDto: LoginDto): Promise<LoginResponseDtoType> {
+  async login(@Body() loginDto: LoginDto): Promise<LoginResponseDto> {
     return this.authService.login(loginDto);
   }
 
@@ -60,8 +49,8 @@ export class AuthController {
   @ApiResponse({ status: 409, description: 'Email đã được sử dụng' })
   // @ApiResponseCreated(MESSAGES.AUTH.REGISTER_SUCCESS)
   async register(
-    @Body() registerDto: RegisterDtoType,
-  ): Promise<RegisterResponseDtoType> {
+    @Body() registerDto: RegisterDto,
+  ): Promise<RegisterResponseDto> {
     return this.authService.register(registerDto);
   }
 
@@ -80,7 +69,7 @@ export class AuthController {
     description: 'Mã OTP không hợp lệ hoặc đã hết hạn',
   })
   // @ApiResponseOk(MESSAGES.AUTH.VERIFY_EMAIL_SUCCESS)
-  async verifyEmail(@Body() verifyEmailDto: VerifyEmailDtoType): Promise<void> {
+  async verifyEmail(@Body() verifyEmailDto: VerifyEmailDto): Promise<void> {
     return this.authService.verifyEmail(verifyEmailDto);
   }
 
@@ -100,8 +89,8 @@ export class AuthController {
   })
   // @ApiResponseCreated(MESSAGES.AUTH.VERIFY_EMAIL_SUCCESS)
   async completeRegister(
-    @Body() completeRegisterDto: CompleteRegisterDtoType,
-  ): Promise<CompleteRegisterResponseDtoType> {
+    @Body() completeRegisterDto: CompleteRegisterDto,
+  ): Promise<CompleteRegisterResponseDto> {
     return this.authService.completeRegister(completeRegisterDto);
   }
 
@@ -118,8 +107,8 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Refresh token không hợp lệ' })
   // @ApiResponseOk(MESSAGES.AUTH.REFRESH_TOKEN_SUCCESS)
   async refreshToken(
-    @Body() refreshTokenDto: RefreshTokenDtoType,
-  ): Promise<LoginResponseDtoType> {
+    @Body() refreshTokenDto: RefreshTokenDto,
+  ): Promise<LoginResponseDto> {
     return this.authService.refreshToken(refreshTokenDto);
   }
 
