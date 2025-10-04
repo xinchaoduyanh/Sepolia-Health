@@ -20,45 +20,40 @@ import { CurrentUser, Public } from '@/common/decorators';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Post('login')
   @Public()
+  @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Đăng nhập tài khoản' })
-  @ApiBody({ type: LoginDto })
   @ApiResponse({
     status: 200,
     description: 'Đăng nhập thành công',
     type: LoginResponseDto,
   })
   @ApiResponse({ status: 401, description: 'Email hoặc mật khẩu không đúng' })
-  // @ApiResponseOk(MESSAGES.AUTH.LOGIN_SUCCESS)
   async login(@Body() loginDto: LoginDto): Promise<LoginResponseDto> {
     return this.authService.login(loginDto);
   }
 
-  @Post('register')
   @Public()
+  @Post('register')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Đăng ký tài khoản mới' })
-  @ApiBody({ type: RegisterDto })
   @ApiResponse({
     status: 201,
     description: 'Đăng ký thành công, vui lòng kiểm tra email',
     type: RegisterResponseDto,
   })
   @ApiResponse({ status: 409, description: 'Email đã được sử dụng' })
-  // @ApiResponseCreated(MESSAGES.AUTH.REGISTER_SUCCESS)
   async register(
     @Body() registerDto: RegisterDto,
   ): Promise<RegisterResponseDto> {
     return this.authService.register(registerDto);
   }
 
-  @Post('verify-email')
   @Public()
+  @Post('verify-email')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Xác thực email với OTP' })
-  @ApiBody({ type: VerifyEmailDto })
   @ApiResponse({
     status: 200,
     description: 'Xác thực email thành công',
@@ -68,16 +63,14 @@ export class AuthController {
     status: 400,
     description: 'Mã OTP không hợp lệ hoặc đã hết hạn',
   })
-  // @ApiResponseOk(MESSAGES.AUTH.VERIFY_EMAIL_SUCCESS)
   async verifyEmail(@Body() verifyEmailDto: VerifyEmailDto): Promise<void> {
     return this.authService.verifyEmail(verifyEmailDto);
   }
 
-  @Post('complete-register')
   @Public()
+  @Post('complete-register')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Hoàn tất đăng ký sau khi xác thực email' })
-  @ApiBody({ type: CompleteRegisterDto })
   @ApiResponse({
     status: 201,
     description: 'Đăng ký hoàn tất thành công',
@@ -87,25 +80,22 @@ export class AuthController {
     status: 400,
     description: 'Mã OTP không hợp lệ hoặc đã hết hạn',
   })
-  // @ApiResponseCreated(MESSAGES.AUTH.VERIFY_EMAIL_SUCCESS)
   async completeRegister(
     @Body() completeRegisterDto: CompleteRegisterDto,
   ): Promise<CompleteRegisterResponseDto> {
     return this.authService.completeRegister(completeRegisterDto);
   }
 
-  @Post('refresh-token')
   @Public()
+  @Post('refresh-token')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Làm mới access token' })
-  @ApiBody({ type: RefreshTokenDto })
   @ApiResponse({
     status: 200,
     description: 'Làm mới token thành công',
     type: LoginResponseDto,
   })
   @ApiResponse({ status: 401, description: 'Refresh token không hợp lệ' })
-  // @ApiResponseOk(MESSAGES.AUTH.REFRESH_TOKEN_SUCCESS)
   async refreshToken(
     @Body() refreshTokenDto: RefreshTokenDto,
   ): Promise<LoginResponseDto> {
@@ -116,7 +106,6 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Đăng xuất tài khoản' })
   @ApiResponse({ status: 200, description: 'Đăng xuất thành công' })
-  // @ApiResponseOk(MESSAGES.AUTH.LOGOUT_SUCCESS)
   async logout(@CurrentUser() user: TokenPayload): Promise<void> {
     return this.authService.logout(user.userId);
   }
