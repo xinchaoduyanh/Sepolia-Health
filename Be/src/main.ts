@@ -2,7 +2,6 @@ import { NestFactory } from '@nestjs/core';
 import { Logger } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ResponseInterceptor } from '@/common/interceptors';
-import { CustomZodValidationPipe } from '@/common/pipes';
 import { Reflector } from '@nestjs/core';
 import { JwtAuthGuard } from '@/common/guards';
 import { AppModule } from './module/app.module';
@@ -21,16 +20,8 @@ async function bootstrap() {
   // Global response interceptor
   app.useGlobalInterceptors(new ResponseInterceptor(new Reflector()));
 
-  // Global validation pipe
-  app.useGlobalPipes(new CustomZodValidationPipe());
-
   // Enable CORS
-  app.enableCors({
-    origin: process.env.CORS_ORIGIN || '*',
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'access-token'],
-    credentials: true,
-  });
+  app.enableCors();
 
   // Global guards (optional - uncomment if you want global auth)
   app.useGlobalGuards(new JwtAuthGuard(new Reflector()));
@@ -40,25 +31,7 @@ async function bootstrap() {
     .setTitle('Sepolia Clinic API')
     .setDescription('API documentation for Sepolia Clinic Management System')
     .setVersion('1.0')
-    .addBearerAuth(
-      {
-        type: 'http',
-        scheme: 'bearer',
-        bearerFormat: 'JWT',
-        name: 'JWT',
-        description: 'Enter JWT token',
-        in: 'header',
-      },
-      'JWT-auth',
-    )
-    .addTag('Auth', 'Authentication endpoints')
-    .addTag('Appointments', 'Appointment management')
-    .addTag('Users', 'User management')
-    .addTag('Doctors', 'Doctor management')
-    .addTag('Patients', 'Patient management')
-    .addTag('Services', 'Service management')
-    .addTag('Medicines', 'Medicine management')
-    .addTag('Prescriptions', 'Prescription management')
+    .addBearerAuth()
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
@@ -71,7 +44,7 @@ async function bootstrap() {
   const port = process.env.PORT || 3000;
   await app.listen(port);
 
-  logger.log(`🚀 Application is running on: http://localhost:${port}/api/v1`);
+  // logger.log(`🚀 Application is running on: http://localhost:${port}/api`);
   logger.log(`📚 Swagger documentation: http://localhost:${port}/api/docs`);
   logger.log(`📚 Environment: ${process.env.NODE_ENV || 'development'}`);
 }

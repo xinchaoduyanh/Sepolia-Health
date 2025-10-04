@@ -3,11 +3,12 @@ import z from 'zod';
 const configSchema = z.object({
   DATABASE_URL: z.string().nonempty(),
   REDIS_URL: z.string().nonempty(),
+  FRONTEND_URL: z.string().nonempty(),
   //email
   FROM_EMAIL: z.string().nonempty(),
   RESEND_API_KEY: z.string().nonempty(),
+  //jwt
   JWT_SECRET: z.string().nonempty(),
-  FRONTEND_URL: z.string().nonempty(),
   JWT_EXPIRES_IN: z.string().nonempty(),
   JWT_REFRESH_SECRET: z.string().nonempty(),
   JWT_REFRESH_EXPIRES_IN: z.string().nonempty(),

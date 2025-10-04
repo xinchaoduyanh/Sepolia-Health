@@ -6,7 +6,8 @@ import { PrismaModule } from '@/common/prisma/prisma.module';
 import { CommonModule } from '@/common/common.module';
 import { AuthModule } from './auth/auth.module';
 import { APP_PIPE } from '@nestjs/core';
-import { ZodValidationPipe } from 'nestjs-zod';
+import { DoctorModule } from './doctor/doctor.module';
+import { CustomZodValidationPipe } from '@/common/pipes';
 
 @Module({
   imports: [
@@ -16,13 +17,14 @@ import { ZodValidationPipe } from 'nestjs-zod';
     PrismaModule,
     CommonModule,
     AuthModule,
+    DoctorModule,
   ],
   controllers: [AppController],
   providers: [
     AppService,
     {
       provide: APP_PIPE,
-      useClass: ZodValidationPipe,
+      useClass: CustomZodValidationPipe,
     },
   ],
 })
