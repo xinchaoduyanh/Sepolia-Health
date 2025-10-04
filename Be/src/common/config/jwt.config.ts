@@ -1,8 +1,9 @@
 import { registerAs } from '@nestjs/config';
+import parsed from './config.validation';
 
 export default registerAs('jwt', () => ({
-  secret: process.env.JWT_SECRET || 'your-secret-key',
-  expiresIn: process.env.JWT_EXPIRES_IN,
-  refreshSecret: process.env.JWT_REFRESH_SECRET,
-  refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN,
+  secret: parsed.JWT_SECRET,
+  expiresIn: parsed.JWT_EXPIRES_IN,
+  refreshSecret: parsed.JWT_REFRESH_SECRET,
+  refreshExpiresIn: parsed.JWT_REFRESH_EXPIRES_IN,
 }));

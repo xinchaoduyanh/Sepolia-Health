@@ -10,11 +10,6 @@ import validationSchema from '../common/config/config.validation';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      cache: true,
-      validationSchema,
-      validationOptions: {
-        abortEarly: false,
-      },
       load: [],
     }),
     PrismaModule,

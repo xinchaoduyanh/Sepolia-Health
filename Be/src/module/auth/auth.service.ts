@@ -16,6 +16,7 @@ import {
   LoginResponseDtoType,
   RegisterResponseDtoType,
   CompleteRegisterResponseDtoType,
+  LoginDto,
 } from './auth.dto';
 import { ERROR_MESSAGES } from '@/common/constants/messages';
 import { AuthRepository } from './auth.repository';
@@ -38,7 +39,7 @@ export class AuthService {
   /**
    * Login user
    */
-  async login(loginDto: LoginDtoType): Promise<LoginResponseDtoType> {
+  async login(loginDto: LoginDto): Promise<LoginResponseDtoType> {
     const { email, password } = loginDto;
 
     const user = await this.authRepository.findByEmail(email);

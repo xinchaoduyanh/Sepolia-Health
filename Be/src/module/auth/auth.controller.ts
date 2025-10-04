@@ -3,7 +3,6 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import type { TokenPayload } from '@/common/types/jwt.type';
 import { MESSAGES } from '@/common/constants';
 import {
-  LoginDto,
   RegisterDto,
   VerifyEmailDto,
   CompleteRegisterDto,
@@ -15,15 +14,15 @@ import {
 } from './swagger';
 import { AuthService } from './auth.service';
 
-import type {
-  LoginDtoType,
-  RegisterDtoType,
-  VerifyEmailDtoType,
-  CompleteRegisterDtoType,
-  RefreshTokenDtoType,
-  LoginResponseDtoType,
-  RegisterResponseDtoType,
-  CompleteRegisterResponseDtoType,
+import {
+  type RegisterDtoType,
+  type VerifyEmailDtoType,
+  type CompleteRegisterDtoType,
+  type RefreshTokenDtoType,
+  type LoginResponseDtoType,
+  type RegisterResponseDtoType,
+  type CompleteRegisterResponseDtoType,
+  LoginDto,
 } from './auth.dto';
 import { CurrentUser, Public } from '@/common/decorators';
 
@@ -44,7 +43,7 @@ export class AuthController {
   })
   @ApiResponse({ status: 401, description: 'Email hoặc mật khẩu không đúng' })
   // @ApiResponseOk(MESSAGES.AUTH.LOGIN_SUCCESS)
-  async login(@Body() loginDto: LoginDtoType): Promise<LoginResponseDtoType> {
+  async login(@Body() loginDto: LoginDto): Promise<LoginResponseDtoType> {
     return this.authService.login(loginDto);
   }
 

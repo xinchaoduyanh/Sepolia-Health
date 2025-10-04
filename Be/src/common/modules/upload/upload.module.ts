@@ -1,9 +1,11 @@
 import { Module } from '@nestjs/common';
 import { UploadService } from './upload.service';
-import { ConfigService } from '../../config';
+import { ConfigModule } from '@nestjs/config';
+import { awsConfig } from '@/common/config';
 
 @Module({
-  providers: [UploadService, ConfigService],
+  imports: [ConfigModule.forFeature(awsConfig)],
+  providers: [UploadService],
   exports: [UploadService],
 })
 export class UploadModule {}

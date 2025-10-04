@@ -1,6 +1,7 @@
 import { registerAs } from '@nestjs/config';
+import parsed from './config.validation';
 
 export default registerAs('email', () => ({
-  fromEmail: process.env.FROM_EMAIL,
-  resendApiKey: process.env.RESEND_API_KEY,
+  fromEmail: parsed.FROM_EMAIL,
+  resendApiKey: parsed.RESEND_API_KEY,
 }));

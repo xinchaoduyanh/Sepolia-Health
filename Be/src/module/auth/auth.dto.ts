@@ -1,7 +1,8 @@
+import { createZodDto } from '@/common/helper';
 import { z } from 'zod';
 
 // Login DTO
-export const LoginDto = z.object({
+const LoginSchema = z.object({
   email: z.email({ error: 'Email không hợp lệ' }),
   password: z.string().min(6, 'Mật khẩu phải có ít nhất 6 ký tự'),
 });
@@ -88,3 +89,5 @@ export type CompleteRegisterResponseDtoType = z.infer<
   typeof CompleteRegisterResponseDto
 >;
 export type LogoutDtoType = z.infer<typeof LogoutDto>;
+
+export class LoginDto extends createZodDto(LoginSchema) {}

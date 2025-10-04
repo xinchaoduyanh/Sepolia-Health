@@ -1,6 +1,5 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Resend } from 'resend';
-import { ConfigService } from '../../config';
 import {
   SendEmailOptions,
   EmailResult,
@@ -13,6 +12,8 @@ import {
   getAppointmentConfirmationTemplate,
   AppointmentConfirmationData,
 } from './templates';
+import { ConfigType } from '@nestjs/config';
+import { emailConfig } from '@/common/config';
 
 @Injectable()
 export class MailService {
@@ -20,11 +21,12 @@ export class MailService {
   private readonly resend: Resend;
   private readonly fromEmail: string;
 
-  constructor(private configService: ConfigService) {
-    const emailConfig = this.configService.getEmailConfig();
-
-    this.resend = new Resend(emailConfig.resendApiKey);
-    this.fromEmail = emailConfig.fromEmail;
+  constructor(
+    @Inject(emailConfig.KEY)
+    private readonly emailConf: ConfigType<typeof emailConfig>,
+  ) {
+    this.resend = new Resend(this.emailConf.resendApiKey);
+    this.fromEmail = this.emailConf.fromEmail;
   }
 
   /**
