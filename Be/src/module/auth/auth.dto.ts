@@ -1,13 +1,14 @@
+import { createZodDto } from '@/common/helper';
 import { z } from 'zod';
 
 // Login DTO
-export const LoginDto = z.object({
-  email: z.string().email('Email không hợp lệ'),
+const LoginSchema = z.object({
+  email: z.string().email({ error: 'Email không hợp lệ' }),
   password: z.string().min(6, 'Mật khẩu phải có ít nhất 6 ký tự'),
 });
 
 // Register DTO
-export const RegisterDto = z
+const RegisterSchema = z
   .object({
     email: z.string().email('Email không hợp lệ'),
     password: z.string().min(6, 'Mật khẩu phải có ít nhất 6 ký tự'),
@@ -22,13 +23,13 @@ export const RegisterDto = z
   });
 
 // Verify Email DTO
-export const VerifyEmailDto = z.object({
-  email: z.string().email('Email không hợp lệ'),
+const VerifyEmailSchema = z.object({
+  email: z.email({ error: 'Email không hợp lệ' }),
   otp: z.string().length(6, 'Mã OTP phải có 6 ký tự'),
 });
 
 // Complete Register DTO
-export const CompleteRegisterDto = z
+const CompleteRegisterSchema = z
   .object({
     email: z.string().email('Email không hợp lệ'),
     otp: z.string().length(6, 'Mã OTP phải có 6 ký tự'),
@@ -45,25 +46,25 @@ export const CompleteRegisterDto = z
   });
 
 // Refresh Token DTO
-export const RefreshTokenDto = z.object({
+const RefreshTokenSchema = z.object({
   refreshToken: z.string().min(1, 'Refresh token không được để trống'),
 });
 
 // Response DTOs
-export const LoginResponseDto = z.object({
+const LoginResponseSchema = z.object({
   accessToken: z.string(),
   refreshToken: z.string(),
 });
 
-export const RegisterResponseDto = z.object({
+const RegisterResponseSchema = z.object({
   email: z.string(),
 });
 
-export const VerifyEmailResponseDto = z.object({
+const VerifyEmailResponseSchema = z.object({
   success: z.boolean(),
 });
 
-export const CompleteRegisterResponseDto = z.object({
+const CompleteRegisterResponseSchema = z.object({
   user: z.object({
     id: z.number(),
     email: z.string(),
@@ -72,19 +73,21 @@ export const CompleteRegisterResponseDto = z.object({
     role: z.string(),
   }),
 });
-export const LogoutDto = z.object({
+const LogoutSchema = z.object({
   userId: z.number(),
 });
-// Export types
-export type LoginDtoType = z.infer<typeof LoginDto>;
-export type RegisterDtoType = z.infer<typeof RegisterDto>;
-export type VerifyEmailDtoType = z.infer<typeof VerifyEmailDto>;
-export type CompleteRegisterDtoType = z.infer<typeof CompleteRegisterDto>;
-export type RefreshTokenDtoType = z.infer<typeof RefreshTokenDto>;
-export type LoginResponseDtoType = z.infer<typeof LoginResponseDto>;
-export type RegisterResponseDtoType = z.infer<typeof RegisterResponseDto>;
-export type VerifyEmailResponseDtoType = z.infer<typeof VerifyEmailResponseDto>;
-export type CompleteRegisterResponseDtoType = z.infer<
-  typeof CompleteRegisterResponseDto
->;
-export type LogoutDtoType = z.infer<typeof LogoutDto>;
+
+export class LoginDto extends createZodDto(LoginSchema) {}
+export class RegisterDto extends createZodDto(RegisterSchema) {}
+export class VerifyEmailDto extends createZodDto(VerifyEmailSchema) {}
+export class CompleteRegisterDto extends createZodDto(CompleteRegisterSchema) {}
+export class RefreshTokenDto extends createZodDto(RefreshTokenSchema) {}
+export class LoginResponseDto extends createZodDto(LoginResponseSchema) {}
+export class RegisterResponseDto extends createZodDto(RegisterResponseSchema) {}
+export class VerifyEmailResponseDto extends createZodDto(
+  VerifyEmailResponseSchema,
+) {}
+export class CompleteRegisterResponseDto extends createZodDto(
+  CompleteRegisterResponseSchema,
+) {}
+export class LogoutDto extends createZodDto(LogoutSchema) {}

@@ -1,28 +1,29 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '../../config';
 import {
   JwtTokens,
   TokenPayload,
   GenerateTokenOptions,
   VerifyTokenResult,
 } from './jwt.types';
+import { jwtConfig } from '@/common/config';
+import { ConfigType } from '@nestjs/config';
 
 @Injectable()
 export class CustomJwtService {
   constructor(
+    @Inject(jwtConfig.KEY)
+    private readonly jwtConf: ConfigType<typeof jwtConfig>,
     private jwtService: JwtService,
-    private configService: ConfigService,
   ) {}
 
   /**
    * Generate access token
    */
   generateAccessToken(payload: Omit<TokenPayload, 'exp' | 'iat'>): string {
-    const jwtConfig = this.configService.getJwtConfig();
     return this.jwtService.sign(payload, {
-      secret: jwtConfig.secret,
-      expiresIn: jwtConfig.expiresIn,
+      secret: this.jwtConf.secret,
+      expiresIn: this.jwtConf.expiresIn,
     });
   }
 
@@ -30,10 +31,9 @@ export class CustomJwtService {
    * Generate refresh token
    */
   generateRefreshToken(payload: Omit<TokenPayload, 'exp' | 'iat'>): string {
-    const jwtConfig = this.configService.getJwtConfig();
     return this.jwtService.sign(payload, {
-      secret: jwtConfig.refreshSecret,
-      expiresIn: jwtConfig.refreshExpiresIn,
+      secret: this.jwtConf.refreshSecret,
+      expiresIn: this.jwtConf.refreshExpiresIn,
     });
   }
 
@@ -55,18 +55,17 @@ export class CustomJwtService {
     type: 'access' | 'refresh' = 'access',
   ): VerifyTokenResult {
     try {
-      const jwtConfig = this.configService.getJwtConfig();
       let secret: string;
 
       switch (type) {
         case 'access':
-          secret = jwtConfig.secret;
+          secret = this.jwtConf.secret;
           break;
         case 'refresh':
-          secret = jwtConfig.refreshSecret;
+          secret = this.jwtConf.refreshSecret;
           break;
         default:
-          secret = jwtConfig.secret;
+          secret = this.jwtConf.secret;
       }
 
       const payload = this.jwtService.verify(token, { secret });

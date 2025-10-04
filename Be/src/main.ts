@@ -1,18 +1,19 @@
 import { NestFactory } from '@nestjs/core';
 import { Logger } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { AppModule } from './app.module';
-import { HttpExceptionsFilter } from '@/common/filters';
 import { ResponseInterceptor } from '@/common/interceptors';
 import { CustomZodValidationPipe } from '@/common/pipes';
 import { Reflector } from '@nestjs/core';
 import { JwtAuthGuard } from '@/common/guards';
+import { AppModule } from './module/app.module';
+import { HttpExceptionsFilter } from './common/exceptions';
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const logger = new Logger('Bootstrap');
 
   // Global prefix
-  app.setGlobalPrefix('api/v1');
+  app.setGlobalPrefix('api');
 
   // Global exception filter
   app.useGlobalFilters(new HttpExceptionsFilter());

@@ -1,11 +1,12 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
   S3Client,
   PutObjectCommand,
   GetObjectCommand,
 } from '@aws-sdk/client-s3';
-import { ConfigService } from '../../config';
 import { UploadFileOptions, UploadResult } from './upload.types';
+import { ConfigType } from '@nestjs/config';
+import { awsConfig } from '@/common/config';
 
 @Injectable()
 export class UploadService {
@@ -14,19 +15,20 @@ export class UploadService {
   private readonly bucketName: string;
   private readonly bucketUrl: string;
 
-  constructor(private configService: ConfigService) {
-    const awsConfig = this.configService.getAwsConfig();
-
+  constructor(
+    @Inject(awsConfig.KEY)
+    private readonly awsConf: ConfigType<typeof awsConfig>,
+  ) {
     this.s3Client = new S3Client({
-      region: awsConfig.region,
+      region: awsConf.region,
       credentials: {
-        accessKeyId: awsConfig.accessKeyId,
-        secretAccessKey: awsConfig.secretAccessKey,
+        accessKeyId: awsConf.accessKeyId,
+        secretAccessKey: awsConf.secretAccessKey,
       },
     });
 
-    this.bucketName = awsConfig.bucketName;
-    this.bucketUrl = awsConfig.bucketUrl;
+    this.bucketName = awsConf.bucketName;
+    this.bucketUrl = awsConf.bucketUrl;
   }
 
   /**

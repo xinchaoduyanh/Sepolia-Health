@@ -3,27 +3,26 @@ import {
   UnauthorizedException,
   ConflictException,
   BadRequestException,
+  Inject,
 } from '@nestjs/common';
 import { PrismaService } from '@/common/prisma/prisma.service';
-import {
-  CustomJwtService,
-  MailService,
-  RedisService,
-  ConfigService,
-} from '@/common';
 import { StringUtil } from '@/common/utils';
 import {
-  LoginDtoType,
-  RegisterDtoType,
-  VerifyEmailDtoType,
-  CompleteRegisterDtoType,
-  RefreshTokenDtoType,
-  LoginResponseDtoType,
-  RegisterResponseDtoType,
-  CompleteRegisterResponseDtoType,
+  CompleteRegisterDto,
+  CompleteRegisterResponseDto,
+  LoginDto,
+  LoginResponseDto,
+  RefreshTokenDto,
+  RegisterDto,
+  RegisterResponseDto,
+  VerifyEmailDto,
 } from './auth.dto';
 import { ERROR_MESSAGES } from '@/common/constants/messages';
-import { AuthRepository } from '@/module/patient/auth/auth.repository';
+import { AuthRepository } from './auth.repository';
+import { CustomJwtService, MailService, RedisService } from '@/common/modules';
+import { tokenStorageConfig } from '@/common/config';
+import { ConfigType } from '@nestjs/config';
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -32,13 +31,14 @@ export class AuthService {
     private readonly mailService: MailService,
     private readonly authRepository: AuthRepository,
     private readonly redisService: RedisService,
-    private readonly configService: ConfigService,
+    @Inject(tokenStorageConfig.KEY)
+    private readonly tokenConf: ConfigType<typeof tokenStorageConfig>,
   ) {}
 
   /**
    * Login user
    */
-  async login(loginDto: LoginDtoType): Promise<LoginResponseDtoType> {
+  async login(loginDto: LoginDto): Promise<LoginResponseDto> {
     const { email, password } = loginDto;
 
     const user = await this.authRepository.findByEmail(email);
@@ -62,7 +62,6 @@ export class AuthService {
     });
 
     // Store tokens in Redis with expiration
-    const tokenConfig = this.configService.getTokenStorageConfig();
     const accessTokenKey = `token:${user.id}:access:${Date.now()}`;
     const refreshTokenKey = `token:${user.id}:refresh:${Date.now()}`;
 
@@ -70,13 +69,13 @@ export class AuthService {
     await this.redisService.setToken(
       accessTokenKey,
       tokens.accessToken,
-      tokenConfig.accessTokenExpiresInSeconds,
+      this.tokenConf.accessTokenExpiresInSeconds,
     );
     // Store refresh token with configured expiration
     await this.redisService.setToken(
       refreshTokenKey,
       tokens.refreshToken,
-      tokenConfig.refreshTokenExpiresInSeconds,
+      this.tokenConf.refreshTokenExpiresInSeconds,
     );
 
     // Update last login
@@ -91,9 +90,7 @@ export class AuthService {
   /**
    * Register user - send verification email
    */
-  async register(
-    registerDto: RegisterDtoType,
-  ): Promise<RegisterResponseDtoType> {
+  async register(registerDto: RegisterDto): Promise<RegisterResponseDto> {
     const { email } = registerDto;
 
     // Check if user already exists
@@ -151,7 +148,7 @@ export class AuthService {
   /**
    * Verify email with OTP
    */
-  async verifyEmail(verifyEmailDto: VerifyEmailDtoType): Promise<void> {
+  async verifyEmail(verifyEmailDto: VerifyEmailDto): Promise<void> {
     const { email, otp } = verifyEmailDto;
 
     // Find OTP record
@@ -172,8 +169,8 @@ export class AuthService {
    * Complete registration after email verification
    */
   async completeRegister(
-    completeRegisterDto: CompleteRegisterDtoType,
-  ): Promise<CompleteRegisterResponseDtoType> {
+    completeRegisterDto: CompleteRegisterDto,
+  ): Promise<CompleteRegisterResponseDto> {
     const { email, otp, firstName, lastName, phone, password, role } =
       completeRegisterDto;
 
@@ -215,8 +212,8 @@ export class AuthService {
    * Refresh access token
    */
   async refreshToken(
-    refreshTokenDto: RefreshTokenDtoType,
-  ): Promise<LoginResponseDtoType> {
+    refreshTokenDto: RefreshTokenDto,
+  ): Promise<LoginResponseDto> {
     const { refreshToken } = refreshTokenDto;
     const payload = this.jwtAuthService.verifyToken(refreshToken);
 
@@ -236,7 +233,6 @@ export class AuthService {
     });
 
     // Store new tokens in Redis with expiration
-    const tokenConfig = this.configService.getTokenStorageConfig();
     const accessTokenKey = `token:${user.id}:access:${Date.now()}`;
     const refreshTokenKey = `token:${user.id}:refresh:${Date.now()}`;
 
@@ -244,13 +240,13 @@ export class AuthService {
     await this.redisService.setToken(
       accessTokenKey,
       tokens.accessToken,
-      tokenConfig.accessTokenExpiresInSeconds,
+      this.tokenConf.accessTokenExpiresInSeconds,
     );
     // Store refresh token with configured expiration
     await this.redisService.setToken(
       refreshTokenKey,
       tokens.refreshToken,
-      tokenConfig.refreshTokenExpiresInSeconds,
+      this.tokenConf.refreshTokenExpiresInSeconds,
     );
 
     return {

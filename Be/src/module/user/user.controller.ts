@@ -18,7 +18,6 @@ import {
   ApiConsumes,
   ApiBody,
 } from '@nestjs/swagger';
-import { CurrentUser, ApiResponseOk, CustomZodValidationPipe } from '@/common';
 import type { TokenPayload } from '@/common/types/jwt.type';
 import { MESSAGES } from '@/common/constants';
 import { UserService } from './user.service';
@@ -31,6 +30,8 @@ import type {
   UploadAvatarResponseDtoType,
 } from './user.dto';
 import { UpdateUserProfileDto, ChangePasswordDto } from './user.dto';
+import { CurrentUser } from '@/common/decorators';
+import { CustomZodValidationPipe } from '@/common/pipes';
 
 @ApiTags('User Profile')
 @Controller('user')
@@ -44,7 +45,7 @@ export class UserController {
     status: 200,
     description: 'Lấy thông tin thành công',
   })
-  @ApiResponseOk(MESSAGES.USER.GET_PROFILE_SUCCESS)
+  // @ApiResponseOk(MESSAGES.USER.GET_PROFILE_SUCCESS)
   async getProfile(
     @CurrentUser() user: TokenPayload,
   ): Promise<UserProfileResponseDtoType> {
@@ -58,7 +59,7 @@ export class UserController {
     status: 200,
     description: 'Cập nhật thành công',
   })
-  @ApiResponseOk(MESSAGES.USER.UPDATE_PROFILE_SUCCESS)
+  // @ApiResponseOk(MESSAGES.USER.UPDATE_PROFILE_SUCCESS)
   async updateProfile(
     @CurrentUser() user: TokenPayload,
     @Body(new CustomZodValidationPipe(UpdateUserProfileDto))
@@ -74,7 +75,7 @@ export class UserController {
     status: 200,
     description: 'Đổi mật khẩu thành công',
   })
-  @ApiResponseOk(MESSAGES.USER.CHANGE_PASSWORD_SUCCESS)
+  // @ApiResponseOk(MESSAGES.USER.CHANGE_PASSWORD_SUCCESS)
   async changePassword(
     @CurrentUser() user: TokenPayload,
     @Body(new CustomZodValidationPipe(ChangePasswordDto))
@@ -104,7 +105,7 @@ export class UserController {
     status: 200,
     description: 'Upload ảnh thành công',
   })
-  @ApiResponseOk('Upload ảnh đại diện thành công')
+  // @ApiResponseOk('Upload ảnh đại diện thành công')
   async uploadAvatar(
     @CurrentUser() user: TokenPayload,
     @UploadedFile() file: any,
