@@ -1,3 +1,4 @@
+import { Type } from '@nestjs/common';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class PaginationResultDto<T> {
@@ -15,4 +16,12 @@ export class PaginationResultDto<T> {
 
   @ApiProperty()
   totalPages: number;
+}
+
+export function PaginatedDto<T>(classRef: Type<T>) {
+  class PaginateResponse extends PaginationResultDto<T> {
+    @ApiProperty({ type: [classRef] })
+    declare data: T[];
+  }
+  return PaginateResponse;
 }

@@ -12,9 +12,15 @@ import { DoctorService } from './doctor.service';
 import { CreateDoctorDto } from './dto/create-doctor.dto';
 import { UpdateDoctorDto } from './dto/update-doctor.dto';
 import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { PaginationResultDto } from '@/common/dto/pagination-result.dto';
+import {
+  PaginatedDto,
+  PaginationResultDto,
+} from '@/common/dto/pagination-result.dto';
 import { DoctorProfile } from '@prisma/client';
+import { Public } from '@/common/decorators';
+import { DoctorProfileDto } from './dto/doctor-profile.dto';
 
+@Public()
 @ApiBearerAuth()
 @ApiTags('Doctor')
 @Controller('doctor')
@@ -29,7 +35,7 @@ export class DoctorController {
   @Get()
   @ApiResponse({
     status: HttpStatus.OK,
-    type: PaginationResultDto<DoctorProfile>,
+    type: PaginatedDto(DoctorProfileDto),
   })
   async findAll(): Promise<PaginationResultDto<DoctorProfile>> {
     return await this.doctorService.findAll();
