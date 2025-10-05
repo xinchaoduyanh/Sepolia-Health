@@ -10,18 +10,12 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { Response } from 'express';
 import { RESPONSE_METADATA_KEY } from '../decorators/response.decorator';
-import { BaseResponseDto } from '../dto/common-response.dto';
 
 @Injectable()
-export class ResponseInterceptor<T>
-  implements NestInterceptor<T, BaseResponseDto<T>>
-{
+export class ResponseInterceptor implements NestInterceptor {
   constructor(private reflector: Reflector) {}
 
-  intercept(
-    context: ExecutionContext,
-    next: CallHandler,
-  ): Observable<BaseResponseDto<T>> {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const responseMetadata = this.reflector.getAllAndOverride(
       RESPONSE_METADATA_KEY,
       [context.getHandler(), context.getClass()],

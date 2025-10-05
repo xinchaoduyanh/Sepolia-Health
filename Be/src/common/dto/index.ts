@@ -1,1 +1,2 @@
-export { BaseResponseDto } from './common-response.dto';
+export * from './pagination-result.dto';
+export * from './success-response.dto';

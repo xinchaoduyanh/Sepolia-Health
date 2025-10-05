@@ -7,7 +7,6 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
-import { BaseResponseDto } from '../dto/common-response.dto';
 
 @Catch()
 export class HttpExceptionsFilter implements ExceptionFilter {
@@ -51,7 +50,7 @@ export class HttpExceptionsFilter implements ExceptionFilter {
     );
 
     // Create response
-    const errorResponse: BaseResponseDto = {
+    const errorResponse = {
       data: null,
       message: message as string,
       statusCode: status,
