@@ -45,25 +45,9 @@ model User {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  deletedAt DateTime?
 }
  
-
-/// Hồ sơ bác sĩ, gắn 1-1 với User (role = DOCTOR)
-model DoctorProfile {
-  id           String  @id @default(uuid())
-  specialty    String
-  experience   String?
-  contactInfo  String?
-  workingHours String?
-
-  userId Int @unique
-  user   User @relation(fields: [userId], references: [id])
-
-  appointments  Appointment[]  @relation("DoctorAppointments")
-  feedbacks     Feedback[]     @relation("DoctorFeedbacks")
-  prescriptions Prescription[]
-}
-
 /// Hồ sơ lễ tân, gắn 1-1 với User (role = RECEPTIONIST)
 model ReceptionistProfile {
   id      String  @id @default(uuid())
@@ -74,15 +58,65 @@ model ReceptionistProfile {
   user   User @relation(fields: [userId], references: [id])
 }
 
+/// Hồ sơ bác sĩ, gắn 1-1 với User (role = DOCTOR)
+model DoctorProfile {
+  id            String  @id @default(uuid())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  deletedAt     DateTime?
+  specialty     String
+  experience    String?
+  contactInfo   String?
+  workingHours  String?
+
+  userId Int @unique
+  user   User @relation(fields: [userId], references: [id])
+
+  appointments  Appointment[]  @relation("DoctorAppointments")
+  feedbacks     Feedback[]     @relation("DoctorFeedbacks")
+  prescriptions Prescription[]
+  services      DoctorService[] @relation("Services")
+  timeslots     Timeslot[] @relation("doctorTimeslot")
+}
+
+model DoctorService {
+  id          Int @id @default(autoincrement())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  doctorId    String
+  doctor      DoctorProfile @relation("Services", fields: [doctorId], references: [id])
+
+  serviceId   String
+  service     Service @relation("Doctor", fields: [serviceId], references: [id])
+}
+
+model Timeslot {
+  id            Int @id @default(autoincrement())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  deletedAt     DateTime?
+  day           DateTime
+  slot          Int
+
+  doctorId      String
+  doctor        DoctorProfile @relation("doctorTimeslot", fields: [doctorId], references: [id])
+
+  appointmentId String
+  appointment   Appointment @relation("appointmentTimeslot", fields: [appointmentId], references: [id])
+}
+
 /// Dịch vụ khám (khám tổng quát, khám tim mạch, ...)
 model Service {
-  id          String  @id @default(uuid())
-  name        String
-  price       Float
-  duration    Int // thời lượng (phút)
-  description String?
+  id            String  @id @default(uuid())
+  name          String
+  price         Float
+  duration      Int // thời lượng (phút)
+  description   String?
 
-  appointments Appointment[]
+  appointments  Appointment[]
+  doctorService DoctorService[] @relation("Doctor")
 }
 
 /// Lịch hẹn khám bệnh
@@ -93,14 +127,16 @@ model Appointment {
   paymentStatus String // pending, paid, refunded
   notes         String?
 
-  patientId Int
-  patient   User @relation("PatientAppointments", fields: [patientId], references: [id])
+  patientId     Int
+  patient       User @relation("PatientAppointments", fields: [patientId], references: [id])
 
-  doctorId String
-  doctor   DoctorProfile @relation("DoctorAppointments", fields: [doctorId], references: [id])
+  doctorId      String
+  doctor        DoctorProfile @relation("DoctorAppointments", fields: [doctorId], references: [id])
 
-  serviceId String
-  service   Service @relation(fields: [serviceId], references: [id])
+  serviceId     String
+  service       Service @relation(fields: [serviceId], references: [id])
+
+  timeslots     Timeslot[] @relation("appointmentTimeslot")
 }
 
 /// Thuốc trong hệ thống
@@ -143,15 +179,15 @@ model PrescriptionItem {
 
 /// Feedback từ bệnh nhân cho bác sĩ
 model Feedback {
-  id      String  @id @default(uuid())
-  rating  Int // số sao (1-5)
-  comment String?
+  id        String  @id @default(uuid())
+  rating    Int // số sao (1-5)
+  comment   String?
 
   patientId Int
   patient   User @relation("PatientFeedbacks", fields: [patientId], references: [id])
 
-  doctorId String
-  doctor   DoctorProfile @relation("DoctorFeedbacks", fields: [doctorId], references: [id])
+  doctorId  String
+  doctor    DoctorProfile @relation("DoctorFeedbacks", fields: [doctorId], references: [id])
 
   createdAt DateTime @default(now())
 }
@@ -171,10 +207,10 @@ model Transaction {
 
 /// Bài viết do admin tạo (tin tức, bài sức khỏe, ...)
 model Article {
-  id      String  @id @default(uuid())
-  title   String
-  content String
-  image   String?
+  id        String  @id @default(uuid())
+  title     String
+  content   String
+  image     String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
