@@ -2,15 +2,15 @@ import { z } from 'zod';
 
 // Create Appointment DTO
 export const CreateAppointmentDto = z.object({
-  doctorId: z.string().min(1, 'Bác sĩ không được để trống'),
-  serviceId: z.string().min(1, 'Dịch vụ không được để trống'),
-  date: z.string().datetime('Ngày hẹn không hợp lệ'),
+  doctorId: z.number().min(1, 'Bác sĩ không được để trống'),
+  serviceId: z.number().min(1, 'Dịch vụ không được để trống'),
+  date: z.iso.datetime('Ngày hẹn không hợp lệ'),
   notes: z.string().optional(),
 });
 
 // Update Appointment DTO
 export const UpdateAppointmentDto = z.object({
-  date: z.string().datetime('Ngày hẹn không hợp lệ').optional(),
+  date: z.iso.datetime('Ngày hẹn không hợp lệ').optional(),
   status: z.enum(['scheduled', 'completed', 'cancelled']).optional(),
   paymentStatus: z.enum(['pending', 'paid', 'refunded']).optional(),
   notes: z.string().optional(),
@@ -28,16 +28,16 @@ export const GetAppointmentsQueryDto = z.object({
     .default(() => 10),
   status: z.enum(['scheduled', 'completed', 'cancelled']).optional(),
   paymentStatus: z.enum(['pending', 'paid', 'refunded']).optional(),
-  doctorId: z.string().optional(),
-  patientId: z.string().optional(),
-  dateFrom: z.string().datetime().optional(),
-  dateTo: z.string().datetime().optional(),
+  doctorId: z.number().optional(),
+  patientId: z.number().optional(),
+  dateFrom: z.iso.datetime().optional(),
+  dateTo: z.iso.datetime().optional(),
 });
 
 // Response DTOs
 export const AppointmentResponseDto = z.object({
-  id: z.string(),
-  date: z.string().datetime(),
+  id: z.number(),
+  date: z.iso.datetime(),
   status: z.string(),
   paymentStatus: z.string(),
   notes: z.string().nullable(),
@@ -49,7 +49,7 @@ export const AppointmentResponseDto = z.object({
     phone: z.string().nullable(),
   }),
   doctor: z.object({
-    id: z.string(),
+    id: z.number(),
     specialty: z.string(),
     user: z.object({
       id: z.number(),
@@ -58,7 +58,7 @@ export const AppointmentResponseDto = z.object({
     }),
   }),
   service: z.object({
-    id: z.string(),
+    id: z.number(),
     name: z.string(),
     price: z.number(),
     duration: z.number(),

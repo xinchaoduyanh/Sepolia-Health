@@ -108,7 +108,7 @@ export class AppointmentService {
     if (status) where.status = status;
     if (paymentStatus) where.paymentStatus = paymentStatus;
     if (doctorId) where.doctorId = doctorId;
-    if (patientId) where.patientId = parseInt(patientId);
+    if (patientId) where.patientId = patientId;
     if (dateFrom || dateTo) {
       where.date = {};
       if (dateFrom) where.date.gte = new Date(dateFrom);
@@ -159,7 +159,7 @@ export class AppointmentService {
   /**
    * Get appointment by ID
    */
-  async findOne(id: string): Promise<AppointmentResponseDtoType> {
+  async findOne(id: number): Promise<AppointmentResponseDtoType> {
     const appointment = await this.prisma.appointment.findUnique({
       where: { id },
       include: {
@@ -198,7 +198,7 @@ export class AppointmentService {
    * Update appointment
    */
   async update(
-    id: string,
+    id: number,
     updateAppointmentDto: UpdateAppointmentDtoType,
     @CurrentUser() user: TokenPayload,
   ): Promise<AppointmentResponseDtoType> {
@@ -268,7 +268,7 @@ export class AppointmentService {
    * Delete appointment
    */
   async remove(
-    id: string,
+    id: number,
     @CurrentUser() user: TokenPayload,
   ): Promise<{ message: string }> {
     const appointment = await this.prisma.appointment.findUnique({
@@ -300,7 +300,7 @@ export class AppointmentService {
   ): Promise<AppointmentsListResponseDtoType> {
     return this.findAll({
       ...query,
-      patientId: user.userId.toString(),
+      patientId: user.userId,
     });
   }
 

@@ -127,4 +127,14 @@ export class DateUtil {
 
     return count;
   }
+
+  static getNextNDays(n: number, startDate: Date = new Date()): Date[] {
+    const days: Date[] = [];
+    for (let i = 0; i < n; i++) {
+      const d = new Date(startDate);
+      d.setDate(d.getDate() + i);
+      days.push(d);
+    }
+    return days;
+  }
 }

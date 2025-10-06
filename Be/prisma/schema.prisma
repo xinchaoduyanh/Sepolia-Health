@@ -17,9 +17,14 @@ enum Role {
   ADMIN // Quản trị viên
 }
 
+enum Period {
+  MORNING
+  AFTERNOON
+}
+
 /// Bảng người dùng chung cho toàn hệ thống
 model User {
-  id          Int       @id @default(autoincrement()) @unique
+  id          Int       @id @default(autoincrement()) 
   email       String    @unique
   phone       String?   @unique
   password    String
@@ -50,7 +55,7 @@ model User {
  
 /// Hồ sơ lễ tân, gắn 1-1 với User (role = RECEPTIONIST)
 model ReceptionistProfile {
-  id      String  @id @default(uuid())
+  id          Int       @id @default(autoincrement())
   shift   String?
   contact String?
 
@@ -60,7 +65,7 @@ model ReceptionistProfile {
 
 /// Hồ sơ bác sĩ, gắn 1-1 với User (role = DOCTOR)
 model DoctorProfile {
-  id            String  @id @default(uuid())
+  id          Int       @id @default(autoincrement())
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   deletedAt     DateTime?
@@ -76,40 +81,51 @@ model DoctorProfile {
   feedbacks     Feedback[]     @relation("DoctorFeedbacks")
   prescriptions Prescription[]
   services      DoctorService[] @relation("Services")
-  timeslots     Timeslot[] @relation("doctorTimeslot")
+  timeslots     Timeslot[] @relation("DoctorTimeslot")
+  specialTimeslots SpecialTimeslot[] @relation("DoctorSpecialTimeslot")
 }
 
 model DoctorService {
-  id          Int @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   deletedAt   DateTime?
 
-  doctorId    String
+  doctorId    Int
   doctor      DoctorProfile @relation("Services", fields: [doctorId], references: [id])
 
-  serviceId   String
+  serviceId   Int
   service     Service @relation("Doctor", fields: [serviceId], references: [id])
 }
 
 model Timeslot {
+  id          Int       @id @default(autoincrement())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  deletedAt     DateTime?
+  slot          Int
+  period        Period
+
+  doctorId      Int
+  doctor        DoctorProfile @relation("DoctorTimeslot", fields: [doctorId], references: [id])
+}
+
+model SpecialTimeslot {
   id            Int @id @default(autoincrement())
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   deletedAt     DateTime?
-  day           DateTime
   slot          Int
+  day           DateTime
+  period        Period
 
-  doctorId      String
-  doctor        DoctorProfile @relation("doctorTimeslot", fields: [doctorId], references: [id])
-
-  appointmentId String
-  appointment   Appointment @relation("appointmentTimeslot", fields: [appointmentId], references: [id])
+  doctorId      Int
+  doctor        DoctorProfile @relation("DoctorSpecialTimeslot", fields: [doctorId], references: [id])
 }
 
 /// Dịch vụ khám (khám tổng quát, khám tim mạch, ...)
 model Service {
-  id            String  @id @default(uuid())
+  id          Int       @id @default(autoincrement())
   name          String
   price         Float
   duration      Int // thời lượng (phút)
@@ -121,7 +137,7 @@ model Service {
 
 /// Lịch hẹn khám bệnh
 model Appointment {
-  id            String   @id @default(uuid())
+  id          Int       @id @default(autoincrement())
   date          DateTime
   status        String // scheduled, completed, cancelled
   paymentStatus String // pending, paid, refunded
@@ -130,18 +146,16 @@ model Appointment {
   patientId     Int
   patient       User @relation("PatientAppointments", fields: [patientId], references: [id])
 
-  doctorId      String
+  doctorId      Int
   doctor        DoctorProfile @relation("DoctorAppointments", fields: [doctorId], references: [id])
 
-  serviceId     String
+  serviceId     Int
   service       Service @relation(fields: [serviceId], references: [id])
-
-  timeslots     Timeslot[] @relation("appointmentTimeslot")
 }
 
 /// Thuốc trong hệ thống
 model Medicine {
-  id     String  @id @default(uuid())
+  id          Int       @id @default(autoincrement())
   name   String
   dosage String?
   stock  Int
@@ -152,10 +166,10 @@ model Medicine {
 
 /// Đơn thuốc do bác sĩ kê cho bệnh nhân
 model Prescription {
-  id    String  @id @default(uuid())
+  id          Int       @id @default(autoincrement())
   notes String?
 
-  doctorId String
+  doctorId Int
   doctor   DoctorProfile @relation(fields: [doctorId], references: [id])
 
   patientId Int
@@ -166,27 +180,27 @@ model Prescription {
 
 /// Chi tiết từng loại thuốc trong đơn thuốc
 model PrescriptionItem {
-  id           String  @id @default(uuid())
+  id          Int       @id @default(autoincrement())
   quantity     Int
   instructions String?
 
-  prescriptionId String
+  prescriptionId Int
   prescription   Prescription @relation(fields: [prescriptionId], references: [id])
 
-  medicineId String
+  medicineId Int
   medicine   Medicine @relation(fields: [medicineId], references: [id])
 }
 
 /// Feedback từ bệnh nhân cho bác sĩ
 model Feedback {
-  id        String  @id @default(uuid())
+  id          Int       @id @default(autoincrement())
   rating    Int // số sao (1-5)
   comment   String?
 
   patientId Int
   patient   User @relation("PatientFeedbacks", fields: [patientId], references: [id])
 
-  doctorId  String
+  doctorId  Int
   doctor    DoctorProfile @relation("DoctorFeedbacks", fields: [doctorId], references: [id])
 
   createdAt DateTime @default(now())
@@ -194,7 +208,7 @@ model Feedback {
 
 /// Giao dịch thanh toán (SEPAY, tiền mặt, ...)
 model Transaction {
-  id     String @id @default(uuid())
+  id          Int       @id @default(autoincrement())
   amount Float
   method String // online, cash, card
   status String // pending, success, failed
@@ -207,7 +221,7 @@ model Transaction {
 
 /// Bài viết do admin tạo (tin tức, bài sức khỏe, ...)
 model Article {
-  id        String  @id @default(uuid())
+  id          Int       @id @default(autoincrement())
   title     String
   content   String
   image     String?
@@ -218,7 +232,7 @@ model Article {
 
 /// Khuyến mãi / voucher
 model Promotion {
-  id          String   @id @default(uuid())
+  id          Int       @id @default(autoincrement())
   code        String   @unique
   description String?
   discount    Float
