@@ -1,21 +1,21 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { View, TouchableOpacity } from 'react-native';
+import { View, TouchableOpacity, Text } from 'react-native';
 
 export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#3B82F6',
-        tabBarInactiveTintColor: '#6B7280',
+        tabBarActiveTintColor: '#0284C7',
+        tabBarInactiveTintColor: '#475569',
         tabBarStyle: {
-          backgroundColor: 'white',
+          backgroundColor: '#F0FDFA',
           borderTopWidth: 1,
-          borderTopColor: '#E5E7EB',
+          borderTopColor: '#E0F2FE',
           paddingBottom: 5,
           paddingTop: 5,
-          height: 60,
+          height: 70,
         },
       }}>
       <Tabs.Screen
@@ -37,11 +37,24 @@ export default function TabLayout() {
       <Tabs.Screen
         name="qr-scanner"
         options={{
-          title: '',
+          title: 'Quét QR',
           tabBarIcon: ({ color, size }) => (
-            <View className="items-center justify-center">
-              <View className="h-12 w-12 items-center justify-center rounded-lg bg-blue-600">
-                <Ionicons name="qr-code" size={24} color="white" />
+            <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+              <View style={{
+                width: 60,
+                height: 60,
+                borderRadius: 30,
+                backgroundColor: '#0284C7',
+                alignItems: 'center',
+                justifyContent: 'center',
+                shadowColor: '#0284C7',
+                shadowOffset: { width: 0, height: 6 },
+                shadowOpacity: 0.4,
+                shadowRadius: 12,
+                elevation: 8,
+                marginTop: -20,
+              }}>
+                <Ionicons name="qr-code" size={28} color="white" />
               </View>
             </View>
           ),
@@ -50,19 +63,38 @@ export default function TabLayout() {
             return (
               <TouchableOpacity
                 onPress={onPress}
-                style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                style={{
+                  flex: 1,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  paddingTop: 10
+                }}>
                 <View style={{ alignItems: 'center', justifyContent: 'center' }}>
                   <View
                     style={{
-                      height: 48,
-                      width: 48,
+                      width: 60,
+                      height: 60,
+                      borderRadius: 30,
+                      backgroundColor: '#0284C7',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      borderRadius: 8,
-                      backgroundColor: '#3B82F6',
+                      shadowColor: '#0284C7',
+                      shadowOffset: { width: 0, height: 6 },
+                      shadowOpacity: 0.4,
+                      shadowRadius: 12,
+                      elevation: 8,
+                      marginTop: -20,
                     }}>
-                    <Ionicons name="qr-code" size={24} color="white" />
+                    <Ionicons name="qr-code" size={28} color="white" />
                   </View>
+                  <Text style={{
+                    fontSize: 10,
+                    fontWeight: '500',
+                    color: '#0284C7',
+                    marginTop: 4,
+                  }}>
+                    Quét QR
+                  </Text>
                 </View>
               </TouchableOpacity>
             );
@@ -85,6 +117,30 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person-outline" size={size} color={color} />
           ),
+        }}
+      />
+      <Tabs.Screen
+        name="specialty-selection"
+        options={{
+          href: null, // Hide from tab bar
+        }}
+      />
+      <Tabs.Screen
+        name="appointment-booking"
+        options={{
+          href: null, // Hide from tab bar
+        }}
+      />
+      <Tabs.Screen
+        name="customer-info"
+        options={{
+          href: null, // Hide from tab bar
+        }}
+      />
+      <Tabs.Screen
+        name="doctor-selection"
+        options={{
+          href: null, // Hide from tab bar
         }}
       />
     </Tabs>

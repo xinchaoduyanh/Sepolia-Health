@@ -1,148 +1,374 @@
 'use client';
 
-import { View, Text, TouchableOpacity, Alert, ScrollView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, TouchableOpacity, ScrollView, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../contexts/AuthContext';
+import { router } from 'expo-router';
 
 export default function ProfileScreen() {
-  const { user, logout } = useAuth();
-
-  const handleLogout = () => {
-    Alert.alert('Đăng xuất', 'Bạn có chắc chắn muốn đăng xuất?', [
-      {
-        text: 'Hủy',
-        style: 'cancel',
-      },
-      {
-        text: 'Đăng xuất',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await logout();
-            console.log('Logout successful');
-          } catch (error) {
-            console.error('Logout error:', error);
-            Alert.alert('Lỗi', 'Có lỗi xảy ra khi đăng xuất');
-          }
-        },
-      },
-    ]);
-  };
+  const { user } = useAuth();
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50" edges={['top']}>
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        <LinearGradient
-          colors={['#667eea', '#764ba2', '#f093fb']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={{ paddingHorizontal: 24, paddingBottom: 48, paddingTop: 32 }}>
-          <View className="items-center">
-            <View className="mb-6 h-32 w-32 items-center justify-center rounded-full bg-white/20 shadow-2xl backdrop-blur-sm">
-              <Text className="text-5xl font-bold text-white">
-                {user?.name?.charAt(0).toUpperCase() || 'A'}
-              </Text>
-            </View>
-            <Text className="mb-2 text-3xl font-bold text-white">
-              {user?.name || 'Nguyễn Văn A'}
-            </Text>
-            <Text className="text-lg text-white/90">22 tuổi • 0123 456 789</Text>
-          </View>
-        </LinearGradient>
-        <View className="-mt-6 mb-6 px-6">
-          <View className="rounded-2xl bg-white p-4 shadow-lg">
-            <View className="flex-row justify-around">
-              <View className="items-center">
-                <View className="mb-2 h-12 w-12 items-center justify-center rounded-full bg-blue-50">
-                  <Ionicons name="calendar" size={24} color="#3B82F6" />
-                </View>
-                <Text className="text-xl font-bold text-gray-800">12</Text>
-                <Text className="text-xs text-gray-500">Lịch hẹn</Text>
-              </View>
-              <View className="items-center">
-                <View className="mb-2 h-12 w-12 items-center justify-center rounded-full bg-green-50">
-                  <Ionicons name="document-text" size={24} color="#10B981" />
-                </View>
-                <Text className="text-xl font-bold text-gray-800">8</Text>
-                <Text className="text-xs text-gray-500">Đơn thuốc</Text>
-              </View>
-              <View className="items-center">
-                <View className="mb-2 h-12 w-12 items-center justify-center rounded-full bg-blue-50">
-                  <Ionicons name="heart" size={24} color="#3B82F6" />
-                </View>
-                <Text className="text-xl font-bold text-gray-800">95</Text>
-                <Text className="text-xs text-gray-500">Điểm sức khỏe</Text>
-              </View>
-            </View>
-          </View>
+    <View style={{ flex: 1, backgroundColor: '#F9FAFB' }}>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+
+      {/* Header with wavy background */}
+      <LinearGradient
+        colors={['#0284C7', '#10B981']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={{ paddingTop: 60, paddingBottom: 40, paddingHorizontal: 24 }}
+      >
+        {/* Wavy pattern overlay - horizontal waves passing through avatar */}
+        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
+          {/* Large horizontal wave - passes through bottom half of avatar */}
+          <View style={{
+            position: 'absolute',
+            top: 120,
+            left: -150,
+            right: -150,
+            height: 100,
+            backgroundColor: 'rgba(255,255,255,0.15)',
+            borderRadius: 50,
+            transform: [{ rotate: '-3deg' }]
+          }} />
+
+          {/* Medium horizontal wave - passes through center of avatar */}
+          <View style={{
+            position: 'absolute',
+            top: 140,
+            left: -120,
+            right: -120,
+            height: 80,
+            backgroundColor: 'rgba(255,255,255,0.12)',
+            borderRadius: 40,
+            transform: [{ rotate: '2deg' }]
+          }} />
+
+          {/* Small horizontal wave - passes through top half of avatar */}
+          <View style={{
+            position: 'absolute',
+            top: 160,
+            left: -100,
+            right: -100,
+            height: 60,
+            backgroundColor: 'rgba(255,255,255,0.08)',
+            borderRadius: 30,
+            transform: [{ rotate: '-1deg' }]
+          }} />
+
+          {/* Additional decorative elements */}
+          <View style={{
+            position: 'absolute',
+            top: 100,
+            left: 30,
+            width: 20,
+            height: 20,
+            backgroundColor: 'rgba(255,255,255,0.06)',
+            borderRadius: 10,
+          }} />
+          <View style={{
+            position: 'absolute',
+            top: 180,
+            right: 20,
+            width: 15,
+            height: 15,
+            backgroundColor: 'rgba(255,255,255,0.05)',
+            borderRadius: 7.5,
+          }} />
+          <View style={{
+            position: 'absolute',
+            top: 130,
+            right: 60,
+            width: 12,
+            height: 12,
+            backgroundColor: 'rgba(255,255,255,0.04)',
+            borderRadius: 6,
+          }} />
         </View>
 
-        <View className="px-6">
-          <View className="mb-6">
-            <Text className="mb-3 text-base font-bold text-gray-800">Tài khoản</Text>
-            <View className="space-y-3">
-              <TouchableOpacity className="flex-row items-center rounded-xl bg-white p-4 shadow-sm">
-                <View className="mr-4 h-11 w-11 items-center justify-center rounded-full bg-blue-50">
-                  <Ionicons name="person-outline" size={22} color="#3B82F6" />
+        {/* User Avatar */}
+        <View style={{ alignItems: 'center', marginTop: 20 }}>
+          <View style={{
+            width: 100,
+            height: 100,
+            borderRadius: 50,
+            backgroundColor: '#F0FDFA',
+            alignItems: 'center',
+            justifyContent: 'center',
+            shadowColor: '#0284C7',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.3,
+            shadowRadius: 8,
+            elevation: 8,
+          }}>
+            <Text style={{ fontSize: 40, fontWeight: 'bold', color: '#0284C7' }}>
+              {user?.name?.charAt(0).toUpperCase() || 'V'}
+            </Text>
+          </View>
+
+          {/* Camera icon overlay */}
+          <View style={{
+            position: 'absolute',
+            bottom: 5,
+            right: 5,
+            width: 28,
+            height: 28,
+            borderRadius: 14,
+            backgroundColor: '#475569',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+            <Ionicons name="camera" size={16} color="white" />
+          </View>
+
+          <Text style={{
+            fontSize: 24,
+            fontWeight: 'bold',
+            color: '#F0FDFA',
+            marginTop: 16,
+            textAlign: 'center'
+          }}>
+            {user?.name || 'Vũ Duy anh'}
+          </Text>
+        </View>
+      </LinearGradient>
+
+      {/* Main Content */}
+      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+        <View style={{ paddingHorizontal: 24, paddingTop: 20 }}>
+          {/* Thông tin chung Section */}
+          <View style={{ marginBottom: 24 }}>
+            <Text style={{
+              fontSize: 18,
+              fontWeight: 'bold',
+              color: '#0F172A',
+              marginBottom: 16
+            }}>
+              Thông tin chung
+            </Text>
+
+            <View style={{ backgroundColor: '#F0FDFA', borderRadius: 12, overflow: 'hidden' }}>
+              <TouchableOpacity
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  padding: 16,
+                  borderBottomWidth: 1,
+                  borderBottomColor: '#E0F2FE'
+                }}
+                onPress={() => router.push('/personal-info' as any)}
+              >
+                <View style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
+                  backgroundColor: '#E0F2FE',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginRight: 16
+                }}>
+                  <Ionicons name="person-outline" size={20} color="#0284C7" />
                 </View>
-                <Text className="flex-1 text-base font-medium text-gray-800">Chỉnh sửa hồ sơ</Text>
-                <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+                <Text style={{
+                  flex: 1,
+                  fontSize: 16,
+                  fontWeight: '500',
+                  color: '#0F172A'
+                }}>
+                  Thông tin cá nhân
+                </Text>
+                <Ionicons name="chevron-forward" size={20} color="#06B6D4" />
               </TouchableOpacity>
 
-              <TouchableOpacity className="flex-row items-center rounded-xl bg-white p-4 shadow-sm">
-                <View className="mr-4 h-11 w-11 items-center justify-center rounded-full bg-green-50">
-                  <Ionicons name="lock-closed-outline" size={22} color="#10B981" />
+              <TouchableOpacity
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  padding: 16,
+                  borderBottomWidth: 1,
+                  borderBottomColor: '#E0F2FE'
+                }}
+                onPress={() => router.push('/additional-info' as any)}
+              >
+                <View style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
+                  backgroundColor: '#E0F2FE',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginRight: 16
+                }}>
+                  <Ionicons name="add-circle-outline" size={20} color="#0284C7" />
                 </View>
-                <Text className="flex-1 text-base font-medium text-gray-800">Đổi mật khẩu</Text>
-                <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+                <Text style={{
+                  flex: 1,
+                  fontSize: 16,
+                  fontWeight: '500',
+                  color: '#0F172A'
+                }}>
+                  Thông tin bổ sung
+                </Text>
+                <Ionicons name="chevron-forward" size={20} color="#06B6D4" />
               </TouchableOpacity>
 
-              <TouchableOpacity className="flex-row items-center rounded-xl bg-white p-4 shadow-sm">
-                <View className="mr-4 h-11 w-11 items-center justify-center rounded-full bg-blue-50">
-                  <Ionicons name="notifications-outline" size={22} color="#3B82F6" />
+              <TouchableOpacity
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  padding: 16
+                }}
+                onPress={() => router.push('/health-info' as any)}
+              >
+                <View style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
+                  backgroundColor: '#E0F2FE',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginRight: 16
+                }}>
+                  <Ionicons name="heart-outline" size={20} color="#0284C7" />
                 </View>
-                <Text className="flex-1 text-base font-medium text-gray-800">Thông báo</Text>
-                <View className="mr-3 rounded-full bg-red-500 px-2 py-0.5">
-                  <Text className="text-xs font-bold text-white">3</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+                <Text style={{
+                  flex: 1,
+                  fontSize: 16,
+                  fontWeight: '500',
+                  color: '#0F172A'
+                }}>
+                  Thông tin sức khỏe
+                </Text>
+                <Ionicons name="chevron-forward" size={20} color="#06B6D4" />
               </TouchableOpacity>
             </View>
           </View>
 
-          <View className="mb-6">
-            <Text className="mb-3 text-base font-bold text-gray-800">Ứng dụng</Text>
-            <View className="space-y-3">
-              <TouchableOpacity className="flex-row items-center rounded-xl bg-white p-4 shadow-sm">
-                <View className="mr-4 h-11 w-11 items-center justify-center rounded-full bg-blue-50">
-                  <Ionicons name="help-circle-outline" size={22} color="#3B82F6" />
-                </View>
-                <Text className="flex-1 text-base font-medium text-gray-800">Trợ giúp</Text>
-                <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
-              </TouchableOpacity>
+          {/* Hồ sơ người thân Section */}
+          <View style={{ marginBottom: 24 }}>
+            <Text style={{
+              fontSize: 18,
+              fontWeight: 'bold',
+              color: '#0F172A',
+              marginBottom: 16
+            }}>
+              Hồ sơ người thân
+            </Text>
 
-              <TouchableOpacity className="flex-row items-center rounded-xl bg-white p-4 shadow-sm">
-                <View className="mr-4 h-11 w-11 items-center justify-center rounded-full bg-green-50">
-                  <Ionicons name="information-circle-outline" size={22} color="#10B981" />
+            <View style={{
+              backgroundColor: '#F0FDFA',
+              borderRadius: 16,
+              padding: 24,
+              alignItems: 'center',
+              borderWidth: 1,
+              borderColor: '#E0F2FE'
+            }}>
+              {/* Illustration */}
+              <View style={{ position: 'relative', marginBottom: 20 }}>
+                {/* Folder */}
+                <View style={{
+                  width: 80,
+                  height: 60,
+                  backgroundColor: '#0284C7',
+                  borderRadius: 8,
+                  position: 'relative',
+                  shadowColor: '#0284C7',
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 8,
+                  elevation: 4,
+                }}>
+                  <View style={{
+                    position: 'absolute',
+                    top: -8,
+                    left: 8,
+                    width: 20,
+                    height: 16,
+                    backgroundColor: '#F0FDFA',
+                    borderRadius: 4,
+                  }} />
                 </View>
-                <Text className="flex-1 text-base font-medium text-gray-800">Giới thiệu</Text>
-                <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+
+                {/* Person with plus icon */}
+                <View style={{
+                  position: 'absolute',
+                  top: 10,
+                  right: -10,
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
+                  backgroundColor: '#10B981',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  shadowColor: '#10B981',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 4,
+                  elevation: 4,
+                }}>
+                  <Ionicons name="person-add" size={20} color="white" />
+                </View>
+
+                {/* Decorative leaves */}
+                <View style={{
+                  position: 'absolute',
+                  top: -5,
+                  left: -15,
+                  width: 12,
+                  height: 12,
+                  backgroundColor: '#10B981',
+                  borderRadius: 6,
+                  transform: [{ rotate: '45deg' }]
+                }} />
+                <View style={{
+                  position: 'absolute',
+                  bottom: 5,
+                  right: -20,
+                  width: 8,
+                  height: 8,
+                  backgroundColor: '#06B6D4',
+                  borderRadius: 4,
+                  transform: [{ rotate: '-30deg' }]
+                }} />
+                <View style={{
+                  position: 'absolute',
+                  top: 25,
+                  left: -20,
+                  width: 10,
+                  height: 10,
+                  backgroundColor: '#A7F3D0',
+                  borderRadius: 5,
+                  transform: [{ rotate: '60deg' }]
+                }} />
+              </View>
+
+              <TouchableOpacity style={{
+                backgroundColor: '#0284C7',
+                paddingHorizontal: 32,
+                paddingVertical: 12,
+                borderRadius: 25,
+                shadowColor: '#0284C7',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.3,
+                shadowRadius: 8,
+                elevation: 4,
+              }}>
+                <Text style={{
+                  color: 'white',
+                  fontSize: 16,
+                  fontWeight: 'bold',
+                  textAlign: 'center'
+                }}>
+                  THÊM HỒ SƠ
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
-
-          <TouchableOpacity
-            onPress={handleLogout}
-            className="mb-8 flex-row items-center justify-center rounded-xl bg-red-50 p-4 shadow-sm">
-            <View className="mr-3 h-11 w-11 items-center justify-center rounded-full bg-red-100">
-              <Ionicons name="log-out-outline" size={22} color="#EF4444" />
-            </View>
-            <Text className="text-base font-semibold text-red-600">Đăng xuất</Text>
-          </TouchableOpacity>
         </View>
       </ScrollView>
-    </SafeAreaView>
+
+    </View>
   );
 }
