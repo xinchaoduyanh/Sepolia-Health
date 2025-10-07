@@ -175,7 +175,9 @@ model Appointment {
   serviceId     Int
   service       Service @relation(fields: [serviceId], references: [id])
 
-
+  // Quan hệ với cơ sở phòng khám
+  clinicId      Int
+  clinic        Clinic @relation("ClinicAppointments", fields: [clinicId], references: [id])
 }
 
 /// Thuốc trong hệ thống
