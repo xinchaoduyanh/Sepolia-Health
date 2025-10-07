@@ -22,9 +22,21 @@ enum Period {
   AFTERNOON
 }
 
+enum AppointmentStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  REFUNDED
+}
+
 /// Bảng người dùng chung cho toàn hệ thống
 model User {
-  id          Int       @id @default(autoincrement()) 
+  id          Int       @id @default(autoincrement())
   email       String    @unique
   phone       String?   @unique
   password    String
@@ -52,7 +64,7 @@ model User {
   updatedAt DateTime @updatedAt
   deletedAt DateTime?
 }
- 
+
 /// Hồ sơ lễ tân, gắn 1-1 với User (role = RECEPTIONIST)
 model ReceptionistProfile {
   id          Int       @id @default(autoincrement())
@@ -76,6 +88,10 @@ model DoctorProfile {
 
   userId Int @unique
   user   User @relation(fields: [userId], references: [id])
+
+  // Quan hệ với cơ sở phòng khám
+  clinicId Int?
+  clinic   Clinic? @relation("ClinicDoctors", fields: [clinicId], references: [id])
 
   appointments  Appointment[]  @relation("DoctorAppointments")
   feedbacks     Feedback[]     @relation("DoctorFeedbacks")
@@ -139,18 +155,27 @@ model Service {
 model Appointment {
   id          Int       @id @default(autoincrement())
   date          DateTime
-  status        String // scheduled, completed, cancelled
-  paymentStatus String // pending, paid, refunded
+  status        AppointmentStatus
+  paymentStatus PaymentStatus
   notes         String?
 
-  patientId     Int
-  patient       User @relation("PatientAppointments", fields: [patientId], references: [id])
+  // Thông tin người đặt lịch (có thể là user đã đăng ký hoặc khách vãng lai)
+  patientId     Int? // Optional - nếu là user đã đăng ký
+  patient       User? @relation("PatientAppointments", fields: [patientId], references: [id])
+
+  // Thông tin bắt buộc cho người đặt lịch
+  patientName   String // Họ tên
+  patientDob    DateTime // Ngày sinh
+  patientPhone  String // Số điện thoại
+  patientGender String // Giới tính
 
   doctorId      Int
   doctor        DoctorProfile @relation("DoctorAppointments", fields: [doctorId], references: [id])
 
   serviceId     Int
   service       Service @relation(fields: [serviceId], references: [id])
+
+
 }
 
 /// Thuốc trong hệ thống
@@ -238,4 +263,27 @@ model Promotion {
   discount    Float
   validFrom   DateTime
   validTo     DateTime
+}
+
+
+
+/// Cơ sở phòng khám
+model Clinic {
+  id          Int       @id @default(autoincrement())
+  name        String    // Tên cơ sở
+  address     String    // Địa chỉ chi tiết
+  phone       String?   // Số điện thoại liên hệ
+  email       String?   // Email liên hệ
+  description String?   // Mô tả cơ sở
+  isActive    Boolean   @default(true) // Trạng thái hoạt động
+
+  // Quan hệ với bác sĩ
+  doctors     DoctorProfile[] @relation("ClinicDoctors")
+
+  // Quan hệ với lịch hẹn
+  appointments Appointment[] @relation("ClinicAppointments")
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
 }
