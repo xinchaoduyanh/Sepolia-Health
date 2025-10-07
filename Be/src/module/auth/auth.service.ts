@@ -1,7 +1,6 @@
 import {
   Injectable,
   UnauthorizedException,
-  ConflictException,
   BadRequestException,
   Inject,
 } from '@nestjs/common';
@@ -94,11 +93,7 @@ export class AuthService {
     const { email } = registerDto;
 
     // Check if user already exists
-    const existingUser = await this.authRepository.findByEmail(email);
-
-    if (existingUser) {
-      throw new ConflictException(ERROR_MESSAGES.AUTH.EMAIL_ALREADY_EXISTS);
-    }
+    await this.authRepository.isEmailExists(email);
 
     // Generate OTP
     const otp = StringUtil.random(6, '0123456789');

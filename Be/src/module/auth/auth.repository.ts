@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '@/common/prisma/prisma.service';
 import { User } from '@prisma/client';
 import { ERROR_MESSAGES } from '@/common/constants/messages';
@@ -11,6 +15,15 @@ export class AuthRepository {
   /**
    * Find user by email
    */
+  async isEmailExists(email: string): Promise<boolean> {
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+    });
+    if (user) {
+      throw new ConflictException(ERROR_MESSAGES.AUTH.EMAIL_ALREADY_EXISTS);
+    }
+    return true;
+  }
   async findByEmail(email: string): Promise<User> {
     const user = await this.prisma.user.findUnique({
       where: { email },
@@ -20,7 +33,6 @@ export class AuthRepository {
     }
     return user;
   }
-
   /**
    * Find user by ID
    */
