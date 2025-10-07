@@ -1,14 +1,11 @@
 import { PaginationResultDto } from '../dto/pagination-result.dto';
 
-export async function paginate<Model, Args>(
-  model: {
-    findMany(args?: Args): Promise<Model[]>;
-    count(args?: { where?: any }): Promise<number>;
-  },
+export async function paginate(
+  model: any,
   page: number,
   limit: number,
-  options?: Args,
-): Promise<PaginationResultDto<Model>> {
+  options: any = {},
+) {
   const take = limit;
   const skip = take * (page - 1);
 
@@ -17,7 +14,7 @@ export async function paginate<Model, Args>(
     ...options,
     take,
     skip,
-  } as Args);
+  });
 
   return {
     data,

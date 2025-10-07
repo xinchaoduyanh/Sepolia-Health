@@ -3,17 +3,20 @@ import { CreateDoctorDto } from './dto/create-doctor.dto';
 import { UpdateDoctorDto } from './dto/update-doctor.dto';
 import { PaginationResultDto } from '@/common/dto/pagination-result.dto';
 import { paginate } from '@/common/helper/paginate';
-import { DoctorProfile, Period } from '@prisma/client';
+import { Period, Service } from '@prisma/client';
 import { PrismaService } from '@/common/prisma/prisma.service';
 import { getTimeslotByDoctorIdAndDayResponseDto } from './dto/response';
 import { DateUtil } from '@/common/utils';
+import { GetDoctorServiceQueryDto } from './dto/request';
 
 @Injectable()
 export class DoctorService {
   constructor(private readonly prismaService: PrismaService) {}
 
-  async getDoctorServices(page: number, limit: number) {
-    return paginate(this.prismaService.service, page, limit);
+  async getDoctorServices(
+    query: GetDoctorServiceQueryDto,
+  ): Promise<PaginationResultDto<Service>> {
+    return paginate(this.prismaService.service, query.page, query.limit);
   }
 
   async getDoctorByServiceId(serviceId: number) {

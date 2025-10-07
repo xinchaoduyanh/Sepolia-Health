@@ -22,10 +22,11 @@ import {
   PaginatedDto,
   PaginationResultDto,
 } from '@/common/dto/pagination-result.dto';
-import { DoctorProfile } from '@prisma/client';
+import { DoctorProfile, Service } from '@prisma/client';
 import { Public } from '@/common/decorators';
 import { DoctorProfileDto } from './dto/response/doctor-profile.dto';
 import { getTimeslotByDoctorIdAndDayResponseDto } from './dto/response';
+import { GetDoctorServiceQueryDto } from './dto/request';
 
 @Public()
 @ApiBearerAuth()
@@ -36,15 +37,14 @@ export class DoctorController {
 
   @Get('services')
   @Public()
-  // @ApiResponse(
-  //   status: HttpStatus.OK,
-
-  // )
+  @ApiResponse({
+    status: HttpStatus.OK,
+    // type: PaginatedDto(Service),
+  })
   async getDoctorServices(
-    @Query('page') page: number,
-    @Query('page') limit: number,
-  ) {
-    return this.doctorService.getDoctorServices(page, limit);
+    @Query() dto: GetDoctorServiceQueryDto,
+  ): Promise<PaginationResultDto<Service>> {
+    return this.doctorService.getDoctorServices(dto);
   }
 
   @Get()
@@ -58,6 +58,7 @@ export class DoctorController {
   @ApiResponse({
     status: HttpStatus.OK,
     type: getTimeslotByDoctorIdAndDayResponseDto,
+    isArray: true,
   })
   @ApiOperation({
     description: 'get timeslot by doctor',
