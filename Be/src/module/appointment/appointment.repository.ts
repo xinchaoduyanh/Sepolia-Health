@@ -15,8 +15,8 @@ export class AppointmentRepository {
     paymentStatus: string;
     notes?: string;
     patientId: number;
-    doctorId: string;
-    serviceId: string;
+    doctorId: number;
+    serviceId: number;
   }): Promise<Appointment> {
     return this.prisma.appointment.create({
       data,
@@ -26,7 +26,7 @@ export class AppointmentRepository {
   /**
    * Find appointment by ID
    */
-  async findById(id: string): Promise<Appointment | null> {
+  async findById(id: number): Promise<Appointment | null> {
     return this.prisma.appointment.findUnique({
       where: { id },
     });
@@ -55,7 +55,7 @@ export class AppointmentRepository {
   /**
    * Update appointment
    */
-  async update(id: string, data: any): Promise<Appointment> {
+  async update(id: number, data: any): Promise<Appointment> {
     return this.prisma.appointment.update({
       where: { id },
       data,
@@ -65,7 +65,7 @@ export class AppointmentRepository {
   /**
    * Delete appointment
    */
-  async delete(id: string): Promise<Appointment> {
+  async delete(id: number): Promise<Appointment> {
     return this.prisma.appointment.delete({
       where: { id },
     });
@@ -92,7 +92,7 @@ export class AppointmentRepository {
    * Find appointments by doctor ID
    */
   async findByDoctorId(
-    doctorId: string,
+    doctorId: number,
     options?: {
       skip?: number;
       take?: number;

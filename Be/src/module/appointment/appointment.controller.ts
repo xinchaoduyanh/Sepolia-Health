@@ -99,7 +99,7 @@ export class AppointmentController {
   @ApiResponse({ status: 404, description: 'Không tìm thấy lịch hẹn' })
   // @ApiResponseOk(MESSAGES.APPOINTMENT.GET_SUCCESS)
   async findOne(@Param('id') id: string): Promise<AppointmentResponseDtoType> {
-    return this.appointmentService.findOne(id);
+    return this.appointmentService.findOne(Number(id));
   }
 
   @Put(':id')
@@ -114,7 +114,11 @@ export class AppointmentController {
     @Body() updateAppointmentDto: UpdateAppointmentDtoType,
     @CurrentUser() user: TokenPayload,
   ): Promise<AppointmentResponseDtoType> {
-    return this.appointmentService.update(id, updateAppointmentDto, user);
+    return this.appointmentService.update(
+      Number(id),
+      updateAppointmentDto,
+      user,
+    );
   }
 
   @Delete(':id')
@@ -128,7 +132,7 @@ export class AppointmentController {
     @Param('id') id: string,
     @CurrentUser() user: TokenPayload,
   ): Promise<{ message: string }> {
-    return this.appointmentService.remove(id, user);
+    return this.appointmentService.remove(Number(id), user);
   }
 
   @Get('patient/my-appointments')
