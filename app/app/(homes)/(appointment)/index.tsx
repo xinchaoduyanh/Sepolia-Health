@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useAppointment } from '../../contexts/AppointmentContext';
+import { useAppointment } from '@/contexts/AppointmentContext';
 
 export default function AppointmentScreen() {
   const [selectedCustomer, setSelectedCustomer] = useState<'me' | 'add'>('me');
@@ -28,12 +28,12 @@ export default function AppointmentScreen() {
   const { selectedSpecialty, selectedDoctor } = useAppointment();
 
   const handleSpecialtySelect = () => {
-    router.push('/specialty-selection');
+    router.push('/appointment/specialty-selection' as any);
   };
 
   const handleDoctorSelect = () => {
     if (selectedSpecialty) {
-      router.push('/doctor-selection');
+      router.push('/appointment/doctor-selection' as any);
     }
   };
 
@@ -63,7 +63,7 @@ export default function AppointmentScreen() {
         day: date.getDate(),
         month: date.getMonth() + 1,
         year: date.getFullYear(),
-        dayName: date.toLocaleDateString('vi-VN', { weekday: 'short' })
+        dayName: date.toLocaleDateString('vi-VN', { weekday: 'short' }),
       });
     }
 
@@ -79,34 +79,27 @@ export default function AppointmentScreen() {
       <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View className="px-5 py-4" style={{ backgroundColor: '#F0FDFA' }}>
-          <View className="flex-row items-center justify-between">
-            <View style={{ width: 24 }} />
-            <Text className="text-xl font-bold" style={{ color: '#0F172A' }}>Đặt lịch hẹn</Text>
-            <TouchableOpacity>
-              <Ionicons name="close" size={24} color="#0284C7" />
-            </TouchableOpacity>
-          </View>
-        </View>
-
         {/* Main Content */}
         <View className="px-5 py-6">
           {/* Chọn Khách hàng Section */}
           <View className="mb-8">
-            <View className="flex-row items-center mb-4">
-              <View className="w-1 h-5 rounded-full mr-2.5" style={{ backgroundColor: '#0284C7' }} />
-              <Text className="text-lg font-bold" style={{ color: '#0F172A' }}>Chọn Khách hàng</Text>
+            <View className="mb-4 flex-row items-center">
+              <View
+                className="mr-2.5 h-5 w-1 rounded-full"
+                style={{ backgroundColor: '#0284C7' }}
+              />
+              <Text className="text-lg font-bold" style={{ color: '#0F172A' }}>
+                Chọn Khách hàng
+              </Text>
             </View>
 
             <View className="flex-row space-x-6">
               <View className="items-center">
                 <TouchableOpacity
                   onPress={() => setSelectedCustomer('me')}
-                  className={`w-16 h-16 rounded-full border-2 items-center justify-center ${
+                  className={`h-16 w-16 items-center justify-center rounded-full border-2 ${
                     selectedCustomer === 'me' ? 'border-[#0284C7]' : 'border-[#06B6D4]'
-                  }`}
-                >
+                  }`}>
                   <Ionicons
                     name="person"
                     size={32}
@@ -115,18 +108,23 @@ export default function AppointmentScreen() {
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => setSelectedCustomer('me')}
-                  className={`mt-2 px-4 py-2 rounded-full ${
+                  className={`mt-2 rounded-full px-4 py-2 ${
                     selectedCustomer === 'me' ? 'bg-[#0284C7]' : 'bg-[#E0F2FE]'
-                  }`}
-                >
+                  }`}>
                   <View className="flex-row items-center">
-                    <Text className={`font-medium ${
-                      selectedCustomer === 'me' ? 'text-white' : 'text-[#475569]'
-                    }`}>
+                    <Text
+                      className={`font-medium ${
+                        selectedCustomer === 'me' ? 'text-white' : 'text-[#475569]'
+                      }`}>
                       Tôi
                     </Text>
                     {selectedCustomer === 'me' && (
-                      <Ionicons name="checkmark" size={16} color="white" style={{ marginLeft: 4 }} />
+                      <Ionicons
+                        name="checkmark"
+                        size={16}
+                        color="white"
+                        style={{ marginLeft: 4 }}
+                      />
                     )}
                   </View>
                 </TouchableOpacity>
@@ -135,31 +133,36 @@ export default function AppointmentScreen() {
               <View className="items-center">
                 <TouchableOpacity
                   onPress={() => setSelectedCustomer('add')}
-                  className={`w-16 h-16 rounded-full border-2 items-center justify-center ${
+                  className={`h-16 w-16 items-center justify-center rounded-full border-2 ${
                     selectedCustomer === 'add' ? 'border-[#0284C7]' : 'border-[#06B6D4]'
-                  }`}
-                >
+                  }`}>
                   <Ionicons
                     name="add"
                     size={32}
                     color={selectedCustomer === 'add' ? '#0284C7' : '#06B6D4'}
                   />
                 </TouchableOpacity>
-                <Text className="mt-2 text-sm" style={{ color: '#475569' }}>Thêm</Text>
+                <Text className="mt-2 text-sm" style={{ color: '#475569' }}>
+                  Thêm
+                </Text>
               </View>
             </View>
           </View>
 
           {/* Thông tin người đặt lịch Section */}
           <View className="mb-8">
-            <Text className="text-lg font-bold mb-4" style={{ color: '#0F172A' }}>Thông tin người đặt lịch</Text>
+            <Text className="mb-4 text-lg font-bold" style={{ color: '#0F172A' }}>
+              Thông tin người đặt lịch
+            </Text>
 
             <View className="space-y-6">
               <View>
-                <View className="flex-row items-center rounded-xl px-5 py-4 border" style={{ backgroundColor: '#F0FDFA', borderColor: '#E0F2FE' }}>
+                <View
+                  className="flex-row items-center rounded-xl border px-5 py-4"
+                  style={{ backgroundColor: '#F0FDFA', borderColor: '#E0F2FE' }}>
                   <Ionicons name="create" size={22} color="#0284C7" />
                   <TextInput
-                    className="flex-1 ml-4 text-lg"
+                    className="ml-4 flex-1 text-lg"
                     style={{ color: '#0F172A' }}
                     placeholder="* Họ tên đầy đủ"
                     placeholderTextColor="#475569"
@@ -170,10 +173,12 @@ export default function AppointmentScreen() {
               </View>
 
               <View>
-                <View className="flex-row items-center rounded-xl px-5 py-4 border" style={{ backgroundColor: '#F0FDFA', borderColor: '#E0F2FE' }}>
+                <View
+                  className="flex-row items-center rounded-xl border px-5 py-4"
+                  style={{ backgroundColor: '#F0FDFA', borderColor: '#E0F2FE' }}>
                   <Ionicons name="calendar" size={22} color="#0284C7" />
                   <TextInput
-                    className="flex-1 ml-4 text-lg"
+                    className="ml-4 flex-1 text-lg"
                     style={{ color: '#0F172A' }}
                     placeholder="* Ngày sinh"
                     placeholderTextColor="#475569"
@@ -184,10 +189,12 @@ export default function AppointmentScreen() {
               </View>
 
               <View>
-                <View className="flex-row items-center rounded-xl px-5 py-4 border" style={{ backgroundColor: '#F0FDFA', borderColor: '#E0F2FE' }}>
+                <View
+                  className="flex-row items-center rounded-xl border px-5 py-4"
+                  style={{ backgroundColor: '#F0FDFA', borderColor: '#E0F2FE' }}>
                   <Ionicons name="call" size={22} color="#0284C7" />
                   <TextInput
-                    className="flex-1 ml-4 text-lg"
+                    className="ml-4 flex-1 text-lg"
                     style={{ color: '#0F172A' }}
                     placeholder="* 0988659126"
                     placeholderTextColor="#475569"
@@ -201,114 +208,114 @@ export default function AppointmentScreen() {
 
             {/* Gender Selection */}
             <View className="mt-8">
-              <Text className="text-lg font-bold mb-4" style={{ color: '#0F172A' }}>Giới tính *</Text>
+              <Text className="mb-4 text-lg font-bold" style={{ color: '#0F172A' }}>
+                Giới tính *
+              </Text>
 
               <View className="flex-row space-x-4">
                 <TouchableOpacity
                   onPress={() => setGender('male')}
-                  className={`flex-1 flex-row items-center justify-center py-4 px-5 rounded-xl border-2 ${
+                  className={`flex-1 flex-row items-center justify-center rounded-xl border-2 px-5 py-4 ${
                     gender === 'male' ? 'border-[#0284C7]' : 'border-[#E0F2FE]'
                   }`}
-                  style={{ backgroundColor: gender === 'male' ? '#E0F2FE' : '#F0FDFA' }}
-                >
+                  style={{ backgroundColor: gender === 'male' ? '#E0F2FE' : '#F0FDFA' }}>
                   <Ionicons
                     name="male"
                     size={22}
                     color={gender === 'male' ? '#0284C7' : '#06B6D4'}
                   />
-                  <Text className={`ml-3 text-lg font-medium ${
-                    gender === 'male' ? 'text-[#0284C7]' : 'text-[#475569]'
-                  }`}>
+                  <Text
+                    className={`ml-3 text-lg font-medium ${
+                      gender === 'male' ? 'text-[#0284C7]' : 'text-[#475569]'
+                    }`}>
                     Nam
                   </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
                   onPress={() => setGender('female')}
-                  className={`flex-1 flex-row items-center justify-center py-4 px-5 rounded-xl border-2 ${
+                  className={`flex-1 flex-row items-center justify-center rounded-xl border-2 px-5 py-4 ${
                     gender === 'female' ? 'border-[#0284C7]' : 'border-[#E0F2FE]'
                   }`}
-                  style={{ backgroundColor: gender === 'female' ? '#E0F2FE' : '#F0FDFA' }}
-                >
+                  style={{ backgroundColor: gender === 'female' ? '#E0F2FE' : '#F0FDFA' }}>
                   <Ionicons
                     name="female"
                     size={22}
                     color={gender === 'female' ? '#0284C7' : '#06B6D4'}
                   />
-                  <Text className={`ml-3 text-lg font-medium ${
-                    gender === 'female' ? 'text-[#0284C7]' : 'text-[#475569]'
-                  }`}>
+                  <Text
+                    className={`ml-3 text-lg font-medium ${
+                      gender === 'female' ? 'text-[#0284C7]' : 'text-[#475569]'
+                    }`}>
                     Nữ
                   </Text>
                 </TouchableOpacity>
               </View>
             </View>
-
-            {/* Foreigner Checkbox */}
-            <View className="mt-8">
-              <TouchableOpacity
-                onPress={() => setIsForeigner(!isForeigner)}
-                className="flex-row items-center"
-              >
-                <View className={`w-6 h-6 rounded border-2 items-center justify-center mr-4 ${
-                  isForeigner ? 'border-[#0284C7]' : 'border-[#E0F2FE]'
-                }`}
-                style={{ backgroundColor: isForeigner ? '#0284C7' : '#F0FDFA' }}>
-                  {isForeigner && (
-                    <Ionicons name="checkmark" size={16} color="white" />
-                  )}
-                </View>
-                <Text className="text-lg" style={{ color: '#0F172A' }}>Đặt hẹn cho người nước ngoài</Text>
-              </TouchableOpacity>
-            </View>
           </View>
 
           {/* Thông tin đặt hẹn Section */}
           <View className="mb-8">
-            <View className="flex-row items-center mb-4">
-              <View className="w-1 h-5 rounded-full mr-2.5" style={{ backgroundColor: '#10B981' }} />
-              <Text className="text-lg font-bold" style={{ color: '#0F172A' }}>Thông tin đặt hẹn</Text>
+            <View className="mb-4 flex-row items-center">
+              <View
+                className="mr-2.5 h-5 w-1 rounded-full"
+                style={{ backgroundColor: '#10B981' }}
+              />
+              <Text className="text-lg font-bold" style={{ color: '#0F172A' }}>
+                Thông tin đặt hẹn
+              </Text>
             </View>
 
             <View className="space-y-6">
-              <TouchableOpacity className="flex-row items-center rounded-xl px-5 py-4 border" style={{ backgroundColor: '#F0FDFA', borderColor: '#E0F2FE' }}>
+              <TouchableOpacity
+                className="flex-row items-center rounded-xl border px-5 py-4"
+                style={{ backgroundColor: '#F0FDFA', borderColor: '#E0F2FE' }}>
                 <Ionicons name="business" size={22} color="#0284C7" />
-                <Text className="ml-4 text-lg" style={{ color: '#0F172A' }}>* Chọn địa điểm</Text>
-                <Ionicons name="chevron-down" size={22} color="#06B6D4" style={{ marginLeft: 'auto' }} />
+                <Text className="ml-4 text-lg" style={{ color: '#0F172A' }}>
+                  * Chọn địa điểm
+                </Text>
+                <Ionicons
+                  name="chevron-down"
+                  size={22}
+                  color="#06B6D4"
+                  style={{ marginLeft: 'auto' }}
+                />
               </TouchableOpacity>
 
               {/* Chọn chuyên khoa */}
               <TouchableOpacity
                 onPress={handleSpecialtySelect}
-                className="flex-row items-center rounded-xl px-5 py-4 border"
-                style={{ backgroundColor: '#F0FDFA', borderColor: '#E0F2FE' }}
-              >
+                className="flex-row items-center rounded-xl border px-5 py-4"
+                style={{ backgroundColor: '#F0FDFA', borderColor: '#E0F2FE' }}>
                 <Ionicons name="briefcase" size={22} color="#0284C7" />
                 <Text className="ml-4 text-lg" style={{ color: '#0F172A' }}>
                   {selectedSpecialty ? selectedSpecialty : '* Chọn chuyên khoa'}
                 </Text>
-                <Ionicons name="chevron-forward" size={22} color="#06B6D4" style={{ marginLeft: 'auto' }} />
+                <Ionicons
+                  name="chevron-forward"
+                  size={22}
+                  color="#06B6D4"
+                  style={{ marginLeft: 'auto' }}
+                />
               </TouchableOpacity>
 
               {/* Chọn bác sĩ */}
               <TouchableOpacity
                 onPress={handleDoctorSelect}
                 disabled={!selectedSpecialty}
-                className={`flex-row items-center rounded-xl px-5 py-4 border ${
-                  selectedSpecialty
-                    ? 'border-[#E0F2FE]'
-                    : 'border-[#A7F3D0]'
+                className={`flex-row items-center rounded-xl border px-5 py-4 ${
+                  selectedSpecialty ? 'border-[#E0F2FE]' : 'border-[#A7F3D0]'
                 }`}
-                style={{ backgroundColor: selectedSpecialty ? '#F0FDFA' : '#A7F3D0' }}
-              >
+                style={{ backgroundColor: selectedSpecialty ? '#F0FDFA' : '#A7F3D0' }}>
                 <Ionicons
                   name="person"
                   size={22}
                   color={selectedSpecialty ? '#0284C7' : '#06B6D4'}
                 />
-                <Text className={`ml-4 text-lg ${
-                  selectedSpecialty ? 'text-[#0F172A]' : 'text-[#475569]'
-                }`}>
+                <Text
+                  className={`ml-4 text-lg ${
+                    selectedSpecialty ? 'text-[#0F172A]' : 'text-[#475569]'
+                  }`}>
                   {selectedDoctor ? selectedDoctor : '* Chọn bác sĩ'}
                 </Text>
                 <Ionicons
@@ -323,90 +330,120 @@ export default function AppointmentScreen() {
 
           {/* Lịch hẹn Section */}
           <View className="mb-8">
-            <View className="flex-row items-center mb-4">
-              <View className="w-1 h-5 rounded-full mr-2.5" style={{ backgroundColor: '#06B6D4' }} />
-              <Text className="text-lg font-bold" style={{ color: '#0F172A' }}>Lịch hẹn</Text>
+            <View className="mb-4 flex-row items-center">
+              <View
+                className="mr-2.5 h-5 w-1 rounded-full"
+                style={{ backgroundColor: '#06B6D4' }}
+              />
+              <Text className="text-lg font-bold" style={{ color: '#0F172A' }}>
+                Lịch hẹn
+              </Text>
             </View>
 
-            <Text className="text-lg font-semibold mb-4" style={{ color: '#0F172A' }}>Ngày khám mong muốn*</Text>
+            <Text className="mb-4 text-lg font-semibold" style={{ color: '#0F172A' }}>
+              Ngày khám mong muốn*
+            </Text>
 
             <View className="flex-row space-x-4">
               <TouchableOpacity
                 onPress={() => setSelectedDate('04')}
-                className={`flex-1 py-4 px-4 rounded-xl ${
+                className={`flex-1 rounded-xl px-4 py-4 ${
                   selectedDate === '04' ? 'bg-[#0284C7]' : 'bg-[#F0FDFA]'
                 }`}
-                style={{ borderColor: selectedDate === '04' ? '#0284C7' : '#E0F2FE', borderWidth: selectedDate === '04' ? 2 : 1 }}
-              >
-                <Text className={`text-center font-medium text-base ${
-                  selectedDate === '04' ? 'text-white' : 'text-[#475569]'
-                }`}>Thg 10</Text>
-                <Text className={`text-center text-sm mt-1 ${
-                  selectedDate === '04' ? 'text-blue-100' : 'text-[#475569]'
-                }`}>04</Text>
+                style={{
+                  borderColor: selectedDate === '04' ? '#0284C7' : '#E0F2FE',
+                  borderWidth: selectedDate === '04' ? 2 : 1,
+                }}>
+                <Text
+                  className={`text-center text-base font-medium ${
+                    selectedDate === '04' ? 'text-white' : 'text-[#475569]'
+                  }`}>
+                  Thg 10
+                </Text>
+                <Text
+                  className={`mt-1 text-center text-sm ${
+                    selectedDate === '04' ? 'text-blue-100' : 'text-[#475569]'
+                  }`}>
+                  04
+                </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 onPress={() => setSelectedDate('05')}
-                className={`flex-1 py-4 px-4 rounded-xl ${
+                className={`flex-1 rounded-xl px-4 py-4 ${
                   selectedDate === '05' ? 'bg-[#0284C7]' : 'bg-[#F0FDFA]'
                 }`}
-                style={{ borderColor: selectedDate === '05' ? '#0284C7' : '#E0F2FE', borderWidth: selectedDate === '05' ? 2 : 1 }}
-              >
-                <Text className={`text-center font-medium text-base ${
-                  selectedDate === '05' ? 'text-white' : 'text-[#475569]'
-                }`}>Thg 10</Text>
-                <Text className={`text-center text-sm mt-1 ${
-                  selectedDate === '05' ? 'text-blue-100' : 'text-[#475569]'
-                }`}>05</Text>
+                style={{
+                  borderColor: selectedDate === '05' ? '#0284C7' : '#E0F2FE',
+                  borderWidth: selectedDate === '05' ? 2 : 1,
+                }}>
+                <Text
+                  className={`text-center text-base font-medium ${
+                    selectedDate === '05' ? 'text-white' : 'text-[#475569]'
+                  }`}>
+                  Thg 10
+                </Text>
+                <Text
+                  className={`mt-1 text-center text-sm ${
+                    selectedDate === '05' ? 'text-blue-100' : 'text-[#475569]'
+                  }`}>
+                  05
+                </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 onPress={() => setSelectedDate('06')}
-                className={`flex-1 py-4 px-4 rounded-xl ${
+                className={`flex-1 rounded-xl px-4 py-4 ${
                   selectedDate === '06' ? 'bg-[#0284C7]' : 'bg-[#F0FDFA]'
                 }`}
-                style={{ borderColor: selectedDate === '06' ? '#0284C7' : '#E0F2FE', borderWidth: selectedDate === '06' ? 2 : 1 }}
-              >
-                <Text className={`text-center font-medium text-base ${
-                  selectedDate === '06' ? 'text-white' : 'text-[#475569]'
-                }`}>Thg 10</Text>
-                <Text className={`text-center text-sm mt-1 ${
-                  selectedDate === '06' ? 'text-blue-100' : 'text-[#475569]'
-                }`}>06</Text>
+                style={{
+                  borderColor: selectedDate === '06' ? '#0284C7' : '#E0F2FE',
+                  borderWidth: selectedDate === '06' ? 2 : 1,
+                }}>
+                <Text
+                  className={`text-center text-base font-medium ${
+                    selectedDate === '06' ? 'text-white' : 'text-[#475569]'
+                  }`}>
+                  Thg 10
+                </Text>
+                <Text
+                  className={`mt-1 text-center text-sm ${
+                    selectedDate === '06' ? 'text-blue-100' : 'text-[#475569]'
+                  }`}>
+                  06
+                </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 onPress={handleCustomDateSelect}
-                className="w-16 h-16 rounded-xl items-center justify-center"
-                style={{ backgroundColor: '#F0FDFA', borderColor: '#E0F2FE', borderWidth: 1 }}
-              >
+                className="h-16 w-16 items-center justify-center rounded-xl"
+                style={{ backgroundColor: '#F0FDFA', borderColor: '#E0F2FE', borderWidth: 1 }}>
                 <Ionicons name="add" size={24} color="#06B6D4" />
               </TouchableOpacity>
             </View>
 
             {/* Thời gian khám */}
-            <Text className="text-lg font-semibold mb-4 mt-8" style={{ color: '#0F172A' }}>Thời gian khám*</Text>
+            <Text className="mb-4 mt-8 text-lg font-semibold" style={{ color: '#0F172A' }}>
+              Thời gian khám*
+            </Text>
 
             <View className="flex-row space-x-4">
               <TouchableOpacity
                 onPress={() => setSelectedTimeSlot('morning')}
-                className={`flex-1 py-4 px-5 rounded-xl border-2 ${
-                  selectedTimeSlot === 'morning'
-                    ? 'border-[#0284C7]'
-                    : 'border-[#E0F2FE]'
+                className={`flex-1 rounded-xl border-2 px-5 py-4 ${
+                  selectedTimeSlot === 'morning' ? 'border-[#0284C7]' : 'border-[#E0F2FE]'
                 }`}
-                style={{ backgroundColor: selectedTimeSlot === 'morning' ? '#E0F2FE' : '#F0FDFA' }}
-              >
+                style={{ backgroundColor: selectedTimeSlot === 'morning' ? '#E0F2FE' : '#F0FDFA' }}>
                 <View className="flex-row items-center justify-center">
                   <Ionicons
                     name="sunny"
                     size={22}
                     color={selectedTimeSlot === 'morning' ? '#0284C7' : '#06B6D4'}
                   />
-                  <Text className={`ml-3 text-lg font-medium ${
-                    selectedTimeSlot === 'morning' ? 'text-[#0284C7]' : 'text-[#475569]'
-                  }`}>
+                  <Text
+                    className={`ml-3 text-lg font-medium ${
+                      selectedTimeSlot === 'morning' ? 'text-[#0284C7]' : 'text-[#475569]'
+                    }`}>
                     Buổi sáng
                   </Text>
                 </View>
@@ -414,22 +451,22 @@ export default function AppointmentScreen() {
 
               <TouchableOpacity
                 onPress={() => setSelectedTimeSlot('afternoon')}
-                className={`flex-1 py-4 px-5 rounded-xl border-2 ${
-                  selectedTimeSlot === 'afternoon'
-                    ? 'border-[#0284C7]'
-                    : 'border-[#E0F2FE]'
+                className={`flex-1 rounded-xl border-2 px-5 py-4 ${
+                  selectedTimeSlot === 'afternoon' ? 'border-[#0284C7]' : 'border-[#E0F2FE]'
                 }`}
-                style={{ backgroundColor: selectedTimeSlot === 'afternoon' ? '#E0F2FE' : '#F0FDFA' }}
-              >
+                style={{
+                  backgroundColor: selectedTimeSlot === 'afternoon' ? '#E0F2FE' : '#F0FDFA',
+                }}>
                 <View className="flex-row items-center justify-center">
                   <Ionicons
                     name="moon"
                     size={22}
                     color={selectedTimeSlot === 'afternoon' ? '#0284C7' : '#06B6D4'}
                   />
-                  <Text className={`ml-3 text-lg font-medium ${
-                    selectedTimeSlot === 'afternoon' ? 'text-[#0284C7]' : 'text-[#475569]'
-                  }`}>
+                  <Text
+                    className={`ml-3 text-lg font-medium ${
+                      selectedTimeSlot === 'afternoon' ? 'text-[#0284C7]' : 'text-[#475569]'
+                    }`}>
                     Buổi chiều
                   </Text>
                 </View>
@@ -438,16 +475,23 @@ export default function AppointmentScreen() {
 
             {/* Lý do khám */}
             <View className="mt-8">
-              <View className="flex-row items-center mb-4">
-                <View className="w-1 h-4 rounded-full mr-2" style={{ backgroundColor: '#10B981' }} />
-                <Text className="text-lg font-bold" style={{ color: '#0F172A' }}>Lý do khám</Text>
+              <View className="mb-4 flex-row items-center">
+                <View
+                  className="mr-2 h-4 w-1 rounded-full"
+                  style={{ backgroundColor: '#10B981' }}
+                />
+                <Text className="text-lg font-bold" style={{ color: '#0F172A' }}>
+                  Lý do khám
+                </Text>
               </View>
 
-              <View className="rounded-xl p-5 border" style={{ backgroundColor: '#F0FDFA', borderColor: '#E0F2FE' }}>
+              <View
+                className="rounded-xl border p-5"
+                style={{ backgroundColor: '#F0FDFA', borderColor: '#E0F2FE' }}>
                 <View className="flex-row items-start">
                   <Ionicons name="create" size={22} color="#0284C7" style={{ marginTop: 2 }} />
                   <TextInput
-                    className="flex-1 ml-4 text-lg"
+                    className="ml-4 flex-1 text-lg"
                     style={{ color: '#0F172A' }}
                     placeholder="* Vui lòng mô tả rõ triệu chứng của bạn và nhu cầu thăm khám"
                     placeholderTextColor="#475569"
@@ -458,8 +502,10 @@ export default function AppointmentScreen() {
                     maxLength={120}
                   />
                 </View>
-                <View className="flex-row justify-end mt-3">
-                  <Text className="text-sm" style={{ color: '#0284C7' }}>{characterCount}/120</Text>
+                <View className="mt-3 flex-row justify-end">
+                  <Text className="text-sm" style={{ color: '#0284C7' }}>
+                    {characterCount}/120
+                  </Text>
                 </View>
               </View>
             </View>
@@ -468,10 +514,12 @@ export default function AppointmentScreen() {
       </ScrollView>
 
       {/* Book Appointment Button */}
-      <View className="px-5 py-4" style={{ backgroundColor: '#F0FDFA', borderTopColor: '#E0F2FE', borderTopWidth: 1 }}>
+      <View
+        className="px-5 py-4"
+        style={{ backgroundColor: '#F0FDFA', borderTopColor: '#E0F2FE', borderTopWidth: 1 }}>
         <TouchableOpacity
           onPress={handleBookAppointment}
-          className="rounded-xl py-4 items-center"
+          className="items-center rounded-xl py-4"
           style={{
             backgroundColor: '#0284C7',
             shadowColor: '#0284C7',
@@ -479,9 +527,8 @@ export default function AppointmentScreen() {
             shadowOpacity: 0.2,
             shadowRadius: 8,
             elevation: 4,
-          }}
-        >
-          <Text className="text-white text-base font-bold">ĐẶT HẸN</Text>
+          }}>
+          <Text className="text-base font-bold text-white">ĐẶT HẸN</Text>
         </TouchableOpacity>
       </View>
 
@@ -491,17 +538,17 @@ export default function AppointmentScreen() {
           transparent={true}
           animationType="slide"
           visible={showDatePicker}
-          onRequestClose={() => setShowDatePicker(false)}
-        >
-          <View className="flex-1 bg-black/50 justify-end">
-            <View className="rounded-t-3xl p-6 max-h-96" style={{ backgroundColor: '#F0FDFA' }}>
-              <View className="flex-row items-center justify-between mb-4">
-                <Text className="text-lg font-bold" style={{ color: '#0F172A' }}>Chọn ngày khám</Text>
+          onRequestClose={() => setShowDatePicker(false)}>
+          <View className="flex-1 justify-end bg-black/50">
+            <View className="max-h-96 rounded-t-3xl p-6" style={{ backgroundColor: '#F0FDFA' }}>
+              <View className="mb-4 flex-row items-center justify-between">
+                <Text className="text-lg font-bold" style={{ color: '#0F172A' }}>
+                  Chọn ngày khám
+                </Text>
                 <TouchableOpacity
                   onPress={() => setShowDatePicker(false)}
-                  className="w-8 h-8 rounded-full items-center justify-center"
-                  style={{ backgroundColor: '#E0F2FE' }}
-                >
+                  className="h-8 w-8 items-center justify-center rounded-full"
+                  style={{ backgroundColor: '#E0F2FE' }}>
                   <Ionicons name="close" size={20} color="#06B6D4" />
                 </TouchableOpacity>
               </View>
@@ -512,32 +559,39 @@ export default function AppointmentScreen() {
                     <TouchableOpacity
                       key={index}
                       onPress={() => handleDateSelect(date.day)}
-                      className={`w-20 py-3 px-2 rounded-xl border-2 ${
+                      className={`w-20 rounded-xl border-2 px-2 py-3 ${
                         selectedDate === date.day.toString().padStart(2, '0')
                           ? 'border-[#0284C7]'
                           : 'border-[#E0F2FE]'
                       }`}
-                      style={{ backgroundColor: selectedDate === date.day.toString().padStart(2, '0') ? '#E0F2FE' : '#F9FAFB' }}
-                    >
-                      <Text className={`text-center text-sm font-medium ${
-                        selectedDate === date.day.toString().padStart(2, '0')
-                          ? 'text-[#0284C7]'
-                          : 'text-[#475569]'
-                      }`}>
+                      style={{
+                        backgroundColor:
+                          selectedDate === date.day.toString().padStart(2, '0')
+                            ? '#E0F2FE'
+                            : '#F9FAFB',
+                      }}>
+                      <Text
+                        className={`text-center text-sm font-medium ${
+                          selectedDate === date.day.toString().padStart(2, '0')
+                            ? 'text-[#0284C7]'
+                            : 'text-[#475569]'
+                        }`}>
                         {date.dayName}
                       </Text>
-                      <Text className={`text-center text-lg font-bold mt-1 ${
-                        selectedDate === date.day.toString().padStart(2, '0')
-                          ? 'text-[#0284C7]'
-                          : 'text-[#0F172A]'
-                      }`}>
+                      <Text
+                        className={`mt-1 text-center text-lg font-bold ${
+                          selectedDate === date.day.toString().padStart(2, '0')
+                            ? 'text-[#0284C7]'
+                            : 'text-[#0F172A]'
+                        }`}>
                         {date.day}
                       </Text>
-                      <Text className={`text-center text-xs ${
-                        selectedDate === date.day.toString().padStart(2, '0')
-                          ? 'text-[#0284C7]'
-                          : 'text-[#475569]'
-                      }`}>
+                      <Text
+                        className={`text-center text-xs ${
+                          selectedDate === date.day.toString().padStart(2, '0')
+                            ? 'text-[#0284C7]'
+                            : 'text-[#475569]'
+                        }`}>
                         Thg {date.month}
                       </Text>
                     </TouchableOpacity>
@@ -545,7 +599,7 @@ export default function AppointmentScreen() {
                 </View>
               </ScrollView>
 
-              <View className="mt-4 p-3 rounded-xl" style={{ backgroundColor: '#E0F2FE' }}>
+              <View className="mt-4 rounded-xl p-3" style={{ backgroundColor: '#E0F2FE' }}>
                 <View className="flex-row items-center">
                   <Ionicons name="information-circle" size={20} color="#0284C7" />
                   <Text className="ml-2 text-sm" style={{ color: '#0284C7' }}>

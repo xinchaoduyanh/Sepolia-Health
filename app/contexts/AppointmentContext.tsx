@@ -39,8 +39,7 @@ export const AppointmentProvider = ({ children }: AppointmentProviderProps) => {
         setSelectedSpecialty,
         setSelectedDoctor,
         clearSelections,
-      }}
-    >
+      }}>
       {children}
     </AppointmentContext.Provider>
   );

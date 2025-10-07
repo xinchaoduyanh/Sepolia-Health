@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { View, Text, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function IndexScreen() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -11,7 +11,7 @@ export default function IndexScreen() {
   useEffect(() => {
     if (!isLoading) {
       if (isAuthenticated) {
-        router.replace('/(tabs)' as any);
+        router.replace('/(homes)' as any);
       } else {
         router.replace('/(auth)/login' as any);
       }

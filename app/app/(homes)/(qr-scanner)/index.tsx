@@ -1,10 +1,10 @@
-import { View, Text, TouchableOpacity } from "react-native"
-import { SafeAreaView } from "react-native-safe-area-context"
-import { Ionicons } from "@expo/vector-icons"
+import { View, Text, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function QRScannerScreen() {
   return (
-    <SafeAreaView className="flex-1 bg-gray-50" edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-gray-50" edges={['top']}>
       <View className="flex-1 items-center justify-center px-6">
         <View className="mb-8 h-32 w-32 items-center justify-center rounded-full bg-blue-100">
           <Ionicons name="qr-code" size={64} color="#3B82F6" />
@@ -20,5 +20,5 @@ export default function QRScannerScreen() {
         </TouchableOpacity>
       </View>
     </SafeAreaView>
-  )
+  );
 }

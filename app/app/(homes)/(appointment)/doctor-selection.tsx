@@ -1,17 +1,10 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  TextInput,
-  StatusBar,
-} from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, TextInput, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { Doctor } from '../../types';
-import { useAppointment } from '../../contexts/AppointmentContext';
+import { Doctor } from '@/types';
+import { useAppointment } from '@/contexts/AppointmentContext';
 
 const doctors: Doctor[] = [
   {
@@ -66,9 +59,10 @@ export default function DoctorSelectionScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const { setSelectedDoctor: setContextDoctor } = useAppointment();
 
-  const filteredDoctors = doctors.filter(doctor =>
-    doctor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    doctor.specialty.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredDoctors = doctors.filter(
+    (doctor) =>
+      doctor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      doctor.specialty.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleDoctorSelect = (doctorId: string) => {
@@ -77,7 +71,7 @@ export default function DoctorSelectionScreen() {
 
   const handleContinue = () => {
     if (selectedDoctor) {
-      const doctor = doctors.find(d => d.id === selectedDoctor);
+      const doctor = doctors.find((d) => d.id === selectedDoctor);
       if (doctor) {
         setContextDoctor(doctor.name);
         router.push('/appointment');
@@ -97,22 +91,16 @@ export default function DoctorSelectionScreen() {
     const hasHalfStar = rating % 1 !== 0;
 
     for (let i = 0; i < fullStars; i++) {
-      stars.push(
-        <Ionicons key={i} name="star" size={14} color="#FCD34D" />
-      );
+      stars.push(<Ionicons key={i} name="star" size={14} color="#FCD34D" />);
     }
 
     if (hasHalfStar) {
-      stars.push(
-        <Ionicons key="half" name="star-half" size={14} color="#FCD34D" />
-      );
+      stars.push(<Ionicons key="half" name="star-half" size={14} color="#FCD34D" />);
     }
 
     const remainingStars = 5 - Math.ceil(rating);
     for (let i = 0; i < remainingStars; i++) {
-      stars.push(
-        <Ionicons key={`empty-${i}`} name="star-outline" size={14} color="#D1D5DB" />
-      );
+      stars.push(<Ionicons key={`empty-${i}`} name="star-outline" size={14} color="#D1D5DB" />);
     }
 
     return stars;
@@ -123,7 +111,7 @@ export default function DoctorSelectionScreen() {
       <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
 
       {/* Header */}
-      <View className="bg-white px-5 py-4 border-b border-slate-100">
+      <View className="border-b border-slate-100 bg-white px-5 py-4">
         <View className="flex-row items-center justify-between">
           <TouchableOpacity onPress={handleBack}>
             <Ionicons name="arrow-back" size={24} color="#2563EB" />
@@ -134,11 +122,11 @@ export default function DoctorSelectionScreen() {
       </View>
 
       {/* Search Bar */}
-      <View className="px-4 mb-4 mt-4">
-        <View className="flex-row items-center bg-white rounded-xl px-4 py-3 border border-slate-200">
+      <View className="mb-4 mt-4 px-4">
+        <View className="flex-row items-center rounded-xl border border-slate-200 bg-white px-4 py-3">
           <Ionicons name="search" size={20} color="#2563EB" />
           <TextInput
-            className="flex-1 text-base ml-3 text-slate-900"
+            className="ml-3 flex-1 text-base text-slate-900"
             placeholder="Tìm bác sĩ"
             placeholderTextColor="#94A3B8"
             value={searchQuery}
@@ -153,10 +141,10 @@ export default function DoctorSelectionScreen() {
           <TouchableOpacity
             key={doctor.id}
             onPress={() => handleDoctorSelect(doctor.id)}
-            className={`mb-3 p-4 rounded-xl ${
+            className={`mb-3 rounded-xl p-4 ${
               selectedDoctor === doctor.id
                 ? 'border-2 border-blue-500 bg-blue-50'
-                : 'bg-white border border-slate-200'
+                : 'border border-slate-200 bg-white'
             } ${!doctor.available ? 'opacity-50' : ''}`}
             disabled={!doctor.available}
             style={{
@@ -165,51 +153,38 @@ export default function DoctorSelectionScreen() {
               shadowOpacity: 0.05,
               shadowRadius: 3,
               elevation: 1,
-            }}
-          >
+            }}>
             <View className="flex-row items-start">
               <View className="mr-4">
                 <Text className="text-3xl">{doctor.avatar}</Text>
                 {!doctor.available && (
-                  <View className="absolute -top-1 -right-1 bg-red-500 rounded-full w-4 h-4 items-center justify-center">
-                    <Text className="text-white text-xs font-bold">!</Text>
+                  <View className="absolute -right-1 -top-1 h-4 w-4 items-center justify-center rounded-full bg-red-500">
+                    <Text className="text-xs font-bold text-white">!</Text>
                   </View>
                 )}
               </View>
 
               <View className="flex-1">
-                <View className="flex-row items-center justify-between mb-1">
-                  <Text className="text-base font-semibold text-slate-900">
-                    {doctor.name}
-                  </Text>
+                <View className="mb-1 flex-row items-center justify-between">
+                  <Text className="text-base font-semibold text-slate-900">{doctor.name}</Text>
                   {selectedDoctor === doctor.id && (
-                    <View className="bg-blue-600 rounded-full p-1">
+                    <View className="rounded-full bg-blue-600 p-1">
                       <Ionicons name="checkmark" size={16} color="white" />
                     </View>
                   )}
                 </View>
 
-                <Text className="text-sm text-blue-600 font-medium mb-1">
-                  {doctor.specialty}
-                </Text>
+                <Text className="mb-1 text-sm font-medium text-blue-600">{doctor.specialty}</Text>
 
-                <Text className="text-sm text-slate-600 mb-2">
-                  {doctor.experience}
-                </Text>
+                <Text className="mb-2 text-sm text-slate-600">{doctor.experience}</Text>
 
                 <View className="flex-row items-center">
-                  <View className="flex-row items-center mr-3">
-                    {renderStars(doctor.rating)}
-                  </View>
-                  <Text className="text-sm text-slate-600">
-                    {doctor.rating || 0}/5
-                  </Text>
+                  <View className="mr-3 flex-row items-center">{renderStars(doctor.rating)}</View>
+                  <Text className="text-sm text-slate-600">{doctor.rating || 0}/5</Text>
                 </View>
 
                 {!doctor.available && (
-                  <Text className="text-sm text-red-500 font-medium mt-2">
-                    Không có lịch trống
-                  </Text>
+                  <Text className="mt-2 text-sm font-medium text-red-500">Không có lịch trống</Text>
                 )}
               </View>
             </View>
@@ -219,19 +194,18 @@ export default function DoctorSelectionScreen() {
 
       {/* Continue Button */}
       {selectedDoctor && (
-        <View className="px-4 py-4 bg-white border-t border-slate-100">
+        <View className="border-t border-slate-100 bg-white px-4 py-4">
           <TouchableOpacity
             onPress={handleContinue}
-            className="bg-blue-600 rounded-xl py-4 items-center"
+            className="items-center rounded-xl bg-blue-600 py-4"
             style={{
               shadowColor: '#2563EB',
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.2,
               shadowRadius: 8,
               elevation: 4,
-            }}
-          >
-            <Text className="text-white text-base font-bold">Tiếp tục</Text>
+            }}>
+            <Text className="text-base font-bold text-white">Tiếp tục</Text>
           </TouchableOpacity>
         </View>
       )}

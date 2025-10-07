@@ -26,7 +26,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="profile"
+        name="(profile)"
         options={{
           title: 'Hồ sơ',
           tabBarIcon: ({ color, size }) => (
@@ -35,25 +35,26 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="qr-scanner"
+        name="(qr-scanner)"
         options={{
           title: 'Quét QR',
           tabBarIcon: ({ color, size }) => (
             <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-              <View style={{
-                width: 60,
-                height: 60,
-                borderRadius: 30,
-                backgroundColor: '#0284C7',
-                alignItems: 'center',
-                justifyContent: 'center',
-                shadowColor: '#0284C7',
-                shadowOffset: { width: 0, height: 6 },
-                shadowOpacity: 0.4,
-                shadowRadius: 12,
-                elevation: 8,
-                marginTop: -20,
-              }}>
+              <View
+                style={{
+                  width: 60,
+                  height: 60,
+                  borderRadius: 30,
+                  backgroundColor: '#0284C7',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  shadowColor: '#0284C7',
+                  shadowOffset: { width: 0, height: 6 },
+                  shadowOpacity: 0.4,
+                  shadowRadius: 12,
+                  elevation: 8,
+                  marginTop: -20,
+                }}>
                 <Ionicons name="qr-code" size={28} color="white" />
               </View>
             </View>
@@ -67,7 +68,7 @@ export default function TabLayout() {
                   flex: 1,
                   alignItems: 'center',
                   justifyContent: 'center',
-                  paddingTop: 10
+                  paddingTop: 10,
                 }}>
                 <View style={{ alignItems: 'center', justifyContent: 'center' }}>
                   <View
@@ -87,12 +88,13 @@ export default function TabLayout() {
                     }}>
                     <Ionicons name="qr-code" size={28} color="white" />
                   </View>
-                  <Text style={{
-                    fontSize: 10,
-                    fontWeight: '500',
-                    color: '#0284C7',
-                    marginTop: 4,
-                  }}>
+                  <Text
+                    style={{
+                      fontSize: 10,
+                      fontWeight: '500',
+                      color: '#0284C7',
+                      marginTop: 4,
+                    }}>
                     Quét QR
                   </Text>
                 </View>
@@ -102,7 +104,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="appointment"
+        name="(appointment)"
         options={{
           title: 'Đặt lịch',
           tabBarIcon: ({ color, size }) => (
@@ -111,36 +113,12 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="account"
+        name="(account)"
         options={{
           title: 'Tài khoản',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person-outline" size={size} color={color} />
           ),
-        }}
-      />
-      <Tabs.Screen
-        name="specialty-selection"
-        options={{
-          href: null, // Hide from tab bar
-        }}
-      />
-      <Tabs.Screen
-        name="appointment-booking"
-        options={{
-          href: null, // Hide from tab bar
-        }}
-      />
-      <Tabs.Screen
-        name="customer-info"
-        options={{
-          href: null, // Hide from tab bar
-        }}
-      />
-      <Tabs.Screen
-        name="doctor-selection"
-        options={{
-          href: null, // Hide from tab bar
         }}
       />
     </Tabs>

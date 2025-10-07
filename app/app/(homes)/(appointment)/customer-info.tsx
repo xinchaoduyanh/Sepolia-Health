@@ -1,17 +1,10 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  TextInput,
-  StatusBar,
-} from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, TextInput, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import DatePicker from '../../components/DatePicker';
-import { Gender, CustomerType } from '../../types';
+import DatePicker from '@/components/DatePicker';
+import { Gender, CustomerType } from '@/types';
 
 export default function CustomerInfoScreen() {
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerType>('me');
@@ -32,7 +25,7 @@ export default function CustomerInfoScreen() {
 
   const handleContinue = () => {
     // Navigate to appointment booking screen
-    router.push('/appointment-booking');
+    router.push('/appointment/appointment-booking' as any);
   };
 
   const handleBack = () => {
@@ -55,8 +48,8 @@ export default function CustomerInfoScreen() {
       <ScrollView className="flex-1 px-4" showsVerticalScrollIndicator={false}>
         {/* Customer Selection */}
         <View className="mb-6">
-          <View className="flex-row items-center mb-4">
-            <View className="w-1 h-4 bg-orange-500 rounded-full mr-2" />
+          <View className="mb-4 flex-row items-center">
+            <View className="mr-2 h-4 w-1 rounded-full bg-orange-500" />
             <Text className="text-lg font-bold text-black">Chọn Khách hàng</Text>
           </View>
 
@@ -64,10 +57,9 @@ export default function CustomerInfoScreen() {
             <View className="items-center">
               <TouchableOpacity
                 onPress={() => handleCustomerSelect('me')}
-                className={`w-16 h-16 rounded-full border-2 items-center justify-center ${
+                className={`h-16 w-16 items-center justify-center rounded-full border-2 ${
                   selectedCustomer === 'me' ? 'border-teal-500' : 'border-blue-300'
-                }`}
-              >
+                }`}>
                 <Ionicons
                   name="person"
                   size={32}
@@ -76,14 +68,14 @@ export default function CustomerInfoScreen() {
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => handleCustomerSelect('me')}
-                className={`mt-2 px-4 py-2 rounded-full ${
+                className={`mt-2 rounded-full px-4 py-2 ${
                   selectedCustomer === 'me' ? 'bg-teal-500' : 'bg-gray-200'
-                }`}
-              >
+                }`}>
                 <View className="flex-row items-center">
-                  <Text className={`font-medium ${
-                    selectedCustomer === 'me' ? 'text-white' : 'text-gray-600'
-                  }`}>
+                  <Text
+                    className={`font-medium ${
+                      selectedCustomer === 'me' ? 'text-white' : 'text-gray-600'
+                    }`}>
                     Tôi
                   </Text>
                   {selectedCustomer === 'me' && (
@@ -96,10 +88,9 @@ export default function CustomerInfoScreen() {
             <View className="items-center">
               <TouchableOpacity
                 onPress={() => handleCustomerSelect('add')}
-                className={`w-16 h-16 rounded-full border-2 items-center justify-center ${
+                className={`h-16 w-16 items-center justify-center rounded-full border-2 ${
                   selectedCustomer === 'add' ? 'border-teal-500' : 'border-blue-300'
-                }`}
-              >
+                }`}>
                 <Ionicons
                   name="add"
                   size={32}
@@ -113,14 +104,14 @@ export default function CustomerInfoScreen() {
 
         {/* Appointment Booker Information */}
         <View className="mb-6">
-          <Text className="text-lg font-bold text-black mb-4">Thông tin người đặt lịch</Text>
+          <Text className="mb-4 text-lg font-bold text-black">Thông tin người đặt lịch</Text>
 
           <View className="space-y-4">
             <View>
-              <View className="flex-row items-center bg-gray-100 rounded-lg px-3 py-3">
+              <View className="flex-row items-center rounded-lg bg-gray-100 px-3 py-3">
                 <Ionicons name="create" size={20} color="#000" />
                 <TextInput
-                  className="flex-1 ml-2 text-base text-black"
+                  className="ml-2 flex-1 text-base text-black"
                   placeholder="* Họ tên đầy đủ"
                   placeholderTextColor="#9CA3AF"
                   value={fullName}
@@ -138,10 +129,10 @@ export default function CustomerInfoScreen() {
             </View>
 
             <View>
-              <View className="flex-row items-center bg-gray-100 rounded-lg px-3 py-3">
+              <View className="flex-row items-center rounded-lg bg-gray-100 px-3 py-3">
                 <Ionicons name="call" size={20} color="#000" />
                 <TextInput
-                  className="flex-1 ml-2 text-base text-black"
+                  className="ml-2 flex-1 text-base text-black"
                   placeholder="* 0988659126"
                   placeholderTextColor="#9CA3AF"
                   value={phoneNumber}
@@ -155,41 +146,37 @@ export default function CustomerInfoScreen() {
 
         {/* Gender Selection */}
         <View className="mb-6">
-          <Text className="text-base font-bold text-black mb-3">Giới tính *</Text>
+          <Text className="mb-3 text-base font-bold text-black">Giới tính *</Text>
 
           <View className="flex-row space-x-4">
             <TouchableOpacity
               onPress={() => handleGenderSelect('male')}
-              className={`flex-1 flex-row items-center justify-center py-3 px-4 rounded-lg border-2 ${
+              className={`flex-1 flex-row items-center justify-center rounded-lg border-2 px-4 py-3 ${
                 gender === 'male' ? 'border-teal-500 bg-teal-50' : 'border-gray-300'
-              }`}
-            >
-              <Ionicons
-                name="male"
-                size={20}
-                color={gender === 'male' ? '#14B8A6' : '#9CA3AF'}
-              />
-              <Text className={`ml-2 font-medium ${
-                gender === 'male' ? 'text-teal-600' : 'text-gray-600'
               }`}>
+              <Ionicons name="male" size={20} color={gender === 'male' ? '#14B8A6' : '#9CA3AF'} />
+              <Text
+                className={`ml-2 font-medium ${
+                  gender === 'male' ? 'text-teal-600' : 'text-gray-600'
+                }`}>
                 Nam
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               onPress={() => handleGenderSelect('female')}
-              className={`flex-1 flex-row items-center justify-center py-3 px-4 rounded-lg border-2 ${
+              className={`flex-1 flex-row items-center justify-center rounded-lg border-2 px-4 py-3 ${
                 gender === 'female' ? 'border-teal-500 bg-teal-50' : 'border-gray-300'
-              }`}
-            >
+              }`}>
               <Ionicons
                 name="female"
                 size={20}
                 color={gender === 'female' ? '#14B8A6' : '#9CA3AF'}
               />
-              <Text className={`ml-2 font-medium ${
-                gender === 'female' ? 'text-teal-600' : 'text-gray-600'
-              }`}>
+              <Text
+                className={`ml-2 font-medium ${
+                  gender === 'female' ? 'text-teal-600' : 'text-gray-600'
+                }`}>
                 Nữ
               </Text>
             </TouchableOpacity>
@@ -200,14 +187,12 @@ export default function CustomerInfoScreen() {
         <View className="mb-6">
           <TouchableOpacity
             onPress={() => setIsForeigner(!isForeigner)}
-            className="flex-row items-center"
-          >
-            <View className={`w-5 h-5 rounded border-2 items-center justify-center mr-3 ${
-              isForeigner ? 'border-teal-500 bg-teal-500' : 'border-gray-300'
-            }`}>
-              {isForeigner && (
-                <Ionicons name="checkmark" size={14} color="white" />
-              )}
+            className="flex-row items-center">
+            <View
+              className={`mr-3 h-5 w-5 items-center justify-center rounded border-2 ${
+                isForeigner ? 'border-teal-500 bg-teal-500' : 'border-gray-300'
+              }`}>
+              {isForeigner && <Ionicons name="checkmark" size={14} color="white" />}
             </View>
             <Text className="text-base text-black">Đặt hẹn cho người nước ngoài</Text>
           </TouchableOpacity>
@@ -215,26 +200,31 @@ export default function CustomerInfoScreen() {
 
         {/* Appointment Information */}
         <View className="mb-6">
-          <View className="flex-row items-center mb-4">
-            <View className="w-1 h-4 bg-orange-500 rounded-full mr-2" />
+          <View className="mb-4 flex-row items-center">
+            <View className="mr-2 h-4 w-1 rounded-full bg-orange-500" />
             <Text className="text-lg font-bold text-black">Thông tin đặt hẹn</Text>
           </View>
 
-          <TouchableOpacity className="flex-row items-center bg-gray-100 rounded-lg px-3 py-3">
+          <TouchableOpacity className="flex-row items-center rounded-lg bg-gray-100 px-3 py-3">
             <Ionicons name="business" size={20} color="#000" />
             <Text className="ml-2 text-base text-black">* Chọn địa điểm</Text>
-            <Ionicons name="chevron-down" size={20} color="#9CA3AF" style={{ marginLeft: 'auto' }} />
+            <Ionicons
+              name="chevron-down"
+              size={20}
+              color="#9CA3AF"
+              style={{ marginLeft: 'auto' }}
+            />
           </TouchableOpacity>
         </View>
 
         {/* Appointment Schedule */}
         <View className="mb-8">
-          <View className="flex-row items-center mb-4">
-            <View className="w-1 h-4 bg-orange-500 rounded-full mr-2" />
+          <View className="mb-4 flex-row items-center">
+            <View className="mr-2 h-4 w-1 rounded-full bg-orange-500" />
             <Text className="text-lg font-bold text-black">Lịch hẹn</Text>
           </View>
 
-          <Text className="text-base font-semibold text-black mb-3">Ngày khám mong muốn*</Text>
+          <Text className="mb-3 text-base font-semibold text-black">Ngày khám mong muốn*</Text>
 
           <DatePicker
             selectedDate={selectedDate}
@@ -245,12 +235,11 @@ export default function CustomerInfoScreen() {
       </ScrollView>
 
       {/* Continue Button */}
-      <View className="px-4 py-4 bg-white border-t border-gray-200">
+      <View className="border-t border-gray-200 bg-white px-4 py-4">
         <TouchableOpacity
           onPress={handleContinue}
-          className="bg-teal-500 rounded-lg py-4 items-center"
-        >
-          <Text className="text-white text-base font-semibold">Tiếp tục</Text>
+          className="items-center rounded-lg bg-teal-500 py-4">
+          <Text className="text-base font-semibold text-white">Tiếp tục</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

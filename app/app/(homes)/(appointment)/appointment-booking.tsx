@@ -1,18 +1,11 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  TextInput,
-  StatusBar,
-} from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, TextInput, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import DatePicker from '../../components/DatePicker';
-import TimePicker from '../../components/TimePicker';
-import { BookingType, Doctor } from '../../types';
+import DatePicker from '@/components/DatePicker';
+import TimePicker from '@/components/TimePicker';
+import { BookingType, Doctor } from '@/types';
 
 const doctors: Doctor[] = [
   { id: '1', name: 'Bác sĩ Lê Thị Thu Hằng', specialty: 'Da liễu' },
@@ -35,11 +28,11 @@ export default function AppointmentBookingScreen() {
 
   const handleDoctorSelect = () => {
     // Navigate to doctor selection screen
-    router.push('/doctor-selection');
+    router.push('/appointment/doctor-selection' as any);
   };
 
   const handleSpecialtySelect = () => {
-    router.push('/specialty-selection');
+    router.push('/appointment/specialty-selection' as any);
   };
 
   const handleDateSelect = (date: string) => {
@@ -85,27 +78,27 @@ export default function AppointmentBookingScreen() {
           <View className="flex-row space-x-2">
             <TouchableOpacity
               onPress={() => handleBookingTypeChange('doctor')}
-              className={`flex-1 py-3 px-4 rounded-lg ${
+              className={`flex-1 rounded-lg px-4 py-3 ${
                 bookingType === 'doctor' ? 'bg-teal-500' : 'bg-gray-200'
-              }`}
-            >
-              <Text className={`text-center font-medium ${
-                bookingType === 'doctor' ? 'text-white' : 'text-gray-600'
               }`}>
+              <Text
+                className={`text-center font-medium ${
+                  bookingType === 'doctor' ? 'text-white' : 'text-gray-600'
+                }`}>
                 Đặt lịch theo bác sĩ
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               onPress={() => handleBookingTypeChange('specialty')}
-              className={`flex-1 py-3 px-4 rounded-lg ${
+              className={`flex-1 rounded-lg px-4 py-3 ${
                 bookingType === 'specialty' ? 'bg-teal-500' : 'bg-gray-200'
-              }`}
-            >
+              }`}>
               <View className="flex-row items-center justify-center">
-                <Text className={`font-medium ${
-                  bookingType === 'specialty' ? 'text-white' : 'text-gray-600'
-                }`}>
+                <Text
+                  className={`font-medium ${
+                    bookingType === 'specialty' ? 'text-white' : 'text-gray-600'
+                  }`}>
                   Đặt lịch theo chuyên khoa
                 </Text>
                 {bookingType === 'specialty' && (
@@ -116,13 +109,13 @@ export default function AppointmentBookingScreen() {
 
             <TouchableOpacity
               onPress={() => handleBookingTypeChange('symptom')}
-              className={`flex-1 py-3 px-4 rounded-lg ${
+              className={`flex-1 rounded-lg px-4 py-3 ${
                 bookingType === 'symptom' ? 'bg-teal-500' : 'bg-gray-200'
-              }`}
-            >
-              <Text className={`text-center font-medium ${
-                bookingType === 'symptom' ? 'text-white' : 'text-gray-600'
               }`}>
+              <Text
+                className={`text-center font-medium ${
+                  bookingType === 'symptom' ? 'text-white' : 'text-gray-600'
+                }`}>
                 Đặt lịch theo triệu chứng
               </Text>
             </TouchableOpacity>
@@ -133,8 +126,7 @@ export default function AppointmentBookingScreen() {
         <View className="mb-6 space-y-2">
           <TouchableOpacity
             onPress={handleSpecialtySelect}
-            className="flex-row items-center bg-gray-100 rounded-lg px-3 py-3"
-          >
+            className="flex-row items-center rounded-lg bg-gray-100 px-3 py-3">
             <Ionicons name="briefcase" size={20} color="#000" />
             <Text className="ml-2 text-base text-black">* Da liễu</Text>
             <Ionicons name="close" size={20} color="#9CA3AF" style={{ marginLeft: 'auto' }} />
@@ -142,8 +134,7 @@ export default function AppointmentBookingScreen() {
 
           <TouchableOpacity
             onPress={handleDoctorSelect}
-            className="flex-row items-center bg-gray-100 rounded-lg px-3 py-3"
-          >
+            className="flex-row items-center rounded-lg bg-gray-100 px-3 py-3">
             <Ionicons name="person" size={20} color="#000" />
             <Text className="ml-2 text-base text-black">Bác sĩ Lê Thị Thu Hằng</Text>
             <Ionicons name="close" size={20} color="#9CA3AF" style={{ marginLeft: 'auto' }} />
@@ -152,46 +143,47 @@ export default function AppointmentBookingScreen() {
 
         {/* Appointment Section */}
         <View className="mb-6">
-          <View className="flex-row items-center mb-4">
-            <View className="w-1 h-4 bg-orange-500 rounded-full mr-2" />
+          <View className="mb-4 flex-row items-center">
+            <View className="mr-2 h-4 w-1 rounded-full bg-orange-500" />
             <Text className="text-lg font-bold text-black">Lịch hẹn</Text>
           </View>
 
-          <Text className="text-base font-semibold text-black mb-3">Ngày khám mong muốn*</Text>
+          <Text className="mb-3 text-base font-semibold text-black">Ngày khám mong muốn*</Text>
 
-          <View className="flex-row space-x-3 mb-4">
+          <View className="mb-4 flex-row space-x-3">
             {dates.map((dateItem) => (
               <TouchableOpacity
                 key={dateItem.date}
                 onPress={() => handleDateSelect(dateItem.date)}
-                className={`flex-1 py-3 px-3 rounded-lg ${
+                className={`flex-1 rounded-lg px-3 py-3 ${
                   selectedDate === dateItem.date ? 'bg-teal-500' : 'bg-gray-100'
-                }`}
-              >
-                <Text className={`text-center font-medium ${
-                  selectedDate === dateItem.date ? 'text-white' : 'text-gray-600'
                 }`}>
+                <Text
+                  className={`text-center font-medium ${
+                    selectedDate === dateItem.date ? 'text-white' : 'text-gray-600'
+                  }`}>
                   {dateItem.day}
                 </Text>
-                <Text className={`text-center text-xs mt-1 ${
-                  selectedDate === dateItem.date ? 'text-white' : 'text-gray-500'
-                }`}>
+                <Text
+                  className={`mt-1 text-center text-xs ${
+                    selectedDate === dateItem.date ? 'text-white' : 'text-gray-500'
+                  }`}>
                   {dateItem.label}
                 </Text>
               </TouchableOpacity>
             ))}
 
-            <TouchableOpacity className="w-12 h-12 bg-gray-100 rounded-lg items-center justify-center">
+            <TouchableOpacity className="h-12 w-12 items-center justify-center rounded-lg bg-gray-100">
               <Ionicons name="add" size={20} color="#9CA3AF" />
             </TouchableOpacity>
           </View>
 
-          <Text className="text-xs text-gray-500 mb-2">Ngày khác</Text>
+          <Text className="mb-2 text-xs text-gray-500">Ngày khác</Text>
         </View>
 
         {/* Time Selection */}
         <View className="mb-6">
-          <Text className="text-base font-semibold text-black mb-3">Giờ khám mong muốn*</Text>
+          <Text className="mb-3 text-base font-semibold text-black">Giờ khám mong muốn*</Text>
 
           <TimePicker
             selectedTime={selectedTime}
@@ -201,7 +193,7 @@ export default function AppointmentBookingScreen() {
           />
 
           {!selectedTime && (
-            <View className="bg-gray-100 rounded-lg p-4 mt-3">
+            <View className="mt-3 rounded-lg bg-gray-100 p-4">
               <Text className="text-sm text-gray-600">
                 Hiện tại không có lịch trống ngày {selectedDate}.
               </Text>
@@ -209,7 +201,7 @@ export default function AppointmentBookingScreen() {
           )}
 
           <TouchableOpacity className="mt-2">
-            <Text className="text-teal-500 text-sm font-medium">
+            <Text className="text-sm font-medium text-teal-500">
               Kiểm tra lịch 3 ngày tiếp theo
             </Text>
           </TouchableOpacity>
@@ -217,16 +209,16 @@ export default function AppointmentBookingScreen() {
 
         {/* Reason for Examination */}
         <View className="mb-8">
-          <View className="flex-row items-center mb-4">
-            <View className="w-1 h-4 bg-orange-500 rounded-full mr-2" />
+          <View className="mb-4 flex-row items-center">
+            <View className="mr-2 h-4 w-1 rounded-full bg-orange-500" />
             <Text className="text-lg font-bold text-black">Lý do khám</Text>
           </View>
 
-          <View className="bg-gray-100 rounded-lg p-3">
+          <View className="rounded-lg bg-gray-100 p-3">
             <View className="flex-row items-start">
               <Ionicons name="create" size={20} color="#000" style={{ marginTop: 2 }} />
               <TextInput
-                className="flex-1 ml-2 text-base text-black"
+                className="ml-2 flex-1 text-base text-black"
                 placeholder="* Vui lòng mô tả rõ triệu chứng của bạn và nhu cầu thăm khám"
                 placeholderTextColor="#9CA3AF"
                 multiline
@@ -236,7 +228,7 @@ export default function AppointmentBookingScreen() {
                 maxLength={120}
               />
             </View>
-            <View className="flex-row justify-end mt-2">
+            <View className="mt-2 flex-row justify-end">
               <Text className="text-xs text-gray-500">{characterCount}/120</Text>
             </View>
           </View>
@@ -244,12 +236,11 @@ export default function AppointmentBookingScreen() {
       </ScrollView>
 
       {/* Book Appointment Button */}
-      <View className="px-4 py-4 bg-white border-t border-gray-200">
+      <View className="border-t border-gray-200 bg-white px-4 py-4">
         <TouchableOpacity
           onPress={handleBookAppointment}
-          className="bg-teal-500 rounded-lg py-4 items-center"
-        >
-          <Text className="text-white text-base font-semibold">ĐẶT HẸN</Text>
+          className="items-center rounded-lg bg-teal-500 py-4">
+          <Text className="text-base font-semibold text-white">ĐẶT HẸN</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

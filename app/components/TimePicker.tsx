@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Modal, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { TimePickerProps, TimeSlot } from '../types';
+import { TimePickerProps, TimeSlot } from '@/types';
 
 export default function TimePicker({
   selectedTime,
   onTimeSelect,
-  placeholder = "Chọn giờ",
-  availableTimes = []
+  placeholder = 'Chọn giờ',
+  availableTimes = [],
 }: TimePickerProps) {
   const [isVisible, setIsVisible] = useState(false);
 
@@ -42,12 +42,9 @@ export default function TimePicker({
     <>
       <TouchableOpacity
         onPress={() => setIsVisible(true)}
-        className="flex-row items-center bg-white rounded-lg px-3 py-3 border border-blue-200"
-      >
+        className="flex-row items-center rounded-lg border border-blue-200 bg-white px-3 py-3">
         <Ionicons name="time" size={20} color="#2563EB" />
-        <Text className="ml-2 text-base text-blue-900 flex-1">
-          {selectedTime || placeholder}
-        </Text>
+        <Text className="ml-2 flex-1 text-base text-blue-900">{selectedTime || placeholder}</Text>
         <Ionicons name="chevron-down" size={20} color="#6B7280" />
       </TouchableOpacity>
 
@@ -55,11 +52,10 @@ export default function TimePicker({
         visible={isVisible}
         transparent
         animationType="slide"
-        onRequestClose={() => setIsVisible(false)}
-      >
-        <View className="flex-1 bg-black/50 justify-end">
-          <View className="bg-white rounded-t-3xl max-h-96">
-            <View className="flex-row items-center justify-between p-4 border-b border-gray-200">
+        onRequestClose={() => setIsVisible(false)}>
+        <View className="flex-1 justify-end bg-black/50">
+          <View className="max-h-96 rounded-t-3xl bg-white">
+            <View className="flex-row items-center justify-between border-b border-gray-200 p-4">
               <Text className="text-lg font-semibold text-black">Chọn giờ</Text>
               <TouchableOpacity onPress={() => setIsVisible(false)}>
                 <Ionicons name="close" size={24} color="#000" />
@@ -74,27 +70,25 @@ export default function TimePicker({
                       key={timeSlot.time}
                       onPress={() => timeSlot.available && handleTimeSelect(timeSlot.time)}
                       disabled={!timeSlot.available}
-                      className={`w-1/3 p-3 mb-2 rounded-lg ${
+                      className={`mb-2 w-1/3 rounded-lg p-3 ${
                         selectedTime === timeSlot.time
                           ? 'bg-blue-600'
                           : timeSlot.available
                             ? 'bg-gray-100'
                             : 'bg-gray-200 opacity-50'
-                      }`}
-                    >
-                      <Text className={`text-center font-medium ${
-                        selectedTime === timeSlot.time
-                          ? 'text-white'
-                          : timeSlot.available
-                            ? 'text-gray-600'
-                            : 'text-gray-400'
                       }`}>
+                      <Text
+                        className={`text-center font-medium ${
+                          selectedTime === timeSlot.time
+                            ? 'text-white'
+                            : timeSlot.available
+                              ? 'text-gray-600'
+                              : 'text-gray-400'
+                        }`}>
                         {timeSlot.label}
                       </Text>
                       {!timeSlot.available && (
-                        <Text className="text-center text-xs text-gray-400 mt-1">
-                          Đã kín
-                        </Text>
+                        <Text className="mt-1 text-center text-xs text-gray-400">Đã kín</Text>
                       )}
                     </TouchableOpacity>
                   ))}
