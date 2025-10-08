@@ -8,10 +8,9 @@ import {
   Delete,
   HttpStatus,
   Query,
+  Put,
 } from '@nestjs/common';
 import { DoctorService } from './doctor.service';
-import { CreateDoctorDto } from './dto/create-doctor.dto';
-import { UpdateDoctorDto } from './dto/update-doctor.dto';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -23,10 +22,15 @@ import {
   PaginationResultDto,
 } from '@/common/dto/pagination-result.dto';
 import { DoctorProfile, Service } from '@prisma/client';
-import { Public } from '@/common/decorators';
+import { CurrentUser, Public } from '@/common/decorators';
 import { DoctorProfileDto } from './dto/response/doctor-profile.dto';
 import { getTimeslotByDoctorIdAndDayResponseDto } from './dto/response';
-import { GetDoctorServiceQueryDto } from './dto/request';
+import {
+  CreateDoctorProfileBodyDto,
+  GetDoctorServiceQueryDto,
+  updateDoctorProfileBodyDto,
+} from './dto/request';
+import { SuccessResponseDto } from '@/common/dto';
 
 @Public()
 @ApiBearerAuth()
@@ -67,5 +71,30 @@ export class DoctorController {
     @Param('doctorId') doctorId: string,
   ): Promise<getTimeslotByDoctorIdAndDayResponseDto[]> {
     return this.doctorService.getTimeslotByDoctorIdAndDay(Number(doctorId));
+  }
+
+  @Post()
+  @Public()
+  async createDoctorProfile(
+    @Body() body: CreateDoctorProfileBodyDto,
+    @CurrentUser('userId') userId: number,
+  ) {
+    return this.doctorService.createDoctorProfile(body, userId);
+  }
+
+  @Put()
+  @Public()
+  @ApiResponse({
+    status: HttpStatus.OK,
+    type: SuccessResponseDto,
+  })
+  @ApiOperation({
+    description: 'update doctor profile',
+  })
+  async updateDoctorProfile(
+    @Body() body: updateDoctorProfileBodyDto,
+    @CurrentUser('userId') userId: number,
+  ): Promise<SuccessResponseDto> {
+    return this.doctorService.updateDoctorProfile(body, userId);
   }
 }

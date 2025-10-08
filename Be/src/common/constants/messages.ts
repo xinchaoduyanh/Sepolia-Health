@@ -87,6 +87,10 @@ export const ERROR_MESSAGES = {
     USER_NOT_VERIFIED: 'Người dùng chưa được xác thực',
     USER_NOT_AUTHORIZED: 'Không có quyền truy cập',
     USER_NOT_AUTHENTICATED: 'Không đăng nhập',
+    RESOURCE_NOT_FOUND: 'Không tìm thấy tài nguyên',
+  },
+  DOCTOR: {
+    DOCTOR_ALREADY_EXIST: 'Tài khoản bác sĩ đã tồn tại',
   },
 };
 export type MessageKey = keyof typeof MESSAGES;

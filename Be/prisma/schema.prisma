@@ -81,10 +81,10 @@ model DoctorProfile {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   deletedAt     DateTime?
+  //not needed for a small clinic where add doctors share the same specialty 
   specialty     String
   experience    String?
   contactInfo   String?
-  workingHours  String?
 
   userId Int @unique
   user   User @relation(fields: [userId], references: [id])

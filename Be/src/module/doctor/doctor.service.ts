@@ -1,13 +1,21 @@
-import { Injectable } from '@nestjs/common';
-import { CreateDoctorDto } from './dto/create-doctor.dto';
-import { UpdateDoctorDto } from './dto/update-doctor.dto';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PaginationResultDto } from '@/common/dto/pagination-result.dto';
 import { paginate } from '@/common/helper/paginate';
-import { Period, Service } from '@prisma/client';
+import { DoctorProfile, Period, Prisma, Service } from '@prisma/client';
 import { PrismaService } from '@/common/prisma/prisma.service';
 import { getTimeslotByDoctorIdAndDayResponseDto } from './dto/response';
 import { DateUtil } from '@/common/utils';
-import { GetDoctorServiceQueryDto } from './dto/request';
+import {
+  CreateDoctorProfileBodyDto,
+  GetDoctorServiceQueryDto,
+  updateDoctorProfileBodyDto,
+} from './dto/request';
+import { ERROR_MESSAGES } from '@/common/constants/messages';
+import { SuccessResponseDto } from '@/common/dto';
 
 @Injectable()
 export class DoctorService {
@@ -73,5 +81,91 @@ export class DoctorService {
         afternoonSlot,
       } as getTimeslotByDoctorIdAndDayResponseDto;
     });
+  }
+
+  // missing validation
+  async createDoctorProfile(body: CreateDoctorProfileBodyDto, userId: number) {
+    const doctor = await this.prismaService.doctorProfile.findFirst({
+      where: {
+        userId,
+      },
+    });
+
+    if (doctor) {
+      throw new ConflictException(ERROR_MESSAGES.DOCTOR.DOCTOR_ALREADY_EXIST);
+    }
+
+    return this.prismaService.doctorProfile.create({
+      data: {
+        specialty: body.specialty,
+        experience: body.experience,
+        contactInfo: body.contactInfo,
+        userId,
+        services: {
+          create: body.serviceIds.map((id) => ({
+            service: { connect: { id } },
+          })),
+        },
+      },
+    });
+  }
+
+  async updateDoctorProfile(
+    body: updateDoctorProfileBodyDto,
+    userId: number,
+  ): Promise<SuccessResponseDto> {
+    const doctor = await this.prismaService.doctorProfile.findFirst({
+      where: {
+        userId,
+      },
+      include: {
+        services: true,
+      },
+    });
+    if (!doctor) {
+      throw new NotFoundException(ERROR_MESSAGES.COMMON.RESOURCE_NOT_FOUND);
+    }
+    const { specialty, experience, contactInfo, serviceIds, timeslots } = body;
+    Prisma.DoctorProfileScalarFieldEnum;
+    const data: Prisma.DoctorProfileUpdateInput = {
+      ...(specialty && { specialty }),
+      ...(experience && { experience }),
+      ...(contactInfo && { contactInfo }),
+    };
+    if (timeslots) {
+      data.timeslots = {
+        update: {
+          where: {
+            id: timeslots.id,
+          },
+          data: {
+            slot: timeslots.slot,
+          },
+        },
+      };
+    }
+    //update doctor
+    await this.prismaService.doctorProfile.update({
+      where: { id: doctor.id },
+      data,
+    });
+
+    //update doctor service
+    if (serviceIds) {
+      await this.prismaService.doctorService.deleteMany({
+        where: {
+          id: { in: doctor.services.map((s) => s.id) },
+        },
+      });
+      if (serviceIds.length) {
+        await this.prismaService.doctorService.createMany({
+          data: serviceIds.map((id) => ({
+            doctorId: doctor.id,
+            serviceId: id,
+          })),
+        });
+      }
+    }
+    return new SuccessResponseDto();
   }
 }
