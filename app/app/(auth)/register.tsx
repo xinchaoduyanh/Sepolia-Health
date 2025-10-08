@@ -10,23 +10,36 @@ import {
   ScrollView,
   StatusBar,
   Image,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Link, useRouter } from 'expo-router';
 import { useState, useRef } from 'react';
+import { useAuth } from '@/lib/hooks/useAuth';
 
 type RegisterStep = 'email' | 'otp' | 'info';
 
 export default function RegisterScreen() {
   const router = useRouter();
+  const {
+    register,
+    verifyEmail,
+    completeRegister,
+    isRegistering,
+    isVerifyingEmail,
+    isCompletingRegister,
+    registerError,
+    verifyEmailError,
+    completeRegisterError,
+  } = useAuth();
+
   const [step, setStep] = useState<RegisterStep>('email');
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
-  const [fullName, setFullName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [phone, setPhone] = useState('');
-  const [dateOfBirth, setDateOfBirth] = useState('');
-  const [gender, setGender] = useState<'male' | 'female' | ''>('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -35,21 +48,70 @@ export default function RegisterScreen() {
   // Refs for OTP inputs
   const otpRefs = useRef<TextInput[]>([]);
 
-  const handleSendOTP = () => {
-    // Send OTP logic here
-    setStep('otp');
-  };
+  const handleSendOTP = async () => {
+    if (!email.trim()) {
+      Alert.alert('Lỗi', 'Vui lòng nhập email');
+      return;
+    }
 
-  const handleVerifyOTP = () => {
-    // Verify OTP logic here
-    if (otp.every((digit) => digit !== '')) {
-      setStep('info');
+    try {
+      await register(email);
+      setStep('otp');
+    } catch (error) {
+      console.error('Register error:', error);
+      Alert.alert('Lỗi', 'Không thể gửi mã xác thực');
     }
   };
 
-  const handleRegister = () => {
-    // Register logic here
-    router.push('/(auth)/login' as any);
+  const handleVerifyOTP = async () => {
+    const otpCode = otp.join('');
+    if (otpCode.length !== 6) {
+      Alert.alert('Lỗi', 'Vui lòng nhập đầy đủ 6 số');
+      return;
+    }
+
+    try {
+      await verifyEmail(email, otpCode);
+      setStep('info');
+    } catch (error) {
+      console.error('Verify email error:', error);
+      Alert.alert('Lỗi', 'Mã xác thực không đúng');
+    }
+  };
+
+  const handleRegister = async () => {
+    if (!firstName.trim() || !lastName.trim() || !phone.trim() || !password.trim()) {
+      Alert.alert('Lỗi', 'Vui lòng nhập đầy đủ thông tin');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      Alert.alert('Lỗi', 'Mật khẩu xác nhận không khớp');
+      return;
+    }
+
+    if (password.length < 6) {
+      Alert.alert('Lỗi', 'Mật khẩu phải có ít nhất 6 ký tự');
+      return;
+    }
+
+    try {
+      await completeRegister({
+        email,
+        otp: otp.join(''),
+        firstName,
+        lastName,
+        phone,
+        password,
+        role: 'PATIENT',
+      });
+      Alert.alert('Thành công', 'Đăng ký thành công!', [
+        { text: 'OK', onPress: () => router.push('/(auth)/login' as any) },
+      ]);
+    } catch (error) {
+      console.error('Complete register error:', error);
+      Alert.alert('Lỗi', 'Đăng ký thất bại');
+    }
   };
 
   return (
@@ -121,9 +183,21 @@ export default function RegisterScreen() {
 
                 <TouchableOpacity
                   className="mt-4 overflow-hidden rounded-lg bg-blue-400 py-4"
-                  onPress={handleSendOTP}>
-                  <Text className="text-center text-lg font-bold text-white">Gửi mã xác thực</Text>
+                  onPress={handleSendOTP}
+                  disabled={isRegistering}>
+                  <Text className="text-center text-lg font-bold text-white">
+                    {isRegistering ? 'Đang gửi...' : 'Gửi mã xác thực'}
+                  </Text>
                 </TouchableOpacity>
+
+                {/* Error Message */}
+                {registerError && (
+                  <View className="mt-4 rounded-lg bg-red-50 p-3">
+                    <Text className="text-center text-sm text-red-600">
+                      {registerError.message || 'Không thể gửi mã xác thực'}
+                    </Text>
+                  </View>
+                )}
               </View>
             </View>
           )}
@@ -201,9 +275,21 @@ export default function RegisterScreen() {
 
                 <TouchableOpacity
                   className="overflow-hidden rounded-lg bg-blue-400 py-4"
-                  onPress={handleVerifyOTP}>
-                  <Text className="text-center text-lg font-bold text-white">Xác nhận</Text>
+                  onPress={handleVerifyOTP}
+                  disabled={isVerifyingEmail}>
+                  <Text className="text-center text-lg font-bold text-white">
+                    {isVerifyingEmail ? 'Đang xác thực...' : 'Xác nhận'}
+                  </Text>
                 </TouchableOpacity>
+
+                {/* Error Message */}
+                {verifyEmailError && (
+                  <View className="mt-4 rounded-lg bg-red-50 p-3">
+                    <Text className="text-center text-sm text-red-600">
+                      {verifyEmailError.message || 'Mã xác thực không đúng'}
+                    </Text>
+                  </View>
+                )}
               </View>
             </View>
           )}
@@ -230,16 +316,30 @@ export default function RegisterScreen() {
               </View>
 
               <View className="gap-5">
-                {/* Full Name */}
+                {/* First Name */}
                 <View>
                   <View className="flex-row items-center rounded-lg bg-gray-100 px-4 py-4">
                     <Ionicons name="person-outline" size={20} color="#000000" />
                     <TextInput
                       className="ml-3 flex-1 text-base text-gray-800"
-                      placeholder="Họ và tên"
+                      placeholder="Tên"
                       placeholderTextColor="#9CA3AF"
-                      value={fullName}
-                      onChangeText={setFullName}
+                      value={firstName}
+                      onChangeText={setFirstName}
+                    />
+                  </View>
+                </View>
+
+                {/* Last Name */}
+                <View>
+                  <View className="flex-row items-center rounded-lg bg-gray-100 px-4 py-4">
+                    <Ionicons name="person-outline" size={20} color="#000000" />
+                    <TextInput
+                      className="ml-3 flex-1 text-base text-gray-800"
+                      placeholder="Họ"
+                      placeholderTextColor="#9CA3AF"
+                      value={lastName}
+                      onChangeText={setLastName}
                     />
                   </View>
                 </View>
@@ -256,60 +356,6 @@ export default function RegisterScreen() {
                       onChangeText={setPhone}
                       keyboardType="phone-pad"
                     />
-                  </View>
-                </View>
-
-                {/* Date of Birth */}
-                <View>
-                  <View className="flex-row items-center rounded-lg bg-gray-100 px-4 py-4">
-                    <Ionicons name="calendar-outline" size={20} color="#000000" />
-                    <TextInput
-                      className="ml-3 flex-1 text-base text-gray-800"
-                      placeholder="Ngày sinh (DD/MM/YYYY)"
-                      placeholderTextColor="#9CA3AF"
-                      value={dateOfBirth}
-                      onChangeText={setDateOfBirth}
-                    />
-                  </View>
-                </View>
-
-                {/* Gender */}
-                <View>
-                  <View className="flex-row gap-3">
-                    <TouchableOpacity
-                      className={`flex-1 flex-row items-center justify-center gap-2 rounded-lg border px-4 py-4 ${
-                        gender === 'male'
-                          ? 'border-blue-400 bg-blue-50'
-                          : 'border-gray-200 bg-white'
-                      }`}
-                      onPress={() => setGender('male')}>
-                      <Ionicons
-                        name="male"
-                        size={20}
-                        color={gender === 'male' ? '#3B82F6' : '#6B7280'}
-                      />
-                      <Text
-                        className={`text-base font-semibold ${gender === 'male' ? 'text-blue-500' : 'text-gray-500'}`}>
-                        Nam
-                      </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      className={`flex-1 flex-row items-center justify-center gap-2 rounded-lg border px-4 py-4 ${
-                        gender === 'female'
-                          ? 'border-blue-400 bg-blue-50'
-                          : 'border-gray-200 bg-white'
-                      }`}
-                      onPress={() => setGender('female')}>
-                      <Ionicons
-                        name="female"
-                        size={20}
-                        color={gender === 'female' ? '#3B82F6' : '#6B7280'}
-                      />
-                      <Text
-                        className={`text-base font-semibold ${gender === 'female' ? 'text-blue-500' : 'text-gray-500'}`}>
-                        Nữ
-                      </Text>
-                    </TouchableOpacity>
                   </View>
                 </View>
 
@@ -363,9 +409,21 @@ export default function RegisterScreen() {
 
                 <TouchableOpacity
                   className="mt-2 overflow-hidden rounded-lg bg-blue-400 py-4"
-                  onPress={handleRegister}>
-                  <Text className="text-center text-lg font-bold text-white">Hoàn tất đăng ký</Text>
+                  onPress={handleRegister}
+                  disabled={isCompletingRegister}>
+                  <Text className="text-center text-lg font-bold text-white">
+                    {isCompletingRegister ? 'Đang đăng ký...' : 'Hoàn tất đăng ký'}
+                  </Text>
                 </TouchableOpacity>
+
+                {/* Error Message */}
+                {completeRegisterError && (
+                  <View className="mt-4 rounded-lg bg-red-50 p-3">
+                    <Text className="text-center text-sm text-red-600">
+                      {completeRegisterError.message || 'Đăng ký thất bại'}
+                    </Text>
+                  </View>
+                )}
               </View>
             </View>
           )}

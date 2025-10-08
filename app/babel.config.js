@@ -9,9 +9,16 @@ module.exports = function (api) {
       root: ['./'],
       alias: {
         '@': './',
+        '@/lib': './lib',
+        '@/lib/api': './lib/api',
+        '@/lib/hooks': './lib/hooks',
+        '@/lib/utils': './lib/utils',
         '@/contexts': './contexts',
         '@/components': './components',
         '@/types': './types',
+        '@/providers': './providers',
+        '@/assets': './assets',
+        '@/constants': './constants',
       },
     },
   ]);

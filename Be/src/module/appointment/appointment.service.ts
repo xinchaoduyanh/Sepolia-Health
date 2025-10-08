@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '@/common/prisma/prisma.service';
 import type { TokenPayload } from '@/common/types';
@@ -25,7 +26,17 @@ export class AppointmentService {
     createAppointmentDto: CreateAppointmentDtoType,
     @CurrentUser() user: TokenPayload,
   ): Promise<AppointmentResponseDtoType> {
-    const { doctorId, serviceId, date, notes } = createAppointmentDto;
+    const {
+      doctorId,
+      serviceId,
+      date,
+      notes,
+      patientName,
+      patientDob,
+      patientPhone,
+      patientGender,
+      clinicId,
+    } = createAppointmentDto;
 
     // Check if doctor exists
     const doctor = await this.prisma.doctorProfile.findUnique({
@@ -46,16 +57,35 @@ export class AppointmentService {
       throw new NotFoundException('Dịch vụ không tồn tại');
     }
 
+    // Validate clinicId - it's required in the schema
+    if (!clinicId) {
+      throw new BadRequestException('Cơ sở phòng khám không được để trống');
+    }
+
+    // Check if clinic exists
+    const clinic = await this.prisma.clinic.findUnique({
+      where: { id: clinicId },
+    });
+
+    if (!clinic) {
+      throw new NotFoundException('Cơ sở phòng khám không tồn tại');
+    }
+
     // Create appointment
     const appointment = await this.prisma.appointment.create({
       data: {
         date: new Date(date),
-        status: 'scheduled',
-        paymentStatus: 'pending',
+        status: 'SCHEDULED',
+        paymentStatus: 'PENDING',
         notes,
         patientId: user.userId,
+        patientName,
+        patientDob: new Date(patientDob),
+        patientPhone,
+        patientGender,
         doctorId,
         serviceId,
+        clinicId,
       },
       include: {
         patient: {
@@ -149,7 +179,9 @@ export class AppointmentService {
     ]);
 
     return {
-      data: appointments.map(this.formatAppointmentResponse),
+      data: appointments.map((appointment) =>
+        this.formatAppointmentResponse(appointment),
+      ),
       total,
       page,
       limit,

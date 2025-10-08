@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/common/prisma/prisma.service';
-import { Appointment } from '@prisma/client';
+import { Appointment, AppointmentStatus, PaymentStatus } from '@prisma/client';
 
 @Injectable()
 export class AppointmentRepository {
@@ -11,12 +11,17 @@ export class AppointmentRepository {
    */
   async create(data: {
     date: Date;
-    status: string;
-    paymentStatus: string;
+    status: AppointmentStatus;
+    paymentStatus: PaymentStatus;
     notes?: string;
-    patientId: number;
+    patientId?: number;
+    patientName: string;
+    patientDob: Date;
+    patientPhone: string;
+    patientGender: string;
     doctorId: number;
     serviceId: number;
+    clinicId: number;
   }): Promise<Appointment> {
     return this.prisma.appointment.create({
       data,

@@ -6,9 +6,16 @@
     "jsx": "react-jsx",
     "paths": {
       "@/*": ["*"],
+      "@/lib/*": ["lib/*"],
+      "@/lib/api/*": ["lib/api/*"],
+      "@/lib/hooks/*": ["lib/hooks/*"],
+      "@/lib/utils/*": ["lib/utils/*"],
       "@/contexts/*": ["contexts/*"],
       "@/components/*": ["components/*"],
-      "@/types/*": ["types/*"]
+      "@/types/*": ["types/*"],
+      "@/providers/*": ["providers/*"],
+      "@/assets/*": ["assets/*"],
+      "@/constants/*": ["constants/*"]
     }
   },
   "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts", "nativewind-env.d.ts"]

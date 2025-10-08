@@ -16,14 +16,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Link, router } from 'expo-router';
 import { useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/lib/hooks/useAuth';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, isLoggingIn, loginError } = useAuth();
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
@@ -31,18 +30,12 @@ export default function LoginScreen() {
       return;
     }
 
-    setIsLoading(true);
     try {
-      const success = await login(email, password);
-      if (success) {
-        router.replace('/(tabs)' as any);
-      } else {
-        Alert.alert('Lỗi', 'Email hoặc mật khẩu không đúng');
-      }
-    } catch {
-      Alert.alert('Lỗi', 'Có lỗi xảy ra, vui lòng thử lại');
-    } finally {
-      setIsLoading(false);
+      await login(email, password);
+      router.replace('/(homes)' as any);
+    } catch (error) {
+      console.error('Login error:', error);
+      Alert.alert('Lỗi', 'Email hoặc mật khẩu không đúng');
     }
   };
 
@@ -117,12 +110,21 @@ export default function LoginScreen() {
             {/* Login Button */}
             <TouchableOpacity
               onPress={handleLogin}
-              disabled={isLoading}
+              disabled={isLoggingIn}
               className="mb-6 overflow-hidden rounded-lg bg-blue-400 py-4">
               <Text className="text-center text-lg font-bold text-white">
-                {isLoading ? 'Đang đăng nhập...' : 'Đăng nhập'}
+                {isLoggingIn ? 'Đang đăng nhập...' : 'Đăng nhập'}
               </Text>
             </TouchableOpacity>
+
+            {/* Error Message */}
+            {loginError && (
+              <View className="mb-4 rounded-lg bg-red-50 p-3">
+                <Text className="text-center text-sm text-red-600">
+                  {loginError.message || 'Đăng nhập thất bại'}
+                </Text>
+              </View>
+            )}
 
             {/* Forgot Password */}
             <TouchableOpacity className="mb-8 self-center">
