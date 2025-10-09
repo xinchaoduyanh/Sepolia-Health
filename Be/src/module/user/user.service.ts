@@ -76,6 +76,7 @@ export class UserService {
     if (updateData.address !== undefined)
       updatePayload.address = updateData.address;
     if (updateData.gender) updatePayload.gender = updateData.gender;
+    if (updateData.avatar) updatePayload.avatar = updateData.avatar;
     if (updateData.dateOfBirth) {
       updatePayload.dateOfBirth = new Date(updateData.dateOfBirth);
     }

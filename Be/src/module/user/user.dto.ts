@@ -11,6 +11,7 @@ export const UpdateUserProfileDto = z.object({
   address: z.string().optional(),
   dateOfBirth: z.string().datetime().optional(),
   gender: z.enum(['MALE', 'FEMALE', 'OTHER']).optional(),
+  avatar: z.string().url('URL avatar không hợp lệ').optional(),
 });
 
 // Change Password DTO
