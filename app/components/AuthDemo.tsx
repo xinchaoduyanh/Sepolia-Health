@@ -102,7 +102,12 @@ export default function AuthDemo() {
               </Text>
             </TouchableOpacity>
             {logoutError && (
-              <Text className="mt-2 text-red-500">Logout error: {logoutError.message}</Text>
+              <Text className="mt-2 text-red-500">
+                Logout error:{' '}
+                {typeof logoutError === 'string'
+                  ? logoutError
+                  : logoutError?.message || 'Logout failed'}
+              </Text>
             )}
           </View>
         ) : (
@@ -132,19 +137,35 @@ export default function AuthDemo() {
 
             {/* Error Messages */}
             {loginError && (
-              <Text className="mt-2 text-red-500">Login error: {loginError.message}</Text>
+              <Text className="mt-2 text-red-500">
+                Login error:{' '}
+                {typeof loginError === 'string'
+                  ? loginError
+                  : loginError?.message || 'Login failed'}
+              </Text>
             )}
             {registerError && (
-              <Text className="mt-2 text-red-500">Register error: {registerError.message}</Text>
+              <Text className="mt-2 text-red-500">
+                Register error:{' '}
+                {typeof registerError === 'string'
+                  ? registerError
+                  : registerError?.message || 'Register failed'}
+              </Text>
             )}
             {verifyEmailError && (
               <Text className="mt-2 text-red-500">
-                Verify email error: {verifyEmailError.message}
+                Verify email error:{' '}
+                {typeof verifyEmailError === 'string'
+                  ? verifyEmailError
+                  : verifyEmailError?.message || 'Verify email failed'}
               </Text>
             )}
             {completeRegisterError && (
               <Text className="mt-2 text-red-500">
-                Complete register error: {completeRegisterError.message}
+                Complete register error:{' '}
+                {typeof completeRegisterError === 'string'
+                  ? completeRegisterError
+                  : completeRegisterError?.message || 'Complete register failed'}
               </Text>
             )}
           </View>

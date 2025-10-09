@@ -20,17 +20,9 @@ async function bootstrap() {
   // Global response interceptor
   app.useGlobalInterceptors(new ResponseInterceptor(new Reflector()));
 
-  // Enable CORS with specific configuration for mobile app
+  // Enable CORS - Allow all origins for development
   app.enableCors({
-    origin: [
-      'http://localhost:3000',
-      'http://localhost:8081', // Expo dev server
-      'http://localhost:19006', // Expo web
-      'exp://192.168.1.100:8081', // Expo tunnel (replace with your IP)
-      'exp://localhost:8081',
-      /^exp:\/\/.*\.ngrok\.io$/, // Ngrok tunnels
-      /^https:\/\/.*\.ngrok\.io$/, // Ngrok HTTPS tunnels
-    ],
+    origin: true, // Allow all origins
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: [
       'Content-Type',
@@ -38,6 +30,9 @@ async function bootstrap() {
       'Accept',
       'Origin',
       'X-Requested-With',
+      'Access-Control-Allow-Origin',
+      'Access-Control-Allow-Headers',
+      'Access-Control-Allow-Methods',
     ],
     credentials: true,
   });

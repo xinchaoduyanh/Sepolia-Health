@@ -194,7 +194,9 @@ export default function RegisterScreen() {
                 {registerError && (
                   <View className="mt-4 rounded-lg bg-red-50 p-3">
                     <Text className="text-center text-sm text-red-600">
-                      {registerError.message || 'Không thể gửi mã xác thực'}
+                      {typeof registerError === 'string'
+                        ? registerError
+                        : registerError?.message || 'Không thể gửi mã xác thực'}
                     </Text>
                   </View>
                 )}
@@ -286,7 +288,9 @@ export default function RegisterScreen() {
                 {verifyEmailError && (
                   <View className="mt-4 rounded-lg bg-red-50 p-3">
                     <Text className="text-center text-sm text-red-600">
-                      {verifyEmailError.message || 'Mã xác thực không đúng'}
+                      {typeof verifyEmailError === 'string'
+                        ? verifyEmailError
+                        : verifyEmailError?.message || 'Mã xác thực không đúng'}
                     </Text>
                   </View>
                 )}
@@ -420,7 +424,9 @@ export default function RegisterScreen() {
                 {completeRegisterError && (
                   <View className="mt-4 rounded-lg bg-red-50 p-3">
                     <Text className="text-center text-sm text-red-600">
-                      {completeRegisterError.message || 'Đăng ký thất bại'}
+                      {typeof completeRegisterError === 'string'
+                        ? completeRegisterError
+                        : completeRegisterError?.message || 'Đăng ký thất bại'}
                     </Text>
                   </View>
                 )}

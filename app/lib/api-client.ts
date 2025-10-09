@@ -116,10 +116,21 @@ class ApiClient {
   private handleError(error: any): ApiError {
     if (error.response) {
       // Server responded with error status
+      const responseData = error.response.data;
+
+      // Handle validation errors (message is array)
+      let message = 'An error occurred';
+      if (Array.isArray(responseData?.message)) {
+        // Join validation error messages
+        message = responseData.message.map((err: any) => err.message).join('. ');
+      } else if (typeof responseData?.message === 'string') {
+        message = responseData.message;
+      }
+
       return {
-        message: error.response.data?.message || 'An error occurred',
+        message,
         status: error.response.status,
-        code: error.response.data?.code,
+        code: responseData?.statusCode?.toString(),
       };
     } else if (error.request) {
       // Request was made but no response received

@@ -39,7 +39,6 @@ export const useAuth = () => {
 
       return result;
     } catch (error) {
-      console.error('Login failed:', error);
       throw error;
     }
   };
@@ -50,7 +49,6 @@ export const useAuth = () => {
       const result = await registerMutation.mutateAsync({ email });
       return result;
     } catch (error) {
-      console.error('Register failed:', error);
       throw error;
     }
   };
@@ -61,7 +59,6 @@ export const useAuth = () => {
       const result = await verifyEmailMutation.mutateAsync({ email, otp });
       return result;
     } catch (error) {
-      console.error('Verify email failed:', error);
       throw error;
     }
   };
@@ -84,7 +81,6 @@ export const useAuth = () => {
 
       return result;
     } catch (error) {
-      console.error('Complete register failed:', error);
       throw error;
     }
   };
@@ -95,7 +91,6 @@ export const useAuth = () => {
       await logoutMutation.mutateAsync();
       return true;
     } catch (error) {
-      console.error('Logout failed:', error);
       // Even if logout fails on server, clear local data
       await clearAuth();
       throw error;
@@ -122,7 +117,6 @@ export const useAuth = () => {
       }
       return false;
     } catch (error) {
-      console.error('Check auth status failed:', error);
       return false;
     }
   };

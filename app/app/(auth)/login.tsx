@@ -17,16 +17,32 @@ import { Ionicons } from '@expo/vector-icons';
 import { Link, router } from 'expo-router';
 import { useState } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { validateEmail, validatePassword } from '@/lib/utils/validation';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
   const { login, isLoggingIn, loginError } = useAuth();
 
   const handleLogin = async () => {
-    if (!email.trim() || !password.trim()) {
-      Alert.alert('Lỗi', 'Vui lòng nhập đầy đủ thông tin');
+    // Clear previous errors
+    setEmailError('');
+    setPasswordError('');
+
+    // Validate email
+    const emailValidation = validateEmail(email);
+    if (!emailValidation.isValid) {
+      setEmailError(emailValidation.message || '');
+      return;
+    }
+
+    // Validate password
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.isValid) {
+      setPasswordError(passwordValidation.message || '');
       return;
     }
 
@@ -34,8 +50,7 @@ export default function LoginScreen() {
       await login(email, password);
       router.replace('/(homes)' as any);
     } catch (error) {
-      console.error('Login error:', error);
-      Alert.alert('Lỗi', 'Email hoặc mật khẩu không đúng');
+      // Error is handled by useAuth hook and displayed in UI
     }
   };
 
@@ -71,30 +86,47 @@ export default function LoginScreen() {
           <View className="px-6 pb-8">
             {/* Phone/Email Input */}
             <View className="mb-4">
-              <View className="flex-row items-center rounded-lg bg-gray-100 px-4 py-4">
-                <Ionicons name="person-outline" size={20} color="#000000" />
+              <View
+                className={`flex-row items-center rounded-lg px-4 py-4 ${emailError ? 'border border-red-200 bg-red-50' : 'bg-gray-100'}`}>
+                <Ionicons
+                  name="person-outline"
+                  size={20}
+                  color={emailError ? '#EF4444' : '#000000'}
+                />
                 <TextInput
                   className="ml-3 flex-1 text-base text-gray-800"
                   placeholder="Số điện thoại/email đã đăng ký"
                   placeholderTextColor="#9CA3AF"
                   value={email}
-                  onChangeText={setEmail}
+                  onChangeText={(text) => {
+                    setEmail(text);
+                    if (emailError) setEmailError(''); // Clear error when user types
+                  }}
                   keyboardType="email-address"
                   autoCapitalize="none"
                 />
               </View>
+              {emailError && <Text className="mt-1 text-xs text-red-600">{emailError}</Text>}
             </View>
 
             {/* Password Input */}
             <View className="mb-6">
-              <View className="flex-row items-center rounded-lg bg-gray-100 px-4 py-4">
-                <Ionicons name="lock-closed-outline" size={20} color="#000000" />
+              <View
+                className={`flex-row items-center rounded-lg px-4 py-4 ${passwordError ? 'border border-red-200 bg-red-50' : 'bg-gray-100'}`}>
+                <Ionicons
+                  name="lock-closed-outline"
+                  size={20}
+                  color={passwordError ? '#EF4444' : '#000000'}
+                />
                 <TextInput
                   className="ml-3 flex-1 text-base text-gray-800"
                   placeholder="Nhập mật khẩu"
                   placeholderTextColor="#9CA3AF"
                   value={password}
-                  onChangeText={setPassword}
+                  onChangeText={(text) => {
+                    setPassword(text);
+                    if (passwordError) setPasswordError(''); // Clear error when user types
+                  }}
                   secureTextEntry={!showPassword}
                 />
                 <TouchableOpacity onPress={() => setShowPassword(!showPassword)} className="p-1">
@@ -105,6 +137,7 @@ export default function LoginScreen() {
                   />
                 </TouchableOpacity>
               </View>
+              {passwordError && <Text className="mt-1 text-xs text-red-600">{passwordError}</Text>}
             </View>
 
             {/* Login Button */}
@@ -121,7 +154,9 @@ export default function LoginScreen() {
             {loginError && (
               <View className="mb-4 rounded-lg bg-red-50 p-3">
                 <Text className="text-center text-sm text-red-600">
-                  {loginError.message || 'Đăng nhập thất bại'}
+                  {typeof loginError === 'string'
+                    ? loginError
+                    : loginError?.message || 'Đăng nhập thất bại'}
                 </Text>
               </View>
             )}

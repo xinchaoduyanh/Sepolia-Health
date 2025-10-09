@@ -78,7 +78,7 @@ export const useLogin = () => {
       queryClient.invalidateQueries({ queryKey: authKeys.profile() });
     },
     onError: (error) => {
-      console.error('Login error:', error);
+      // Error is handled by UI
     },
   });
 };
@@ -87,7 +87,7 @@ export const useRegister = () => {
   return useMutation({
     mutationFn: authApi.register,
     onError: (error) => {
-      console.error('Register error:', error);
+      // Error is handled by UI
     },
   });
 };
@@ -96,7 +96,7 @@ export const useVerifyEmail = () => {
   return useMutation({
     mutationFn: authApi.verifyEmail,
     onError: (error) => {
-      console.error('Verify email error:', error);
+      // Error is handled by UI
     },
   });
 };
@@ -112,7 +112,7 @@ export const useCompleteRegister = () => {
       queryClient.invalidateQueries({ queryKey: authKeys.profile() });
     },
     onError: (error) => {
-      console.error('Complete register error:', error);
+      // Error is handled by UI
     },
   });
 };
@@ -132,7 +132,7 @@ export const useLogout = () => {
       queryClient.removeQueries({ queryKey: authKeys.all });
     },
     onError: (error) => {
-      console.error('Logout error:', error);
+      // Error is handled by UI
     },
   });
 };
