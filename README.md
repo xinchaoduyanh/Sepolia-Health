@@ -19,7 +19,7 @@ Sepolia-Health là một giải pháp quản lý phòng khám hiện đại, cun
 
 ### 👨‍⚕️ Dành cho Bác sĩ
 
-- **Quản lý lịch làm việc** và ca khám
+- **Quản lý lịch làm việc**  ca khám
 - **Xem danh sách bệnh nhân** đã đặt lịch
 - **Kê đơn thuốc** điện tử
 - **Theo dõi phản hồi** từ bệnh nhân
