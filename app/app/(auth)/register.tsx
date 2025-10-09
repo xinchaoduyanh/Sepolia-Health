@@ -77,7 +77,6 @@ export default function RegisterScreen() {
       await register(email);
       setStep('otp');
     } catch (error) {
-      // Error is handled by useAuth hook and displayed in UI
     }
   };
 
