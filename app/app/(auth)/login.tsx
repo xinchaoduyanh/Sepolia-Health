@@ -61,16 +61,9 @@ export default function LoginScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1">
         <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
-          {/* Close Button */}
-          <View className="px-6 pt-4">
-            <TouchableOpacity className="h-8 w-8 items-center justify-center">
-              <Ionicons name="close" size={24} color="#000000" />
-            </TouchableOpacity>
-          </View>
-
-          {/* Family Illustration */}
-          <View className="items-center px-6 py-8">
-            <View className="h-64 w-80 items-center justify-center rounded-full bg-amber-50">
+          {/* Family Illustration with Overlay Logo */}
+          <View className="mt-16 items-center px-6 py-8">
+            <View className="relative h-64 w-80 items-center justify-center rounded-full bg-amber-50">
               <Image
                 source={require('../../assets/Doctor-pana.png')}
                 style={{
@@ -80,6 +73,24 @@ export default function LoginScreen() {
                 }}
                 fadeDuration={200}
               />
+              {/* Logo Overlay */}
+              <View
+                style={{
+                  position: 'absolute',
+                  top: -195,
+                  left: -120,
+                  zIndex: 10,
+                }}>
+                <Image
+                  source={require('../../assets/sepolia-icon.png')}
+                  style={{
+                    width: 380,
+                    height: 360,
+                    resizeMode: 'contain',
+                  }}
+                  fadeDuration={200}
+                />
+              </View>
             </View>
           </View>
 

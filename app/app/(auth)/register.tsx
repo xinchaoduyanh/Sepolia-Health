@@ -45,12 +45,31 @@ export default function RegisterScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  // Validation errors
+  const [emailError, setEmailError] = useState('');
+  const [firstNameError, setFirstNameError] = useState('');
+  const [lastNameError, setLastNameError] = useState('');
+  const [phoneError, setPhoneError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [confirmPasswordError, setConfirmPasswordError] = useState('');
+
   // Refs for OTP inputs
   const otpRefs = useRef<TextInput[]>([]);
 
   const handleSendOTP = async () => {
+    // Clear previous errors
+    setEmailError('');
+
+    // Validate email
     if (!email.trim()) {
-      Alert.alert('Lỗi', 'Vui lòng nhập email');
+      setEmailError('Vui lòng nhập email');
+      return;
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setEmailError('Email không hợp lệ');
       return;
     }
 
@@ -58,8 +77,7 @@ export default function RegisterScreen() {
       await register(email);
       setStep('otp');
     } catch (error) {
-      console.error('Register error:', error);
-      Alert.alert('Lỗi', 'Không thể gửi mã xác thực');
+      // Error is handled by useAuth hook and displayed in UI
     }
   };
 
@@ -74,24 +92,62 @@ export default function RegisterScreen() {
       await verifyEmail(email, otpCode);
       setStep('info');
     } catch (error) {
-      console.error('Verify email error:', error);
-      Alert.alert('Lỗi', 'Mã xác thực không đúng');
+      // Error is handled by useAuth hook and displayed in UI
     }
   };
 
   const handleRegister = async () => {
-    if (!firstName.trim() || !lastName.trim() || !phone.trim() || !password.trim()) {
-      Alert.alert('Lỗi', 'Vui lòng nhập đầy đủ thông tin');
+    // Clear previous errors
+    setFirstNameError('');
+    setLastNameError('');
+    setPhoneError('');
+    setPasswordError('');
+    setConfirmPasswordError('');
+
+    // Validate first name
+    if (!firstName.trim()) {
+      setFirstNameError('Vui lòng nhập tên');
       return;
     }
 
-    if (password !== confirmPassword) {
-      Alert.alert('Lỗi', 'Mật khẩu xác nhận không khớp');
+    // Validate last name
+    if (!lastName.trim()) {
+      setLastNameError('Vui lòng nhập họ');
+      return;
+    }
+
+    // Validate phone
+    if (!phone.trim()) {
+      setPhoneError('Vui lòng nhập số điện thoại');
+      return;
+    }
+
+    // Basic phone validation
+    const phoneRegex = /^[0-9]{10,11}$/;
+    if (!phoneRegex.test(phone.replace(/\s/g, ''))) {
+      setPhoneError('Số điện thoại không hợp lệ');
+      return;
+    }
+
+    // Validate password
+    if (!password.trim()) {
+      setPasswordError('Vui lòng nhập mật khẩu');
       return;
     }
 
     if (password.length < 6) {
-      Alert.alert('Lỗi', 'Mật khẩu phải có ít nhất 6 ký tự');
+      setPasswordError('Mật khẩu phải có ít nhất 6 ký tự');
+      return;
+    }
+
+    // Validate confirm password
+    if (!confirmPassword.trim()) {
+      setConfirmPasswordError('Vui lòng xác nhận mật khẩu');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setConfirmPasswordError('Mật khẩu xác nhận không khớp');
       return;
     }
 
@@ -109,8 +165,7 @@ export default function RegisterScreen() {
         { text: 'OK', onPress: () => router.push('/(auth)/login' as any) },
       ]);
     } catch (error) {
-      console.error('Complete register error:', error);
-      Alert.alert('Lỗi', 'Đăng ký thất bại');
+      // Error is handled by useAuth hook and displayed in UI
     }
   };
 
@@ -121,15 +176,6 @@ export default function RegisterScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1">
         <ScrollView showsVerticalScrollIndicator={false}>
-          {/* Close Button */}
-          <View className="px-6 pt-4">
-            <TouchableOpacity
-              className="h-8 w-8 items-center justify-center"
-              onPress={() => router.back()}>
-              <Ionicons name="close" size={24} color="#000000" />
-            </TouchableOpacity>
-          </View>
-
           <View className="px-6 py-6">
             <View className="mb-3 flex-row gap-2">
               <View
@@ -150,9 +196,9 @@ export default function RegisterScreen() {
           {/* Step 1: Email */}
           {step === 'email' && (
             <View className="px-6">
-              {/* Family Illustration */}
-              <View className="items-center px-6 py-8">
-                <View className="h-64 w-80 items-center justify-center rounded-full bg-amber-50">
+              {/* Family Illustration with Overlay Logo */}
+              <View className="mt-16 items-center px-6 py-8">
+                <View className="relative h-64 w-80 items-center justify-center rounded-full bg-amber-50">
                   <Image
                     source={require('../../assets/Doctor-pana.png')}
                     style={{
@@ -162,23 +208,50 @@ export default function RegisterScreen() {
                     }}
                     fadeDuration={200}
                   />
+                  {/* Logo Overlay */}
+                  <View
+                    style={{
+                      position: 'absolute',
+                      top: -195,
+                      left: -120,
+                      zIndex: 10,
+                    }}>
+                    <Image
+                      source={require('../../assets/sepolia-icon.png')}
+                      style={{
+                        width: 380,
+                        height: 360,
+                        resizeMode: 'contain',
+                      }}
+                      fadeDuration={200}
+                    />
+                  </View>
                 </View>
               </View>
 
               <View className="gap-4">
                 <View className="mb-2">
-                  <View className="flex-row items-center rounded-lg bg-gray-100 px-4 py-4">
-                    <Ionicons name="mail-outline" size={20} color="#000000" />
+                  <View
+                    className={`flex-row items-center rounded-lg px-4 py-4 ${emailError ? 'border border-red-200 bg-red-50' : 'bg-gray-100'}`}>
+                    <Ionicons
+                      name="mail-outline"
+                      size={20}
+                      color={emailError ? '#EF4444' : '#000000'}
+                    />
                     <TextInput
                       className="ml-3 flex-1 text-base text-gray-800"
                       placeholder="Nhập email của bạn"
                       placeholderTextColor="#9CA3AF"
                       value={email}
-                      onChangeText={setEmail}
+                      onChangeText={(text) => {
+                        setEmail(text);
+                        if (emailError) setEmailError(''); // Clear error when user types
+                      }}
                       keyboardType="email-address"
                       autoCapitalize="none"
                     />
                   </View>
+                  {emailError && <Text className="mt-1 text-xs text-red-600">{emailError}</Text>}
                 </View>
 
                 <TouchableOpacity
@@ -322,57 +395,96 @@ export default function RegisterScreen() {
               <View className="gap-5">
                 {/* First Name */}
                 <View>
-                  <View className="flex-row items-center rounded-lg bg-gray-100 px-4 py-4">
-                    <Ionicons name="person-outline" size={20} color="#000000" />
+                  <View
+                    className={`flex-row items-center rounded-lg px-4 py-4 ${firstNameError ? 'border border-red-200 bg-red-50' : 'bg-gray-100'}`}>
+                    <Ionicons
+                      name="person-outline"
+                      size={20}
+                      color={firstNameError ? '#EF4444' : '#000000'}
+                    />
                     <TextInput
                       className="ml-3 flex-1 text-base text-gray-800"
                       placeholder="Tên"
                       placeholderTextColor="#9CA3AF"
                       value={firstName}
-                      onChangeText={setFirstName}
+                      onChangeText={(text) => {
+                        setFirstName(text);
+                        if (firstNameError) setFirstNameError(''); // Clear error when user types
+                      }}
                     />
                   </View>
+                  {firstNameError && (
+                    <Text className="mt-1 text-xs text-red-600">{firstNameError}</Text>
+                  )}
                 </View>
 
                 {/* Last Name */}
                 <View>
-                  <View className="flex-row items-center rounded-lg bg-gray-100 px-4 py-4">
-                    <Ionicons name="person-outline" size={20} color="#000000" />
+                  <View
+                    className={`flex-row items-center rounded-lg px-4 py-4 ${lastNameError ? 'border border-red-200 bg-red-50' : 'bg-gray-100'}`}>
+                    <Ionicons
+                      name="person-outline"
+                      size={20}
+                      color={lastNameError ? '#EF4444' : '#000000'}
+                    />
                     <TextInput
                       className="ml-3 flex-1 text-base text-gray-800"
                       placeholder="Họ"
                       placeholderTextColor="#9CA3AF"
                       value={lastName}
-                      onChangeText={setLastName}
+                      onChangeText={(text) => {
+                        setLastName(text);
+                        if (lastNameError) setLastNameError(''); // Clear error when user types
+                      }}
                     />
                   </View>
+                  {lastNameError && (
+                    <Text className="mt-1 text-xs text-red-600">{lastNameError}</Text>
+                  )}
                 </View>
 
                 {/* Phone */}
                 <View>
-                  <View className="flex-row items-center rounded-lg bg-gray-100 px-4 py-4">
-                    <Ionicons name="call-outline" size={20} color="#000000" />
+                  <View
+                    className={`flex-row items-center rounded-lg px-4 py-4 ${phoneError ? 'border border-red-200 bg-red-50' : 'bg-gray-100'}`}>
+                    <Ionicons
+                      name="call-outline"
+                      size={20}
+                      color={phoneError ? '#EF4444' : '#000000'}
+                    />
                     <TextInput
                       className="ml-3 flex-1 text-base text-gray-800"
                       placeholder="Số điện thoại"
                       placeholderTextColor="#9CA3AF"
                       value={phone}
-                      onChangeText={setPhone}
+                      onChangeText={(text) => {
+                        setPhone(text);
+                        if (phoneError) setPhoneError(''); // Clear error when user types
+                      }}
                       keyboardType="phone-pad"
                     />
                   </View>
+                  {phoneError && <Text className="mt-1 text-xs text-red-600">{phoneError}</Text>}
                 </View>
 
                 {/* Password */}
                 <View>
-                  <View className="flex-row items-center rounded-lg bg-gray-100 px-4 py-4">
-                    <Ionicons name="lock-closed-outline" size={20} color="#000000" />
+                  <View
+                    className={`flex-row items-center rounded-lg px-4 py-4 ${passwordError ? 'border border-red-200 bg-red-50' : 'bg-gray-100'}`}>
+                    <Ionicons
+                      name="lock-closed-outline"
+                      size={20}
+                      color={passwordError ? '#EF4444' : '#000000'}
+                    />
                     <TextInput
                       className="ml-3 flex-1 text-base text-gray-800"
-                      placeholder="Mật khẩu (tối thiểu 8 ký tự)"
+                      placeholder="Mật khẩu (tối thiểu 6 ký tự)"
                       placeholderTextColor="#9CA3AF"
                       value={password}
-                      onChangeText={setPassword}
+                      onChangeText={(text) => {
+                        setPassword(text);
+                        if (passwordError) setPasswordError(''); // Clear error when user types
+                      }}
                       secureTextEntry={!showPassword}
                     />
                     <TouchableOpacity
@@ -385,18 +497,29 @@ export default function RegisterScreen() {
                       />
                     </TouchableOpacity>
                   </View>
+                  {passwordError && (
+                    <Text className="mt-1 text-xs text-red-600">{passwordError}</Text>
+                  )}
                 </View>
 
                 {/* Confirm Password */}
                 <View>
-                  <View className="flex-row items-center rounded-lg bg-gray-100 px-4 py-4">
-                    <Ionicons name="lock-closed-outline" size={20} color="#000000" />
+                  <View
+                    className={`flex-row items-center rounded-lg px-4 py-4 ${confirmPasswordError ? 'border border-red-200 bg-red-50' : 'bg-gray-100'}`}>
+                    <Ionicons
+                      name="lock-closed-outline"
+                      size={20}
+                      color={confirmPasswordError ? '#EF4444' : '#000000'}
+                    />
                     <TextInput
                       className="ml-3 flex-1 text-base text-gray-800"
                       placeholder="Xác nhận mật khẩu"
                       placeholderTextColor="#9CA3AF"
                       value={confirmPassword}
-                      onChangeText={setConfirmPassword}
+                      onChangeText={(text) => {
+                        setConfirmPassword(text);
+                        if (confirmPasswordError) setConfirmPasswordError(''); // Clear error when user types
+                      }}
                       secureTextEntry={!showConfirmPassword}
                     />
                     <TouchableOpacity
@@ -409,6 +532,9 @@ export default function RegisterScreen() {
                       />
                     </TouchableOpacity>
                   </View>
+                  {confirmPasswordError && (
+                    <Text className="mt-1 text-xs text-red-600">{confirmPasswordError}</Text>
+                  )}
                 </View>
 
                 <TouchableOpacity

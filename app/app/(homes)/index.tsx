@@ -545,6 +545,18 @@ export default function HomeScreen() {
                 className="mb-4 h-px w-16"
                 style={{ backgroundColor: 'rgba(255, 255, 255, 0.3)' }}
               />
+              {/* Sepolia Logo */}
+              <View className="mb-4 items-center">
+                <Image
+                  source={require('../../assets/sepolia-icon.png')}
+                  style={{
+                    width: 140,
+                    height: 50,
+                    resizeMode: 'contain',
+                  }}
+                  fadeDuration={200}
+                />
+              </View>
               <Text className="text-xs text-white/80">© 2025 DUYANH. All rights reserved.</Text>
             </View>
           </LinearGradient>
