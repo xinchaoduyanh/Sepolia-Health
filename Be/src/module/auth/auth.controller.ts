@@ -1,5 +1,10 @@
 import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import type { TokenPayload } from '@/common/types/jwt.type';
 import { AuthService } from './auth.service';
 import {
@@ -86,10 +91,10 @@ export class AuthController {
     return this.authService.completeRegister(completeRegisterDto);
   }
 
-  @Public()
   @Post('refresh-token')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Làm mới access token' })
+  @ApiBearerAuth()
   @ApiResponse({
     status: 200,
     description: 'Làm mới token thành công',
@@ -105,6 +110,7 @@ export class AuthController {
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Đăng xuất tài khoản' })
+  @ApiBearerAuth()
   @ApiResponse({ status: 200, description: 'Đăng xuất thành công' })
   async logout(@CurrentUser() user: TokenPayload): Promise<void> {
     return this.authService.logout(user.userId);

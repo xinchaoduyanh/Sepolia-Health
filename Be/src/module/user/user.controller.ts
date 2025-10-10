@@ -19,7 +19,6 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import type { TokenPayload } from '@/common/types/jwt.type';
-import { MESSAGES } from '@/common/constants';
 import { UserService } from './user.service';
 import type {
   UpdateUserProfileDtoType,
@@ -32,7 +31,8 @@ import type {
 import { UpdateUserProfileDto, ChangePasswordDto } from './user.dto';
 import { CurrentUser } from '@/common/decorators';
 import { CustomZodValidationPipe } from '@/common/pipes';
-
+import { ApiBearerAuth } from '@nestjs/swagger';
+@ApiBearerAuth()
 @ApiTags('User Profile')
 @Controller('user')
 export class UserController {

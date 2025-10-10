@@ -14,6 +14,18 @@ export const CreateAppointmentDto = z.object({
   clinicId: z.number().min(1, 'Cơ sở phòng khám không được để trống'),
 });
 
+// Create Appointment from DoctorService DTO
+export const CreateAppointmentFromDoctorServiceDto = z.object({
+  doctorServiceId: z.number().min(1, 'Dịch vụ bác sĩ không được để trống'),
+  date: z.iso.datetime('Ngày hẹn không hợp lệ'),
+  notes: z.string().optional(),
+  // Patient information (required for all appointments)
+  patientName: z.string().min(1, 'Họ tên không được để trống'),
+  patientDob: z.iso.datetime('Ngày sinh không hợp lệ'),
+  patientPhone: z.string().min(10, 'Số điện thoại không hợp lệ'),
+  patientGender: z.enum(['MALE', 'FEMALE', 'OTHER'], 'Giới tính không hợp lệ'),
+});
+
 // Update Appointment DTO
 export const UpdateAppointmentDto = z.object({
   date: z.iso.datetime('Ngày hẹn không hợp lệ').optional(),
@@ -82,6 +94,9 @@ export const AppointmentsListResponseDto = z.object({
 
 // Export types
 export type CreateAppointmentDtoType = z.infer<typeof CreateAppointmentDto>;
+export type CreateAppointmentFromDoctorServiceDtoType = z.infer<
+  typeof CreateAppointmentFromDoctorServiceDto
+>;
 export type UpdateAppointmentDtoType = z.infer<typeof UpdateAppointmentDto>;
 export type GetAppointmentsQueryDtoType = z.infer<
   typeof GetAppointmentsQueryDto

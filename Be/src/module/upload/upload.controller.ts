@@ -21,7 +21,7 @@ import { z } from 'zod';
 import { PrismaService } from '@/common/prisma/prisma.service';
 import { CurrentUser } from '@/common/decorators';
 import type { TokenPayload } from '@/common/types/jwt.type';
-
+import { ApiBearerAuth } from '@nestjs/swagger';
 // DTOs
 const UploadFileDto = z.object({
   file: z.any(), // File will be handled by multer
@@ -41,6 +41,7 @@ type UploadFileDtoType = z.infer<typeof UploadFileDto>;
 type UploadUrlDtoType = z.infer<typeof UploadUrlDto>;
 type UploadFileResponseDtoType = z.infer<typeof UploadFileResponseDto>;
 
+@ApiBearerAuth()
 @ApiTags('Upload')
 @Controller('upload')
 export class UploadController {

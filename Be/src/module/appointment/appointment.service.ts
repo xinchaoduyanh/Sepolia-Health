@@ -8,6 +8,7 @@ import { PrismaService } from '@/common/prisma/prisma.service';
 import type { TokenPayload } from '@/common/types';
 import type {
   CreateAppointmentDtoType,
+  CreateAppointmentFromDoctorServiceDtoType,
   UpdateAppointmentDtoType,
   GetAppointmentsQueryDtoType,
   AppointmentResponseDtoType,
@@ -356,6 +357,245 @@ export class AppointmentService {
       ...query,
       doctorId: doctorProfile.id,
     });
+  }
+
+  /**
+   * Get all locations (clinics)
+   */
+  async getLocations() {
+    const locations = await this.prisma.clinic.findMany({
+      where: {
+        isActive: true,
+        deletedAt: null,
+      },
+      select: {
+        id: true,
+        name: true,
+        address: true,
+        phone: true,
+        email: true,
+        description: true,
+      },
+      orderBy: {
+        name: 'asc',
+      },
+    });
+
+    return {
+      data: locations,
+      total: locations.length,
+    };
+  }
+
+  /**
+   * Get all services
+   */
+  async getServices() {
+    const services = await this.prisma.service.findMany({
+      select: {
+        id: true,
+        name: true,
+        price: true,
+        duration: true,
+        description: true,
+      },
+      orderBy: {
+        name: 'asc',
+      },
+    });
+
+    return {
+      data: services,
+      total: services.length,
+    };
+  }
+
+  /**
+   * Get doctor services by location and service
+   */
+  async getDoctorServices(locationId: number, serviceId: number) {
+    // First check if location exists
+    const location = await this.prisma.clinic.findUnique({
+      where: { id: locationId },
+    });
+
+    if (!location) {
+      throw new NotFoundException('Cơ sở phòng khám không tồn tại');
+    }
+
+    // Check if service exists
+    const service = await this.prisma.service.findUnique({
+      where: { id: serviceId },
+    });
+
+    if (!service) {
+      throw new NotFoundException('Dịch vụ không tồn tại');
+    }
+
+    // Get doctor services that match both location and service
+    const doctorServices = await this.prisma.doctorService.findMany({
+      where: {
+        serviceId: serviceId,
+        doctor: {
+          clinicId: locationId,
+          deletedAt: null,
+        },
+        deletedAt: null,
+      },
+      include: {
+        doctor: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                avatar: true,
+              },
+            },
+          },
+        },
+        service: {
+          select: {
+            id: true,
+            name: true,
+            price: true,
+            duration: true,
+          },
+        },
+      },
+    });
+
+    // Format response
+    const formattedData = doctorServices.map((ds) => ({
+      id: ds.id,
+      doctorId: ds.doctorId,
+      serviceId: ds.serviceId,
+      clinicId: ds.doctor.clinicId,
+      doctor: {
+        id: ds.doctor.id,
+        specialty: ds.doctor.specialty,
+        experience: ds.doctor.experience,
+        contactInfo: ds.doctor.contactInfo,
+        user: {
+          id: ds.doctor.user.id,
+          firstName: ds.doctor.user.firstName,
+          lastName: ds.doctor.user.lastName,
+          avatar: ds.doctor.user.avatar,
+        },
+      },
+      service: ds.service,
+      location: {
+        id: location.id,
+        name: location.name,
+        address: location.address,
+        phone: location.phone,
+        email: location.email,
+      },
+    }));
+
+    return {
+      data: formattedData,
+      total: formattedData.length,
+    };
+  }
+
+  /**
+   * Create appointment from DoctorService
+   */
+  async createFromDoctorService(
+    createAppointmentDto: CreateAppointmentFromDoctorServiceDtoType,
+    @CurrentUser() user: TokenPayload,
+  ): Promise<AppointmentResponseDtoType> {
+    const {
+      doctorServiceId,
+      date,
+      notes,
+      patientName,
+      patientDob,
+      patientPhone,
+      patientGender,
+    } = createAppointmentDto;
+
+    // Get DoctorService with all related data
+    const doctorService = await this.prisma.doctorService.findUnique({
+      where: { id: doctorServiceId },
+      include: {
+        doctor: {
+          include: {
+            user: true,
+          },
+        },
+        service: true,
+      },
+    });
+
+    if (!doctorService) {
+      throw new NotFoundException('Dịch vụ bác sĩ không tồn tại');
+    }
+
+    // Check if doctor is active
+    if (doctorService.doctor.deletedAt) {
+      throw new BadRequestException('Bác sĩ không còn hoạt động');
+    }
+
+    // Check if clinic exists and is active
+    if (!doctorService.doctor.clinicId) {
+      throw new BadRequestException('Bác sĩ chưa được gán cơ sở phòng khám');
+    }
+
+    const clinic = await this.prisma.clinic.findUnique({
+      where: { id: doctorService.doctor.clinicId },
+    });
+
+    if (!clinic || clinic.deletedAt) {
+      throw new NotFoundException(
+        'Cơ sở phòng khám không tồn tại hoặc không hoạt động',
+      );
+    }
+
+    // Create appointment using data from DoctorService
+    const appointment = await this.prisma.appointment.create({
+      data: {
+        date: new Date(date),
+        status: 'SCHEDULED',
+        paymentStatus: 'PENDING',
+        notes,
+        patientId: user.userId,
+        patientName,
+        patientDob: new Date(patientDob),
+        patientPhone,
+        patientGender,
+        doctorId: doctorService.doctorId,
+        serviceId: doctorService.serviceId,
+        clinicId: doctorService.doctor.clinicId,
+      },
+      include: {
+        patient: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            phone: true,
+          },
+        },
+        doctor: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+              },
+            },
+          },
+        },
+        service: true,
+      },
+    });
+
+    return this.formatAppointmentResponse(appointment);
   }
 
   /**

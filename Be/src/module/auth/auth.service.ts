@@ -210,7 +210,7 @@ export class AuthService {
     refreshTokenDto: RefreshTokenDto,
   ): Promise<LoginResponseDto> {
     const { refreshToken } = refreshTokenDto;
-    const payload = this.jwtAuthService.verifyToken(refreshToken);
+    const payload = this.jwtAuthService.verifyToken(refreshToken, 'refresh');
 
     if (!payload.valid || !payload.payload?.userId) {
       throw new UnauthorizedException(
