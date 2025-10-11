@@ -10,8 +10,6 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
-  UsePipes,
-  ValidationPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -22,10 +20,9 @@ import {
   ApiQuery,
   ApiBody,
 } from '@nestjs/swagger';
-import { CreateAppointmentDto, UpdateAppointmentDto } from './swagger';
+import { UpdateAppointmentDto } from './swagger';
 import { AppointmentService } from './appointment.service';
 import type {
-  CreateAppointmentDtoType,
   CreateAppointmentFromDoctorServiceDtoType,
   UpdateAppointmentDtoType,
   GetAppointmentsQueryDtoType,
@@ -35,30 +32,16 @@ import type {
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import type { TokenPayload } from '@/common/types/jwt.type';
 import { JwtAuthGuard, RolesGuard } from '@/common/guards';
-import { Roles } from '@/common/decorators';
+import { Roles, Public } from '@/common/decorators';
+import { Role } from '@prisma/client';
 
 @ApiTags('Appointments')
 @Controller('appointments')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(Role.PATIENT)
 @ApiBearerAuth()
 export class AppointmentController {
   constructor(private readonly appointmentService: AppointmentService) {}
-
-  @Post()
-  @ApiOperation({ summary: 'Tạo lịch hẹn mới' })
-  @ApiBody({ type: CreateAppointmentDto })
-  @ApiResponse({ status: 201, description: 'Tạo lịch hẹn thành công' })
-  @ApiResponse({ status: 400, description: 'Dữ liệu không hợp lệ' })
-  @ApiResponse({ status: 401, description: 'Không có quyền truy cập' })
-  @HttpCode(HttpStatus.CREATED)
-  @UsePipes(new ValidationPipe({ transform: true }))
-  // @ApiResponseCreated(MESSAGES.APPOINTMENT.CREATE_SUCCESS)
-  async create(
-    @Body() createAppointmentDto: CreateAppointmentDtoType,
-    @CurrentUser() user: TokenPayload,
-  ): Promise<AppointmentResponseDtoType> {
-    return this.appointmentService.create(createAppointmentDto, user);
-  }
 
   @Get()
   @ApiOperation({ summary: 'Lấy danh sách lịch hẹn' })
@@ -112,7 +95,6 @@ export class AppointmentController {
   @ApiBody({ type: UpdateAppointmentDto })
   @ApiResponse({ status: 200, description: 'Cập nhật thành công' })
   @ApiResponse({ status: 404, description: 'Không tìm thấy lịch hẹn' })
-  @UsePipes(new ValidationPipe({ transform: true }))
   // @ApiResponseOk(MESSAGES.APPOINTMENT.UPDATE_SUCCESS)
   async update(
     @Param('id') id: string,
@@ -181,6 +163,7 @@ export class AppointmentController {
   // ========== BOOKING APIS ==========
 
   @Get('booking/locations')
+  @Public()
   @ApiOperation({ summary: 'Lấy danh sách cơ sở phòng khám (locations)' })
   @ApiResponse({ status: 200, description: 'Lấy danh sách cơ sở thành công' })
   async getLocations() {
@@ -188,6 +171,7 @@ export class AppointmentController {
   }
 
   @Get('booking/services')
+  @Public()
   @ApiOperation({ summary: 'Lấy danh sách dịch vụ khám' })
   @ApiResponse({ status: 200, description: 'Lấy danh sách dịch vụ thành công' })
   async getServices() {
@@ -195,6 +179,7 @@ export class AppointmentController {
   }
 
   @Get('booking/doctor-services')
+  @Public()
   @ApiOperation({
     summary: 'Lấy danh sách bác sĩ cung cấp dịch vụ theo location và service',
   })
@@ -230,14 +215,19 @@ export class AppointmentController {
         doctorServiceId: { type: 'number', description: 'ID DoctorService' },
         date: {
           type: 'string',
-          format: 'date-time',
-          description: 'Ngày giờ hẹn',
+          format: 'date',
+          description: 'Ngày hẹn',
+        },
+        startTime: {
+          type: 'string',
+          pattern: '^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$',
+          description: 'Thời gian bắt đầu (HH:mm)',
         },
         notes: { type: 'string', description: 'Ghi chú' },
         patientName: { type: 'string', description: 'Họ tên bệnh nhân' },
         patientDob: {
           type: 'string',
-          format: 'date-time',
+          format: 'date',
           description: 'Ngày sinh',
         },
         patientPhone: { type: 'string', description: 'Số điện thoại' },
@@ -250,6 +240,7 @@ export class AppointmentController {
       required: [
         'doctorServiceId',
         'date',
+        'startTime',
         'patientName',
         'patientDob',
         'patientPhone',
@@ -261,7 +252,6 @@ export class AppointmentController {
   @ApiResponse({ status: 400, description: 'Dữ liệu không hợp lệ' })
   @ApiResponse({ status: 401, description: 'Không có quyền truy cập' })
   @HttpCode(HttpStatus.CREATED)
-  @UsePipes(new ValidationPipe({ transform: true }))
   async createFromDoctorService(
     @Body() createAppointmentDto: CreateAppointmentFromDoctorServiceDtoType,
     @CurrentUser() user: TokenPayload,

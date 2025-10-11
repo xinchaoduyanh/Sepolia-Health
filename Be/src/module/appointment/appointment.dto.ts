@@ -8,7 +8,7 @@ export const CreateAppointmentDto = z.object({
   notes: z.string().optional(),
   // Patient information (required for all appointments)
   patientName: z.string().min(1, 'Họ tên không được để trống'),
-  patientDob: z.iso.datetime('Ngày sinh không hợp lệ'),
+  patientDob: z.string().date('Ngày sinh không hợp lệ'),
   patientPhone: z.string().min(10, 'Số điện thoại không hợp lệ'),
   patientGender: z.enum(['MALE', 'FEMALE', 'OTHER'], 'Giới tính không hợp lệ'),
   clinicId: z.number().min(1, 'Cơ sở phòng khám không được để trống'),
@@ -17,19 +17,34 @@ export const CreateAppointmentDto = z.object({
 // Create Appointment from DoctorService DTO
 export const CreateAppointmentFromDoctorServiceDto = z.object({
   doctorServiceId: z.number().min(1, 'Dịch vụ bác sĩ không được để trống'),
-  date: z.iso.datetime('Ngày hẹn không hợp lệ'),
+  date: z.string().date('Ngày hẹn không hợp lệ'),
+  startTime: z
+    .string()
+    .regex(
+      /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/,
+      'Thời gian bắt đầu không hợp lệ (HH:mm)',
+    ),
   notes: z.string().optional(),
   // Patient information (required for all appointments)
   patientName: z.string().min(1, 'Họ tên không được để trống'),
-  patientDob: z.iso.datetime('Ngày sinh không hợp lệ'),
+  patientDob: z.string().date('Ngày sinh không hợp lệ'),
   patientPhone: z.string().min(10, 'Số điện thoại không hợp lệ'),
   patientGender: z.enum(['MALE', 'FEMALE', 'OTHER'], 'Giới tính không hợp lệ'),
 });
 
 // Update Appointment DTO
 export const UpdateAppointmentDto = z.object({
-  date: z.iso.datetime('Ngày hẹn không hợp lệ').optional(),
-  status: z.enum(['SCHEDULED', 'COMPLETED', 'CANCELLED']).optional(),
+  date: z.string().date('Ngày hẹn không hợp lệ').optional(),
+  startTime: z
+    .string()
+    .regex(
+      /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/,
+      'Thời gian bắt đầu không hợp lệ (HH:mm)',
+    )
+    .optional(),
+  status: z
+    .enum(['PENDING', 'UPCOMING', 'ONGOING', 'COMPLETED', 'CANCELLED'])
+    .optional(),
   paymentStatus: z.enum(['PENDING', 'PAID', 'REFUNDED']).optional(),
   notes: z.string().optional(),
 });
@@ -44,7 +59,9 @@ export const GetAppointmentsQueryDto = z.object({
     .string()
     .transform(Number)
     .default(() => 10),
-  status: z.enum(['SCHEDULED', 'COMPLETED', 'CANCELLED']).optional(),
+  status: z
+    .enum(['PENDING', 'UPCOMING', 'ONGOING', 'COMPLETED', 'CANCELLED'])
+    .optional(),
   paymentStatus: z.enum(['PENDING', 'PAID', 'REFUNDED']).optional(),
   doctorId: z.number().optional(),
   patientId: z.number().optional(),

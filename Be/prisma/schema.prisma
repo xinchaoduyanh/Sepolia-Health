@@ -23,7 +23,9 @@ enum Period {
 }
 
 enum AppointmentStatus {
-  SCHEDULED
+  PENDING
+  UPCOMING
+  ONGOING
   COMPLETED
   CANCELLED
 }
@@ -32,6 +34,11 @@ enum PaymentStatus {
   PENDING
   PAID
   REFUNDED
+}
+
+enum PaymentMethod {
+  TRANSFER
+  COUNTER
 }
 
 /// Bảng người dùng chung cho toàn hệ thống
@@ -99,6 +106,7 @@ model DoctorProfile {
   services      DoctorService[] @relation("Services")
   timeslots     Timeslot[] @relation("DoctorTimeslot")
   specialTimeslots SpecialTimeslot[] @relation("DoctorSpecialTimeslot")
+  schedules     DoctorSchedule[] @relation("DoctorSchedules")
 }
 
 model DoctorService {
@@ -139,6 +147,26 @@ model SpecialTimeslot {
   doctor        DoctorProfile @relation("DoctorSpecialTimeslot", fields: [doctorId], references: [id])
 }
 
+/// Lịch trình thực tế của bác sĩ (thời gian đã bị chiếm bởi appointments)
+model DoctorSchedule {
+  id            Int       @id @default(autoincrement())
+  date          DateTime  // Ngày
+  startTime     String    // Thời gian bắt đầu (HH:mm)
+  endTime       String    // Thời gian kết thúc (HH:mm)
+  isAvailable   Boolean   @default(true) // Còn trống hay đã bị chiếm
+  notes         String?   // Ghi chú (nghỉ phép, họp, ...)
+
+  doctorId      Int
+  doctor        DoctorProfile @relation("DoctorSchedules", fields: [doctorId], references: [id])
+
+  // Quan hệ với appointment (nếu bị chiếm bởi appointment)
+  appointmentId Int?      @unique
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id])
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
 /// Dịch vụ khám (khám tổng quát, khám tim mạch, ...)
 model Service {
   id          Int       @id @default(autoincrement())
@@ -155,6 +183,7 @@ model Service {
 model Appointment {
   id          Int       @id @default(autoincrement())
   date          DateTime
+  startTime     String   // Thời gian bắt đầu (HH:mm format)
   status        AppointmentStatus
   paymentStatus PaymentStatus
   notes         String?
@@ -178,6 +207,27 @@ model Appointment {
   // Quan hệ với cơ sở phòng khám
   clinicId      Int
   clinic        Clinic @relation("ClinicAppointments", fields: [clinicId], references: [id])
+
+  // Quan hệ với hóa đơn
+  billing       Billing?
+
+  // Quan hệ với lịch trình bác sĩ
+  schedule      DoctorSchedule?
+}
+
+/// Hóa đơn thanh toán
+model Billing {
+  id            Int       @id @default(autoincrement())
+  amount        Float     // Số tiền
+  status        PaymentStatus // PENDING, PAID, REFUNDED
+  paymentMethod PaymentMethod? // TRANSFER, COUNTER
+  notes         String?
+
+  appointmentId Int       @unique
+  appointment   Appointment @relation(fields: [appointmentId], references: [id])
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 }
 
 /// Thuốc trong hệ thống

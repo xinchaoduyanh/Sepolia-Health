@@ -9,6 +9,7 @@ import { APP_PIPE } from '@nestjs/core';
 import { DoctorModule } from './doctor/doctor.module';
 import { UserModule } from './user/user.module';
 import { UploadModule } from './upload/upload.module';
+import { AppointmentModule } from './appointment/appointment.module';
 import { CustomZodValidationPipe } from '@/common/pipes';
 
 @Module({
@@ -22,6 +23,7 @@ import { CustomZodValidationPipe } from '@/common/pipes';
     DoctorModule,
     UserModule,
     UploadModule,
+    AppointmentModule,
   ],
   controllers: [AppController],
   providers: [

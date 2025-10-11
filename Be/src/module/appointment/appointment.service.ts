@@ -7,7 +7,6 @@ import {
 import { PrismaService } from '@/common/prisma/prisma.service';
 import type { TokenPayload } from '@/common/types';
 import type {
-  CreateAppointmentDtoType,
   CreateAppointmentFromDoctorServiceDtoType,
   UpdateAppointmentDtoType,
   GetAppointmentsQueryDtoType,
@@ -19,102 +18,6 @@ import { CurrentUser } from '@/common/decorators';
 @Injectable()
 export class AppointmentService {
   constructor(private readonly prisma: PrismaService) {}
-
-  /**
-   * Create new appointment
-   */
-  async create(
-    createAppointmentDto: CreateAppointmentDtoType,
-    @CurrentUser() user: TokenPayload,
-  ): Promise<AppointmentResponseDtoType> {
-    const {
-      doctorId,
-      serviceId,
-      date,
-      notes,
-      patientName,
-      patientDob,
-      patientPhone,
-      patientGender,
-      clinicId,
-    } = createAppointmentDto;
-
-    // Check if doctor exists
-    const doctor = await this.prisma.doctorProfile.findUnique({
-      where: { id: doctorId },
-      include: { user: true },
-    });
-
-    if (!doctor) {
-      throw new NotFoundException('Bác sĩ không tồn tại');
-    }
-
-    // Check if service exists
-    const service = await this.prisma.service.findUnique({
-      where: { id: serviceId },
-    });
-
-    if (!service) {
-      throw new NotFoundException('Dịch vụ không tồn tại');
-    }
-
-    // Validate clinicId - it's required in the schema
-    if (!clinicId) {
-      throw new BadRequestException('Cơ sở phòng khám không được để trống');
-    }
-
-    // Check if clinic exists
-    const clinic = await this.prisma.clinic.findUnique({
-      where: { id: clinicId },
-    });
-
-    if (!clinic) {
-      throw new NotFoundException('Cơ sở phòng khám không tồn tại');
-    }
-
-    // Create appointment
-    const appointment = await this.prisma.appointment.create({
-      data: {
-        date: new Date(date),
-        status: 'SCHEDULED',
-        paymentStatus: 'PENDING',
-        notes,
-        patientId: user.userId,
-        patientName,
-        patientDob: new Date(patientDob),
-        patientPhone,
-        patientGender,
-        doctorId,
-        serviceId,
-        clinicId,
-      },
-      include: {
-        patient: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-            phone: true,
-          },
-        },
-        doctor: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-              },
-            },
-          },
-        },
-        service: true,
-      },
-    });
-
-    return this.formatAppointmentResponse(appointment);
-  }
 
   /**
    * Get all appointments with filters
@@ -257,7 +160,10 @@ export class AppointmentService {
       where: { id },
       data: {
         ...(updateAppointmentDto.date && {
-          date: new Date(updateAppointmentDto.date),
+          date: new Date(updateAppointmentDto.date + 'T00:00:00.000Z'),
+        }),
+        ...(updateAppointmentDto.startTime && {
+          startTime: updateAppointmentDto.startTime,
         }),
         ...(updateAppointmentDto.status && {
           status: updateAppointmentDto.status,
@@ -510,6 +416,7 @@ export class AppointmentService {
     const {
       doctorServiceId,
       date,
+      startTime,
       notes,
       patientName,
       patientDob,
@@ -557,13 +464,14 @@ export class AppointmentService {
     // Create appointment using data from DoctorService
     const appointment = await this.prisma.appointment.create({
       data: {
-        date: new Date(date),
-        status: 'SCHEDULED',
+        date: new Date(date + 'T00:00:00.000Z'),
+        startTime,
+        status: 'PENDING',
         paymentStatus: 'PENDING',
         notes,
         patientId: user.userId,
         patientName,
-        patientDob: new Date(patientDob),
+        patientDob: new Date(patientDob + 'T00:00:00.000Z'),
         patientPhone,
         patientGender,
         doctorId: doctorService.doctorId,
