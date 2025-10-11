@@ -1,3 +1,4 @@
+import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 
 // Update User Profile DTO
@@ -32,7 +33,7 @@ export const UploadAvatarDto = z.object({
 });
 
 // Response DTOs
-export const UserProfileResponseDto = z.object({
+export const UserProfileResponseSchema = z.object({
   id: z.number(),
   email: z.string(),
   firstName: z.string(),
@@ -49,7 +50,7 @@ export const UserProfileResponseDto = z.object({
 });
 
 export const UpdateUserProfileResponseDto = z.object({
-  user: UserProfileResponseDto,
+  user: UserProfileResponseSchema,
 });
 
 export const ChangePasswordResponseDto = z.object({
@@ -64,7 +65,9 @@ export const UploadAvatarResponseDto = z.object({
 export type UpdateUserProfileDtoType = z.infer<typeof UpdateUserProfileDto>;
 export type ChangePasswordDtoType = z.infer<typeof ChangePasswordDto>;
 export type UploadAvatarDtoType = z.infer<typeof UploadAvatarDto>;
-export type UserProfileResponseDtoType = z.infer<typeof UserProfileResponseDto>;
+export type UserProfileResponseDtoType = z.infer<
+  typeof UserProfileResponseSchema
+>;
 export type UpdateUserProfileResponseDtoType = z.infer<
   typeof UpdateUserProfileResponseDto
 >;
@@ -74,3 +77,7 @@ export type ChangePasswordResponseDtoType = z.infer<
 export type UploadAvatarResponseDtoType = z.infer<
   typeof UploadAvatarResponseDto
 >;
+
+export class UserProfileResponseDto extends createZodDto(
+  UserProfileResponseSchema,
+) {}

@@ -3,9 +3,7 @@ import {
   Get,
   Post,
   Body,
-  Patch,
   Param,
-  Delete,
   HttpStatus,
   Query,
   Put,
@@ -21,16 +19,21 @@ import {
   PaginatedDto,
   PaginationResultDto,
 } from '@/common/dto/pagination-result.dto';
-import { DoctorProfile, Service } from '@prisma/client';
 import { CurrentUser, Public } from '@/common/decorators';
-import { DoctorProfileDto } from './dto/response/doctor-profile.dto';
-import { getTimeslotByDoctorIdAndDayResponseDto } from './dto/response';
+import {
+  GetDoctorServiceResponseDto,
+  getTimeslotByDoctorIdAndDayResponseDto,
+} from './dto/response';
 import {
   CreateDoctorProfileBodyDto,
   GetDoctorServiceQueryDto,
   updateDoctorProfileBodyDto,
 } from './dto/request';
 import { SuccessResponseDto } from '@/common/dto';
+import {
+  CreateDoctorProfileResponseDto,
+  GetDoctorProfileByServiceIdResponseDto,
+} from './dto/response/doctor-profile.dto';
 
 @Public()
 @ApiBearerAuth()
@@ -43,17 +46,30 @@ export class DoctorController {
   @Public()
   @ApiResponse({
     status: HttpStatus.OK,
-    // type: PaginatedDto(Service),
+    type: PaginatedDto(GetDoctorServiceResponseDto),
+  })
+  @ApiOperation({
+    description: 'get doctor service',
   })
   async getDoctorServices(
     @Query() dto: GetDoctorServiceQueryDto,
-  ): Promise<PaginationResultDto<Service>> {
+  ): Promise<PaginationResultDto<GetDoctorServiceResponseDto>> {
     return this.doctorService.getDoctorServices(dto);
   }
 
   @Get()
   @Public()
-  async getDoctorByServiceId(@Query('serviceId') serviceId: string) {
+  @ApiOperation({
+    description: 'get doctor by service id',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    type: GetDoctorProfileByServiceIdResponseDto,
+    isArray: true,
+  })
+  async getDoctorByServiceId(
+    @Query('serviceId') serviceId: string,
+  ): Promise<GetDoctorProfileByServiceIdResponseDto[]> {
     return this.doctorService.getDoctorByServiceId(Number(serviceId));
   }
 
@@ -75,10 +91,17 @@ export class DoctorController {
 
   @Post()
   @Public()
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    type: CreateDoctorProfileResponseDto,
+  })
+  @ApiOperation({
+    description: 'create doctor profile',
+  })
   async createDoctorProfile(
     @Body() body: CreateDoctorProfileBodyDto,
     @CurrentUser('userId') userId: number,
-  ) {
+  ): Promise<CreateDoctorProfileResponseDto> {
     return this.doctorService.createDoctorProfile(body, userId);
   }
 

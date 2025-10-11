@@ -16,11 +16,11 @@ import {
   RegisterResponseDto,
   VerifyEmailDto,
 } from './auth.dto';
-import { ERROR_MESSAGES } from '@/common/constants/messages';
 import { AuthRepository } from './auth.repository';
 import { CustomJwtService, MailService, RedisService } from '@/common/modules';
 import { tokenStorageConfig } from '@/common/config';
 import { ConfigType } from '@nestjs/config';
+import { ERROR_MESSAGES } from '@/common/constants/error-messages';
 
 @Injectable()
 export class AuthService {

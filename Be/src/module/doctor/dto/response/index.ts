@@ -1,10 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Period } from '@prisma/client';
 
 export class getTimeslotByDoctorIdAndDayResponseDto {
-  //   @ApiProperty()
-  //   id: number;
-
   @ApiProperty()
   day: Date;
 
@@ -13,4 +9,21 @@ export class getTimeslotByDoctorIdAndDayResponseDto {
 
   @ApiProperty()
   afternoonSlot: number;
+}
+
+export class GetDoctorServiceResponseDto {
+  @ApiProperty()
+  id: number;
+
+  @ApiProperty()
+  name: string;
+
+  @ApiProperty()
+  price: number;
+
+  @ApiProperty()
+  duration: number;
+
+  @ApiProperty()
+  description: string;
 }

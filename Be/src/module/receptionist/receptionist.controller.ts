@@ -8,16 +8,22 @@ import {
   Delete,
 } from '@nestjs/common';
 import { ReceptionistService } from './receptionist.service';
-import { CreateReceptionistDto } from './dto/create-receptionist.dto';
-import { UpdateReceptionistDto } from './dto/update-receptionist.dto';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { CurrentUser, Public } from '@/common/decorators';
 
+@Public()
+@ApiTags('receptionist')
+@ApiBearerAuth()
 @Controller('receptionist')
 export class ReceptionistController {
   constructor(private readonly receptionistService: ReceptionistService) {}
 
   @Post()
-  create(@Body() createReceptionistDto: CreateReceptionistDto) {
-    return this.receptionistService.create(createReceptionistDto);
+  @ApiOperation({
+    description: 'create receptionist profile',
+  })
+  async createReceptionistProfile(@CurrentUser('userId') userId: number) {
+    return this.receptionistService.createReceptionistProfile(userId);
   }
 
   @Get()
@@ -31,11 +37,8 @@ export class ReceptionistController {
   }
 
   @Patch(':id')
-  update(
-    @Param('id') id: string,
-    @Body() updateReceptionistDto: UpdateReceptionistDto,
-  ) {
-    return this.receptionistService.update(+id, updateReceptionistDto);
+  update(@Param('id') id: string) {
+    return this.receptionistService.update(+id);
   }
 
   @Delete(':id')

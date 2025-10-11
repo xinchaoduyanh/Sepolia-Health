@@ -5,17 +5,24 @@ import {
 } from '@nestjs/common';
 import { PaginationResultDto } from '@/common/dto/pagination-result.dto';
 import { paginate } from '@/common/helper/paginate';
-import { DoctorProfile, Period, Prisma, Service } from '@prisma/client';
+import { Period, Prisma } from '@prisma/client';
 import { PrismaService } from '@/common/prisma/prisma.service';
-import { getTimeslotByDoctorIdAndDayResponseDto } from './dto/response';
+import {
+  GetDoctorServiceResponseDto,
+  getTimeslotByDoctorIdAndDayResponseDto,
+} from './dto/response';
 import { DateUtil } from '@/common/utils';
 import {
   CreateDoctorProfileBodyDto,
   GetDoctorServiceQueryDto,
   updateDoctorProfileBodyDto,
 } from './dto/request';
-import { ERROR_MESSAGES } from '@/common/constants/messages';
 import { SuccessResponseDto } from '@/common/dto';
+import {
+  CreateDoctorProfileResponseDto,
+  GetDoctorProfileByServiceIdResponseDto,
+} from './dto/response/doctor-profile.dto';
+import { ERROR_MESSAGES } from '@/common/constants/error-messages';
 
 @Injectable()
 export class DoctorService {
@@ -23,11 +30,13 @@ export class DoctorService {
 
   async getDoctorServices(
     query: GetDoctorServiceQueryDto,
-  ): Promise<PaginationResultDto<Service>> {
+  ): Promise<PaginationResultDto<GetDoctorServiceResponseDto>> {
     return paginate(this.prismaService.service, query.page, query.limit);
   }
 
-  async getDoctorByServiceId(serviceId: number) {
+  async getDoctorByServiceId(
+    serviceId: number,
+  ): Promise<GetDoctorProfileByServiceIdResponseDto[]> {
     const doctor = await this.prismaService.doctorProfile.findMany({
       where: {
         services: {
@@ -84,7 +93,10 @@ export class DoctorService {
   }
 
   // missing validation
-  async createDoctorProfile(body: CreateDoctorProfileBodyDto, userId: number) {
+  async createDoctorProfile(
+    body: CreateDoctorProfileBodyDto,
+    userId: number,
+  ): Promise<CreateDoctorProfileResponseDto> {
     const doctor = await this.prismaService.doctorProfile.findFirst({
       where: {
         userId,

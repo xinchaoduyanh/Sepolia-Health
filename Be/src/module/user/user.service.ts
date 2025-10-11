@@ -5,7 +5,6 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '@/common/prisma/prisma.service';
-import { ERROR_MESSAGES } from '@/common/constants/messages';
 import {
   UpdateUserProfileDtoType,
   ChangePasswordDtoType,
@@ -15,6 +14,7 @@ import {
   UploadAvatarResponseDtoType,
 } from './user.dto';
 import { UploadService } from '@/common/modules';
+import { ERROR_MESSAGES } from '@/common/constants/error-messages';
 
 @Injectable()
 export class UserService {
