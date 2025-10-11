@@ -250,11 +250,15 @@ export class AuthService {
     };
   }
   /**
-   * Logout user
+   * Logout user - xóa cả access token và refresh token khỏi Redis
    */
-  async logout(userId: number): Promise<void> {
+  async logout(userId: number, refreshToken: string): Promise<void> {
+    // Lấy tất cả tokens của user (cả access và refresh tokens)
     const tokens = await this.redisService.findAllTokens(userId);
+
+    // Xóa tất cả tokens của user khỏi Redis
     await this.redisService.deleteTokens(tokens);
+
     return;
   }
 }

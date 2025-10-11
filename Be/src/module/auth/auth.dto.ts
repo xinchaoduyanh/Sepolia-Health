@@ -59,8 +59,9 @@ const CompleteRegisterResponseSchema = z.object({
   }),
 });
 
+// Logout DTO - nhận refresh token từ body
 const LogoutSchema = z.object({
-  userId: z.number(),
+  refreshToken: z.string().min(1, 'Refresh token không được để trống'),
 });
 
 export class LoginDto extends createZodDto(LoginSchema) {}

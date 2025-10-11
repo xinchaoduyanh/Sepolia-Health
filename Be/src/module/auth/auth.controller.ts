@@ -12,6 +12,7 @@ import {
   CompleteRegisterResponseDto,
   LoginDto,
   LoginResponseDto,
+  LogoutDto,
   RefreshTokenDto,
   RegisterDto,
   RegisterResponseDto,
@@ -112,7 +113,10 @@ export class AuthController {
   @ApiOperation({ summary: 'Đăng xuất tài khoản' })
   @ApiBearerAuth()
   @ApiResponse({ status: 200, description: 'Đăng xuất thành công' })
-  async logout(@CurrentUser() user: TokenPayload): Promise<void> {
-    return this.authService.logout(user.userId);
+  async logout(
+    @CurrentUser() user: TokenPayload,
+    @Body() logoutDto: LogoutDto,
+  ): Promise<void> {
+    return this.authService.logout(user.userId, logoutDto.refreshToken);
   }
 }
