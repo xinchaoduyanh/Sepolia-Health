@@ -2,7 +2,7 @@
 export const API_CONFIG = {
   // Development URLs
   BASE_URL: __DEV__
-    ? 'http://10.2.48.182:3000/api' // Local development
+    ? 'http://192.168.100.49:3000/api' // Local development
     : 'https://your-production-api.com/api', // Production URL
 
   TIMEOUT: 10000, // 10 seconds
@@ -19,14 +19,14 @@ export const API_ENDPOINTS = {
     COMPLETE_REGISTER: '/auth/complete-register',
     REFRESH: '/auth/refresh-token',
     LOGOUT: '/auth/logout',
-    PROFILE: '/users/profile', // User profile endpoint
+    PROFILE: '/user/profile', // User profile endpoint
   },
 
   // Users
   USERS: {
-    BASE: '/users',
-    PROFILE: '/users/profile',
-    UPDATE_PROFILE: '/users/profile',
+    BASE: '/user',
+    PROFILE: '/user/profile',
+    UPDATE_PROFILE: '/user/profile',
   },
 
   // Appointments

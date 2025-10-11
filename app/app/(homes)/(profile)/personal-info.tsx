@@ -1,9 +1,8 @@
 'use client';
 
 import { View, Text, TouchableOpacity, ScrollView, StatusBar } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/lib/hooks/useAuth';
 import { useRouter } from 'expo-router';
 
 export default function PersonalInfoScreen() {
@@ -109,7 +108,7 @@ export default function PersonalInfoScreen() {
                     fontWeight: 'bold',
                     color: '#0F172A',
                   }}>
-                  {user?.name || 'Vũ Duy anh'}
+                  {user ? `${user.firstName} ${user.lastName}` : 'Vũ Duy anh'}
                 </Text>
               </View>
 
@@ -128,7 +127,7 @@ export default function PersonalInfoScreen() {
                     fontWeight: 'bold',
                     color: '#0F172A',
                   }}>
-                  06/10/2007
+                  Chưa cập nhật
                 </Text>
               </View>
 
@@ -147,7 +146,7 @@ export default function PersonalInfoScreen() {
                     fontWeight: 'bold',
                     color: '#0F172A',
                   }}>
-                  0988659126
+                  {user?.phone || 'Chưa cập nhật'}
                 </Text>
               </View>
 
@@ -166,7 +165,7 @@ export default function PersonalInfoScreen() {
                     fontWeight: 'bold',
                     color: '#0F172A',
                   }}>
-                  --
+                  {user?.email || 'Chưa cập nhật'}
                 </Text>
               </View>
 

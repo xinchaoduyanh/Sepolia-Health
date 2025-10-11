@@ -1,20 +1,29 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { View, Text, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/lib/hooks/useAuth';
 
 export default function IndexScreen() {
   const { isAuthenticated, isLoading } = useAuth();
+  const hasNavigated = useRef(false);
 
   useEffect(() => {
-    if (!isLoading) {
-      if (isAuthenticated) {
-        router.replace('/(homes)' as any);
-      } else {
-        router.replace('/(auth)/login' as any);
-      }
+    // Only navigate after component has mounted and auth state is determined
+    if (!isLoading && !hasNavigated.current) {
+      hasNavigated.current = true;
+
+      // Use setTimeout to ensure navigation happens after render
+      const timer = setTimeout(() => {
+        if (isAuthenticated) {
+          router.replace('/(homes)' as any);
+        } else {
+          router.replace('/(auth)/login' as any);
+        }
+      }, 0);
+
+      return () => clearTimeout(timer);
     }
   }, [isAuthenticated, isLoading]);
 

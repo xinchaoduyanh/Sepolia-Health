@@ -1,10 +1,9 @@
 'use client';
 
 import { View, Text, TouchableOpacity, Alert, ScrollView, StatusBar, Image } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/lib/hooks/useAuth';
 import { Svg, Defs, Stop, Path, LinearGradient as SvgLinearGradient } from 'react-native-svg';
 export default function AccountScreen() {
   const { user, logout } = useAuth();
@@ -62,7 +61,7 @@ export default function AccountScreen() {
                 <View>
                   <Text style={{ fontSize: 18, color: '#fff', opacity: 0.9 }}>Xin chào,</Text>
                   <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#fff' }}>
-                    Duy Anh 👋
+                    {user ? `${user.firstName} ${user.lastName}` : 'Người dùng'} 👋
                   </Text>
                 </View>
 

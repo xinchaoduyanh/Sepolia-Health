@@ -18,6 +18,7 @@ class ApiClient {
     });
 
     this.setupInterceptors();
+    // Load token synchronously to avoid race conditions
     this.loadToken();
   }
 
@@ -85,6 +86,16 @@ class ApiClient {
   // IMPROVEMENT: Thêm method để kiểm tra token một cách đồng bộ
   public hasToken(): boolean {
     return !!this.token;
+  }
+
+  // Method để kiểm tra token từ AsyncStorage (async)
+  public async hasTokenAsync(): Promise<boolean> {
+    try {
+      const token = await AsyncStorage.getItem('auth_token');
+      return !!token;
+    } catch {
+      return false;
+    }
   }
 
   private async refreshToken() {

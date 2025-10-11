@@ -3,7 +3,7 @@
 import { View, Text, TouchableOpacity, ScrollView, StatusBar, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/lib/hooks/useAuth';
 
 export default function HomeScreen() {
   const { user } = useAuth();
@@ -111,16 +111,16 @@ export default function HomeScreen() {
                     marginRight: 16,
                   }}>
                   <Text style={{ fontSize: 26, fontWeight: 'bold', color: '#0284C7' }}>
-                    {user?.name?.charAt(0).toUpperCase() || 'A'}
+                    {user?.firstName?.charAt(0).toUpperCase() || 'A'}
                   </Text>
                 </View>
 
                 <View style={{ flexShrink: 1 }}>
                   <Text style={{ fontSize: 18, fontWeight: '700', color: '#F0FDFA' }}>
-                    Xin chào, {user?.name || 'Nguyễn Văn A'}
+                    Xin chào, {user ? `${user.firstName} ${user.lastName}` : 'Nguyễn Văn A'}
                   </Text>
                   <Text style={{ fontSize: 13, color: '#A7F3D0', marginTop: 4 }}>
-                    22 tuổi • 0123 456 789
+                    {user?.phone || 'Chưa cập nhật'} • {user?.email || 'Chưa cập nhật'}
                   </Text>
                 </View>
               </View>

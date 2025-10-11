@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 import { API_ENDPOINTS } from '@/lib/config';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import type {
   LoginRequest,
   RegisterRequest,
@@ -49,13 +50,23 @@ export const authApi = {
   },
 
   logout: async () => {
-    const response = await apiClient.post(API_ENDPOINTS.AUTH.LOGOUT);
+    // Get refresh token from storage
+    const refreshToken = await AsyncStorage.getItem('refresh_token');
+
+    const response = await apiClient.post(API_ENDPOINTS.AUTH.LOGOUT, {
+      refreshToken: refreshToken || '',
+    });
     return response.data;
   },
 
   getProfile: async () => {
     const response = await apiClient.get<User>(API_ENDPOINTS.AUTH.PROFILE);
-    return response.data;
+    const userData = response.data;
+
+    // Lưu user data vào AsyncStorage
+    await AsyncStorage.setItem('user_data', JSON.stringify(userData));
+
+    return userData;
   },
 
   refreshToken: async (data: RefreshTokenRequest) => {
@@ -137,17 +148,14 @@ export const useLogout = () => {
   });
 };
 
-export const useProfile = () => {
-  // IMPROVEMENT: Chỉ fetch profile khi người dùng đã đăng nhập
-  const isAuthenticated = apiClient.hasToken();
-
+export const useProfile = (enabled: boolean = false) => {
   return useQuery({
     // IMPROVEMENT: Dùng query key factory
     queryKey: authKeys.profile(),
     queryFn: authApi.getProfile,
     staleTime: 5 * 60 * 1000, // 5 minutes
-    retry: 1,
-    // IMPROVEMENT: Chỉ chạy query này khi `isAuthenticated` là true
-    enabled: isAuthenticated,
+    retry: enabled ? 1 : false, // Don't retry when disabled
+    // Only run when enabled
+    enabled,
   });
 };

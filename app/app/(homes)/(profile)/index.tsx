@@ -3,7 +3,7 @@
 import { View, Text, TouchableOpacity, ScrollView, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/lib/hooks/useAuth';
 import { router } from 'expo-router';
 
 export default function ProfileScreen() {
@@ -116,7 +116,7 @@ export default function ProfileScreen() {
               elevation: 8,
             }}>
             <Text style={{ fontSize: 40, fontWeight: 'bold', color: '#0284C7' }}>
-              {user?.name?.charAt(0).toUpperCase() || 'V'}
+              {user?.firstName?.charAt(0).toUpperCase() || 'V'}
             </Text>
           </View>
 
@@ -144,7 +144,7 @@ export default function ProfileScreen() {
               marginTop: 16,
               textAlign: 'center',
             }}>
-            {user?.name || 'Vũ Duy anh'}
+            {user ? `${user.firstName} ${user.lastName}` : 'Vũ Duy anh'}
           </Text>
         </View>
       </LinearGradient>
