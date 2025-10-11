@@ -1,11 +1,12 @@
 'use client';
 
 import { View, Text, TouchableOpacity, ScrollView, StatusBar, TextInput } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
 export default function AdditionalInfoScreen() {
+  const router = useRouter();
+
   return (
     <View style={{ flex: 1, backgroundColor: '#F9FAFB' }}>
       <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
@@ -21,7 +22,7 @@ export default function AdditionalInfoScreen() {
           borderBottomColor: '#E0F2FE',
         }}>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <TouchableOpacity onPress={() => {}}>
+          <TouchableOpacity onPress={() => router.push('/(profile)/' as any)}>
             <Ionicons name="arrow-back" size={24} color="#0F172A" />
           </TouchableOpacity>
           <Text
@@ -190,27 +191,6 @@ export default function AdditionalInfoScreen() {
             LƯU
           </Text>
         </TouchableOpacity>
-      </View>
-
-      {/* Floating Action Button */}
-      <View
-        style={{
-          position: 'absolute',
-          bottom: 100,
-          right: 24,
-          width: 56,
-          height: 56,
-          borderRadius: 28,
-          backgroundColor: '#0284C7',
-          alignItems: 'center',
-          justifyContent: 'center',
-          shadowColor: '#0284C7',
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.3,
-          shadowRadius: 8,
-          elevation: 8,
-        }}>
-        <Ionicons name="chatbubbles" size={24} color="white" />
       </View>
     </View>
   );

@@ -24,7 +24,7 @@ export default function PersonalInfoScreen() {
           borderBottomColor: '#E0F2FE',
         }}>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <TouchableOpacity onPress={() => router.back()}>
+          <TouchableOpacity onPress={() => router.push('/(profile)/' as any)}>
             <Ionicons name="arrow-back" size={24} color="#0F172A" />
           </TouchableOpacity>
           <Text
@@ -288,33 +288,16 @@ export default function PersonalInfoScreen() {
                   Thông tin bảo hiểm
                 </Text>
               </View>
-              <View style={{ alignItems: 'center' }}>
-                <TouchableOpacity
-                  style={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: 24,
-                    backgroundColor: '#0284C7',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    shadowColor: '#0284C7',
-                    shadowOffset: { width: 0, height: 4 },
-                    shadowOpacity: 0.3,
-                    shadowRadius: 8,
-                    elevation: 4,
-                  }}>
-                  <Ionicons name="chatbubbles" size={20} color="white" />
-                </TouchableOpacity>
+              <TouchableOpacity>
                 <Text
                   style={{
-                    fontSize: 12,
+                    fontSize: 14,
                     fontWeight: '500',
                     color: '#0284C7',
-                    marginTop: 4,
                   }}>
                   Thêm
                 </Text>
-              </View>
+              </TouchableOpacity>
             </View>
 
             <View

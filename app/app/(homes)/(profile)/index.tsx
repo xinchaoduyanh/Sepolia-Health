@@ -173,7 +173,7 @@ export default function ProfileScreen() {
                   borderBottomWidth: 1,
                   borderBottomColor: '#E0F2FE',
                 }}
-                onPress={() => router.push('/profile/personal-info' as any)}>
+                onPress={() => router.push('/(profile)/personal-info' as any)}>
                 <View
                   style={{
                     width: 40,
@@ -206,7 +206,7 @@ export default function ProfileScreen() {
                   borderBottomWidth: 1,
                   borderBottomColor: '#E0F2FE',
                 }}
-                onPress={() => router.push('/profile/additional-info' as any)}>
+                onPress={() => router.push('/(profile)/additional-info' as any)}>
                 <View
                   style={{
                     width: 40,
@@ -237,7 +237,7 @@ export default function ProfileScreen() {
                   alignItems: 'center',
                   padding: 16,
                 }}
-                onPress={() => router.push('/profile/health-info' as any)}>
+                onPress={() => router.push('/(profile)/health-info' as any)}>
                 <View
                   style={{
                     width: 40,
