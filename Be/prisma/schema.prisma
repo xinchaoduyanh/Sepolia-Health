@@ -9,25 +9,22 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-/// Enum vai trò người dùng trong hệ thống
-enum Role {
-  PATIENT // Bệnh nhân
-  DOCTOR // Bác sĩ
-  RECEPTIONIST // Lễ tân
-  ADMIN // Quản trị viên
-}
+// ----------------- ENUMS -----------------
 
-enum Period {
-  MORNING
-  AFTERNOON
+enum Role {
+  PATIENT
+  DOCTOR
+  RECEPTIONIST
+  ADMIN
 }
 
 enum AppointmentStatus {
-  PENDING
-  UPCOMING
-  ONGOING
-  COMPLETED
-  CANCELLED
+  REQUESTED    // Mới yêu cầu, chờ xác nhận
+  CONFIRMED    // Đã xác nhận
+  CHECKED_IN   // Đã đến làm thủ tục
+  COMPLETED    // Đã hoàn thành
+  CANCELLED    // Đã hủy
+  NO_SHOW      // Không đến
 }
 
 enum PaymentStatus {
@@ -37,245 +34,237 @@ enum PaymentStatus {
 }
 
 enum PaymentMethod {
-  TRANSFER
-  COUNTER
+  CASH
+  BANK_TRANSFER
+  CARD
+  ONLINE
 }
 
-/// Bảng người dùng chung cho toàn hệ thống
-model User {
-  id          Int       @id @default(autoincrement())
-  email       String    @unique
-  phone       String?   
-  password    String
-  role        Role
-  firstName   String
-  lastName    String
-  avatar      String?
-  status      String?
-  address     String?
-  dateOfBirth DateTime?
-  gender      String?
-  isVerified  Boolean   @default(false)
-  verifiedAt  DateTime?
-  lastLoginAt DateTime?
+enum DayOfWeek {
+  SUNDAY
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+}
 
-  // Quan hệ
+enum SmokingStatus {
+  NON_SMOKER
+  FORMER_SMOKER
+  CURRENT_SMOKER
+}
+
+
+
+// ----------------- CORE MODELS -----------------
+
+/// Bảng User: Chỉ dùng để xác thực và quản lý vai trò.
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  phone     String?  @unique // SĐT đăng nhập/khôi phục
+  password  String
+  role      Role
+
+  // Quan hệ 1-1 với các hồ sơ chuyên môn
   doctorProfile       DoctorProfile?
   receptionistProfile ReceptionistProfile?
-  appointments        Appointment[]        @relation("PatientAppointments")
-  feedbacks           Feedback[]           @relation("PatientFeedbacks")
-  prescriptions       Prescription[]       @relation("PatientPrescriptions")
+
+  // Quan hệ 1-nhiều: Một user có thể quản lý nhiều hồ sơ bệnh nhân
+  patientProfiles     PatientProfile[]
+
+  // Quan hệ với giao dịch
   transactions        Transaction[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  deletedAt DateTime?
+  isVerified  Boolean  @default(false)
+  verifiedAt  DateTime?
+  lastLoginAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
 }
 
-/// Hồ sơ lễ tân, gắn 1-1 với User (role = RECEPTIONIST)
-model ReceptionistProfile {
-  id          Int       @id @default(autoincrement())
-  shift   String?
-  contact String?
-
-  userId Int @unique
-  user   User @relation(fields: [userId], references: [id])
-}
-
-/// Hồ sơ bác sĩ, gắn 1-1 với User (role = DOCTOR)
+/// Hồ sơ Bác sĩ: Chứa TẤT CẢ thông tin về một bác sĩ.
 model DoctorProfile {
-  id          Int       @id @default(autoincrement())
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  deletedAt     DateTime?
-  //not needed for a small clinic where add doctors share the same specialty
+  id            Int      @id @default(autoincrement())
+
+  // Thông tin cá nhân của bác sĩ
+  firstName     String
+  lastName      String
+  dateOfBirth   DateTime? @db.Date
+  gender        String?
+  avatar        String?
+
+  // Thông tin chuyên môn
   specialty     String
   experience    String?
   contactInfo   String?
 
-  userId Int @unique
-  user   User @relation(fields: [userId], references: [id])
+  userId        Int      @unique
+  user          User     @relation(fields: [userId], references: [id])
 
-  // Quan hệ với cơ sở phòng khám
-  clinicId Int?
-  clinic   Clinic? @relation("ClinicDoctors", fields: [clinicId], references: [id])
+  // Quan hệ
+  clinicId        Int?
+  clinic          Clinic?              @relation("ClinicDoctors", fields: [clinicId], references: [id])
+  appointments    Appointment[]        @relation("DoctorAppointments")
+  feedbacks       Feedback[]           @relation("DoctorFeedbacks")
+  prescriptions   Prescription[]
+  services        DoctorService[]      @relation("Services")
+  availabilities  DoctorAvailability[]
+  overrides       AvailabilityOverride[]
 
-  appointments  Appointment[]  @relation("DoctorAppointments")
-  feedbacks     Feedback[]     @relation("DoctorFeedbacks")
-  prescriptions Prescription[]
-  services      DoctorService[] @relation("Services")
-  timeslots     Timeslot[] @relation("DoctorTimeslot")
-  specialTimeslots SpecialTimeslot[] @relation("DoctorSpecialTimeslot")
-  schedules     DoctorSchedule[] @relation("DoctorSchedules")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
-model DoctorService {
-  id          Int       @id @default(autoincrement())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  deletedAt   DateTime?
+/// Hồ sơ Lễ tân: Chứa TẤT CẢ thông tin về một lễ tân.
+model ReceptionistProfile {
+  id            Int      @id @default(autoincrement())
 
-  doctorId    Int
-  doctor      DoctorProfile @relation("Services", fields: [doctorId], references: [id])
+  // Thông tin cá nhân của lễ tân
+  firstName     String
+  lastName      String
+  dateOfBirth   DateTime? @db.Date
+  gender        String?
+  avatar        String?
 
-  serviceId   Int
-  service     Service @relation("Doctor", fields: [serviceId], references: [id])
-}
+  // Thông tin công việc
+  shift         String?
 
-model Timeslot {
-  id          Int       @id @default(autoincrement())
+  userId        Int      @unique
+  user          User     @relation(fields: [userId], references: [id])
+
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-  deletedAt     DateTime?
-  slot          Int
-  period        Period
-
-  doctorId      Int
-  doctor        DoctorProfile @relation("DoctorTimeslot", fields: [doctorId], references: [id])
 }
 
-model SpecialTimeslot {
-  id            Int @id @default(autoincrement())
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  deletedAt     DateTime?
-  slot          Int
-  day           DateTime
-  period        Period
+/// Hồ sơ Bệnh nhân: Chứa TẤT CẢ thông tin y tế và cá nhân của một bệnh nhân.
+model PatientProfile {
+  id           Int      @id @default(autoincrement())
 
-  doctorId      Int
-  doctor        DoctorProfile @relation("DoctorSpecialTimeslot", fields: [doctorId], references: [id])
-}
+  // Thông tin cá nhân
+  firstName    String
+  lastName     String
+  dateOfBirth  DateTime @db.Date
+  gender       String
+  phone        String   // SĐT liên lạc y tế (không cần unique)
+  relationship String   // Mối quan hệ với người quản lý (Bản thân, Con, Vợ...)
+  avatar       String?
 
-/// Lịch trình thực tế của bác sĩ (thời gian đã bị chiếm bởi appointments)
-model DoctorSchedule {
-  id            Int       @id @default(autoincrement())
-  date          DateTime  // Ngày
-  startTime     String    // Thời gian bắt đầu (HH:mm)
-  endTime       String    // Thời gian kết thúc (HH:mm)
-  isAvailable   Boolean   @default(true) // Còn trống hay đã bị chiếm
-  notes         String?   // Ghi chú (nghỉ phép, họp, ...)
+  // Thông tin bổ sung
+  idCardNumber String?
+  occupation   String?
+  nationality  String?
+  address      String?
 
-  doctorId      Int
-  doctor        DoctorProfile @relation("DoctorSchedules", fields: [doctorId], references: [id])
+  // Thông tin sức khỏe
+  healthDetailsJson Json?          // Lưu các thông tin linh hoạt khác
 
-  // Quan hệ với appointment (nếu bị chiếm bởi appointment)
-  appointmentId Int?      @unique
-  appointment   Appointment? @relation(fields: [appointmentId], references: [id])
-
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-}
-
-/// Dịch vụ khám (khám tổng quát, khám tim mạch, ...)
-model Service {
-  id          Int       @id @default(autoincrement())
-  name          String
-  price         Float
-  duration      Int // thời lượng (phút)
-  description   String?
-
+  // Quan hệ
+  managerId    Int
+  manager      User          @relation(fields: [managerId], references: [id])
+  isPrimary    Boolean       @default(false) // Là hồ sơ chính của người quản lý?
   appointments  Appointment[]
-  doctorService DoctorService[] @relation("Doctor")
+  prescriptions Prescription[]
+  feedbacks     Feedback[]
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([phone]) // Tối ưu tìm kiếm theo SĐT
 }
 
-/// Lịch hẹn khám bệnh
+
+// ----------------- SCHEDULING MODELS -----------------
+
+/// Lịch làm việc cố định hàng tuần của bác sĩ
+model DoctorAvailability {
+  id        Int       @id @default(autoincrement())
+  dayOfWeek DayOfWeek
+  startTime String
+  endTime   String
+
+  doctorId  Int
+  doctor    DoctorProfile @relation(fields: [doctorId], references: [id])
+
+  @@unique([doctorId, dayOfWeek])
+}
+
+/// Ghi đè lịch làm việc cho một ngày cụ thể (nghỉ, làm thêm)
+model AvailabilityOverride {
+  id        Int      @id @default(autoincrement())
+  date      DateTime @db.Date
+  startTime String?
+  endTime   String?
+
+  doctorId  Int
+  doctor    DoctorProfile @relation(fields: [doctorId], references: [id])
+
+  @@unique([doctorId, date])
+}
+
+
+// ----------------- APPOINTMENT & RELATED MODELS -----------------
+
+/// Lịch hẹn khám bệnh: Linh hoạt cho cả khách có hồ sơ và khách vãng lai.
 model Appointment {
-  id          Int       @id @default(autoincrement())
-  date          DateTime
-  startTime     String   // Thời gian bắt đầu (HH:mm format)
+  id            Int      @id @default(autoincrement())
+  date          DateTime @db.Date
+  startTime     String
+  endTime       String
   status        AppointmentStatus
   paymentStatus PaymentStatus
   notes         String?
 
-  // Thông tin người đặt lịch (có thể là user đã đăng ký hoặc khách vãng lai)
-  patientId     Int? // Optional - nếu là user đã đăng ký
-  patient       User? @relation("PatientAppointments", fields: [patientId], references: [id])
+  // Liên kết tùy chọn với hồ sơ bệnh nhân
+  patientProfileId Int?
+  patientProfile   PatientProfile? @relation(fields: [patientProfileId], references: [id])
 
-  // Thông tin bắt buộc cho người đặt lịch
-  patientName   String // Họ tên
-  patientDob    DateTime // Ngày sinh
-  patientPhone  String // Số điện thoại
-  patientGender String // Giới tính
+  // Thông tin bắt buộc cho mọi cuộc hẹn (kể cả khách vãng lai)
+  patientName   String
+  patientDob    DateTime @db.Date
+  patientPhone  String
+  patientGender String
 
+  // Quan hệ
   doctorId      Int
   doctor        DoctorProfile @relation("DoctorAppointments", fields: [doctorId], references: [id])
-
   serviceId     Int
-  service       Service @relation(fields: [serviceId], references: [id])
-
-  // Quan hệ với cơ sở phòng khám
+  service       Service     @relation(fields: [serviceId], references: [id])
   clinicId      Int
-  clinic        Clinic @relation("ClinicAppointments", fields: [clinicId], references: [id])
-
-  // Quan hệ với hóa đơn
+  clinic        Clinic      @relation("ClinicAppointments", fields: [clinicId], references: [id])
   billing       Billing?
 
-  // Quan hệ với lịch trình bác sĩ
-  schedule      DoctorSchedule?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
-/// Hóa đơn thanh toán
-model Billing {
-  id            Int       @id @default(autoincrement())
-  amount        Float     // Số tiền
-  status        PaymentStatus // PENDING, PAID, REFUNDED
-  paymentMethod PaymentMethod? // TRANSFER, COUNTER
-  notes         String?
 
-  appointmentId Int       @unique
-  appointment   Appointment @relation(fields: [appointmentId], references: [id])
-
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-}
-
-/// Thuốc trong hệ thống
-model Medicine {
-  id          Int       @id @default(autoincrement())
-  name   String
-  dosage String?
-  stock  Int
-  price  Float
-
-  prescriptionItems PrescriptionItem[]
-}
-
-/// Đơn thuốc do bác sĩ kê cho bệnh nhân
+/// Đơn thuốc: Gắn với một hồ sơ bệnh nhân cụ thể.
 model Prescription {
-  id          Int       @id @default(autoincrement())
-  notes String?
+  id        Int      @id @default(autoincrement())
+  notes     String?
 
-  doctorId Int
-  doctor   DoctorProfile @relation(fields: [doctorId], references: [id])
+  doctorId      Int
+  doctor        DoctorProfile  @relation(fields: [doctorId], references: [id])
 
-  patientId Int
-  patient   User @relation("PatientPrescriptions", fields: [patientId], references: [id])
+  patientProfileId Int
+  patientProfile   PatientProfile @relation(fields: [patientProfileId], references: [id])
 
-  items PrescriptionItem[]
+  items     PrescriptionItem[]
+  createdAt DateTime       @default(now())
 }
 
-/// Chi tiết từng loại thuốc trong đơn thuốc
-model PrescriptionItem {
-  id          Int       @id @default(autoincrement())
-  quantity     Int
-  instructions String?
-
-  prescriptionId Int
-  prescription   Prescription @relation(fields: [prescriptionId], references: [id])
-
-  medicineId Int
-  medicine   Medicine @relation(fields: [medicineId], references: [id])
-}
-
-/// Feedback từ bệnh nhân cho bác sĩ
+/// Feedback: Gắn với một hồ sơ bệnh nhân cụ thể.
 model Feedback {
-  id          Int       @id @default(autoincrement())
-  rating    Int // số sao (1-5)
+  id        Int      @id @default(autoincrement())
+  rating    Int
   comment   String?
 
-  patientId Int
-  patient   User @relation("PatientFeedbacks", fields: [patientId], references: [id])
+  patientProfileId Int
+  patientProfile   PatientProfile @relation(fields: [patientProfileId], references: [id])
 
   doctorId  Int
   doctor    DoctorProfile @relation("DoctorFeedbacks", fields: [doctorId], references: [id])
@@ -283,9 +272,76 @@ model Feedback {
   createdAt DateTime @default(now())
 }
 
+// ----------------- OTHER MODELS (Giữ nguyên hoặc ít thay đổi) -----------------
+
+model Service {
+  id            Int      @id @default(autoincrement())
+  name          String
+  price         Float
+  duration      Int      // thời lượng (phút)
+  description   String?
+  appointments  Appointment[]
+  doctorService DoctorService[] @relation("Doctor")
+}
+
+model DoctorService {
+  id         Int      @id @default(autoincrement())
+  doctorId   Int
+  doctor     DoctorProfile @relation("Services", fields: [doctorId], references: [id])
+  serviceId  Int
+  service    Service  @relation("Doctor", fields: [serviceId], references: [id])
+  createdAt  DateTime @default(now())
+  @@unique([doctorId, serviceId])
+}
+
+model Billing {
+  id            Int      @id @default(autoincrement())
+  amount        Float
+  status        PaymentStatus
+  paymentMethod PaymentMethod?
+  notes         String?
+  appointmentId Int      @unique
+  appointment   Appointment @relation(fields: [appointmentId], references: [id])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Medicine {
+  id                Int      @id @default(autoincrement())
+  name              String
+  dosage            String?
+  stock             Int
+  price             Float
+  prescriptionItems PrescriptionItem[]
+}
+
+model PrescriptionItem {
+  id             Int      @id @default(autoincrement())
+  quantity       Int
+  instructions   String?
+  prescriptionId Int
+  prescription   Prescription @relation(fields: [prescriptionId], references: [id])
+  medicineId     Int
+  medicine       Medicine @relation(fields: [medicineId], references: [id])
+}
+
+model Clinic {
+  id           Int      @id @default(autoincrement())
+  name         String
+  address      String
+  phone        String?
+  email        String?
+  description  String?
+  isActive     Boolean  @default(true)
+  doctors      DoctorProfile[] @relation("ClinicDoctors")
+  appointments Appointment[]   @relation("ClinicAppointments")
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
 /// Giao dịch thanh toán (SEPAY, tiền mặt, ...)
 model Transaction {
-  id          Int       @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
   amount Float
   method String // online, cash, card
   status String // pending, success, failed
@@ -298,7 +354,7 @@ model Transaction {
 
 /// Bài viết do admin tạo (tin tức, bài sức khỏe, ...)
 model Article {
-  id          Int       @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
   title     String
   content   String
   image     String?
@@ -309,33 +365,10 @@ model Article {
 
 /// Khuyến mãi / voucher
 model Promotion {
-  id          Int       @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
   code        String   @unique
   description String?
   discount    Float
   validFrom   DateTime
   validTo     DateTime
-}
-
-
-
-/// Cơ sở phòng khám
-model Clinic {
-  id          Int       @id @default(autoincrement())
-  name        String    // Tên cơ sở
-  address     String    // Địa chỉ chi tiết
-  phone       String?   // Số điện thoại liên hệ
-  email       String?   // Email liên hệ
-  description String?   // Mô tả cơ sở
-  isActive    Boolean   @default(true) // Trạng thái hoạt động
-
-  // Quan hệ với bác sĩ
-  doctors     DoctorProfile[] @relation("ClinicDoctors")
-
-  // Quan hệ với lịch hẹn
-  appointments Appointment[] @relation("ClinicAppointments")
-
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
 }
