@@ -29,22 +29,40 @@ export class UserService {
   async getProfile(userId: number): Promise<UserProfileResponseDtoType> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
+      include: {
+        doctorProfile: true,
+        receptionistProfile: true,
+        patientProfiles: {
+          where: { isPrimary: true },
+          take: 1,
+        },
+      },
     });
 
     if (!user) {
       throw new NotFoundException(ERROR_MESSAGES.AUTH.USER_NOT_FOUND);
     }
 
+    // Get profile based on role
+    let profile: any = null;
+    if (user.role === 'DOCTOR' && user.doctorProfile) {
+      profile = user.doctorProfile;
+    } else if (user.role === 'RECEPTIONIST' && user.receptionistProfile) {
+      profile = user.receptionistProfile;
+    } else if (user.role === 'PATIENT' && user.patientProfiles.length > 0) {
+      profile = user.patientProfiles[0];
+    }
+
     return {
       id: user.id,
       email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      phone: user.phone,
-      address: user.address,
-      dateOfBirth: user.dateOfBirth?.toISOString() || null,
-      gender: user.gender,
-      avatar: user.avatar,
+      firstName: profile?.firstName || '',
+      lastName: profile?.lastName || '',
+      phone: user.phone || profile?.phone || '',
+      address: profile?.address || '',
+      dateOfBirth: profile?.dateOfBirth?.toISOString() || null,
+      gender: profile?.gender || '',
+      avatar: profile?.avatar || '',
       role: user.role,
       isVerified: user.isVerified,
       createdAt: user.createdAt.toISOString(),
@@ -61,46 +79,98 @@ export class UserService {
   ): Promise<UpdateUserProfileResponseDtoType> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
+      include: {
+        doctorProfile: true,
+        receptionistProfile: true,
+        patientProfiles: {
+          where: { isPrimary: true },
+          take: 1,
+        },
+      },
     });
 
     if (!user) {
       throw new NotFoundException(ERROR_MESSAGES.AUTH.USER_NOT_FOUND);
     }
 
-    // Prepare update data
-    const updatePayload: any = {};
-
-    if (updateData.firstName) updatePayload.firstName = updateData.firstName;
-    if (updateData.lastName) updatePayload.lastName = updateData.lastName;
-    if (updateData.phone) updatePayload.phone = updateData.phone;
-    if (updateData.address !== undefined)
-      updatePayload.address = updateData.address;
-    if (updateData.gender) updatePayload.gender = updateData.gender;
-    if (updateData.avatar) updatePayload.avatar = updateData.avatar;
-    if (updateData.dateOfBirth) {
-      updatePayload.dateOfBirth = new Date(updateData.dateOfBirth);
+    // Update user phone if provided
+    if (updateData.phone) {
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: { phone: updateData.phone },
+      });
     }
 
-    const updatedUser = await this.prisma.user.update({
-      where: { id: userId },
-      data: updatePayload,
-    });
+    // Update profile based on role
+    let updatedProfile: any = null;
+    if (user.role === 'DOCTOR' && user.doctorProfile) {
+      const profileUpdateData: any = {};
+      if (updateData.firstName)
+        profileUpdateData.firstName = updateData.firstName;
+      if (updateData.lastName) profileUpdateData.lastName = updateData.lastName;
+      if (updateData.address !== undefined)
+        profileUpdateData.address = updateData.address;
+      if (updateData.gender) profileUpdateData.gender = updateData.gender;
+      if (updateData.avatar) profileUpdateData.avatar = updateData.avatar;
+      if (updateData.dateOfBirth) {
+        profileUpdateData.dateOfBirth = new Date(updateData.dateOfBirth);
+      }
+
+      updatedProfile = await this.prisma.doctorProfile.update({
+        where: { id: user.doctorProfile.id },
+        data: profileUpdateData,
+      });
+    } else if (user.role === 'RECEPTIONIST' && user.receptionistProfile) {
+      const profileUpdateData: any = {};
+      if (updateData.firstName)
+        profileUpdateData.firstName = updateData.firstName;
+      if (updateData.lastName) profileUpdateData.lastName = updateData.lastName;
+      if (updateData.address !== undefined)
+        profileUpdateData.address = updateData.address;
+      if (updateData.gender) profileUpdateData.gender = updateData.gender;
+      if (updateData.avatar) profileUpdateData.avatar = updateData.avatar;
+      if (updateData.dateOfBirth) {
+        profileUpdateData.dateOfBirth = new Date(updateData.dateOfBirth);
+      }
+
+      updatedProfile = await this.prisma.receptionistProfile.update({
+        where: { id: user.receptionistProfile.id },
+        data: profileUpdateData,
+      });
+    } else if (user.role === 'PATIENT' && user.patientProfiles.length > 0) {
+      const profileUpdateData: any = {};
+      if (updateData.firstName)
+        profileUpdateData.firstName = updateData.firstName;
+      if (updateData.lastName) profileUpdateData.lastName = updateData.lastName;
+      if (updateData.address !== undefined)
+        profileUpdateData.address = updateData.address;
+      if (updateData.gender) profileUpdateData.gender = updateData.gender;
+      if (updateData.avatar) profileUpdateData.avatar = updateData.avatar;
+      if (updateData.dateOfBirth) {
+        profileUpdateData.dateOfBirth = new Date(updateData.dateOfBirth);
+      }
+
+      updatedProfile = await this.prisma.patientProfile.update({
+        where: { id: user.patientProfiles[0].id },
+        data: profileUpdateData,
+      });
+    }
 
     return {
       user: {
-        id: updatedUser.id,
-        email: updatedUser.email,
-        firstName: updatedUser.firstName,
-        lastName: updatedUser.lastName,
-        phone: updatedUser.phone,
-        address: updatedUser.address,
-        dateOfBirth: updatedUser.dateOfBirth?.toISOString() || null,
-        gender: updatedUser.gender,
-        avatar: updatedUser.avatar,
-        role: updatedUser.role,
-        isVerified: updatedUser.isVerified,
-        createdAt: updatedUser.createdAt.toISOString(),
-        updatedAt: updatedUser.updatedAt.toISOString(),
+        id: user.id,
+        email: user.email,
+        firstName: updatedProfile?.firstName || '',
+        lastName: updatedProfile?.lastName || '',
+        phone: updateData.phone || user.phone || updatedProfile?.phone || '',
+        address: updatedProfile?.address || '',
+        dateOfBirth: updatedProfile?.dateOfBirth?.toISOString() || null,
+        gender: updatedProfile?.gender || '',
+        avatar: updatedProfile?.avatar || '',
+        role: user.role,
+        isVerified: user.isVerified,
+        createdAt: user.createdAt.toISOString(),
+        updatedAt: user.updatedAt.toISOString(),
       },
     };
   }
@@ -180,11 +250,41 @@ export class UserService {
       );
     }
 
-    // Update user avatar URL
-    await this.prisma.user.update({
+    // Update profile avatar URL based on role
+    const userData = await this.prisma.user.findUnique({
       where: { id: userId },
-      data: { avatar: uploadResult.url },
+      include: {
+        doctorProfile: true,
+        receptionistProfile: true,
+        patientProfiles: {
+          where: { isPrimary: true },
+          take: 1,
+        },
+      },
     });
+
+    if (userData?.role === 'DOCTOR' && userData.doctorProfile) {
+      await this.prisma.doctorProfile.update({
+        where: { id: userData.doctorProfile.id },
+        data: { avatar: uploadResult.url },
+      });
+    } else if (
+      userData?.role === 'RECEPTIONIST' &&
+      userData.receptionistProfile
+    ) {
+      await this.prisma.receptionistProfile.update({
+        where: { id: userData.receptionistProfile.id },
+        data: { avatar: uploadResult.url },
+      });
+    } else if (
+      userData?.role === 'PATIENT' &&
+      userData.patientProfiles.length > 0
+    ) {
+      await this.prisma.patientProfile.update({
+        where: { id: userData.patientProfiles[0].id },
+        data: { avatar: uploadResult.url },
+      });
+    }
 
     return {
       avatarUrl: uploadResult.url!,

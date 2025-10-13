@@ -43,7 +43,14 @@ export const UpdateAppointmentDto = z.object({
     )
     .optional(),
   status: z
-    .enum(['PENDING', 'UPCOMING', 'ONGOING', 'COMPLETED', 'CANCELLED'])
+    .enum([
+      'REQUESTED',
+      'CONFIRMED',
+      'CHECKED_IN',
+      'COMPLETED',
+      'CANCELLED',
+      'NO_SHOW',
+    ])
     .optional(),
   paymentStatus: z.enum(['PENDING', 'PAID', 'REFUNDED']).optional(),
   notes: z.string().optional(),
@@ -60,7 +67,14 @@ export const GetAppointmentsQueryDto = z.object({
     .transform(Number)
     .default(() => 10),
   status: z
-    .enum(['PENDING', 'UPCOMING', 'ONGOING', 'COMPLETED', 'CANCELLED'])
+    .enum([
+      'REQUESTED',
+      'CONFIRMED',
+      'CHECKED_IN',
+      'COMPLETED',
+      'CANCELLED',
+      'NO_SHOW',
+    ])
     .optional(),
   paymentStatus: z.enum(['PENDING', 'PAID', 'REFUNDED']).optional(),
   doctorId: z.number().optional(),
@@ -73,6 +87,8 @@ export const GetAppointmentsQueryDto = z.object({
 export const AppointmentResponseDto = z.object({
   id: z.number(),
   date: z.iso.datetime(),
+  startTime: z.string(),
+  endTime: z.string(),
   status: z.string(),
   paymentStatus: z.string(),
   notes: z.string().nullable(),

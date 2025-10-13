@@ -20,6 +20,8 @@ export interface CompleteRegisterRequest {
   lastName: string;
   phone: string;
   password: string;
+  dateOfBirth: string; // ISO date string
+  gender: 'MALE' | 'FEMALE' | 'OTHER'; // Should match Prisma Gender enum
   role?: 'PATIENT' | 'DOCTOR' | 'ADMIN';
 }
 

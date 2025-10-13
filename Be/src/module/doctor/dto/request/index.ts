@@ -1,4 +1,4 @@
-import { Period } from '@prisma/client';
+// Period enum no longer exists in new schema
 import { createZodDto } from 'nestjs-zod';
 import z from 'zod';
 
@@ -11,30 +11,24 @@ export class GetDoctorServiceQueryDto extends createZodDto(
 ) {}
 
 const createDoctorProfileSchema = z.object({
+  firstName: z.string().min(2, 'Tên phải có ít nhất 2 ký tự'),
+  lastName: z.string().min(2, 'Họ phải có ít nhất 2 ký tự'),
   specialty: z.string(),
   experience: z.string().optional(),
   contactInfo: z.string().optional(),
   serviceIds: z.array(z.number()),
-  timeslots: z.object({
-    period: z.enum(Period),
-    slot: z.number(),
-  }),
 });
 export class CreateDoctorProfileBodyDto extends createZodDto(
   createDoctorProfileSchema,
 ) {}
 
 const updateDoctorProfileSchema = z.object({
+  firstName: z.string().min(2, 'Tên phải có ít nhất 2 ký tự').optional(),
+  lastName: z.string().min(2, 'Họ phải có ít nhất 2 ký tự').optional(),
   specialty: z.string().optional(),
   experience: z.string().optional(),
   contactInfo: z.string().optional(),
   serviceIds: z.array(z.number()).optional(),
-  timeslots: z
-    .object({
-      id: z.number(),
-      slot: z.number(),
-    })
-    .optional(),
 });
 export class updateDoctorProfileBodyDto extends createZodDto(
   updateDoctorProfileSchema,

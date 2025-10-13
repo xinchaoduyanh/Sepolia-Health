@@ -117,6 +117,7 @@ export class AuthController {
     @CurrentUser() user: TokenPayload,
     @Body() logoutDto: LogoutDto,
   ): Promise<void> {
-    return this.authService.logout(user.userId, logoutDto.refreshToken);
+    console.log(logoutDto);
+    return this.authService.logout(user.userId);
   }
 }

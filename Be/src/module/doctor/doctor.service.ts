@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { PaginationResultDto } from '@/common/dto/pagination-result.dto';
 import { paginate } from '@/common/helper/paginate';
-import { Period, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '@/common/prisma/prisma.service';
 import {
   GetDoctorServiceResponseDto,
@@ -60,10 +60,10 @@ export class DoctorService {
         id: doctorId,
       },
       include: {
-        timeslots: true,
-        specialTimeslots: {
+        availabilities: true,
+        overrides: {
           where: {
-            day: {
+            date: {
               gte: new Date(),
             },
           },
@@ -72,17 +72,30 @@ export class DoctorService {
     });
 
     return DateUtil.getNextNDays(3).map((day) => {
-      const special = doctors.specialTimeslots.filter((spe) => spe.day === day);
+      const dayOfWeek = day.getDay(); // 0 = Sunday, 1 = Monday, etc.
+      const dayName = [
+        'SUNDAY',
+        'MONDAY',
+        'TUESDAY',
+        'WEDNESDAY',
+        'THURSDAY',
+        'FRIDAY',
+        'SATURDAY',
+      ][dayOfWeek];
 
-      const morningSlot =
-        special.find((s) => s.period === Period.MORNING)?.slot ??
-        doctors.timeslots.find((s) => s.period === Period.MORNING)?.slot ??
-        3;
+      // Check for override first
+      const override = doctors.overrides.find(
+        (o) => o.date.toDateString() === day.toDateString(),
+      );
 
-      const afternoonSlot =
-        special.find((s) => s.period === Period.AFTERNOON)?.slot ??
-        doctors.timeslots.find((s) => s.period === Period.AFTERNOON)?.slot ??
-        3;
+      // Get regular availability for this day of week
+      const availability = doctors.availabilities.find(
+        (a) => a.dayOfWeek === dayName,
+      );
+
+      // Default to 3 slots if no availability found
+      const morningSlot = 3;
+      const afternoonSlot = 3;
 
       return {
         day,
@@ -109,6 +122,8 @@ export class DoctorService {
 
     return this.prismaService.doctorProfile.create({
       data: {
+        firstName: body.firstName,
+        lastName: body.lastName,
         specialty: body.specialty,
         experience: body.experience,
         contactInfo: body.contactInfo,
@@ -137,25 +152,21 @@ export class DoctorService {
     if (!doctor) {
       throw new NotFoundException(ERROR_MESSAGES.COMMON.RESOURCE_NOT_FOUND);
     }
-    const { specialty, experience, contactInfo, serviceIds, timeslots } = body;
-    Prisma.DoctorProfileScalarFieldEnum;
+    const {
+      firstName,
+      lastName,
+      specialty,
+      experience,
+      contactInfo,
+      serviceIds,
+    } = body;
     const data: Prisma.DoctorProfileUpdateInput = {
+      ...(firstName && { firstName }),
+      ...(lastName && { lastName }),
       ...(specialty && { specialty }),
       ...(experience && { experience }),
       ...(contactInfo && { contactInfo }),
     };
-    if (timeslots) {
-      data.timeslots = {
-        update: {
-          where: {
-            id: timeslots.id,
-          },
-          data: {
-            slot: timeslots.slot,
-          },
-        },
-      };
-    }
     //update doctor
     await this.prismaService.doctorProfile.update({
       where: { id: doctor.id },

@@ -1,6 +1,6 @@
 import { createZodDto } from 'nestjs-zod';
 import z from 'zod';
-import { Role } from '@prisma/client';
+import { Role, Gender, Relationship } from '@prisma/client';
 
 // Login DTO
 const LoginSchema = z.object({
@@ -23,11 +23,17 @@ const VerifyEmailSchema = z.object({
 const CompleteRegisterSchema = z.object({
   email: z.email('Email không hợp lệ'),
   otp: z.string().length(6, 'Mã OTP phải có 6 ký tự'),
+  password: z.string().min(6, 'Mật khẩu phải có ít nhất 6 ký tự'),
+  role: z.nativeEnum(Role).default(Role.PATIENT),
+  // Patient profile fields - basic info needed for registration
   firstName: z.string().min(2, 'Tên phải có ít nhất 2 ký tự'),
   lastName: z.string().min(2, 'Họ phải có ít nhất 2 ký tự'),
   phone: z.string().min(10, 'Số điện thoại không hợp lệ'),
-  password: z.string().min(6, 'Mật khẩu phải có ít nhất 6 ký tự'),
-  role: z.nativeEnum(Role).default(Role.PATIENT),
+  dateOfBirth: z
+    .string()
+    .refine((val) => !isNaN(Date.parse(val)), 'Ngày sinh không hợp lệ'),
+  gender: z.nativeEnum(Gender, 'Giới tính không hợp lệ'),
+  relationship: z.nativeEnum(Relationship, 'Mối quan hệ không hợp lệ'),
 });
 
 // Refresh Token DTO

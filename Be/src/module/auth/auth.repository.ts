@@ -4,8 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '@/common/prisma/prisma.service';
-import { User } from '@prisma/client';
-import { Role } from '@prisma/client';
+import { User, Role, Gender, Relationship } from '@prisma/client';
 import { ERROR_MESSAGES } from '@/common/constants/error-messages';
 
 @Injectable()
@@ -52,15 +51,86 @@ export class AuthRepository {
   async createUser(userData: {
     email: string;
     password: string;
-    firstName: string;
-    lastName: string;
-    phone: string;
+    phone?: string;
     role: Role;
     isVerified: boolean;
     verifiedAt: Date;
   }): Promise<User> {
     return await this.prisma.user.create({
       data: userData,
+    });
+  }
+
+  /**
+   * Create patient profile
+   */
+  async createPatientProfile(patientData: {
+    firstName: string;
+    lastName: string;
+    dateOfBirth: Date;
+    gender: Gender;
+    phone: string;
+    relationship: Relationship;
+    avatar?: string;
+    idCardNumber?: string;
+    occupation?: string;
+    nationality?: string;
+    address?: string;
+    healthDetailsJson?: any;
+    managerId: number;
+    isPrimary: boolean;
+  }) {
+    return await this.prisma.patientProfile.create({
+      data: patientData,
+    });
+  }
+
+  /**
+   * Create user with patient profile (for registration)
+   */
+  async createUserWithPatientProfile(data: {
+    // User data
+    email: string;
+    password: string;
+    phone?: string;
+    role: Role;
+    isVerified: boolean;
+    verifiedAt: Date;
+    firstName: string;
+    lastName: string;
+    dateOfBirth: Date;
+    gender: Gender;
+    patientPhone: string;
+    relationship: Relationship;
+  }) {
+    return await this.prisma.$transaction(async (tx) => {
+      // Create user first
+      const user = await tx.user.create({
+        data: {
+          email: data.email,
+          password: data.password,
+          phone: data.phone,
+          role: data.role,
+          isVerified: data.isVerified,
+          verifiedAt: data.verifiedAt,
+        },
+      });
+
+      // Create patient profile with basic info only
+      const patientProfile = await tx.patientProfile.create({
+        data: {
+          firstName: data.firstName,
+          lastName: data.lastName,
+          dateOfBirth: data.dateOfBirth,
+          gender: data.gender,
+          phone: data.patientPhone,
+          relationship: data.relationship,
+          managerId: user.id,
+          isPrimary: true, // Always true for self-registered patients
+        },
+      });
+
+      return { user, patientProfile };
     });
   }
 

@@ -17,29 +17,21 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { UploadService } from '@/common/modules';
-import { z } from 'zod';
+// zod no longer needed
 import { PrismaService } from '@/common/prisma/prisma.service';
 import { CurrentUser } from '@/common/decorators';
 import type { TokenPayload } from '@/common/types/jwt.type';
 import { ApiBearerAuth } from '@nestjs/swagger';
 // DTOs
-const UploadFileDto = z.object({
-  file: z.any(), // File will be handled by multer
-});
+type UploadUrlDtoType = {
+  url: string;
+};
 
-const UploadUrlDto = z.object({
-  url: z.string().url('URL không hợp lệ'),
-});
-
-const UploadFileResponseDto = z.object({
-  success: z.boolean(),
-  url: z.string().optional(),
-  error: z.string().optional(),
-});
-
-type UploadFileDtoType = z.infer<typeof UploadFileDto>;
-type UploadUrlDtoType = z.infer<typeof UploadUrlDto>;
-type UploadFileResponseDtoType = z.infer<typeof UploadFileResponseDto>;
+type UploadFileResponseDtoType = {
+  success: boolean;
+  url?: string;
+  error?: string;
+};
 
 @ApiBearerAuth()
 @ApiTags('Upload')
@@ -117,9 +109,7 @@ export class UploadController {
     status: 200,
     description: 'Lưu URL thành công',
   })
-  async uploadFromUrl(
-    @Body() body: UploadUrlDtoType,
-  ): Promise<UploadFileResponseDtoType> {
+  uploadFromUrl(@Body() body: UploadUrlDtoType): UploadFileResponseDtoType {
     // Validate URL
     try {
       new URL(body.url);
@@ -193,11 +183,41 @@ export class UploadController {
       );
     }
 
-    // Update user avatar URL
-    await this.prisma.user.update({
+    // Update profile avatar URL based on role
+    const userData = await this.prisma.user.findUnique({
       where: { id: user.userId },
-      data: { avatar: uploadResult.url },
+      include: {
+        doctorProfile: true,
+        receptionistProfile: true,
+        patientProfiles: {
+          where: { isPrimary: true },
+          take: 1,
+        },
+      },
     });
+
+    if (userData?.role === 'DOCTOR' && userData.doctorProfile) {
+      await this.prisma.doctorProfile.update({
+        where: { id: userData.doctorProfile.id },
+        data: { avatar: uploadResult.url },
+      });
+    } else if (
+      userData?.role === 'RECEPTIONIST' &&
+      userData.receptionistProfile
+    ) {
+      await this.prisma.receptionistProfile.update({
+        where: { id: userData.receptionistProfile.id },
+        data: { avatar: uploadResult.url },
+      });
+    } else if (
+      userData?.role === 'PATIENT' &&
+      userData.patientProfiles.length > 0
+    ) {
+      await this.prisma.patientProfile.update({
+        where: { id: userData.patientProfiles[0].id },
+        data: { avatar: uploadResult.url },
+      });
+    }
 
     return uploadResult;
   }
@@ -232,11 +252,41 @@ export class UploadController {
       throw new BadRequestException('URL không hợp lệ');
     }
 
-    // Update user avatar URL
-    await this.prisma.user.update({
+    // Update profile avatar URL based on role
+    const userData = await this.prisma.user.findUnique({
       where: { id: user.userId },
-      data: { avatar: body.url },
+      include: {
+        doctorProfile: true,
+        receptionistProfile: true,
+        patientProfiles: {
+          where: { isPrimary: true },
+          take: 1,
+        },
+      },
     });
+
+    if (userData?.role === 'DOCTOR' && userData.doctorProfile) {
+      await this.prisma.doctorProfile.update({
+        where: { id: userData.doctorProfile.id },
+        data: { avatar: body.url },
+      });
+    } else if (
+      userData?.role === 'RECEPTIONIST' &&
+      userData.receptionistProfile
+    ) {
+      await this.prisma.receptionistProfile.update({
+        where: { id: userData.receptionistProfile.id },
+        data: { avatar: body.url },
+      });
+    } else if (
+      userData?.role === 'PATIENT' &&
+      userData.patientProfiles.length > 0
+    ) {
+      await this.prisma.patientProfile.update({
+        where: { id: userData.patientProfiles[0].id },
+        data: { avatar: body.url },
+      });
+    }
 
     return {
       success: true,

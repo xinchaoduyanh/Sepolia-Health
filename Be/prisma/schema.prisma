@@ -56,6 +56,23 @@ enum SmokingStatus {
   CURRENT_SMOKER
 }
 
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum Relationship {
+  SELF        // Bản thân
+  SPOUSE      // Vợ/Chồng
+  CHILD       // Con
+  PARENT      // Bố/Mẹ
+  SIBLING     // Anh/Chị/Em
+  RELATIVE    // Họ hàng
+  FRIEND      // Bạn bè
+  OTHER       // Khác
+}
+
 
 
 // ----------------- CORE MODELS -----------------
@@ -94,7 +111,7 @@ model DoctorProfile {
   firstName     String
   lastName      String
   dateOfBirth   DateTime? @db.Date
-  gender        String?
+  gender        Gender?
   avatar        String?
 
   // Thông tin chuyên môn
@@ -127,7 +144,7 @@ model ReceptionistProfile {
   firstName     String
   lastName      String
   dateOfBirth   DateTime? @db.Date
-  gender        String?
+  gender        Gender?
   avatar        String?
 
   // Thông tin công việc
@@ -148,9 +165,9 @@ model PatientProfile {
   firstName    String
   lastName     String
   dateOfBirth  DateTime @db.Date
-  gender       String
+  gender       Gender
   phone        String   // SĐT liên lạc y tế (không cần unique)
-  relationship String   // Mối quan hệ với người quản lý (Bản thân, Con, Vợ...)
+  relationship Relationship // Mối quan hệ với người quản lý
   avatar       String?
 
   // Thông tin bổ sung

@@ -10,8 +10,7 @@ export class DoctorProfileDto {
   @ApiProperty()
   updatedAt: Date;
 
-  @ApiProperty({ nullable: true })
-  deletedAt: Date | null;
+  // deletedAt field removed in new schema
 
   @ApiProperty()
   specialty: string;
@@ -33,26 +32,8 @@ export class UserProfileDto {
   @ApiProperty()
   email: string;
 
-  @ApiProperty()
-  firstName: string;
-
-  @ApiProperty()
-  lastName: string;
-
   @ApiProperty({ nullable: true })
   phone?: string | null;
-
-  @ApiProperty({ nullable: true })
-  address?: string | null;
-
-  @ApiProperty({ nullable: true })
-  dateOfBirth?: Date | null;
-
-  @ApiProperty({ nullable: true })
-  gender?: string | null;
-
-  @ApiProperty({ nullable: true })
-  avatar?: string | null;
 
   @ApiProperty()
   role: string;

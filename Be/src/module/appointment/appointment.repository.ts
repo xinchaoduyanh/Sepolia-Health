@@ -11,10 +11,12 @@ export class AppointmentRepository {
    */
   async create(data: {
     date: Date;
+    startTime: string;
+    endTime: string;
     status: AppointmentStatus;
     paymentStatus: PaymentStatus;
     notes?: string;
-    patientId?: number;
+    patientProfileId?: number;
     patientName: string;
     patientDob: Date;
     patientPhone: string;
@@ -77,10 +79,10 @@ export class AppointmentRepository {
   }
 
   /**
-   * Find appointments by patient ID
+   * Find appointments by patient profile ID
    */
-  async findByPatientId(
-    patientId: number,
+  async findByPatientProfileId(
+    patientProfileId: number,
     options?: {
       skip?: number;
       take?: number;
@@ -88,7 +90,7 @@ export class AppointmentRepository {
     },
   ): Promise<Appointment[]> {
     return this.prisma.appointment.findMany({
-      where: { patientId },
+      where: { patientProfileId },
       ...options,
     });
   }
@@ -138,35 +140,35 @@ export class AppointmentRepository {
    */
   async getStatistics(where?: any): Promise<{
     total: number;
-    scheduled: number;
+    confirmed: number;
     completed: number;
     cancelled: number;
     pending: number;
     paid: number;
   }> {
-    const [total, scheduled, completed, cancelled, pending, paid] =
+    const [total, confirmed, completed, cancelled, pending, paid] =
       await Promise.all([
         this.prisma.appointment.count({ where }),
         this.prisma.appointment.count({
-          where: { ...where, status: 'scheduled' },
+          where: { ...where, status: 'CONFIRMED' },
         }),
         this.prisma.appointment.count({
-          where: { ...where, status: 'completed' },
+          where: { ...where, status: 'COMPLETED' },
         }),
         this.prisma.appointment.count({
-          where: { ...where, status: 'cancelled' },
+          where: { ...where, status: 'CANCELLED' },
         }),
         this.prisma.appointment.count({
-          where: { ...where, paymentStatus: 'pending' },
+          where: { ...where, paymentStatus: 'PENDING' },
         }),
         this.prisma.appointment.count({
-          where: { ...where, paymentStatus: 'paid' },
+          where: { ...where, paymentStatus: 'PAID' },
         }),
       ]);
 
     return {
       total,
-      scheduled,
+      confirmed,
       completed,
       cancelled,
       pending,

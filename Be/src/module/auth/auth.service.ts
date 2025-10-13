@@ -166,8 +166,18 @@ export class AuthService {
   async completeRegister(
     completeRegisterDto: CompleteRegisterDto,
   ): Promise<CompleteRegisterResponseDto> {
-    const { email, otp, firstName, lastName, phone, password, role } =
-      completeRegisterDto;
+    const {
+      email,
+      otp,
+      password,
+      role,
+      firstName,
+      lastName,
+      phone,
+      dateOfBirth,
+      gender,
+      relationship,
+    } = completeRegisterDto;
 
     // Verify OTP again
     const isOtpValid = await this.redisService.verifyOtp(
@@ -180,24 +190,30 @@ export class AuthService {
       throw new BadRequestException(ERROR_MESSAGES.AUTH.INVALID_OTP);
     }
 
-    // Create user
-    const user = await this.authRepository.createUser({
-      email,
-      password,
-      firstName,
-      lastName,
-      phone,
-      role,
-      isVerified: true,
-      verifiedAt: new Date(),
-    });
+    // Create user with patient profile
+    const { user, patientProfile } =
+      await this.authRepository.createUserWithPatientProfile({
+        email,
+        password,
+        phone: phone, // Use phone for user.phone
+        role,
+        isVerified: true,
+        verifiedAt: new Date(),
+        // Patient profile data - basic info for registration
+        firstName,
+        lastName,
+        dateOfBirth: new Date(dateOfBirth),
+        gender,
+        patientPhone: phone, // Use phone for patient profile
+        relationship,
+      });
 
     return {
       user: {
         id: user.id,
         email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
+        firstName: patientProfile.firstName,
+        lastName: patientProfile.lastName,
         role: user.role,
       },
     };
@@ -252,7 +268,7 @@ export class AuthService {
   /**
    * Logout user - xóa cả access token và refresh token khỏi Redis
    */
-  async logout(userId: number, refreshToken: string): Promise<void> {
+  async logout(userId: number): Promise<void> {
     // Lấy tất cả tokens của user (cả access và refresh tokens)
     const tokens = await this.redisService.findAllTokens(userId);
 

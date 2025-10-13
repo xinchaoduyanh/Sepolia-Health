@@ -42,7 +42,7 @@ export class AppointmentService {
     if (status) where.status = status;
     if (paymentStatus) where.paymentStatus = paymentStatus;
     if (doctorId) where.doctorId = doctorId;
-    if (patientId) where.patientId = patientId;
+    if (patientId) where.patientProfileId = patientId;
     if (dateFrom || dateTo) {
       where.date = {};
       if (dateFrom) where.date.gte = new Date(dateFrom);
@@ -56,24 +56,20 @@ export class AppointmentService {
         take: limit,
         orderBy: { date: 'asc' },
         include: {
-          patient: {
+          patientProfile: {
             select: {
               id: true,
               firstName: true,
               lastName: true,
-              email: true,
               phone: true,
             },
           },
           doctor: {
-            include: {
-              user: {
-                select: {
-                  id: true,
-                  firstName: true,
-                  lastName: true,
-                },
-              },
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              specialty: true,
             },
           },
           service: true,
@@ -99,24 +95,20 @@ export class AppointmentService {
     const appointment = await this.prisma.appointment.findUnique({
       where: { id },
       include: {
-        patient: {
+        patientProfile: {
           select: {
             id: true,
             firstName: true,
             lastName: true,
-            email: true,
             phone: true,
           },
         },
         doctor: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-              },
-            },
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            specialty: true,
           },
         },
         service: true,
@@ -140,7 +132,10 @@ export class AppointmentService {
   ): Promise<AppointmentResponseDtoType> {
     const appointment = await this.prisma.appointment.findUnique({
       where: { id },
-      include: { doctor: true },
+      include: {
+        doctor: true,
+        patientProfile: true,
+      },
     });
 
     if (!appointment) {
@@ -150,7 +145,7 @@ export class AppointmentService {
     // Check permissions
     if (
       user.role !== 'ADMIN' &&
-      appointment.patientId !== user.userId &&
+      appointment.patientProfile?.managerId !== user.userId &&
       appointment.doctor.userId !== user.userId
     ) {
       throw new ForbiddenException('Không có quyền cập nhật lịch hẹn này');
@@ -176,24 +171,20 @@ export class AppointmentService {
         }),
       },
       include: {
-        patient: {
+        patientProfile: {
           select: {
             id: true,
             firstName: true,
             lastName: true,
-            email: true,
             phone: true,
           },
         },
         doctor: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-              },
-            },
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            specialty: true,
           },
         },
         service: true,
@@ -212,6 +203,7 @@ export class AppointmentService {
   ): Promise<{ message: string }> {
     const appointment = await this.prisma.appointment.findUnique({
       where: { id },
+      include: { patientProfile: true },
     });
 
     if (!appointment) {
@@ -219,7 +211,10 @@ export class AppointmentService {
     }
 
     // Check permissions
-    if (user.role !== 'ADMIN' && appointment.patientId !== user.userId) {
+    if (
+      user.role !== 'ADMIN' &&
+      appointment.patientProfile?.managerId !== user.userId
+    ) {
       throw new ForbiddenException('Không có quyền xóa lịch hẹn này');
     }
 
@@ -237,9 +232,17 @@ export class AppointmentService {
     query: GetAppointmentsQueryDtoType,
     @CurrentUser() user: TokenPayload,
   ): Promise<AppointmentsListResponseDtoType> {
+    // Find patient profiles managed by this user
+    const patientProfiles = await this.prisma.patientProfile.findMany({
+      where: { managerId: user.userId },
+      select: { id: true },
+    });
+
+    const patientProfileIds = patientProfiles.map((p) => p.id);
+
     return this.findAll({
       ...query,
-      patientId: user.userId,
+      patientId: patientProfileIds.length > 0 ? patientProfileIds[0] : -1, // Use first profile or invalid ID
     });
   }
 
@@ -272,7 +275,6 @@ export class AppointmentService {
     const locations = await this.prisma.clinic.findMany({
       where: {
         isActive: true,
-        deletedAt: null,
       },
       select: {
         id: true,
@@ -344,21 +346,19 @@ export class AppointmentService {
         serviceId: serviceId,
         doctor: {
           clinicId: locationId,
-          deletedAt: null,
         },
-        deletedAt: null,
       },
       include: {
         doctor: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                avatar: true,
-              },
-            },
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            specialty: true,
+            experience: true,
+            contactInfo: true,
+            avatar: true,
+            clinicId: true,
           },
         },
         service: {
@@ -380,15 +380,12 @@ export class AppointmentService {
       clinicId: ds.doctor.clinicId,
       doctor: {
         id: ds.doctor.id,
+        firstName: ds.doctor.firstName,
+        lastName: ds.doctor.lastName,
         specialty: ds.doctor.specialty,
         experience: ds.doctor.experience,
         contactInfo: ds.doctor.contactInfo,
-        user: {
-          id: ds.doctor.user.id,
-          firstName: ds.doctor.user.firstName,
-          lastName: ds.doctor.user.lastName,
-          avatar: ds.doctor.user.avatar,
-        },
+        avatar: ds.doctor.avatar,
       },
       service: ds.service,
       location: {
@@ -441,10 +438,7 @@ export class AppointmentService {
       throw new NotFoundException('Dịch vụ bác sĩ không tồn tại');
     }
 
-    // Check if doctor is active
-    if (doctorService.doctor.deletedAt) {
-      throw new BadRequestException('Bác sĩ không còn hoạt động');
-    }
+    // Doctor is always active in new schema
 
     // Check if clinic exists and is active
     if (!doctorService.doctor.clinicId) {
@@ -455,21 +449,30 @@ export class AppointmentService {
       where: { id: doctorService.doctor.clinicId },
     });
 
-    if (!clinic || clinic.deletedAt) {
+    if (!clinic || !clinic.isActive) {
       throw new NotFoundException(
         'Cơ sở phòng khám không tồn tại hoặc không hoạt động',
       );
     }
+
+    // Calculate end time based on service duration
+    const [startHour, startMinute] = startTime.split(':').map(Number);
+    const startMinutes = startHour * 60 + startMinute;
+    const endMinutes = startMinutes + doctorService.service.duration;
+    const endHour = Math.floor(endMinutes / 60);
+    const endMinute = endMinutes % 60;
+    const endTime = `${endHour.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}`;
 
     // Create appointment using data from DoctorService
     const appointment = await this.prisma.appointment.create({
       data: {
         date: new Date(date + 'T00:00:00.000Z'),
         startTime,
-        status: 'PENDING',
+        endTime,
+        status: 'REQUESTED',
         paymentStatus: 'PENDING',
         notes,
-        patientId: user.userId,
+        patientProfileId: user.userId,
         patientName,
         patientDob: new Date(patientDob + 'T00:00:00.000Z'),
         patientPhone,
@@ -479,24 +482,20 @@ export class AppointmentService {
         clinicId: doctorService.doctor.clinicId,
       },
       include: {
-        patient: {
+        patientProfile: {
           select: {
             id: true,
             firstName: true,
             lastName: true,
-            email: true,
             phone: true,
           },
         },
         doctor: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-              },
-            },
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            specialty: true,
           },
         },
         service: true,
@@ -515,23 +514,33 @@ export class AppointmentService {
     return {
       id: appointment.id,
       date: appointment.date.toISOString(),
+      startTime: appointment.startTime,
+      endTime: appointment.endTime,
       status: appointment.status,
       paymentStatus: appointment.paymentStatus,
       notes: appointment.notes,
-      patient: {
-        id: appointment.patient.id,
-        firstName: appointment.patient.firstName,
-        lastName: appointment.patient.lastName,
-        email: appointment.patient.email,
-        phone: appointment.patient.phone,
-      },
+      patient: appointment.patientProfile
+        ? {
+            id: appointment.patientProfile.id,
+            firstName: appointment.patientProfile.firstName,
+            lastName: appointment.patientProfile.lastName,
+            email: '', // Patient profile doesn't have email
+            phone: appointment.patientProfile.phone,
+          }
+        : {
+            id: 0,
+            firstName: appointment.patientName,
+            lastName: '',
+            email: '',
+            phone: appointment.patientPhone,
+          },
       doctor: {
         id: appointment.doctor.id,
         specialty: appointment.doctor.specialty,
         user: {
-          id: appointment.doctor.user.id,
-          firstName: appointment.doctor.user.firstName,
-          lastName: appointment.doctor.user.lastName,
+          id: appointment.doctor.id,
+          firstName: appointment.doctor.firstName,
+          lastName: appointment.doctor.lastName,
         },
       },
       service: {
