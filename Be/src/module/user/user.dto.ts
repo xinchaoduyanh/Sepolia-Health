@@ -1,8 +1,8 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 
-// Update User Profile DTO
-export const UpdateUserProfileDto = z.object({
+// Update User Profile DTO Schema
+export const UpdateUserProfileSchema = z.object({
   firstName: z.string().min(1, 'Tên không được để trống').optional(),
   lastName: z.string().min(1, 'Họ không được để trống').optional(),
   phone: z
@@ -15,8 +15,13 @@ export const UpdateUserProfileDto = z.object({
   avatar: z.string().url('URL avatar không hợp lệ').optional(),
 });
 
-// Change Password DTO
-export const ChangePasswordDto = z
+// Export class for Swagger
+export class UpdateUserProfileDto extends createZodDto(
+  UpdateUserProfileSchema,
+) {}
+
+// Change Password DTO Schema
+export const ChangePasswordSchema = z
   .object({
     currentPassword: z.string().min(1, 'Mật khẩu hiện tại không được để trống'),
     newPassword: z.string().min(6, 'Mật khẩu mới phải có ít nhất 6 ký tự'),
@@ -26,6 +31,9 @@ export const ChangePasswordDto = z
     message: 'Mật khẩu xác nhận không khớp',
     path: ['confirmPassword'],
   });
+
+// Export class for Swagger
+export class ChangePasswordDto extends createZodDto(ChangePasswordSchema) {}
 
 // Upload Avatar DTO
 export const UploadAvatarDto = z.object({
@@ -49,33 +57,44 @@ export const UserProfileResponseSchema = z.object({
   updatedAt: z.string(),
 });
 
-export const UpdateUserProfileResponseDto = z.object({
+export const UpdateUserProfileResponseSchema = z.object({
   user: UserProfileResponseSchema,
 });
 
-export const ChangePasswordResponseDto = z.object({
+export const ChangePasswordResponseSchema = z.object({
   message: z.string(),
 });
 
-export const UploadAvatarResponseDto = z.object({
+export const UploadAvatarResponseSchema = z.object({
   avatarUrl: z.string(),
 });
 
+// Export classes for Swagger
+export class UpdateUserProfileResponseDto extends createZodDto(
+  UpdateUserProfileResponseSchema,
+) {}
+export class ChangePasswordResponseDto extends createZodDto(
+  ChangePasswordResponseSchema,
+) {}
+export class UploadAvatarResponseDto extends createZodDto(
+  UploadAvatarResponseSchema,
+) {}
+
 // Export types
-export type UpdateUserProfileDtoType = z.infer<typeof UpdateUserProfileDto>;
-export type ChangePasswordDtoType = z.infer<typeof ChangePasswordDto>;
+export type UpdateUserProfileDtoType = z.infer<typeof UpdateUserProfileSchema>;
+export type ChangePasswordDtoType = z.infer<typeof ChangePasswordSchema>;
 export type UploadAvatarDtoType = z.infer<typeof UploadAvatarDto>;
 export type UserProfileResponseDtoType = z.infer<
   typeof UserProfileResponseSchema
 >;
 export type UpdateUserProfileResponseDtoType = z.infer<
-  typeof UpdateUserProfileResponseDto
+  typeof UpdateUserProfileResponseSchema
 >;
 export type ChangePasswordResponseDtoType = z.infer<
-  typeof ChangePasswordResponseDto
+  typeof ChangePasswordResponseSchema
 >;
 export type UploadAvatarResponseDtoType = z.infer<
-  typeof UploadAvatarResponseDto
+  typeof UploadAvatarResponseSchema
 >;
 
 export class UserProfileResponseDto extends createZodDto(

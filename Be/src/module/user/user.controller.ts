@@ -28,7 +28,14 @@ import type {
   ChangePasswordResponseDtoType,
   UploadAvatarResponseDtoType,
 } from './user.dto';
-import { UpdateUserProfileDto, ChangePasswordDto } from './user.dto';
+import {
+  UpdateUserProfileDto,
+  ChangePasswordDto,
+  UpdateUserProfileSchema,
+  ChangePasswordSchema,
+  UpdateUserProfileResponseDto,
+  ChangePasswordResponseDto,
+} from './user.dto';
 import { CurrentUser } from '@/common/decorators';
 import { CustomZodValidationPipe } from '@/common/pipes';
 import { ApiBearerAuth } from '@nestjs/swagger';
@@ -58,11 +65,32 @@ export class UserController {
   @ApiResponse({
     status: 200,
     description: 'Cập nhật thành công',
+    type: UpdateUserProfileResponseDto,
   })
-  // @ApiResponseOk(MESSAGES.USER.UPDATE_PROFILE_SUCCESS)
+  @ApiResponse({
+    status: 422,
+    description: 'Dữ liệu không hợp lệ',
+  })
+  @ApiBody({
+    type: UpdateUserProfileDto,
+    description: 'Thông tin cập nhật',
+    examples: {
+      example1: {
+        summary: 'Cập nhật thông tin cơ bản',
+        value: {
+          firstName: 'Nguyễn',
+          lastName: 'Văn A',
+          phone: '0123456789',
+          address: '123 Đường ABC, Quận 1, TP.HCM',
+          dateOfBirth: '1990-01-15T00:00:00.000Z',
+          gender: 'MALE',
+        },
+      },
+    },
+  })
   async updateProfile(
     @CurrentUser() user: TokenPayload,
-    @Body(new CustomZodValidationPipe(UpdateUserProfileDto))
+    @Body(new CustomZodValidationPipe(UpdateUserProfileSchema))
     updateData: UpdateUserProfileDtoType,
   ): Promise<UpdateUserProfileResponseDtoType> {
     return this.userService.updateProfile(user.userId, updateData);
@@ -74,11 +102,29 @@ export class UserController {
   @ApiResponse({
     status: 200,
     description: 'Đổi mật khẩu thành công',
+    type: ChangePasswordResponseDto,
   })
-  // @ApiResponseOk(MESSAGES.USER.CHANGE_PASSWORD_SUCCESS)
+  @ApiResponse({
+    status: 422,
+    description: 'Dữ liệu không hợp lệ',
+  })
+  @ApiBody({
+    type: ChangePasswordDto,
+    description: 'Thông tin đổi mật khẩu',
+    examples: {
+      example1: {
+        summary: 'Đổi mật khẩu',
+        value: {
+          currentPassword: 'oldpassword123',
+          newPassword: 'newpassword123',
+          confirmPassword: 'newpassword123',
+        },
+      },
+    },
+  })
   async changePassword(
     @CurrentUser() user: TokenPayload,
-    @Body(new CustomZodValidationPipe(ChangePasswordDto))
+    @Body(new CustomZodValidationPipe(ChangePasswordSchema))
     changePasswordData: ChangePasswordDtoType,
   ): Promise<ChangePasswordResponseDtoType> {
     return this.userService.changePassword(user.userId, changePasswordData);

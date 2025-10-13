@@ -25,6 +25,8 @@ export const CreateAppointmentFromDoctorServiceDto = z.object({
       'Thời gian bắt đầu không hợp lệ (HH:mm)',
     ),
   notes: z.string().optional(),
+  // Patient profile ID (optional - if not provided, will use null)
+  patientProfileId: z.number().optional(),
   // Patient information (required for all appointments)
   patientName: z.string().min(1, 'Họ tên không được để trống'),
   patientDob: z.string().date('Ngày sinh không hợp lệ'),

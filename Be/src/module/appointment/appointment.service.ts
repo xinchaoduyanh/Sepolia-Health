@@ -4,7 +4,9 @@ import {
   ForbiddenException,
   BadRequestException,
 } from '@nestjs/common';
+import { MESSAGES } from '@/common/constants/messages';
 import { PrismaService } from '@/common/prisma/prisma.service';
+import { DayOfWeek } from '@prisma/client';
 import type { TokenPayload } from '@/common/types';
 import type {
   CreateAppointmentFromDoctorServiceDtoType,
@@ -116,7 +118,7 @@ export class AppointmentService {
     });
 
     if (!appointment) {
-      throw new NotFoundException('Lịch hẹn không tồn tại');
+      throw new NotFoundException(MESSAGES.APPOINTMENT.APPOINTMENT_NOT_FOUND);
     }
 
     return this.formatAppointmentResponse(appointment);
@@ -139,7 +141,7 @@ export class AppointmentService {
     });
 
     if (!appointment) {
-      throw new NotFoundException('Lịch hẹn không tồn tại');
+      throw new NotFoundException(MESSAGES.APPOINTMENT.APPOINTMENT_NOT_FOUND);
     }
 
     // Check permissions
@@ -148,7 +150,7 @@ export class AppointmentService {
       appointment.patientProfile?.managerId !== user.userId &&
       appointment.doctor.userId !== user.userId
     ) {
-      throw new ForbiddenException('Không có quyền cập nhật lịch hẹn này');
+      throw new ForbiddenException(MESSAGES.APPOINTMENT.UNAUTHORIZED_ACCESS);
     }
 
     const updatedAppointment = await this.prisma.appointment.update({
@@ -207,7 +209,7 @@ export class AppointmentService {
     });
 
     if (!appointment) {
-      throw new NotFoundException('Lịch hẹn không tồn tại');
+      throw new NotFoundException(MESSAGES.APPOINTMENT.APPOINTMENT_NOT_FOUND);
     }
 
     // Check permissions
@@ -215,7 +217,7 @@ export class AppointmentService {
       user.role !== 'ADMIN' &&
       appointment.patientProfile?.managerId !== user.userId
     ) {
-      throw new ForbiddenException('Không có quyền xóa lịch hẹn này');
+      throw new ForbiddenException(MESSAGES.APPOINTMENT.UNAUTHORIZED_ACCESS);
     }
 
     await this.prisma.appointment.delete({
@@ -259,7 +261,9 @@ export class AppointmentService {
     });
 
     if (!doctorProfile) {
-      throw new NotFoundException('Không tìm thấy hồ sơ bác sĩ');
+      throw new NotFoundException(
+        MESSAGES.APPOINTMENT.DOCTOR_SERVICE_NOT_FOUND,
+      );
     }
 
     return this.findAll({
@@ -328,7 +332,7 @@ export class AppointmentService {
     });
 
     if (!location) {
-      throw new NotFoundException('Cơ sở phòng khám không tồn tại');
+      throw new NotFoundException(MESSAGES.APPOINTMENT.LOCATION_NOT_FOUND);
     }
 
     // Check if service exists
@@ -337,7 +341,7 @@ export class AppointmentService {
     });
 
     if (!service) {
-      throw new NotFoundException('Dịch vụ không tồn tại');
+      throw new NotFoundException(MESSAGES.APPOINTMENT.SERVICE_NOT_FOUND);
     }
 
     // Get doctor services that match both location and service
@@ -415,6 +419,7 @@ export class AppointmentService {
       date,
       startTime,
       notes,
+      patientProfileId,
       patientName,
       patientDob,
       patientPhone,
@@ -435,14 +440,16 @@ export class AppointmentService {
     });
 
     if (!doctorService) {
-      throw new NotFoundException('Dịch vụ bác sĩ không tồn tại');
+      throw new NotFoundException(
+        MESSAGES.APPOINTMENT.DOCTOR_SERVICE_NOT_FOUND,
+      );
     }
 
     // Doctor is always active in new schema
 
     // Check if clinic exists and is active
     if (!doctorService.doctor.clinicId) {
-      throw new BadRequestException('Bác sĩ chưa được gán cơ sở phòng khám');
+      throw new BadRequestException(MESSAGES.APPOINTMENT.DOCTOR_NO_CLINIC);
     }
 
     const clinic = await this.prisma.clinic.findUnique({
@@ -450,9 +457,30 @@ export class AppointmentService {
     });
 
     if (!clinic || !clinic.isActive) {
-      throw new NotFoundException(
-        'Cơ sở phòng khám không tồn tại hoặc không hoạt động',
-      );
+      throw new NotFoundException(MESSAGES.APPOINTMENT.CLINIC_NOT_FOUND);
+    }
+
+    // Validate patientProfileId if provided
+    let validatedPatientProfileId: number | null = null;
+    if (patientProfileId) {
+      const patientProfile = await this.prisma.patientProfile.findUnique({
+        where: { id: patientProfileId },
+        select: { id: true, managerId: true },
+      });
+
+      if (!patientProfile) {
+        throw new NotFoundException(
+          MESSAGES.APPOINTMENT.PATIENT_PROFILE_NOT_FOUND,
+        );
+      }
+
+      if (patientProfile.managerId !== user.userId) {
+        throw new ForbiddenException(
+          MESSAGES.APPOINTMENT.PATIENT_PROFILE_NOT_OWNED,
+        );
+      }
+
+      validatedPatientProfileId = patientProfile.id;
     }
 
     // Calculate end time based on service duration
@@ -472,7 +500,7 @@ export class AppointmentService {
         status: 'REQUESTED',
         paymentStatus: 'PENDING',
         notes,
-        patientProfileId: user.userId,
+        patientProfileId: validatedPatientProfileId,
         patientName,
         patientDob: new Date(patientDob + 'T00:00:00.000Z'),
         patientPhone,
@@ -552,5 +580,122 @@ export class AppointmentService {
       createdAt: appointment.createdAt.toISOString(),
       updatedAt: appointment.updatedAt.toISOString(),
     };
+  }
+
+  /**
+   * Get doctor availability for a specific date (simple version)
+   */
+  async getDoctorAvailability(doctorServiceId: number, date: string) {
+    // Validate date format (like dateOfBirth in complete-register)
+    if (isNaN(Date.parse(date))) {
+      throw new BadRequestException(MESSAGES.APPOINTMENT.INVALID_DATE);
+    }
+    const targetDate = new Date(date);
+
+    // Check if date is in the past
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (targetDate < today) {
+      throw new BadRequestException(MESSAGES.APPOINTMENT.PAST_DATE);
+    }
+
+    // Get doctor service info
+    const doctorService = await this.prisma.doctorService.findUnique({
+      where: { id: doctorServiceId },
+      include: {
+        doctor: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            specialty: true,
+          },
+        },
+        service: {
+          select: {
+            id: true,
+            name: true,
+            duration: true,
+          },
+        },
+      },
+    });
+
+    if (!doctorService) {
+      throw new NotFoundException(
+        MESSAGES.APPOINTMENT.DOCTOR_SERVICE_NOT_FOUND,
+      );
+    }
+
+    // Get doctor's working hours for the day of week
+    const dayOfWeek = this.getDayOfWeek(targetDate);
+    const workingHours = await this.prisma.doctorAvailability.findUnique({
+      where: {
+        doctorId_dayOfWeek: {
+          doctorId: doctorService.doctor.id,
+          dayOfWeek: dayOfWeek,
+        },
+      },
+    });
+
+    // If doctor doesn't work on this day, throw error
+    if (!workingHours) {
+      throw new NotFoundException(MESSAGES.APPOINTMENT.DOCTOR_NOT_AVAILABLE);
+    }
+
+    // Get existing appointments for the date
+    const bookedAppointments = await this.prisma.appointment.findMany({
+      where: {
+        doctorId: doctorService.doctor.id,
+        date: targetDate,
+        status: {
+          in: ['REQUESTED', 'CONFIRMED', 'CHECKED_IN'],
+        },
+      },
+      select: {
+        startTime: true,
+        endTime: true,
+        patientName: true,
+        status: true,
+      },
+      orderBy: {
+        startTime: 'asc',
+      },
+    });
+
+    return {
+      doctorId: doctorService.doctor.id,
+      doctorName: `${doctorService.doctor.firstName} ${doctorService.doctor.lastName}`,
+      specialty: doctorService.doctor.specialty,
+      serviceName: doctorService.service.name,
+      serviceDuration: doctorService.service.duration,
+      date: date,
+      workingHours: {
+        startTime: workingHours.startTime,
+        endTime: workingHours.endTime,
+      },
+      bookedAppointments: bookedAppointments.map((apt) => ({
+        startTime: apt.startTime,
+        endTime: apt.endTime,
+        patientName: apt.patientName,
+        status: apt.status,
+      })),
+    };
+  }
+
+  /**
+   * Get day of week from date
+   */
+  private getDayOfWeek(date: Date): DayOfWeek {
+    const days: DayOfWeek[] = [
+      'SUNDAY',
+      'MONDAY',
+      'TUESDAY',
+      'WEDNESDAY',
+      'THURSDAY',
+      'FRIDAY',
+      'SATURDAY',
+    ];
+    return days[date.getDay()];
   }
 }

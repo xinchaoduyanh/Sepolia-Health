@@ -50,11 +50,7 @@ enum DayOfWeek {
   SATURDAY
 }
 
-enum SmokingStatus {
-  NON_SMOKER
-  FORMER_SMOKER
-  CURRENT_SMOKER
-}
+
 
 enum Gender {
   MALE
