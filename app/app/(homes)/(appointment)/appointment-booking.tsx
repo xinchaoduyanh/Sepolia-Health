@@ -8,9 +8,33 @@ import TimePicker from '@/components/TimePicker';
 import { BookingType, Doctor } from '@/types';
 
 const doctors: Doctor[] = [
-  { id: '1', name: 'Bác sĩ Lê Thị Thu Hằng', specialty: 'Da liễu' },
-  { id: '2', name: 'Bác sĩ Nguyễn Văn A', specialty: 'Tim mạch' },
-  { id: '3', name: 'Bác sĩ Trần Thị B', specialty: 'Mắt' },
+  {
+    id: 1,
+    firstName: 'Lê Thị Thu',
+    lastName: 'Hằng',
+    specialty: 'Da liễu',
+    userId: 1,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 2,
+    firstName: 'Nguyễn Văn',
+    lastName: 'A',
+    specialty: 'Tim mạch',
+    userId: 2,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 3,
+    firstName: 'Trần Thị',
+    lastName: 'B',
+    specialty: 'Mắt',
+    userId: 3,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
 ];
 
 export default function AppointmentBookingScreen() {
@@ -136,7 +160,12 @@ export default function AppointmentBookingScreen() {
             onPress={handleDoctorSelect}
             className="flex-row items-center rounded-lg bg-gray-100 px-3 py-3">
             <Ionicons name="person" size={20} color="#000" />
-            <Text className="ml-2 text-base text-black">Bác sĩ Lê Thị Thu Hằng</Text>
+            <Text className="ml-2 text-base text-black">
+              Bác sĩ{' '}
+              {selectedDoctor
+                ? `${selectedDoctor.firstName} ${selectedDoctor.lastName}`
+                : 'Lê Thị Thu Hằng'}
+            </Text>
             <Ionicons name="close" size={20} color="#9CA3AF" style={{ marginLeft: 'auto' }} />
           </TouchableOpacity>
         </View>

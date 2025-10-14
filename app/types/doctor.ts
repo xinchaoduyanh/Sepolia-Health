@@ -11,32 +11,26 @@ export interface Service {
 
 export interface Doctor {
   id: number;
+  firstName: string;
+  lastName: string;
+  dateOfBirth?: string;
+  gender?: 'MALE' | 'FEMALE' | 'OTHER';
+  avatar?: string;
   specialty: string;
   experience?: string;
   contactInfo?: string;
-  workingHours?: string;
   userId: number;
-  user: {
+  clinicId?: number;
+  clinic?: {
     id: number;
-    firstName: string;
-    lastName: string;
-    email: string;
-    phone?: string;
+    name: string;
+    address: string;
   };
   createdAt: string;
   updatedAt: string;
 }
 
-export interface DoctorProfile {
-  id: number;
-  specialty: string;
-  experience?: string;
-  contactInfo?: string;
-  workingHours?: string;
-  userId: number;
-  createdAt: string;
-  updatedAt: string;
-}
+// DoctorProfile is now exported from auth.ts to avoid duplication
 
 export interface Timeslot {
   id: number;

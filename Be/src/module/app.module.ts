@@ -6,10 +6,11 @@ import { PrismaModule } from '@/common/prisma/prisma.module';
 import { CommonModule } from '@/common/common.module';
 import { AuthModule } from './auth/auth.module';
 import { APP_PIPE } from '@nestjs/core';
-import { DoctorModule } from './doctor/doctor.module';
-import { UserModule } from './user/user.module';
-import { UploadModule } from './upload/upload.module';
 import { AppointmentModule } from './appointment/appointment.module';
+import { DoctorModule } from './doctor/doctor.module';
+import { ReceptionistModule } from './receptionist/receptionist.module';
+import { UploadModule } from './upload/upload.module';
+import { UserModule } from './user/user.module';
 import { CustomZodValidationPipe } from '@/common/pipes';
 
 @Module({
@@ -20,10 +21,11 @@ import { CustomZodValidationPipe } from '@/common/pipes';
     PrismaModule,
     CommonModule,
     AuthModule,
-    DoctorModule,
-    UserModule,
-    UploadModule,
     AppointmentModule,
+    DoctorModule,
+    ReceptionistModule,
+    UploadModule,
+    UserModule,
   ],
   controllers: [AppController],
   providers: [

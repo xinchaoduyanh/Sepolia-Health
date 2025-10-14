@@ -12,7 +12,7 @@ import {
 } from '@/lib/api/auth';
 import { apiClient } from '@/lib/api-client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { User } from '@/types/auth';
+import type { User, CompleteRegisterRequest } from '@/types/auth';
 
 export const useAuth = () => {
   const queryClient = useQueryClient();
@@ -100,15 +100,7 @@ export const useAuth = () => {
   };
 
   // Complete register function - Step 3: Complete registration
-  const completeRegister = async (userData: {
-    email: string;
-    otp: string;
-    firstName: string;
-    lastName: string;
-    phone: string;
-    password: string;
-    role?: 'PATIENT' | 'DOCTOR' | 'ADMIN';
-  }) => {
+  const completeRegister = async (userData: CompleteRegisterRequest) => {
     try {
       const result = await completeRegisterMutation.mutateAsync(userData);
 

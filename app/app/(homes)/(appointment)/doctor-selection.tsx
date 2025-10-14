@@ -8,64 +8,69 @@ import { useAppointment } from '@/contexts/AppointmentContext';
 
 const doctors: Doctor[] = [
   {
-    id: '1',
-    name: 'Bác sĩ Lê Thị Thu Hằng',
+    id: 1,
+    firstName: 'Lê Thị Thu',
+    lastName: 'Hằng',
     specialty: 'Da liễu',
     experience: '15 năm kinh nghiệm',
-    rating: 4.8,
-    avatar: '👩‍⚕️',
-    available: true,
+    userId: 1,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   },
   {
-    id: '2',
-    name: 'Bác sĩ Nguyễn Văn A',
+    id: 2,
+    firstName: 'Nguyễn Văn',
+    lastName: 'A',
     specialty: 'Tim mạch',
     experience: '12 năm kinh nghiệm',
-    rating: 4.9,
-    avatar: '👨‍⚕️',
-    available: true,
+    userId: 2,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   },
   {
-    id: '3',
-    name: 'Bác sĩ Trần Thị B',
+    id: 3,
+    firstName: 'Trần Thị',
+    lastName: 'B',
     specialty: 'Mắt',
     experience: '10 năm kinh nghiệm',
-    rating: 4.7,
-    avatar: '👩‍⚕️',
-    available: false,
+    userId: 3,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   },
   {
-    id: '4',
-    name: 'Bác sĩ Phạm Văn C',
+    id: 4,
+    firstName: 'Phạm Văn',
+    lastName: 'C',
     specialty: 'Ngoại chấn thương chỉnh hình',
     experience: '18 năm kinh nghiệm',
-    rating: 4.9,
-    avatar: '👨‍⚕️',
-    available: true,
+    userId: 4,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   },
   {
-    id: '5',
-    name: 'Bác sĩ Hoàng Thị D',
+    id: 5,
+    firstName: 'Hoàng Thị',
+    lastName: 'D',
     specialty: 'Nhi',
     experience: '8 năm kinh nghiệm',
-    rating: 4.6,
-    avatar: '👩‍⚕️',
-    available: true,
+    userId: 5,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   },
 ];
 
 export default function DoctorSelectionScreen() {
-  const [selectedDoctor, setSelectedDoctor] = useState<string | null>(null);
+  const [selectedDoctor, setSelectedDoctor] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const { setSelectedDoctor: setContextDoctor } = useAppointment();
 
   const filteredDoctors = doctors.filter(
     (doctor) =>
-      doctor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      `${doctor.firstName} ${doctor.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
       doctor.specialty.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleDoctorSelect = (doctorId: string) => {
+  const handleDoctorSelect = (doctorId: number) => {
     setSelectedDoctor(doctorId);
   };
 
@@ -73,14 +78,14 @@ export default function DoctorSelectionScreen() {
     if (selectedDoctor) {
       const doctor = doctors.find((d) => d.id === selectedDoctor);
       if (doctor) {
-        setContextDoctor(doctor.name);
-        router.push('/appointment');
+        setContextDoctor(`${doctor.firstName} ${doctor.lastName}`);
+        router.push('/appointment' as any);
       }
     }
   };
 
   const handleBack = () => {
-    router.push('/appointment');
+    router.push('/appointment' as any);
   };
 
   const renderStars = (rating: number | undefined) => {
@@ -145,8 +150,7 @@ export default function DoctorSelectionScreen() {
               selectedDoctor === doctor.id
                 ? 'border-2 border-blue-500 bg-blue-50'
                 : 'border border-slate-200 bg-white'
-            } ${!doctor.available ? 'opacity-50' : ''}`}
-            disabled={!doctor.available}
+            }`}
             style={{
               shadowColor: '#000',
               shadowOffset: { width: 0, height: 1 },
@@ -156,17 +160,16 @@ export default function DoctorSelectionScreen() {
             }}>
             <View className="flex-row items-start">
               <View className="mr-4">
-                <Text className="text-3xl">{doctor.avatar}</Text>
-                {!doctor.available && (
-                  <View className="absolute -right-1 -top-1 h-4 w-4 items-center justify-center rounded-full bg-red-500">
-                    <Text className="text-xs font-bold text-white">!</Text>
-                  </View>
-                )}
+                <View className="h-12 w-12 items-center justify-center rounded-full bg-blue-100">
+                  <Ionicons name="person" size={24} color="#3B82F6" />
+                </View>
               </View>
 
               <View className="flex-1">
                 <View className="mb-1 flex-row items-center justify-between">
-                  <Text className="text-base font-semibold text-slate-900">{doctor.name}</Text>
+                  <Text className="text-base font-semibold text-slate-900">
+                    Bác sĩ {doctor.firstName} {doctor.lastName}
+                  </Text>
                   {selectedDoctor === doctor.id && (
                     <View className="rounded-full bg-blue-600 p-1">
                       <Ionicons name="checkmark" size={16} color="white" />
@@ -179,13 +182,9 @@ export default function DoctorSelectionScreen() {
                 <Text className="mb-2 text-sm text-slate-600">{doctor.experience}</Text>
 
                 <View className="flex-row items-center">
-                  <View className="mr-3 flex-row items-center">{renderStars(doctor.rating)}</View>
-                  <Text className="text-sm text-slate-600">{doctor.rating || 0}/5</Text>
+                  <View className="mr-3 flex-row items-center">{renderStars(4.5)}</View>
+                  <Text className="text-sm text-slate-600">4.5/5</Text>
                 </View>
-
-                {!doctor.available && (
-                  <Text className="mt-2 text-sm font-medium text-red-500">Không có lịch trống</Text>
-                )}
               </View>
             </View>
           </TouchableOpacity>

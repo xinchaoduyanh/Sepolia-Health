@@ -17,6 +17,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Link, useRouter } from 'expo-router';
 import { useState, useRef } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
+import BirthDatePicker from '@/components/BirthDatePicker';
+import GenderSelector from '@/components/GenderSelector';
 
 type RegisterStep = 'email' | 'otp' | 'info';
 
@@ -44,6 +46,8 @@ export default function RegisterScreen() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [dateOfBirth, setDateOfBirth] = useState<Date | null>(null);
+  const [gender, setGender] = useState<'MALE' | 'FEMALE' | 'OTHER' | null>(null);
 
   // Validation errors
   const [emailError, setEmailError] = useState('');
@@ -52,6 +56,8 @@ export default function RegisterScreen() {
   const [phoneError, setPhoneError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
+  const [dateOfBirthError, setDateOfBirthError] = useState('');
+  const [genderError, setGenderError] = useState('');
 
   // Refs for OTP inputs
   const otpRefs = useRef<TextInput[]>([]);
@@ -76,8 +82,7 @@ export default function RegisterScreen() {
     try {
       await register(email);
       setStep('otp');
-    } catch (error) {
-    }
+    } catch {}
   };
 
   const handleVerifyOTP = async () => {
@@ -90,7 +95,7 @@ export default function RegisterScreen() {
     try {
       await verifyEmail(email, otpCode);
       setStep('info');
-    } catch (error) {
+    } catch {
       // Error is handled by useAuth hook and displayed in UI
     }
   };
@@ -102,6 +107,8 @@ export default function RegisterScreen() {
     setPhoneError('');
     setPasswordError('');
     setConfirmPasswordError('');
+    setDateOfBirthError('');
+    setGenderError('');
 
     // Validate first name
     if (!firstName.trim()) {
@@ -125,6 +132,18 @@ export default function RegisterScreen() {
     const phoneRegex = /^[0-9]{10,11}$/;
     if (!phoneRegex.test(phone.replace(/\s/g, ''))) {
       setPhoneError('Số điện thoại không hợp lệ');
+      return;
+    }
+
+    // Validate date of birth
+    if (!dateOfBirth) {
+      setDateOfBirthError('Vui lòng chọn ngày sinh');
+      return;
+    }
+
+    // Validate gender
+    if (!gender) {
+      setGenderError('Vui lòng chọn giới tính');
       return;
     }
 
@@ -158,12 +177,14 @@ export default function RegisterScreen() {
         lastName,
         phone,
         password,
+        dateOfBirth: dateOfBirth!.toISOString().split('T')[0], // Convert to YYYY-MM-DD format
+        gender: gender!,
         role: 'PATIENT',
       });
       Alert.alert('Thành công', 'Đăng ký thành công!', [
         { text: 'OK', onPress: () => router.push('/(auth)/login' as any) },
       ]);
-    } catch (error) {
+    } catch {
       // Error is handled by useAuth hook and displayed in UI
     }
   };
@@ -464,6 +485,25 @@ export default function RegisterScreen() {
                     />
                   </View>
                   {phoneError && <Text className="mt-1 text-xs text-red-600">{phoneError}</Text>}
+                </View>
+
+                {/* Date of Birth */}
+                <View>
+                  <BirthDatePicker
+                    selectedDate={dateOfBirth}
+                    onDateSelect={setDateOfBirth}
+                    placeholder="Chọn ngày sinh"
+                    error={dateOfBirthError}
+                  />
+                </View>
+
+                {/* Gender */}
+                <View>
+                  <GenderSelector
+                    selectedGender={gender}
+                    onGenderSelect={setGender}
+                    error={genderError}
+                  />
                 </View>
 
                 {/* Password */}

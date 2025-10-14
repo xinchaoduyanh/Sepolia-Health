@@ -11,7 +11,7 @@ export default function CustomerInfoScreen() {
   const [fullName, setFullName] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('0988659126');
-  const [gender, setGender] = useState<Gender>('male');
+  const [gender, setGender] = useState<Gender>('MALE');
   const [isForeigner, setIsForeigner] = useState(false);
   const [selectedDate, setSelectedDate] = useState('');
 
@@ -19,7 +19,7 @@ export default function CustomerInfoScreen() {
     setSelectedCustomer(type);
   };
 
-  const handleGenderSelect = (selectedGender: Gender) => {
+  const handleGenderSelect = (selectedGender: 'MALE' | 'FEMALE') => {
     setGender(selectedGender);
   };
 
@@ -150,32 +150,32 @@ export default function CustomerInfoScreen() {
 
           <View className="flex-row space-x-4">
             <TouchableOpacity
-              onPress={() => handleGenderSelect('male')}
+              onPress={() => handleGenderSelect('MALE')}
               className={`flex-1 flex-row items-center justify-center rounded-lg border-2 px-4 py-3 ${
-                gender === 'male' ? 'border-teal-500 bg-teal-50' : 'border-gray-300'
+                gender === 'MALE' ? 'border-teal-500 bg-teal-50' : 'border-gray-300'
               }`}>
-              <Ionicons name="male" size={20} color={gender === 'male' ? '#14B8A6' : '#9CA3AF'} />
+              <Ionicons name="male" size={20} color={gender === 'MALE' ? '#14B8A6' : '#9CA3AF'} />
               <Text
                 className={`ml-2 font-medium ${
-                  gender === 'male' ? 'text-teal-600' : 'text-gray-600'
+                  gender === 'MALE' ? 'text-teal-600' : 'text-gray-600'
                 }`}>
                 Nam
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => handleGenderSelect('female')}
+              onPress={() => handleGenderSelect('FEMALE')}
               className={`flex-1 flex-row items-center justify-center rounded-lg border-2 px-4 py-3 ${
-                gender === 'female' ? 'border-teal-500 bg-teal-50' : 'border-gray-300'
+                gender === 'FEMALE' ? 'border-teal-500 bg-teal-50' : 'border-gray-300'
               }`}>
               <Ionicons
                 name="female"
                 size={20}
-                color={gender === 'female' ? '#14B8A6' : '#9CA3AF'}
+                color={gender === 'FEMALE' ? '#14B8A6' : '#9CA3AF'}
               />
               <Text
                 className={`ml-2 font-medium ${
-                  gender === 'female' ? 'text-teal-600' : 'text-gray-600'
+                  gender === 'FEMALE' ? 'text-teal-600' : 'text-gray-600'
                 }`}>
                 Nữ
               </Text>

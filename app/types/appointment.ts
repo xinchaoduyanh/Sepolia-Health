@@ -1,31 +1,49 @@
 // Appointment Types
 export interface Appointment {
   id: number;
-  date: string; // ISO datetime
-  status: 'SCHEDULED' | 'COMPLETED' | 'CANCELLED';
+  date: string; // ISO date
+  startTime: string;
+  endTime: string;
+  status: 'REQUESTED' | 'CONFIRMED' | 'CHECKED_IN' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW';
   paymentStatus: 'PENDING' | 'PAID' | 'REFUNDED';
-  notes: string | null;
-  patient: {
+  notes?: string;
+  patientProfileId?: number;
+  patientProfile?: {
     id: number;
     firstName: string;
     lastName: string;
-    email: string;
-    phone: string | null;
+    phone: string;
   };
+  patientName: string;
+  patientDob: string;
+  patientPhone: string;
+  patientGender: string;
+  doctorId: number;
   doctor: {
     id: number;
+    firstName: string;
+    lastName: string;
     specialty: string;
-    user: {
-      id: number;
-      firstName: string;
-      lastName: string;
-    };
   };
+  serviceId: number;
   service: {
     id: number;
     name: string;
     price: number;
     duration: number;
+  };
+  clinicId: number;
+  clinic: {
+    id: number;
+    name: string;
+    address: string;
+  };
+  billing?: {
+    id: number;
+    amount: number;
+    status: 'PENDING' | 'PAID' | 'REFUNDED';
+    paymentMethod?: 'CASH' | 'BANK_TRANSFER' | 'CARD' | 'ONLINE';
+    notes?: string;
   };
   createdAt: string;
   updatedAt: string;
@@ -34,19 +52,24 @@ export interface Appointment {
 export interface CreateAppointmentRequest {
   doctorId: number;
   serviceId: number;
-  date: string; // ISO datetime
+  date: string; // ISO date
+  startTime: string;
+  endTime: string;
   notes?: string;
   // Patient information (required for all appointments)
   patientName: string;
-  patientDob: string; // ISO datetime
+  patientDob: string; // ISO date
   patientPhone: string;
   patientGender: 'MALE' | 'FEMALE' | 'OTHER';
-  clinicId?: number;
+  clinicId: number;
+  patientProfileId?: number; // Optional if patient has profile
 }
 
 export interface UpdateAppointmentRequest {
-  date?: string; // ISO datetime
-  status?: 'SCHEDULED' | 'COMPLETED' | 'CANCELLED';
+  date?: string; // ISO date
+  startTime?: string;
+  endTime?: string;
+  status?: 'REQUESTED' | 'CONFIRMED' | 'CHECKED_IN' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW';
   paymentStatus?: 'PENDING' | 'PAID' | 'REFUNDED';
   notes?: string;
 }
@@ -54,10 +77,10 @@ export interface UpdateAppointmentRequest {
 export interface AppointmentFilters {
   page?: number;
   limit?: number;
-  status?: 'SCHEDULED' | 'COMPLETED' | 'CANCELLED';
+  status?: 'REQUESTED' | 'CONFIRMED' | 'CHECKED_IN' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW';
   paymentStatus?: 'PENDING' | 'PAID' | 'REFUNDED';
   doctorId?: number;
-  patientId?: number;
-  dateFrom?: string; // ISO datetime
-  dateTo?: string; // ISO datetime
+  patientProfileId?: number;
+  dateFrom?: string; // ISO date
+  dateTo?: string; // ISO date
 }

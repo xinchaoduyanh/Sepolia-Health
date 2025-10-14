@@ -8,61 +8,61 @@ import { useAppointment } from '@/contexts/AppointmentContext';
 
 const specialties: Specialty[] = [
   {
-    id: '1',
+    id: 1,
     name: 'Da liễu',
     description:
       'Khoa Da liễu là khoa chuyên điều trị các bệnh về da và những phần phụ của da (tóc, móng,...)',
     icon: 'medical',
   },
   {
-    id: '2',
+    id: 2,
     name: 'Khám sàng lọc tiêu hóa',
     description: '',
     icon: 'restaurant',
   },
   {
-    id: '3',
+    id: 3,
     name: 'Khám sàng lọc tim mạch',
     description: '',
     icon: 'heart',
   },
   {
-    id: '4',
+    id: 4,
     name: 'Khám sức khỏe tổng quát - Trẻ em',
     description:
       'Khám sức khỏe tổng quát cho trẻ từ 0-16 tuổi tại Vinmec giúp theo dõi toàn diện sự phát...',
     icon: 'people',
   },
   {
-    id: '5',
+    id: 5,
     name: 'Mắt',
     description:
       'Khám và điều trị các bệnh lý nội khoa về mắt cũng như các phẫu thuật mắt như: mộng thịt,...',
     icon: 'eye',
   },
   {
-    id: '6',
+    id: 6',
     name: 'Ngoại chấn thương chỉnh hình',
     description:
       'Khám thực hiện phẫu thuật các vấn đề chấn thương và di chứng chấn thương xương khớp...',
     icon: 'fitness',
   },
   {
-    id: '7',
+    id: 7',
     name: 'Ngoại Thận - Tiết niệu',
     description:
       'Thực hiện các phẫu thuật nội soi và phẫu thuật mở điều trị các bệnh ngoại khoa Tiết niệu:...',
     icon: 'water',
   },
   {
-    id: '8',
+    id: 8',
     name: 'Ngoại Tiêu hoá',
     description:
       'Phẫu thuật nội soi, phẫu thuật robot điều trị ung thư dạ dày, ung thư đại trực tràng, gan m...',
     icon: 'restaurant',
   },
   {
-    id: '9',
+    id: 9',
     name: 'Nhi',
     description: '',
     icon: 'people',
@@ -87,7 +87,7 @@ export default function SpecialtySelectionScreen() {
       const specialty = specialties.find((s) => s.id === selectedSpecialty);
       if (specialty) {
         setContextSpecialty(specialty.name);
-        router.push('/appointment');
+        router.push('/appointment' as any);
       }
     }
   };

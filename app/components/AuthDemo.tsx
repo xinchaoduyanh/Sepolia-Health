@@ -56,6 +56,8 @@ export default function AuthDemo() {
         lastName: 'Doe',
         phone: '0123456789',
         password: 'password123',
+        dateOfBirth: '1990-01-01',
+        gender: 'MALE',
         role: 'PATIENT',
       });
       console.log('Registration completed');
