@@ -286,6 +286,50 @@ export class UserController {
     );
   }
 
+  @Post('patient-profiles/:profileId/upload-avatar')
+  @HttpCode(HttpStatus.OK)
+  @UseInterceptors(FileInterceptor('avatar'))
+  @ApiOperation({ summary: 'Upload ảnh đại diện cho hồ sơ bệnh nhân' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        avatar: {
+          type: 'string',
+          format: 'binary',
+          description: 'File ảnh đại diện (JPEG, PNG, WebP, tối đa 5MB)',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Upload ảnh thành công',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Dữ liệu không hợp lệ',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Không tìm thấy hồ sơ bệnh nhân',
+  })
+  async uploadPatientProfileAvatar(
+    @CurrentUser() user: TokenPayload,
+    @Param('profileId', ParseIntPipe) profileId: number,
+    @UploadedFile() file: any,
+  ): Promise<UploadAvatarResponseDtoType> {
+    if (!file) {
+      throw new BadRequestException('Vui lòng chọn file ảnh');
+    }
+    return this.userService.uploadPatientProfileAvatar(
+      user.userId,
+      profileId,
+      file,
+    );
+  }
+
   @Delete('patient-profiles/:profileId')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Xóa hồ sơ bệnh nhân' })

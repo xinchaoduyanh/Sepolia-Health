@@ -264,6 +264,60 @@ export class UserService {
   }
 
   /**
+   * Upload avatar for specific patient profile
+   */
+  async uploadPatientProfileAvatar(
+    userId: number,
+    profileId: number,
+    file: any,
+  ): Promise<UploadAvatarResponseDtoType> {
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.mimetype)) {
+      throw new BadRequestException('Chỉ chấp nhận file ảnh (JPEG, PNG, WebP)');
+    }
+
+    // Validate file size (5MB max)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      throw new BadRequestException('Kích thước file không được vượt quá 5MB');
+    }
+
+    // Check if patient profile exists and belongs to user
+    const profile =
+      await this.userRepository.findPatientProfileByIdAndManagerId(
+        profileId,
+        userId,
+      );
+
+    // Generate unique filename
+    const fileExtension = file.originalname.split('.').pop();
+    const fileName = `patient-avatars/${userId}-${profileId}-${Date.now()}.${fileExtension}`;
+
+    // Upload to S3
+    const uploadResult = await this.uploadService.uploadFile({
+      key: fileName,
+      body: file.buffer,
+      contentType: file.mimetype,
+    });
+
+    if (!uploadResult.success) {
+      throw new BadRequestException(
+        'Lỗi khi upload ảnh: ' + uploadResult.error,
+      );
+    }
+
+    // Update patient profile avatar
+    await this.userRepository.updatePatientProfile(profileId, {
+      avatar: uploadResult.url,
+    });
+
+    return {
+      avatarUrl: uploadResult.url!,
+    };
+  }
+
+  /**
    * Get all patient profiles for a user
    */
   async getPatientProfiles(

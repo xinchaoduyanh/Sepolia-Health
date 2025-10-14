@@ -12,13 +12,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useAppointment } from '@/contexts/AppointmentContext';
+import GenderSelector from '@/components/GenderSelector';
+import BirthDatePicker from '@/components/BirthDatePicker';
 
 export default function AppointmentScreen() {
   const [selectedCustomer, setSelectedCustomer] = useState<'me' | 'add'>('me');
   const [fullName, setFullName] = useState('');
-  const [dateOfBirth, setDateOfBirth] = useState('');
+  const [dateOfBirth, setDateOfBirth] = useState<Date | null>(null);
   const [phoneNumber, setPhoneNumber] = useState('0988659126');
-  const [gender, setGender] = useState<'male' | 'female'>('male');
+  const [gender, setGender] = useState<'MALE' | 'FEMALE' | 'OTHER' | null>(null);
   const [isForeigner, setIsForeigner] = useState(false);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<'morning' | 'afternoon'>('morning');
   const [reason, setReason] = useState('');
@@ -173,19 +175,11 @@ export default function AppointmentScreen() {
               </View>
 
               <View>
-                <View
-                  className="flex-row items-center rounded-xl border px-5 py-4"
-                  style={{ backgroundColor: '#F0FDFA', borderColor: '#E0F2FE' }}>
-                  <Ionicons name="calendar" size={22} color="#0284C7" />
-                  <TextInput
-                    className="ml-4 flex-1 text-lg"
-                    style={{ color: '#0F172A' }}
-                    placeholder="* Ngày sinh"
-                    placeholderTextColor="#475569"
-                    value={dateOfBirth}
-                    onChangeText={setDateOfBirth}
-                  />
-                </View>
+                <BirthDatePicker
+                  selectedDate={dateOfBirth}
+                  onDateSelect={setDateOfBirth}
+                  placeholder="* Ngày sinh"
+                />
               </View>
 
               <View>
@@ -208,49 +202,7 @@ export default function AppointmentScreen() {
 
             {/* Gender Selection */}
             <View className="mt-8">
-              <Text className="mb-4 text-lg font-bold" style={{ color: '#0F172A' }}>
-                Giới tính *
-              </Text>
-
-              <View className="flex-row space-x-4">
-                <TouchableOpacity
-                  onPress={() => setGender('male')}
-                  className={`flex-1 flex-row items-center justify-center rounded-xl border-2 px-5 py-4 ${
-                    gender === 'male' ? 'border-[#0284C7]' : 'border-[#E0F2FE]'
-                  }`}
-                  style={{ backgroundColor: gender === 'male' ? '#E0F2FE' : '#F0FDFA' }}>
-                  <Ionicons
-                    name="male"
-                    size={22}
-                    color={gender === 'male' ? '#0284C7' : '#06B6D4'}
-                  />
-                  <Text
-                    className={`ml-3 text-lg font-medium ${
-                      gender === 'male' ? 'text-[#0284C7]' : 'text-[#475569]'
-                    }`}>
-                    Nam
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={() => setGender('female')}
-                  className={`flex-1 flex-row items-center justify-center rounded-xl border-2 px-5 py-4 ${
-                    gender === 'female' ? 'border-[#0284C7]' : 'border-[#E0F2FE]'
-                  }`}
-                  style={{ backgroundColor: gender === 'female' ? '#E0F2FE' : '#F0FDFA' }}>
-                  <Ionicons
-                    name="female"
-                    size={22}
-                    color={gender === 'female' ? '#0284C7' : '#06B6D4'}
-                  />
-                  <Text
-                    className={`ml-3 text-lg font-medium ${
-                      gender === 'female' ? 'text-[#0284C7]' : 'text-[#475569]'
-                    }`}>
-                    Nữ
-                  </Text>
-                </TouchableOpacity>
-              </View>
+              <GenderSelector selectedGender={gender} onGenderSelect={setGender} />
             </View>
           </View>
 

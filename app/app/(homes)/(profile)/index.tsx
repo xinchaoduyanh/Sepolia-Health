@@ -1,262 +1,207 @@
 'use client';
 
-import { View, Text, TouchableOpacity, ScrollView, StatusBar } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StatusBar, Image, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { router } from 'expo-router';
+import { PatientProfile, Relationship } from '@/types/auth';
+import { useState } from 'react';
+import * as ImagePicker from 'expo-image-picker';
+import { userApi } from '@/lib/api';
 
-export default function ProfileScreen() {
+// Helper function để chuyển đổi relationship enum sang text tiếng Việt
+const getRelationshipText = (relationship: Relationship): string => {
+  const relationshipMap: Record<Relationship, string> = {
+    SELF: 'Bản thân',
+    SPOUSE: 'Vợ/Chồng',
+    CHILD: 'Con',
+    PARENT: 'Bố/Mẹ',
+    SIBLING: 'Anh/Chị/Em',
+    RELATIVE: 'Họ hàng',
+    FRIEND: 'Bạn bè',
+    OTHER: 'Khác',
+  };
+  return relationshipMap[relationship] || 'Khác';
+};
+
+// ================== Main Screen Component ==================
+
+const ProfileScreen = () => {
   const { user } = useAuth();
+  const [patientProfiles, setPatientProfiles] = useState<PatientProfile[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  // TODO: Thêm API call để lấy danh sách PatientProfile
+  // const [isLoading, setIsLoading] = useState(true);
+
+  // Lấy primary profile (hồ sơ chính)
+  const primaryProfile = patientProfiles.find((profile) => profile.isPrimary);
+
+  // Lấy các profile khác (không phải primary)
+  const otherProfiles = patientProfiles.filter((profile) => !profile.isPrimary);
+
+  // Function để chọn và upload avatar
+  const handleUploadAvatar = async (profileId?: number) => {
+    try {
+      // Request permission
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (permissionResult.granted === false) {
+        Alert.alert('Cần quyền truy cập', 'Cần quyền truy cập thư viện ảnh để upload avatar');
+        return;
+      }
+
+      // Pick image
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        setIsUploading(true);
+
+        // Create FormData
+        const formData = new FormData();
+        formData.append('avatar', {
+          uri: result.assets[0].uri,
+          type: 'image/jpeg',
+          name: 'avatar.jpg',
+        } as any);
+
+        // Upload avatar
+        let response;
+        if (profileId) {
+          // Upload for specific patient profile
+          response = await userApi.uploadPatientProfileAvatar(profileId, formData);
+        } else {
+          // Upload for primary profile
+          response = await userApi.uploadUserAvatar(formData);
+        }
+
+        // Update local state
+        if (profileId) {
+          setPatientProfiles((prev) =>
+            prev.map((profile) =>
+              profile.id === profileId ? { ...profile, avatar: response.avatarUrl } : profile
+            )
+          );
+        } else {
+          // For primary profile, we might need to update user context
+          // This depends on how you handle user state
+        }
+
+        Alert.alert('Thành công', 'Avatar đã được cập nhật');
+      }
+    } catch (error) {
+      console.error('Upload avatar error:', error);
+      Alert.alert('Lỗi', 'Không thể upload avatar. Vui lòng thử lại.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  // TODO: Thêm API call để lấy danh sách PatientProfile
+  // useEffect(() => {
+  //   fetchPatientProfiles();
+  // }, []);
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#F9FAFB' }}>
+    <View className="flex-1 bg-white">
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
-      {/* Header with wavy background */}
-      <LinearGradient
-        colors={['#0284C7', '#10B981']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={{ paddingTop: 60, paddingBottom: 40, paddingHorizontal: 24 }}>
-        {/* Wavy pattern overlay - horizontal waves passing through avatar */}
-        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
-          {/* Large horizontal wave - passes through bottom half of avatar */}
-          <View
-            style={{
-              position: 'absolute',
-              top: 120,
-              left: -150,
-              right: -150,
-              height: 100,
-              backgroundColor: 'rgba(255,255,255,0.15)',
-              borderRadius: 50,
-              transform: [{ rotate: '-3deg' }],
-            }}
+      {/* ScrollView chứa toàn bộ nội dung */}
+      <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
+        {/* Background Image Section */}
+        <View className="relative h-60">
+          <Image
+            source={require('../../../assets/1.png')}
+            className="h-full w-full"
+            resizeMode="cover"
           />
-
-          {/* Medium horizontal wave - passes through center of avatar */}
-          <View
-            style={{
-              position: 'absolute',
-              top: 140,
-              left: -120,
-              right: -120,
-              height: 80,
-              backgroundColor: 'rgba(255,255,255,0.12)',
-              borderRadius: 40,
-              transform: [{ rotate: '2deg' }],
-            }}
-          />
-
-          {/* Small horizontal wave - passes through top half of avatar */}
-          <View
-            style={{
-              position: 'absolute',
-              top: 160,
-              left: -100,
-              right: -100,
-              height: 60,
-              backgroundColor: 'rgba(255,255,255,0.08)',
-              borderRadius: 30,
-              transform: [{ rotate: '-1deg' }],
-            }}
-          />
-
-          {/* Additional decorative elements */}
-          <View
-            style={{
-              position: 'absolute',
-              top: 100,
-              left: 30,
-              width: 20,
-              height: 20,
-              backgroundColor: 'rgba(255,255,255,0.06)',
-              borderRadius: 10,
-            }}
-          />
-          <View
-            style={{
-              position: 'absolute',
-              top: 180,
-              right: 20,
-              width: 15,
-              height: 15,
-              backgroundColor: 'rgba(255,255,255,0.05)',
-              borderRadius: 7.5,
-            }}
-          />
-          <View
-            style={{
-              position: 'absolute',
-              top: 130,
-              right: 60,
-              width: 12,
-              height: 12,
-              backgroundColor: 'rgba(255,255,255,0.04)',
-              borderRadius: 6,
-            }}
-          />
+          {/* Overlay để làm tối background một chút */}
+          <View className="absolute inset-0 bg-black/20" />
         </View>
 
-        {/* User Avatar */}
-        <View style={{ alignItems: 'center', marginTop: 20 }}>
-          <View
-            style={{
-              width: 100,
-              height: 100,
-              borderRadius: 50,
-              backgroundColor: '#F0FDFA',
-              alignItems: 'center',
-              justifyContent: 'center',
-              shadowColor: '#0284C7',
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.3,
-              shadowRadius: 8,
-              elevation: 8,
-            }}>
-            <Text style={{ fontSize: 40, fontWeight: 'bold', color: '#0284C7' }}>
-              {user?.firstName?.charAt(0).toUpperCase() || 'V'}
-            </Text>
+        {/* Avatar & Tên được kéo lên trên với 3 layers */}
+        <View className="z-20 -mt-20 items-center px-6">
+          <View className="relative items-center">
+            {/* Layer 2: Hình tròn trắng dày bao quanh avatar */}
+            <View className="h-32 w-32 items-center justify-center rounded-full bg-white  ">
+              {/* Layer 3: Avatar bên trong */}
+              <View className="h-28 w-28 rounded-full bg-white p-1">
+                {primaryProfile?.avatar ? (
+                  <Image
+                    source={{ uri: primaryProfile.avatar }}
+                    className="h-full w-full rounded-full"
+                  />
+                ) : (
+                  <View className="h-full w-full items-center justify-center rounded-full bg-slate-100">
+                    <Text className="text-3xl font-bold text-slate-600">
+                      {primaryProfile ? primaryProfile.firstName.charAt(0).toUpperCase() : 'U'}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </View>
+
+            {/* Camera button ở layer 3 */}
+            <TouchableOpacity
+              className="absolute bottom-1 right-1 h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-slate-100"
+              onPress={() => handleUploadAvatar(primaryProfile?.id)}
+              disabled={isUploading}>
+              {isUploading ? (
+                <Ionicons name="hourglass-outline" size={20} color="#334155" />
+              ) : (
+                <Ionicons name="camera-outline" size={20} color="#334155" />
+              )}
+            </TouchableOpacity>
           </View>
 
-          {/* Camera icon overlay */}
-          <View
-            style={{
-              position: 'absolute',
-              bottom: 5,
-              right: 5,
-              width: 28,
-              height: 28,
-              borderRadius: 14,
-              backgroundColor: '#475569',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-            <Ionicons name="camera" size={16} color="white" />
-          </View>
-
-          <Text
-            style={{
-              fontSize: 24,
-              fontWeight: 'bold',
-              color: '#F0FDFA',
-              marginTop: 16,
-              textAlign: 'center',
-            }}>
-            {user ? `${user.firstName} ${user.lastName}` : 'Vũ Duy anh'}
+          <Text className="mt-3 text-2xl font-bold text-white">
+            {primaryProfile
+              ? `${primaryProfile.firstName} ${primaryProfile.lastName}`
+              : user
+                ? `${user.firstName} ${user.lastName}`
+                : 'Vũ Duy Anh'}
           </Text>
         </View>
-      </LinearGradient>
 
-      {/* Main Content */}
-      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
-        <View style={{ paddingHorizontal: 24, paddingTop: 20 }}>
+        {/* Main Content Area */}
+        <View className="z-10 mt-6 px-6 pb-8">
           {/* Thông tin chung Section */}
-          <View style={{ marginBottom: 24 }}>
-            <Text
-              style={{
-                fontSize: 18,
-                fontWeight: 'bold',
-                color: '#0F172A',
-                marginBottom: 16,
-              }}>
-              Thông tin chung
-            </Text>
-
-            <View style={{ backgroundColor: '#F0FDFA', borderRadius: 12, overflow: 'hidden' }}>
+          <View className="mb-6">
+            <Text className="mb-4 text-lg font-bold text-slate-900">Thông tin chung </Text>
+            <View className="overflow-hidden rounded-xl bg-teal-50">
               <TouchableOpacity
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  padding: 16,
-                  borderBottomWidth: 1,
-                  borderBottomColor: '#E0F2FE',
-                }}
+                className="flex-row items-center border-b border-cyan-100 p-4"
                 onPress={() => router.push('/(profile)/personal-info' as any)}>
-                <View
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 20,
-                    backgroundColor: '#E0F2FE',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 16,
-                  }}>
+                <View className="mr-4 h-10 w-10 items-center justify-center rounded-full bg-cyan-100">
                   <Ionicons name="person-outline" size={20} color="#0284C7" />
                 </View>
-                <Text
-                  style={{
-                    flex: 1,
-                    fontSize: 16,
-                    fontWeight: '500',
-                    color: '#0F172A',
-                  }}>
+                <Text className="flex-1 text-base font-medium text-slate-900">
                   Thông tin cá nhân
                 </Text>
                 <Ionicons name="chevron-forward" size={20} color="#06B6D4" />
               </TouchableOpacity>
-
               <TouchableOpacity
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  padding: 16,
-                  borderBottomWidth: 1,
-                  borderBottomColor: '#E0F2FE',
-                }}
+                className="flex-row items-center border-b border-cyan-100 p-4"
                 onPress={() => router.push('/(profile)/additional-info' as any)}>
-                <View
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 20,
-                    backgroundColor: '#E0F2FE',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 16,
-                  }}>
+                <View className="mr-4 h-10 w-10 items-center justify-center rounded-full bg-cyan-100">
                   <Ionicons name="add-circle-outline" size={20} color="#0284C7" />
                 </View>
-                <Text
-                  style={{
-                    flex: 1,
-                    fontSize: 16,
-                    fontWeight: '500',
-                    color: '#0F172A',
-                  }}>
+                <Text className="flex-1 text-base font-medium text-slate-900">
                   Thông tin bổ sung
                 </Text>
                 <Ionicons name="chevron-forward" size={20} color="#06B6D4" />
               </TouchableOpacity>
-
               <TouchableOpacity
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  padding: 16,
-                }}
+                className="flex-row items-center p-4"
                 onPress={() => router.push('/(profile)/health-info' as any)}>
-                <View
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 20,
-                    backgroundColor: '#E0F2FE',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 16,
-                  }}>
+                <View className="mr-4 h-10 w-10 items-center justify-center rounded-full bg-cyan-100">
                   <Ionicons name="heart-outline" size={20} color="#0284C7" />
                 </View>
-                <Text
-                  style={{
-                    flex: 1,
-                    fontSize: 16,
-                    fontWeight: '500',
-                    color: '#0F172A',
-                  }}>
+                <Text className="flex-1 text-base font-medium text-slate-900">
                   Thông tin sức khỏe
                 </Text>
                 <Ionicons name="chevron-forward" size={20} color="#06B6D4" />
@@ -265,141 +210,81 @@ export default function ProfileScreen() {
           </View>
 
           {/* Hồ sơ người thân Section */}
-          <View style={{ marginBottom: 24 }}>
-            <Text
-              style={{
-                fontSize: 18,
-                fontWeight: 'bold',
-                color: '#0F172A',
-                marginBottom: 16,
-              }}>
-              Hồ sơ người thân
-            </Text>
-
-            <View
-              style={{
-                backgroundColor: '#F0FDFA',
-                borderRadius: 16,
-                padding: 24,
-                alignItems: 'center',
-                borderWidth: 1,
-                borderColor: '#E0F2FE',
-              }}>
-              {/* Illustration */}
-              <View style={{ position: 'relative', marginBottom: 20 }}>
-                {/* Folder */}
-                <View
-                  style={{
-                    width: 80,
-                    height: 60,
-                    backgroundColor: '#0284C7',
-                    borderRadius: 8,
-                    position: 'relative',
-                    shadowColor: '#0284C7',
-                    shadowOffset: { width: 0, height: 4 },
-                    shadowOpacity: 0.3,
-                    shadowRadius: 8,
-                    elevation: 4,
-                  }}>
-                  <View
-                    style={{
-                      position: 'absolute',
-                      top: -8,
-                      left: 8,
-                      width: 20,
-                      height: 16,
-                      backgroundColor: '#F0FDFA',
-                      borderRadius: 4,
-                    }}
-                  />
-                </View>
-
-                {/* Person with plus icon */}
-                <View
-                  style={{
-                    position: 'absolute',
-                    top: 10,
-                    right: -10,
-                    width: 40,
-                    height: 40,
-                    borderRadius: 20,
-                    backgroundColor: '#10B981',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    shadowColor: '#10B981',
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.3,
-                    shadowRadius: 4,
-                    elevation: 4,
-                  }}>
-                  <Ionicons name="person-add" size={20} color="white" />
-                </View>
-
-                {/* Decorative leaves */}
-                <View
-                  style={{
-                    position: 'absolute',
-                    top: -5,
-                    left: -15,
-                    width: 12,
-                    height: 12,
-                    backgroundColor: '#10B981',
-                    borderRadius: 6,
-                    transform: [{ rotate: '45deg' }],
-                  }}
-                />
-                <View
-                  style={{
-                    position: 'absolute',
-                    bottom: 5,
-                    right: -20,
-                    width: 8,
-                    height: 8,
-                    backgroundColor: '#06B6D4',
-                    borderRadius: 4,
-                    transform: [{ rotate: '-30deg' }],
-                  }}
-                />
-                <View
-                  style={{
-                    position: 'absolute',
-                    top: 25,
-                    left: -20,
-                    width: 10,
-                    height: 10,
-                    backgroundColor: '#A7F3D0',
-                    borderRadius: 5,
-                    transform: [{ rotate: '60deg' }],
-                  }}
-                />
-              </View>
-
+          <View className="mb-6">
+            <View className="mb-4 flex-row items-center justify-between">
+              <Text className="text-lg font-bold text-slate-900">Hồ sơ người thân</Text>
               <TouchableOpacity
-                style={{
-                  backgroundColor: '#0284C7',
-                  paddingHorizontal: 32,
-                  paddingVertical: 12,
-                  borderRadius: 25,
-                  shadowColor: '#0284C7',
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.3,
-                  shadowRadius: 8,
-                  elevation: 4,
-                }}>
-                <Text
-                  style={{
-                    color: 'white',
-                    fontSize: 16,
-                    fontWeight: 'bold',
-                    textAlign: 'center',
-                  }}>
-                  THÊM HỒ SƠ
-                </Text>
+                className="flex-row items-center"
+                onPress={() => router.push('/(profile)/add-patient-profile' as any)}>
+                <Ionicons name="add" size={20} color="#0284C7" />
+                <Text className="ml-1 text-base font-medium text-sky-600">Thêm hồ sơ</Text>
               </TouchableOpacity>
             </View>
+
+            {otherProfiles.length > 0 ? (
+              /* Hiển thị danh sách PatientProfile */
+              <View className="space-y-3">
+                {otherProfiles.map((profile) => (
+                  <View
+                    key={profile.id}
+                    className="flex-row items-center rounded-xl border border-cyan-100 bg-teal-50 p-4">
+                    <TouchableOpacity
+                      className="mr-4 h-12 w-12 items-center justify-center rounded-full bg-cyan-100"
+                      onPress={() => handleUploadAvatar(profile.id)}
+                      disabled={isUploading}>
+                      {profile.avatar ? (
+                        <Image
+                          source={{ uri: profile.avatar }}
+                          className="h-full w-full rounded-full"
+                        />
+                      ) : (
+                        <Text className="text-lg font-bold text-sky-600">
+                          {profile.firstName.charAt(0).toUpperCase()}
+                        </Text>
+                      )}
+                      {/* Small camera icon overlay */}
+                      <View className="absolute -bottom-1 -right-1 h-6 w-6 items-center justify-center rounded-full border border-cyan-200 bg-white">
+                        <Ionicons name="camera" size={12} color="#0284C7" />
+                      </View>
+                    </TouchableOpacity>
+                    <TouchableOpacity className="flex-1">
+                      <Text className="text-base font-medium text-slate-900">
+                        {profile.firstName} {profile.lastName}
+                      </Text>
+                      <Text className="text-sm text-slate-500">
+                        {getRelationshipText(profile.relationship)}
+                      </Text>
+                    </TouchableOpacity>
+                    <Ionicons name="chevron-forward" size={20} color="#06B6D4" />
+                  </View>
+                ))}
+              </View>
+            ) : (
+              /* Hiển thị illustration khi chưa có PatientProfile */
+              <View className="items-center rounded-2xl border border-cyan-100 bg-teal-50 p-6">
+                <View className="mb-5 h-32 w-32 items-center justify-center rounded-full bg-white/50">
+                  <Image
+                    source={require('../../../assets/profile-bg1.png')}
+                    className="h-24 w-24"
+                    resizeMode="contain"
+                  />
+                </View>
+                <Text className="mb-4 text-center text-base font-medium text-slate-600">
+                  Bạn chưa có Hồ sơ Người thân nào{'\n'}hãy cập nhật nhé
+                </Text>
+                <TouchableOpacity
+                  className="rounded-full bg-sky-600 px-8 py-3 shadow-lg shadow-sky-600/30"
+                  onPress={() => router.push('/(profile)/add-patient-profile' as any)}>
+                  <Text className="text-center text-base font-bold text-white">THÊM HỒ SƠ</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
         </View>
       </ScrollView>
     </View>
   );
-}
+};
+
+// Thay đổi cuối cùng: Tách riêng export default để đảm bảo tính ổn định
+export default ProfileScreen;

@@ -41,28 +41,28 @@ const specialties: Specialty[] = [
     icon: 'eye',
   },
   {
-    id: 6',
+    id: 6,
     name: 'Ngoại chấn thương chỉnh hình',
     description:
       'Khám thực hiện phẫu thuật các vấn đề chấn thương và di chứng chấn thương xương khớp...',
     icon: 'fitness',
   },
   {
-    id: 7',
+    id: 7,
     name: 'Ngoại Thận - Tiết niệu',
     description:
       'Thực hiện các phẫu thuật nội soi và phẫu thuật mở điều trị các bệnh ngoại khoa Tiết niệu:...',
     icon: 'water',
   },
   {
-    id: 8',
+    id: 8,
     name: 'Ngoại Tiêu hoá',
     description:
       'Phẫu thuật nội soi, phẫu thuật robot điều trị ung thư dạ dày, ung thư đại trực tràng, gan m...',
     icon: 'restaurant',
   },
   {
-    id: 9',
+    id: 9,
     name: 'Nhi',
     description: '',
     icon: 'people',
