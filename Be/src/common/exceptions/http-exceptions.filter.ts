@@ -48,8 +48,27 @@ export class HttpExceptionsFilter implements ExceptionFilter {
       shouldLogStack = true;
     }
 
-    // Create log message
+    // Create detailed log message with request body and query params
+    const requestBody = request.body
+      ? JSON.stringify(request.body, null, 2)
+      : 'No body';
+    const queryParams = request.query
+      ? JSON.stringify(request.query, null, 2)
+      : 'No query params';
+
     const logMessage = `${request.method} ${request.url} - ${status} - ${message as string}`;
+    const detailedLog = {
+      method: request.method,
+      url: request.url,
+      status,
+      message: message as string,
+      error: error,
+      requestBody,
+      queryParams,
+      userAgent: request.get('User-Agent'),
+      ip: request.ip,
+      timestamp: new Date().toISOString(),
+    };
 
     // Log based on status code
     if (status >= 500) {
@@ -59,8 +78,16 @@ export class HttpExceptionsFilter implements ExceptionFilter {
           ? exception.stack
           : undefined,
       );
+      this.logger.error(
+        'Detailed error info:',
+        JSON.stringify(detailedLog, null, 2),
+      );
     } else if (status >= 400) {
       this.logger.warn(logMessage);
+      this.logger.warn(
+        'Detailed error info:',
+        JSON.stringify(detailedLog, null, 2),
+      );
     } else {
       this.logger.log(logMessage);
     }

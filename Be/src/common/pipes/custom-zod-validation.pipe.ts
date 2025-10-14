@@ -6,15 +6,17 @@ const CustomZodValidationPipe: typeof ZodValidationPipe =
   createZodValidationPipe({
     // provide custom validation exception factory
     createValidationException: (error: ZodError) => {
-      console.log();
-      return new UnprocessableEntityException(
-        error.issues.map((issue) => {
-          return {
-            ...issue,
-            path: issue.path.join('.'),
-          };
-        }),
-      );
+      const formattedErrors = error.issues.map((issue) => {
+        return {
+          ...issue,
+          path: issue.path.join('.'),
+          message: issue.message,
+          code: issue.code,
+          received: issue,
+        };
+      });
+
+      return new UnprocessableEntityException(formattedErrors);
     },
   });
 

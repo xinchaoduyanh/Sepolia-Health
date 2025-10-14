@@ -215,22 +215,25 @@ export class AuthService {
     }
 
     // Create user with patient profile
+    const userData = {
+      email,
+      password,
+      phone: phone, // Use phone for user.phone
+      role,
+      isVerified: true,
+      verifiedAt: new Date(),
+      // Patient profile data - basic info for registration
+      firstName,
+      lastName,
+      dateOfBirth: parseDate(dateOfBirth),
+      gender,
+      patientPhone: phone, // Use phone for patient profile
+      relationship,
+      // isPrimary sẽ được set = true trong auth repository
+    };
+
     const { user, patientProfile } =
-      await this.authRepository.createUserWithPatientProfile({
-        email,
-        password,
-        phone: phone, // Use phone for user.phone
-        role,
-        isVerified: true,
-        verifiedAt: new Date(),
-        // Patient profile data - basic info for registration
-        firstName,
-        lastName,
-        dateOfBirth: parseDate(dateOfBirth),
-        gender,
-        patientPhone: phone, // Use phone for patient profile
-        relationship,
-      });
+      await this.authRepository.createUserWithPatientProfile(userData);
 
     return {
       user: {

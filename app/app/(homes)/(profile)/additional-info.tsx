@@ -1,11 +1,8 @@
-'use client';
-
 import { View, Text, TouchableOpacity, ScrollView, StatusBar, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { router } from 'expo-router';
 
 export default function AdditionalInfoScreen() {
-  const router = useRouter();
 
   return (
     <View style={{ flex: 1, backgroundColor: '#F9FAFB' }}>

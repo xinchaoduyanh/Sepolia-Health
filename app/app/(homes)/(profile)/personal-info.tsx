@@ -1,13 +1,10 @@
-'use client';
-
 import { View, Text, TouchableOpacity, ScrollView, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/lib/hooks/useAuth';
-import { useRouter } from 'expo-router';
+import { router } from 'expo-router';
 
 export default function PersonalInfoScreen() {
   const { user } = useAuth();
-  const router = useRouter();
 
   return (
     <View style={{ flex: 1, backgroundColor: '#F9FAFB' }}>
