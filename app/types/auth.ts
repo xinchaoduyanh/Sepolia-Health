@@ -65,6 +65,7 @@ export interface User {
   createdAt: string;
   updatedAt: string;
   deletedAt?: string;
+  patientProfiles?: PatientProfile[];
 }
 
 // Gender enum to match Prisma
@@ -74,7 +75,15 @@ export type Gender = 'MALE' | 'FEMALE' | 'OTHER';
 export type Role = 'PATIENT' | 'DOCTOR' | 'RECEPTIONIST' | 'ADMIN';
 
 // Relationship enum to match Prisma
-export type Relationship = 'SELF' | 'SPOUSE' | 'CHILD' | 'PARENT' | 'SIBLING' | 'RELATIVE' | 'FRIEND' | 'OTHER';
+export type Relationship =
+  | 'SELF'
+  | 'SPOUSE'
+  | 'CHILD'
+  | 'PARENT'
+  | 'SIBLING'
+  | 'RELATIVE'
+  | 'FRIEND'
+  | 'OTHER';
 
 // Patient Profile interface
 export interface PatientProfile {

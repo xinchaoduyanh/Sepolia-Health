@@ -1,10 +1,41 @@
 import { View, Text, TouchableOpacity, ScrollView, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/lib/hooks/useAuth';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
+import { PatientProfile } from '@/types/auth';
 
 export default function PersonalInfoScreen() {
   const { user } = useAuth();
+  const params = useLocalSearchParams();
+
+  // Parse profile data from params, fallback to user data
+  const profileData: PatientProfile = params.profile
+    ? JSON.parse(params.profile as string)
+    : user?.patientProfiles?.find((p) => p.isPrimary) || (user as any);
+
+  // Helper function to calculate age from date of birth
+  const calculateAge = (dateOfBirth: string): number => {
+    const today = new Date();
+    const birthDate = new Date(dateOfBirth);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+
+    return age;
+  };
+
+  // Helper function to format date of birth
+  const formatDateOfBirth = (dateOfBirth: string): string => {
+    const date = new Date(dateOfBirth);
+    return date.toLocaleDateString('vi-VN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: '#F9FAFB' }}>
@@ -105,7 +136,7 @@ export default function PersonalInfoScreen() {
                     fontWeight: 'bold',
                     color: '#0F172A',
                   }}>
-                  {user ? `${user.firstName} ${user.lastName}` : 'Vũ Duy anh'}
+                  {profileData ? `${profileData.firstName} ${profileData.lastName}` : 'Vũ Duy anh'}
                 </Text>
               </View>
 
@@ -124,7 +155,9 @@ export default function PersonalInfoScreen() {
                     fontWeight: 'bold',
                     color: '#0F172A',
                   }}>
-                  Chưa cập nhật
+                  {profileData?.dateOfBirth
+                    ? `${formatDateOfBirth(profileData.dateOfBirth)} (${calculateAge(profileData.dateOfBirth)} tuổi)`
+                    : 'Chưa cập nhật'}
                 </Text>
               </View>
 
@@ -143,26 +176,7 @@ export default function PersonalInfoScreen() {
                     fontWeight: 'bold',
                     color: '#0F172A',
                   }}>
-                  {user?.phone || 'Chưa cập nhật'}
-                </Text>
-              </View>
-
-              <View style={{ marginBottom: 12 }}>
-                <Text
-                  style={{
-                    fontSize: 12,
-                    color: '#475569',
-                    marginBottom: 4,
-                  }}>
-                  Email
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 16,
-                    fontWeight: 'bold',
-                    color: '#0F172A',
-                  }}>
-                  {user?.email || 'Chưa cập nhật'}
+                  {profileData?.phone || 'Chưa cập nhật'}
                 </Text>
               </View>
 
@@ -181,7 +195,13 @@ export default function PersonalInfoScreen() {
                     fontWeight: 'bold',
                     color: '#0F172A',
                   }}>
-                  Nam
+                  {profileData?.gender === 'MALE'
+                    ? 'Nam'
+                    : profileData?.gender === 'FEMALE'
+                      ? 'Nữ'
+                      : profileData?.gender === 'OTHER'
+                        ? 'Khác'
+                        : 'Chưa cập nhật'}
                 </Text>
               </View>
             </View>

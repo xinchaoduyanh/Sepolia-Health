@@ -27,17 +27,17 @@ const getRelationshipText = (relationship: Relationship): string => {
 // ================== Main Screen Component ==================
 
 const ProfileScreen = () => {
-  const { user } = useAuth();
-  const [patientProfiles, setPatientProfiles] = useState<PatientProfile[]>([]);
+  const { user, refreshProfile } = useAuth();
   const [isUploading, setIsUploading] = useState(false);
-  // TODO: Thêm API call để lấy danh sách PatientProfile
-  // const [isLoading, setIsLoading] = useState(true);
+
+  // Lấy patientProfiles từ user data
+  const patientProfiles = user?.patientProfiles || [];
 
   // Lấy primary profile (hồ sơ chính)
-  const primaryProfile = patientProfiles.find((profile) => profile.isPrimary);
+  const primaryProfile = patientProfiles.find((profile: PatientProfile) => profile.isPrimary);
 
   // Lấy các profile khác (không phải primary)
-  const otherProfiles = patientProfiles.filter((profile) => !profile.isPrimary);
+  const otherProfiles = patientProfiles.filter((profile: PatientProfile) => !profile.isPrimary);
 
   // Function để chọn và upload avatar
   const handleUploadAvatar = async (profileId?: number) => {
@@ -70,26 +70,22 @@ const ProfileScreen = () => {
         } as any);
 
         // Upload avatar
-        let response;
         if (profileId) {
           // Upload for specific patient profile
-          response = await userApi.uploadPatientProfileAvatar(profileId, formData);
+          await userApi.uploadPatientProfileAvatar(profileId, formData);
         } else {
-          // Upload for primary profile
-          response = await userApi.uploadUserAvatar(formData);
+          // Upload for primary profile - find primary profile ID
+          const primaryProfileId = primaryProfile?.id;
+          if (primaryProfileId) {
+            await userApi.uploadPatientProfileAvatar(primaryProfileId, formData);
+          } else {
+            // Fallback to user avatar upload if no primary profile found
+            await userApi.uploadUserAvatar(formData);
+          }
         }
 
-        // Update local state
-        if (profileId) {
-          setPatientProfiles((prev) =>
-            prev.map((profile) =>
-              profile.id === profileId ? { ...profile, avatar: response.avatarUrl } : profile
-            )
-          );
-        } else {
-          // For primary profile, we might need to update user context
-          // This depends on how you handle user state
-        }
+        // Refresh user data to get updated profiles
+        refreshProfile();
 
         Alert.alert('Thành công', 'Avatar đã được cập nhật');
       }
@@ -175,7 +171,16 @@ const ProfileScreen = () => {
             <View className="overflow-hidden rounded-xl bg-teal-50">
               <TouchableOpacity
                 className="flex-row items-center border-b border-cyan-100 p-4"
-                onPress={() => router.push('/(profile)/personal-info' as any)}>
+                onPress={() => {
+                  if (primaryProfile) {
+                    router.push({
+                      pathname: '/(homes)/(profile)/personal-info',
+                      params: { profile: JSON.stringify(primaryProfile) },
+                    });
+                  } else {
+                    router.push('/(homes)/(profile)/personal-info' as any);
+                  }
+                }}>
                 <View className="mr-4 h-10 w-10 items-center justify-center rounded-full bg-cyan-100">
                   <Ionicons name="person-outline" size={20} color="#0284C7" />
                 </View>
@@ -224,7 +229,7 @@ const ProfileScreen = () => {
             {otherProfiles.length > 0 ? (
               /* Hiển thị danh sách PatientProfile */
               <View className="space-y-3">
-                {otherProfiles.map((profile) => (
+                {otherProfiles.map((profile: PatientProfile) => (
                   <View
                     key={profile.id}
                     className="flex-row items-center rounded-xl border border-cyan-100 bg-teal-50 p-4">
@@ -247,7 +252,14 @@ const ProfileScreen = () => {
                         <Ionicons name="camera" size={12} color="#0284C7" />
                       </View>
                     </TouchableOpacity>
-                    <TouchableOpacity className="flex-1">
+                    <TouchableOpacity
+                      className="flex-1"
+                      onPress={() => {
+                        router.push({
+                          pathname: '/(homes)/(profile)/personal-info',
+                          params: { profile: JSON.stringify(profile) },
+                        });
+                      }}>
                       <Text className="text-base font-medium text-slate-900">
                         {profile.firstName} {profile.lastName}
                       </Text>

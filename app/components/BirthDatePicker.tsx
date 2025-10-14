@@ -121,17 +121,18 @@ export default function BirthDatePicker({
 
       <Modal visible={isVisible} transparent animationType="slide" onRequestClose={handleCancel}>
         <View className="flex-1 justify-end bg-black/50">
+          <TouchableOpacity className="flex-1" activeOpacity={1} onPress={handleCancel} />
           <View className="rounded-t-3xl bg-teal-50">
-            <View className="flex-row items-center justify-between border-b border-cyan-100 p-6">
+            {/* Handle bar để người dùng biết có thể vuốt xuống */}
+            <View className="items-center py-2">
+              <View className="h-1 w-12 rounded-full bg-gray-300" />
+            </View>
+
+            <View className="flex-row items-center justify-between border-b border-cyan-100 px-6 pb-4">
               <Text className="text-lg font-bold text-slate-900">Chọn ngày sinh</Text>
-              <View className="flex-row space-x-4">
-                <TouchableOpacity onPress={handleCancel}>
-                  <Text className="text-base text-slate-500">Hủy</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => handleDateSelect(tempDate)}>
-                  <Text className="text-base font-bold text-sky-600">Xong</Text>
-                </TouchableOpacity>
-              </View>
+              <TouchableOpacity onPress={() => handleDateSelect(tempDate)}>
+                <Text className="text-base font-bold text-sky-600">Xong</Text>
+              </TouchableOpacity>
             </View>
 
             <View className="p-6">
