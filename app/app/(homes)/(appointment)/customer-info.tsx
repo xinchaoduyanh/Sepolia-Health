@@ -25,11 +25,11 @@ export default function CustomerInfoScreen() {
 
   const handleContinue = () => {
     // Navigate to appointment booking screen
-    router.push('/appointment/appointment-booking' as any);
+    router.push('./appointment-booking' as any);
   };
 
   const handleBack = () => {
-    router.back();
+    router.push('./index' as any);
   };
 
   return (

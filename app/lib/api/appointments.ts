@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
-import { API_ENDPOINTS } from '@/lib/config';
+import { API_ENDPOINTS } from '@/constants/api';
+import { Facility, Service, DoctorAvailability } from '@/types/doctor';
 
 // Types - Matching Backend DTOs
 export interface Appointment {
@@ -143,6 +144,39 @@ export const appointmentApi = {
     }>(`${API_ENDPOINTS.APPOINTMENTS.DOCTOR_APPOINTMENTS}?${params.toString()}`);
     return response.data;
   },
+
+  getLocations: async () => {
+    const response = await apiClient.get<{
+      data: Facility[];
+      total: number;
+    }>(API_ENDPOINTS.APPOINTMENTS.LOCATIONS);
+    return response.data;
+  },
+
+  getServices: async () => {
+    const response = await apiClient.get<{
+      data: Service[];
+      total: number;
+    }>(API_ENDPOINTS.APPOINTMENTS.SERVICES);
+    return response.data;
+  },
+
+  getDoctorServices: async (locationId: number, serviceId: number) => {
+    const response = await apiClient.get<{
+      data: any[];
+      total: number;
+    }>(
+      `${API_ENDPOINTS.APPOINTMENTS.DOCTOR_SERVICES}?locationId=${locationId}&serviceId=${serviceId}`
+    );
+    return response.data;
+  },
+
+  getDoctorAvailability: async (doctorServiceId: number, date: string) => {
+    const response = await apiClient.get<DoctorAvailability>(
+      `${API_ENDPOINTS.APPOINTMENTS.DOCTOR_AVAILABILITY}?doctorServiceId=${doctorServiceId}&date=${date}`
+    );
+    return response.data;
+  },
 };
 
 // React Query Hooks
@@ -221,6 +255,40 @@ export const useDoctorAppointments = (filters?: AppointmentFilters) => {
     queryKey: ['appointments', 'doctor', filters],
     queryFn: () => appointmentApi.getDoctorAppointments(filters),
     staleTime: 2 * 60 * 1000, // 2 minutes
+  });
+};
+
+export const useLocations = () => {
+  return useQuery({
+    queryKey: ['appointments', 'locations'],
+    queryFn: appointmentApi.getLocations,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+};
+
+export const useServices = () => {
+  return useQuery({
+    queryKey: ['appointments', 'services'],
+    queryFn: appointmentApi.getServices,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+};
+
+export const useDoctorServices = (locationId: number, serviceId: number) => {
+  return useQuery({
+    queryKey: ['appointments', 'doctor-services', locationId, serviceId],
+    queryFn: () => appointmentApi.getDoctorServices(locationId, serviceId),
+    enabled: !!locationId && !!serviceId,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  });
+};
+
+export const useDoctorAvailability = (doctorServiceId: number, date: string) => {
+  return useQuery({
+    queryKey: ['appointments', 'doctor-availability', doctorServiceId, date],
+    queryFn: () => appointmentApi.getDoctorAvailability(doctorServiceId, date),
+    enabled: !!doctorServiceId && !!date,
+    staleTime: 1 * 60 * 1000, // 1 minute (frequently changes)
   });
 };
 

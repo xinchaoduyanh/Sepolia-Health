@@ -9,6 +9,16 @@ export interface Service {
   updatedAt: string;
 }
 
+export interface Facility {
+  id: number;
+  name: string;
+  address: string;
+  phone?: string;
+  email?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Doctor {
   id: number;
   firstName: string;
@@ -51,4 +61,30 @@ export interface DoctorFilters {
 export interface ServiceFilters {
   page?: number;
   limit?: number;
+}
+
+export interface DoctorAvailability {
+  doctorId: number;
+  doctorName: string;
+  specialty: string;
+  serviceName: string;
+  serviceDuration: number;
+  date: string;
+  workingHours: {
+    startTime: string;
+    endTime: string;
+  };
+  bookedAppointments: {
+    startTime: string;
+    endTime: string;
+    patientName: string;
+    status: string;
+  }[];
+}
+
+export interface TimeSlot {
+  time: string;
+  displayTime: string;
+  isAvailable: boolean;
+  isMorning: boolean;
 }

@@ -7,6 +7,7 @@ interface BirthDatePickerProps {
   onDateSelect: (date: Date) => void;
   placeholder?: string;
   error?: string;
+  disabled?: boolean;
 }
 
 export default function BirthDatePicker({
@@ -14,6 +15,7 @@ export default function BirthDatePicker({
   onDateSelect,
   placeholder = 'Chọn ngày sinh',
   error,
+  disabled = false,
 }: BirthDatePickerProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [tempDate, setTempDate] = useState(selectedDate || new Date());
@@ -103,20 +105,31 @@ export default function BirthDatePicker({
   return (
     <>
       <TouchableOpacity
-        onPress={() => setIsVisible(true)}
+        onPress={() => !disabled && setIsVisible(true)}
+        disabled={disabled}
         className={`flex-row items-center rounded-xl border px-5 py-4 ${
-          error ? 'border-red-200 bg-red-50' : 'border-cyan-100 bg-teal-50'
+          error
+            ? 'border-red-200 bg-red-50'
+            : disabled
+              ? 'border-gray-200 bg-gray-100'
+              : 'border-cyan-100 bg-teal-50'
         }`}>
-        <Ionicons name="calendar-outline" size={22} color={error ? '#EF4444' : '#0284C7'} />
+        <Ionicons
+          name="calendar-outline"
+          size={22}
+          color={error ? '#EF4444' : disabled ? '#9CA3AF' : '#0284C7'}
+        />
         <View className="ml-4 flex-1">
-          <Text className="text-lg text-slate-900">
+          <Text className={`text-lg ${disabled ? 'text-gray-400' : 'text-slate-900'}`}>
             {selectedDate ? formatDate(selectedDate) : placeholder}
           </Text>
           {selectedDate && (
-            <Text className="text-sm text-slate-500">{getAge(selectedDate)} tuổi</Text>
+            <Text className={`text-sm ${disabled ? 'text-gray-400' : 'text-slate-500'}`}>
+              {getAge(selectedDate)} tuổi
+            </Text>
           )}
         </View>
-        <Ionicons name="chevron-down" size={22} color="#06B6D4" />
+        {!disabled && <Ionicons name="chevron-down" size={22} color="#06B6D4" />}
       </TouchableOpacity>
 
       <Modal visible={isVisible} transparent animationType="slide" onRequestClose={handleCancel}>
