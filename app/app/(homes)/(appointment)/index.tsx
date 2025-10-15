@@ -326,8 +326,8 @@ export default function AppointmentScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1" style={{ backgroundColor: '#F9FAFB' }}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
+    <SafeAreaView className="flex-1" style={{ backgroundColor: '#E0F2FE' }}>
+      <StatusBar barStyle="dark-content" backgroundColor="#E0F2FE" />
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* Main Content */}
@@ -879,31 +879,29 @@ export default function AppointmentScreen() {
                 </View>
               </View>
             </View>
+
+            {/* Book Appointment Button */}
+            <View className="mt-8">
+              <TouchableOpacity
+                onPress={handleBookAppointment}
+                disabled={createAppointmentMutation.isPending}
+                className="items-center rounded-xl py-4"
+                style={{
+                  backgroundColor: createAppointmentMutation.isPending ? '#9CA3AF' : '#0284C7',
+                  shadowColor: '#0284C7',
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.2,
+                  shadowRadius: 8,
+                  elevation: 4,
+                }}>
+                <Text className="text-base font-bold text-white">
+                  {createAppointmentMutation.isPending ? 'ĐANG XỬ LÝ...' : 'ĐẶT HẸN'}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </ScrollView>
-
-      {/* Book Appointment Button */}
-      <View
-        className="px-5 py-4"
-        style={{ backgroundColor: '#F0FDFA', borderTopColor: '#E0F2FE', borderTopWidth: 1 }}>
-        <TouchableOpacity
-          onPress={handleBookAppointment}
-          disabled={createAppointmentMutation.isPending}
-          className="items-center rounded-xl py-4"
-          style={{
-            backgroundColor: createAppointmentMutation.isPending ? '#9CA3AF' : '#0284C7',
-            shadowColor: '#0284C7',
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.2,
-            shadowRadius: 8,
-            elevation: 4,
-          }}>
-          <Text className="text-base font-bold text-white">
-            {createAppointmentMutation.isPending ? 'ĐANG XỬ LÝ...' : 'ĐẶT HẸN'}
-          </Text>
-        </TouchableOpacity>
-      </View>
 
       {/* Date Picker Modal */}
       {showDatePicker && (

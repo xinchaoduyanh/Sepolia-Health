@@ -103,7 +103,7 @@ const ProfileScreen = () => {
   // }, []);
 
   return (
-    <View className="flex-1 bg-white">
+    <View className="flex-1" style={{ backgroundColor: '#E0F2FE' }}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
       {/* ScrollView chứa toàn bộ nội dung */}
@@ -122,8 +122,10 @@ const ProfileScreen = () => {
         {/* Avatar & Tên được kéo lên trên với 3 layers */}
         <View className="z-20 -mt-20 items-center px-6">
           <View className="relative items-center">
-            {/* Layer 2: Hình tròn trắng dày bao quanh avatar */}
-            <View className="h-32 w-32 items-center justify-center rounded-full bg-white  ">
+            {/* Layer 2: Hình tròn xanh nhạt dày bao quanh avatar */}
+            <View
+              className="h-32 w-32 items-center justify-center rounded-full"
+              style={{ backgroundColor: '#E0F2FE' }}>
               {/* Layer 3: Avatar bên trong */}
               <View className="h-28 w-28 rounded-full bg-white p-1">
                 {primaryProfile?.avatar ? (
@@ -154,7 +156,7 @@ const ProfileScreen = () => {
             </TouchableOpacity>
           </View>
 
-          <Text className="mt-3 text-2xl font-bold text-white">
+          <Text className="mt-3 text-2xl font-bold" style={{ color: '#1E40AF' }}>
             {primaryProfile
               ? `${primaryProfile.firstName} ${primaryProfile.lastName}`
               : user

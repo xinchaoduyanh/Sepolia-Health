@@ -5,8 +5,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { Svg, Defs, Stop, Path, LinearGradient as SvgLinearGradient } from 'react-native-svg';
+import { PatientProfile } from '@/types/auth';
 export default function AccountScreen() {
   const { user, logout } = useAuth();
+  // Lấy patientProfiles từ user data
+  const patientProfiles = user?.patientProfiles || [];
+
+  // Lấy primary profile (hồ sơ chính)
+  const primaryProfile = patientProfiles.find((profile: PatientProfile) => profile.isPrimary);
 
   const handleLogout = () => {
     Alert.alert('Đăng xuất', 'Bạn có chắc chắn muốn đăng xuất?', [
@@ -23,7 +29,7 @@ export default function AccountScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#F9FAFB' }}>
+    <View style={{ flex: 1, backgroundColor: '#E0F2FE' }}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
       <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
@@ -61,7 +67,12 @@ export default function AccountScreen() {
                 <View>
                   <Text style={{ fontSize: 18, color: '#fff', opacity: 0.9 }}>Xin chào,</Text>
                   <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#fff' }}>
-                    {user ? `${user.firstName} ${user.lastName}` : 'Người dùng'} 👋
+                    {primaryProfile
+                      ? `${primaryProfile.firstName} ${primaryProfile.lastName}`
+                      : user
+                        ? `${user.firstName} ${user.lastName}`
+                        : 'Người dùng'}{' '}
+                    👋
                   </Text>
                 </View>
 
@@ -86,19 +97,42 @@ export default function AccountScreen() {
                   </Svg>
 
                   {/* Avatar image */}
-                  <Image
-                    source={{ uri: 'https://i.pravatar.cc/300' }}
-                    style={{
-                      width: 60,
-                      height: 60,
-                      borderRadius: 30,
-                      borderWidth: 2,
-                      borderColor: '#fff',
-                      position: 'absolute',
-                      top: 5,
-                      left: 5,
-                    }}
-                  />
+                  {primaryProfile?.avatar ? (
+                    <Image
+                      source={{ uri: primaryProfile.avatar }}
+                      style={{
+                        width: 60,
+                        height: 60,
+                        borderRadius: 30,
+                        borderWidth: 2,
+                        borderColor: '#fff',
+                        position: 'absolute',
+                        top: 5,
+                        left: 5,
+                      }}
+                    />
+                  ) : (
+                    <View
+                      style={{
+                        width: 60,
+                        height: 60,
+                        borderRadius: 30,
+                        borderWidth: 2,
+                        borderColor: '#fff',
+                        position: 'absolute',
+                        top: 5,
+                        left: 5,
+                        backgroundColor: 'rgba(255,255,255,0.3)',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}>
+                      <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#FFFFFF' }}>
+                        {primaryProfile
+                          ? primaryProfile.firstName.charAt(0).toUpperCase()
+                          : user?.firstName?.charAt(0).toUpperCase() || 'U'}
+                      </Text>
+                    </View>
+                  )}
                 </View>
               </View>
             </View>

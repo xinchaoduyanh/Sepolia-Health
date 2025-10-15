@@ -42,3 +42,4 @@ export const getRelationshipLabel = (relationship: Relationship | string | undef
   const translated = translateRelationship(relationship);
   return translated || 'Bản thân'; // Default fallback
 };
+

@@ -9,6 +9,12 @@ import Svg, { Path } from 'react-native-svg';
 export default function HomeScreen() {
   const { user } = useAuth();
 
+  // Lấy patientProfiles từ user data
+  const patientProfiles = user?.patientProfiles || [];
+
+  // Lấy primary profile (hồ sơ chính)
+  const primaryProfile = patientProfiles.find((profile) => profile.isPrimary);
+
   return (
     <View style={{ flex: 1, backgroundColor: '#E0F2FE' }}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
@@ -129,17 +135,36 @@ export default function HomeScreen() {
                 elevation: 4,
                 marginRight: 16,
               }}>
-              <Text style={{ fontSize: 32, fontWeight: 'bold', color: '#FFFFFF' }}>
-                {user?.firstName?.charAt(0).toUpperCase() || 'A'}
-              </Text>
+              {primaryProfile?.avatar ? (
+                <Image
+                  source={{ uri: primaryProfile.avatar }}
+                  style={{
+                    height: 66,
+                    width: 66,
+                    borderRadius: 33,
+                  }}
+                />
+              ) : (
+                <Text style={{ fontSize: 32, fontWeight: 'bold', color: '#FFFFFF' }}>
+                  {primaryProfile
+                    ? primaryProfile.firstName.charAt(0).toUpperCase()
+                    : user?.firstName?.charAt(0).toUpperCase() || 'A'}
+                </Text>
+              )}
             </View>
 
             <View style={{ flex: 1 }}>
               <Text style={{ fontSize: 20, fontWeight: '700', color: '#FFFFFF', marginBottom: 6 }}>
-                Xin chào, {user ? `${user.firstName} ${user.lastName}` : 'Nguyễn Văn A'}
+                Xin chào,{' '}
+                {primaryProfile
+                  ? `${primaryProfile.firstName} ${primaryProfile.lastName}`
+                  : user
+                    ? `${user.firstName} ${user.lastName}`
+                    : 'Nguyễn Văn A'}
               </Text>
               <Text style={{ fontSize: 14, color: 'rgba(255,255,255,0.9)', lineHeight: 20 }}>
-                {user?.phone || 'Chưa cập nhật'} • {user?.email || 'Chưa cập nhật'}
+                {primaryProfile?.phone || user?.phone || 'Chưa cập nhật'} •{' '}
+                {user?.email || 'Chưa cập nhật'}
               </Text>
             </View>
           </View>
