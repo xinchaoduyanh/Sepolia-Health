@@ -8,7 +8,6 @@ import {
   StatusBar,
   Modal,
   Image,
-  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,6 +15,7 @@ import { router } from 'expo-router';
 import { useAppointment } from '@/contexts/AppointmentContext';
 import GenderSelector from '@/components/GenderSelector';
 import BirthDatePicker from '@/components/BirthDatePicker';
+import TimeSlotPicker from '@/components/TimeSlotPicker';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { PatientProfile } from '@/types/auth';
 import { getRelationshipLabel } from '@/utils/relationshipTranslator';
@@ -30,9 +30,7 @@ export default function AppointmentScreen() {
   const [phoneNumber, setPhoneNumber] = useState('0988659126');
   const [gender, setGender] = useState<'MALE' | 'FEMALE' | null>(null);
   const [patientDescription, setPatientDescription] = useState<string>('');
-  const [selectedDay, setSelectedDay] = useState<string>('');
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [selectedPeriod, setSelectedPeriod] = useState<'morning' | 'afternoon'>('morning');
   const [showTimeSlots, setShowTimeSlots] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [selectedCustomDate, setSelectedCustomDate] = useState<Date | null>(null);
@@ -72,14 +70,21 @@ export default function AppointmentScreen() {
   }, [selectedFacility, selectedService, selectedDoctor]);
 
   // API call để lấy availability thực tế
-  const {
-    data: availabilityData,
-    isLoading: isLoadingAvailability,
-    error: availabilityError,
-  } = useDoctorAvailability(
+  const getTodayString = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const { data: availabilityData, error: availabilityError } = useDoctorAvailability(
     selectedDoctorServiceId || 0,
-    selectedDateForAPI || new Date().toISOString().split('T')[0]
+    selectedDateForAPI || getTodayString()
   );
+
+  // Check if doctor is not available (no time slots)
+  const isDoctorNotAvailable = availabilityData && availabilityData.availableTimeSlots.length === 0;
 
   // API call để tạo appointment
   const createAppointmentMutation = useCreateAppointment();
@@ -91,93 +96,14 @@ export default function AppointmentScreen() {
     }
     if (availabilityError) {
       console.log('❌ Availability Error:', availabilityError);
+      console.log('❌ Error Response:', (availabilityError as any)?.response);
+      console.log('❌ Error Status:', (availabilityError as any)?.response?.status);
+      console.log('❌ Error Code:', (availabilityError as any)?.code);
+      console.log('❌ Error Message:', (availabilityError as any)?.message);
+      console.log('❌ Error Data:', (availabilityError as any)?.response?.data);
+      console.log('❌ Is Doctor Not Available:', isDoctorNotAvailable);
     }
-  }, [availabilityData, availabilityError]);
-
-  // Format thời gian hiển thị (11:00 -> 11:00AM, 12:30 -> 12:30PM)
-  const formatTimeForDisplay = (time: string) => {
-    const [hours, minutes] = time.split(':');
-    const hour = parseInt(hours);
-    const minute = parseInt(minutes);
-
-    const period = hour >= 12 ? 'PM' : 'AM';
-    const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-    const displayMinutes = minute === 0 ? '00' : minute.toString().padStart(2, '0');
-
-    return `${displayHour}:${displayMinutes}${period}`;
-  };
-
-  // Kiểm tra time slot có available không dựa trên API data
-  const isTimeSlotAvailable = (time: string) => {
-    if (!availabilityData) {
-      // Fallback: 70% available nếu không có API data
-      return Math.random() > 0.3;
-    }
-
-    // Kiểm tra xem time slot có bị book chưa
-    const isBooked =
-      availabilityData.bookedAppointments?.some((appointment) => {
-        const appointmentStart = appointment.startTime.split('T')[1].substring(0, 5); // Lấy HH:MM
-        return appointmentStart === time && appointment.status !== 'CANCELLED';
-      }) || false;
-
-    // Kiểm tra giờ làm việc
-    const hour = parseInt(time.split(':')[0]);
-    const minute = parseInt(time.split(':')[1]);
-    const timeInMinutes = hour * 60 + minute;
-
-    let isWorkingHours = true; // Default to true nếu không có workingHours data
-
-    if (availabilityData.workingHours) {
-      const workingStart = availabilityData.workingHours.startTime.split(':');
-      const workingEnd = availabilityData.workingHours.endTime.split(':');
-      const workingStartMinutes = parseInt(workingStart[0]) * 60 + parseInt(workingStart[1]);
-      const workingEndMinutes = parseInt(workingEnd[0]) * 60 + parseInt(workingEnd[1]);
-
-      isWorkingHours = timeInMinutes >= workingStartMinutes && timeInMinutes < workingEndMinutes;
-    }
-
-    // Kiểm tra timeslot phải ít nhất 30p so với hiện tại
-    const now = new Date();
-    const currentTimeInMinutes = now.getHours() * 60 + now.getMinutes();
-    const isAtLeast30MinutesFromNow = timeInMinutes >= currentTimeInMinutes + 30;
-
-    return !isBooked && isWorkingHours && isAtLeast30MinutesFromNow;
-  };
-
-  // Tạo time slots dựa trên API data thực tế
-  const generateTimeSlots = () => {
-    const morningSlots = [];
-    const afternoonSlots = [];
-
-    // Buổi sáng: 7:00 - 12:00
-    for (let hour = 7; hour < 12; hour++) {
-      for (let minute = 0; minute < 60; minute += 30) {
-        const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-        morningSlots.push({
-          time: timeString,
-          displayTime: formatTimeForDisplay(timeString),
-          isAvailable: isTimeSlotAvailable(timeString),
-          isMorning: true,
-        });
-      }
-    }
-
-    // Buổi chiều: 13:00 - 18:00
-    for (let hour = 13; hour < 18; hour++) {
-      for (let minute = 0; minute < 60; minute += 30) {
-        const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-        afternoonSlots.push({
-          time: timeString,
-          displayTime: formatTimeForDisplay(timeString),
-          isAvailable: isTimeSlotAvailable(timeString),
-          isMorning: false,
-        });
-      }
-    }
-
-    return { morning: morningSlots, afternoon: afternoonSlots };
-  };
+  }, [availabilityData, availabilityError, isDoctorNotAvailable]);
 
   const handleCustomerSelect = (customerId: string, profile?: PatientProfile) => {
     setSelectedCustomer(customerId);
@@ -198,7 +124,8 @@ export default function AppointmentScreen() {
       setGender(null);
       setPatientDescription('');
     } else if (customerId === 'me') {
-      // Luôn set "Bản thân" cho "me", không phụ thuộc vào primaryProfile relationship
+      // Set primary profile for "me"
+      setSelectedProfile(primaryProfile || null);
       setPatientDescription('');
       // Thông tin user sẽ được auto-fill bởi useEffect
     }
@@ -228,7 +155,11 @@ export default function AppointmentScreen() {
 
   const handleCustomDateConfirm = (date: Date) => {
     setSelectedCustomDate(date);
-    setSelectedDateForAPI(date.toISOString().split('T')[0]);
+    // Format ngày theo local timezone để tránh lùi 1 ngày
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    setSelectedDateForAPI(`${year}-${month}-${day}`);
     setShowDatePicker(false);
     // Call API khi chọn ngày
     if (selectedDoctorServiceId) {
@@ -240,7 +171,6 @@ export default function AppointmentScreen() {
     // Clear custom date selection
     setSelectedCustomDate(null);
     // Set preset date
-    setSelectedDay(date.day.toString().padStart(2, '0'));
     setSelectedDateForAPI(date.fullDate);
     // Call API khi chọn ngày
     if (selectedDoctorServiceId) {
@@ -262,16 +192,16 @@ export default function AppointmentScreen() {
     const today = new Date();
     const dates = [];
 
-    // Bắt đầu từ ngày thứ 4 (i = 3) vì 3 ngày đầu đã có sẵn
-    for (let i = 3; i < 30; i++) {
+    // Tạo 30 ngày bắt đầu từ hôm nay
+    for (let i = 0; i < 30; i++) {
       const date = new Date(today);
       date.setDate(today.getDate() + i);
       dates.push({
         day: date.getDate(),
         month: date.getMonth() + 1,
         year: date.getFullYear(),
-        dayName: date.toLocaleDateString('vi-VN', { weekday: 'short' }),
-        fullDate: date.toISOString().split('T')[0], // YYYY-MM-DD format
+        dayName: date.toLocaleDateString('vi-VN', { weekday: 'long' }),
+        fullDate: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`, // YYYY-MM-DD format
         isToday: i === 0,
       });
     }
@@ -293,11 +223,24 @@ export default function AppointmentScreen() {
 
     try {
       // Tạo appointment data
+      const formatDateForAPI = (date: Date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      };
+
       const appointmentData = {
-        doctorId: selectedDoctorServiceId || 0,
-        serviceId: selectedService.id,
-        date: `${selectedDate || new Date().toISOString().split('T')[0]}T${selectedTimeSlot}:00`,
+        doctorServiceId: selectedDoctorServiceId || 0,
+        date: selectedDate || formatDateForAPI(new Date()),
+        startTime: selectedTimeSlot,
         notes: patientDescription || '',
+        patientName: fullName || '',
+        patientDob: dateOfBirth ? formatDateForAPI(dateOfBirth) : '',
+        patientPhone: phoneNumber || '',
+        patientGender: gender || 'MALE',
+        clinicId: selectedFacility?.id || 1,
+        patientProfileId: selectedProfile?.id,
       };
 
       console.log('📝 Creating appointment:', appointmentData);
@@ -679,7 +622,13 @@ export default function AppointmentScreen() {
                       className={`mt-1 text-center text-sm ${
                         selectedDateForAPI === date.fullDate ? 'text-blue-100' : 'text-[#475569]'
                       }`}>
-                      {date.isToday ? 'Hôm nay' : ''}
+                      {index === 0
+                        ? 'Hôm nay'
+                        : index === 1
+                          ? 'Ngày mai'
+                          : index === 2
+                            ? 'Ngày kia'
+                            : ''}
                     </Text>
                   </TouchableOpacity>
                 ))}
@@ -717,129 +666,52 @@ export default function AppointmentScreen() {
                   Giờ khám mong muốn*
                 </Text>
 
-                {/* Period Selection */}
-                <View className="mb-4 flex-row space-x-4">
-                  <TouchableOpacity
-                    onPress={() => {
-                      setSelectedPeriod('morning');
-                      // Tự động hiển thị time slots khi đã chọn đủ thông tin
-                      if (selectedFacility && selectedService && selectedDoctor) {
-                        setShowTimeSlots(true);
-                      }
-                    }}
-                    className={`flex-1 rounded-xl border-2 px-5 py-4 ${
-                      selectedPeriod === 'morning' ? 'border-blue-500' : 'border-slate-200'
-                    }`}
-                    style={{
-                      backgroundColor: selectedPeriod === 'morning' ? '#E0F2FE' : '#F8FAFC',
-                    }}>
-                    <View className="flex-row items-center justify-center">
-                      <Ionicons
-                        name="sunny"
-                        size={20}
-                        color={selectedPeriod === 'morning' ? '#2563EB' : '#6B7280'}
-                      />
-                      <Text
-                        className={`ml-2 text-base font-medium ${
-                          selectedPeriod === 'morning' ? 'text-blue-600' : 'text-slate-600'
-                        }`}>
-                        Buổi sáng
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    onPress={() => {
-                      setSelectedPeriod('afternoon');
-                      // Tự động hiển thị time slots khi đã chọn đủ thông tin
-                      if (selectedFacility && selectedService && selectedDoctor) {
-                        setShowTimeSlots(true);
-                      }
-                    }}
-                    className={`flex-1 rounded-xl border-2 px-5 py-4 ${
-                      selectedPeriod === 'afternoon' ? 'border-blue-500' : 'border-slate-200'
-                    }`}
-                    style={{
-                      backgroundColor: selectedPeriod === 'afternoon' ? '#E0F2FE' : '#F8FAFC',
-                    }}>
-                    <View className="flex-row items-center justify-center">
-                      <Ionicons
-                        name="moon"
-                        size={20}
-                        color={selectedPeriod === 'afternoon' ? '#2563EB' : '#6B7280'}
-                      />
-                      <Text
-                        className={`ml-2 text-base font-medium ${
-                          selectedPeriod === 'afternoon' ? 'text-blue-600' : 'text-slate-600'
-                        }`}>
-                        Buổi chiều
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                </View>
-
-                {/* Time Slots - chỉ hiển thị khi đã chọn đủ thông tin */}
-                {showTimeSlots && selectedFacility && selectedService && selectedDoctor && (
-                  <View className="mb-4">
-                    <Text className="mb-3 text-base font-medium" style={{ color: '#0F172A' }}>
-                      Chọn giờ khám
-                    </Text>
-
-                    {isLoadingAvailability ? (
-                      <View className="flex-row items-center justify-center py-8">
-                        <ActivityIndicator size="small" color="#0284C7" />
-                        <Text className="ml-2 text-slate-600">Đang tải giờ khám...</Text>
-                      </View>
-                    ) : (
-                      <View className="space-y-3">
-                        {generateTimeSlots()[selectedPeriod].map((slot, index) => (
-                          <View
-                            key={index}
-                            className="flex-row items-center justify-between rounded-xl bg-white p-4"
-                            style={{
-                              shadowColor: '#000',
-                              shadowOffset: { width: 0, height: 1 },
-                              shadowOpacity: 0.05,
-                              shadowRadius: 2,
-                              elevation: 1,
-                            }}>
-                            <View className="flex-1">
-                              <Text className="text-sm font-medium text-gray-600">{slot.time}</Text>
-                              <Text className="text-xs text-gray-500">
-                                {slot.isAvailable ? 'Có sẵn' : 'Đã đặt'}
-                              </Text>
-                            </View>
-                            <TouchableOpacity
-                              onPress={() => slot.isAvailable && handleTimeSlotSelect(slot.time)}
-                              disabled={!slot.isAvailable}
-                              className={`rounded-lg px-4 py-2 ${
-                                selectedTimeSlot === slot.time
-                                  ? 'bg-[#0284C7]'
-                                  : slot.isAvailable
-                                    ? 'border border-[#0284C7] bg-[#F0FDFA]'
-                                    : 'bg-gray-100'
-                              }`}>
-                              <Text
-                                className={`text-sm font-medium ${
-                                  selectedTimeSlot === slot.time
-                                    ? 'text-white'
-                                    : slot.isAvailable
-                                      ? 'text-[#0284C7]'
-                                      : 'text-gray-400'
-                                }`}>
-                                {selectedTimeSlot === slot.time
-                                  ? 'Đã chọn'
-                                  : slot.isAvailable
-                                    ? 'Chọn'
-                                    : 'Không có'}
-                              </Text>
-                            </TouchableOpacity>
+                {/* Time Slots - chỉ hiển thị khi đã chọn đủ thông tin và có ngày */}
+                {showTimeSlots &&
+                  selectedFacility &&
+                  selectedService &&
+                  selectedDoctor &&
+                  selectedDateForAPI && (
+                    <View className="mb-4">
+                      {isDoctorNotAvailable ? (
+                        <View className="rounded-xl border border-blue-200 bg-blue-50 p-6">
+                          <View className="mb-3 flex-row items-center justify-center space-x-3">
+                            <Ionicons name="calendar-outline" size={24} color="#3B82F6" />
+                            <Text className="text-lg font-semibold text-blue-800">
+                              Không có lịch trống
+                            </Text>
                           </View>
-                        ))}
-                      </View>
-                    )}
-                  </View>
-                )}
+                          <Text className="text-center text-blue-700">
+                            Bác sĩ không có lịch trống trong ngày này. Vui lòng chọn ngày khác.
+                          </Text>
+                        </View>
+                      ) : availabilityData ? (
+                        <TimeSlotPicker
+                          availableTimeSlots={availabilityData.availableTimeSlots}
+                          selectedTimeSlot={selectedTimeSlot}
+                          onTimeSlotSelect={handleTimeSlotSelect}
+                          isLoading={false}
+                          error={null}
+                        />
+                      ) : availabilityError ? (
+                        <View className="rounded-xl border border-red-200 bg-red-50 p-6">
+                          <View className="mb-3 flex-row items-center justify-center space-x-3">
+                            <Ionicons name="warning-outline" size={24} color="#EF4444" />
+                            <Text className="text-lg font-semibold text-red-800">
+                              Lỗi tải dữ liệu
+                            </Text>
+                          </View>
+                          <Text className="text-center text-red-700">
+                            Không thể tải khung giờ khả dụng. Vui lòng thử lại.
+                          </Text>
+                        </View>
+                      ) : (
+                        <View className="flex-row items-center justify-center py-8">
+                          <Text className="text-gray-600">Đang tải...</Text>
+                        </View>
+                      )}
+                    </View>
+                  )}
               </View>
             )}
 
@@ -926,49 +798,68 @@ export default function AppointmentScreen() {
 
               <ScrollView showsVerticalScrollIndicator={false}>
                 <View className="flex-row flex-wrap gap-3">
-                  {generateFutureDates().map((date, index) => (
-                    <TouchableOpacity
-                      key={index}
-                      onPress={() =>
-                        handleCustomDateConfirm(new Date(date.year, date.month - 1, date.day))
-                      }
-                      className={`w-20 rounded-xl border-2 px-2 py-3 ${
-                        selectedDay === date.day.toString().padStart(2, '0')
-                          ? 'border-[#0284C7]'
-                          : 'border-[#E0F2FE]'
-                      }`}
-                      style={{
-                        backgroundColor:
-                          selectedDay === date.day.toString().padStart(2, '0')
-                            ? '#E0F2FE'
-                            : '#F9FAFB',
-                      }}>
-                      <Text
-                        className={`text-center text-sm font-medium ${
-                          selectedDay === date.day.toString().padStart(2, '0')
-                            ? 'text-[#0284C7]'
-                            : 'text-[#475569]'
-                        }`}>
-                        {date.dayName}
-                      </Text>
-                      <Text
-                        className={`mt-1 text-center text-lg font-bold ${
-                          selectedDay === date.day.toString().padStart(2, '0')
-                            ? 'text-[#0284C7]'
-                            : 'text-[#0F172A]'
-                        }`}>
-                        {date.day}
-                      </Text>
-                      <Text
-                        className={`text-center text-xs ${
-                          selectedDay === date.day.toString().padStart(2, '0')
-                            ? 'text-[#0284C7]'
-                            : 'text-[#475569]'
-                        }`}>
-                        Thg {date.month}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
+                  {generateFutureDates()
+                    .slice(3)
+                    .map((date, index) => (
+                      <TouchableOpacity
+                        key={index}
+                        onPress={() => {
+                          // Tạo Date object trực tiếp từ year, month, day để tránh timezone issue
+                          const selectedDate = new Date(date.year, date.month - 1, date.day);
+                          handleCustomDateConfirm(selectedDate);
+                        }}
+                        className={`w-20 rounded-xl border-2 px-2 py-3 ${
+                          selectedCustomDate &&
+                          selectedCustomDate.getDate() === date.day &&
+                          selectedCustomDate.getMonth() === date.month - 1 &&
+                          selectedCustomDate.getFullYear() === date.year
+                            ? 'border-[#0284C7]'
+                            : 'border-[#E0F2FE]'
+                        }`}
+                        style={{
+                          backgroundColor:
+                            selectedCustomDate &&
+                            selectedCustomDate.getDate() === date.day &&
+                            selectedCustomDate.getMonth() === date.month - 1 &&
+                            selectedCustomDate.getFullYear() === date.year
+                              ? '#E0F2FE'
+                              : '#F9FAFB',
+                        }}>
+                        <Text
+                          className={`text-center text-sm font-medium ${
+                            selectedCustomDate &&
+                            selectedCustomDate.getDate() === date.day &&
+                            selectedCustomDate.getMonth() === date.month - 1 &&
+                            selectedCustomDate.getFullYear() === date.year
+                              ? 'text-[#0284C7]'
+                              : 'text-[#475569]'
+                          }`}>
+                          {date.dayName}
+                        </Text>
+                        <Text
+                          className={`mt-1 text-center text-lg font-bold ${
+                            selectedCustomDate &&
+                            selectedCustomDate.getDate() === date.day &&
+                            selectedCustomDate.getMonth() === date.month - 1 &&
+                            selectedCustomDate.getFullYear() === date.year
+                              ? 'text-[#0284C7]'
+                              : 'text-[#0F172A]'
+                          }`}>
+                          {date.day}
+                        </Text>
+                        <Text
+                          className={`text-center text-xs ${
+                            selectedCustomDate &&
+                            selectedCustomDate.getDate() === date.day &&
+                            selectedCustomDate.getMonth() === date.month - 1 &&
+                            selectedCustomDate.getFullYear() === date.year
+                              ? 'text-[#0284C7]'
+                              : 'text-[#475569]'
+                          }`}>
+                          Thg {date.month}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
                 </View>
               </ScrollView>
 

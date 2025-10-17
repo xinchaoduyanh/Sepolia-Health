@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 import { API_ENDPOINTS } from '@/constants/api';
 import { Facility, Service, DoctorAvailability } from '@/types/doctor';
+import { CreateAppointmentRequest } from '@/types/appointment';
 
 // Types - Matching Backend DTOs
 export interface Appointment {
@@ -34,13 +35,6 @@ export interface Appointment {
   };
   createdAt: string;
   updatedAt: string;
-}
-
-export interface CreateAppointmentRequest {
-  doctorId: number;
-  serviceId: number;
-  date: string; // ISO datetime
-  notes?: string;
 }
 
 export interface UpdateAppointmentRequest {
@@ -88,7 +82,10 @@ export const appointmentApi = {
   },
 
   createAppointment: async (data: CreateAppointmentRequest) => {
-    const response = await apiClient.post<Appointment>(API_ENDPOINTS.APPOINTMENTS.BASE, data);
+    const response = await apiClient.post<Appointment>(
+      `${API_ENDPOINTS.APPOINTMENTS.BASE}/booking/create`,
+      data
+    );
     return response.data;
   },
 
@@ -167,6 +164,27 @@ export const appointmentApi = {
       total: number;
     }>(
       `${API_ENDPOINTS.APPOINTMENTS.DOCTOR_SERVICES}?locationId=${locationId}&serviceId=${serviceId}`
+    );
+    return response.data;
+  },
+
+  getAvailableDates: async (doctorServiceId: number, startDate: string, endDate: string) => {
+    const response = await apiClient.get<{
+      doctorId: number;
+      doctorName: string;
+      specialty: string;
+      serviceName: string;
+      serviceDuration: number;
+      availableDates: {
+        date: string;
+        dayOfWeek: string;
+        workingHours: {
+          startTime: string;
+          endTime: string;
+        };
+      }[];
+    }>(
+      `${API_ENDPOINTS.APPOINTMENTS.AVAILABLE_DATES}?doctorServiceId=${doctorServiceId}&startDate=${startDate}&endDate=${endDate}`
     );
     return response.data;
   },
@@ -280,6 +298,15 @@ export const useDoctorServices = (locationId: number, serviceId: number) => {
     queryFn: () => appointmentApi.getDoctorServices(locationId, serviceId),
     enabled: !!locationId && !!serviceId,
     staleTime: 2 * 60 * 1000, // 2 minutes
+  });
+};
+
+export const useAvailableDates = (doctorServiceId: number, startDate: string, endDate: string) => {
+  return useQuery({
+    queryKey: ['appointments', 'available-dates', doctorServiceId, startDate, endDate],
+    queryFn: () => appointmentApi.getAvailableDates(doctorServiceId, startDate, endDate),
+    enabled: !!doctorServiceId && !!startDate && !!endDate,
+    staleTime: 5 * 60 * 1000, // 5 minutes (less frequently changes)
   });
 };
 

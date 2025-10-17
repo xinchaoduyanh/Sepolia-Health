@@ -74,11 +74,11 @@ export interface DoctorAvailability {
     startTime: string;
     endTime: string;
   };
-  bookedAppointments: {
+  availableTimeSlots: {
     startTime: string;
     endTime: string;
-    patientName: string;
-    status: string;
+    displayTime: string;
+    period: 'morning' | 'afternoon';
   }[];
 }
 

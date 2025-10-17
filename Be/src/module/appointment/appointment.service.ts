@@ -28,8 +28,8 @@ export class AppointmentService {
     query: GetAppointmentsQueryDtoType,
   ): Promise<AppointmentsListResponseDtoType> {
     const {
-      page,
-      limit,
+      page = 1,
+      limit = 10,
       status,
       paymentStatus,
       doctorId,
@@ -37,7 +37,7 @@ export class AppointmentService {
       dateFrom,
       dateTo,
     } = query;
-    const skip = (page - 1) * limit;
+    const skip = (Number(page) - 1) * Number(limit);
 
     const where: any = {};
 
@@ -55,7 +55,7 @@ export class AppointmentService {
       this.prisma.appointment.findMany({
         where,
         skip,
-        take: limit,
+        take: Number(limit),
         orderBy: { date: 'asc' },
         include: {
           patientProfile: {
@@ -81,7 +81,7 @@ export class AppointmentService {
     ]);
 
     return {
-      data: appointments.map((appointment) =>
+      appointments: appointments.map((appointment) =>
         this.formatAppointmentResponse(appointment),
       ),
       total,
@@ -242,10 +242,78 @@ export class AppointmentService {
 
     const patientProfileIds = patientProfiles.map((p) => p.id);
 
-    return this.findAll({
-      ...query,
-      patientId: patientProfileIds.length > 0 ? patientProfileIds[0] : -1, // Use first profile or invalid ID
-    });
+    if (patientProfileIds.length === 0) {
+      // Return empty result if no patient profiles
+      return {
+        appointments: [],
+        total: 0,
+        page: query.page || 1,
+        limit: query.limit || 10,
+      };
+    }
+
+    // Query appointments for all patient profiles
+    const {
+      page = 1,
+      limit = 10,
+      status,
+      paymentStatus,
+      doctorId,
+      dateFrom,
+      dateTo,
+    } = query;
+    const skip = (Number(page) - 1) * Number(limit);
+
+    const where: any = {
+      patientProfileId: { in: patientProfileIds }, // Query all patient profiles
+    };
+
+    if (status) where.status = status;
+    if (paymentStatus) where.paymentStatus = paymentStatus;
+    if (doctorId) where.doctorId = doctorId;
+    if (dateFrom || dateTo) {
+      where.date = {};
+      if (dateFrom) where.date.gte = new Date(dateFrom);
+      if (dateTo) where.date.lte = new Date(dateTo);
+    }
+
+    const [appointments, total] = await Promise.all([
+      this.prisma.appointment.findMany({
+        where,
+        skip,
+        take: Number(limit),
+        orderBy: { date: 'asc' },
+        include: {
+          patientProfile: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              phone: true,
+            },
+          },
+          doctor: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              specialty: true,
+            },
+          },
+          service: true,
+        },
+      }),
+      this.prisma.appointment.count({ where }),
+    ]);
+
+    return {
+      appointments: appointments.map((appointment) =>
+        this.formatAppointmentResponse(appointment),
+      ),
+      total,
+      page,
+      limit,
+    };
   }
 
   /**
@@ -494,7 +562,7 @@ export class AppointmentService {
     // Create appointment using data from DoctorService
     const appointment = await this.prisma.appointment.create({
       data: {
-        date: new Date(date + 'T00:00:00.000Z'),
+        date: new Date(date),
         startTime,
         endTime,
         status: 'REQUESTED',
@@ -638,9 +706,21 @@ export class AppointmentService {
       },
     });
 
-    // If doctor doesn't work on this day, throw error
+    // If doctor doesn't work on this day, return empty time slots
     if (!workingHours) {
-      throw new NotFoundException(MESSAGES.APPOINTMENT.DOCTOR_NOT_AVAILABLE);
+      return {
+        doctorId: doctorService.doctor.id,
+        doctorName: `${doctorService.doctor.firstName} ${doctorService.doctor.lastName}`,
+        specialty: doctorService.doctor.specialty,
+        serviceName: doctorService.service.name,
+        serviceDuration: doctorService.service.duration,
+        date: date,
+        workingHours: {
+          startTime: '08:00',
+          endTime: '17:00',
+        },
+        availableTimeSlots: [],
+      };
     }
 
     // Get existing appointments for the date
@@ -663,6 +743,14 @@ export class AppointmentService {
       },
     });
 
+    // Generate available time slots
+    const availableTimeSlots = this.generateAvailableTimeSlots(
+      workingHours.startTime,
+      workingHours.endTime,
+      doctorService.service.duration,
+      bookedAppointments,
+    );
+
     return {
       doctorId: doctorService.doctor.id,
       doctorName: `${doctorService.doctor.firstName} ${doctorService.doctor.lastName}`,
@@ -674,13 +762,195 @@ export class AppointmentService {
         startTime: workingHours.startTime,
         endTime: workingHours.endTime,
       },
-      bookedAppointments: bookedAppointments.map((apt) => ({
-        startTime: apt.startTime,
-        endTime: apt.endTime,
-        patientName: apt.patientName,
-        status: apt.status,
-      })),
+      availableTimeSlots,
     };
+  }
+
+  /**
+   * Get available dates for a doctor service within a date range
+   */
+  async getAvailableDates(
+    doctorServiceId: number,
+    startDate: string,
+    endDate: string,
+  ) {
+    // Validate date formats
+    if (isNaN(Date.parse(startDate)) || isNaN(Date.parse(endDate))) {
+      throw new BadRequestException(MESSAGES.APPOINTMENT.INVALID_DATE);
+    }
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    // Check if dates are valid
+    if (start >= end) {
+      throw new BadRequestException('Ngày bắt đầu phải nhỏ hơn ngày kết thúc');
+    }
+
+    // Check if start date is not in the past
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (start < today) {
+      throw new BadRequestException(MESSAGES.APPOINTMENT.PAST_DATE);
+    }
+
+    // Get doctor service info
+    const doctorService = await this.prisma.doctorService.findUnique({
+      where: { id: doctorServiceId },
+      include: {
+        doctor: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            specialty: true,
+          },
+        },
+        service: {
+          select: {
+            id: true,
+            name: true,
+            duration: true,
+          },
+        },
+      },
+    });
+
+    if (!doctorService) {
+      throw new NotFoundException(
+        MESSAGES.APPOINTMENT.DOCTOR_SERVICE_NOT_FOUND,
+      );
+    }
+
+    // Get all working hours for the doctor
+    const workingHours = await this.prisma.doctorAvailability.findMany({
+      where: {
+        doctorId: doctorService.doctor.id,
+      },
+    });
+
+    if (workingHours.length === 0) {
+      throw new NotFoundException('Bác sĩ chưa có lịch làm việc');
+    }
+
+    // Create a map of day of week to working hours
+    const workingHoursMap = new Map<
+      DayOfWeek,
+      { startTime: string; endTime: string }
+    >();
+    workingHours.forEach((wh) => {
+      workingHoursMap.set(wh.dayOfWeek, {
+        startTime: wh.startTime,
+        endTime: wh.endTime,
+      });
+    });
+
+    // Generate available dates
+    const availableDates: Array<{
+      date: string;
+      dayOfWeek: DayOfWeek;
+      workingHours: {
+        startTime: string;
+        endTime: string;
+      };
+    }> = [];
+    const currentDate = new Date(start);
+
+    while (currentDate <= end) {
+      const dayOfWeek = this.getDayOfWeek(currentDate);
+      const workingHour = workingHoursMap.get(dayOfWeek);
+
+      if (workingHour) {
+        availableDates.push({
+          date: currentDate.toISOString().split('T')[0], // YYYY-MM-DD format
+          dayOfWeek: dayOfWeek,
+          workingHours: {
+            startTime: workingHour.startTime,
+            endTime: workingHour.endTime,
+          },
+        });
+      }
+
+      // Move to next day
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    return {
+      doctorId: doctorService.doctor.id,
+      doctorName: `${doctorService.doctor.firstName} ${doctorService.doctor.lastName}`,
+      specialty: doctorService.doctor.specialty,
+      serviceName: doctorService.service.name,
+      serviceDuration: doctorService.service.duration,
+      availableDates,
+    };
+  }
+
+  /**
+   * Generate available time slots for a doctor on a specific date
+   */
+  private generateAvailableTimeSlots(
+    startTime: string,
+    endTime: string,
+    serviceDuration: number,
+    bookedAppointments: Array<{
+      startTime: string;
+      endTime: string;
+      patientName: string;
+      status: string;
+    }>,
+  ) {
+    const slots: Array<{
+      startTime: string;
+      endTime: string;
+      displayTime: string;
+      period: 'morning' | 'afternoon';
+    }> = [];
+    const start = this.timeToMinutes(startTime);
+    const end = this.timeToMinutes(endTime);
+    const duration = serviceDuration;
+
+    // Generate time slots every 30 minutes, but each slot has the full service duration
+    for (let time = start; time + duration <= end; time += 30) {
+      const slotStartTime = this.minutesToTime(time);
+      const slotEndTime = this.minutesToTime(time + duration);
+
+      // Check if this slot conflicts with any booked appointment
+      const isAvailable = !bookedAppointments.some((apt) => {
+        const aptStart = this.timeToMinutes(apt.startTime);
+        const aptEnd = this.timeToMinutes(apt.endTime);
+
+        // Check for overlap - slot must not overlap with any existing appointment
+        return time < aptEnd && time + duration > aptStart;
+      });
+
+      if (isAvailable) {
+        slots.push({
+          startTime: slotStartTime,
+          endTime: slotEndTime,
+          displayTime: `${slotStartTime} - ${slotEndTime}`,
+          period: time < 12 * 60 ? 'morning' : 'afternoon', // Before 12:00 is morning
+        });
+      }
+    }
+
+    return slots;
+  }
+
+  /**
+   * Convert time string (HH:mm) to minutes since midnight
+   */
+  private timeToMinutes(time: string): number {
+    const [hours, minutes] = time.split(':').map(Number);
+    return hours * 60 + minutes;
+  }
+
+  /**
+   * Convert minutes since midnight to time string (HH:mm)
+   */
+  private minutesToTime(minutes: number): string {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
   }
 
   /**

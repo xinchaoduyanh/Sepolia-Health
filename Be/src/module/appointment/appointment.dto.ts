@@ -121,7 +121,7 @@ export const AppointmentResponseDto = z.object({
 });
 
 export const AppointmentsListResponseDto = z.object({
-  data: z.array(AppointmentResponseDto),
+  appointments: z.array(AppointmentResponseDto),
   total: z.number(),
   page: z.number(),
   limit: z.number(),

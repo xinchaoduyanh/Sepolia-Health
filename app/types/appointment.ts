@@ -50,11 +50,9 @@ export interface Appointment {
 }
 
 export interface CreateAppointmentRequest {
-  doctorId: number;
-  serviceId: number;
+  doctorServiceId: number;
   date: string; // ISO date
   startTime: string;
-  endTime: string;
   notes?: string;
   // Patient information (required for all appointments)
   patientName: string;

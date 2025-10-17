@@ -32,7 +32,7 @@ import type {
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import type { TokenPayload } from '@/common/types/jwt.type';
 import { JwtAuthGuard, RolesGuard } from '@/common/guards';
-import { Roles, Public } from '@/common/decorators';
+import { Roles } from '@/common/decorators';
 import { Role } from '@prisma/client';
 
 @ApiTags('Appointments')
@@ -43,7 +43,7 @@ export class AppointmentController {
 
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.RECEPTIONIST)
+  @Roles(Role.ADMIN, Role.RECEPTIONIST, Role.DOCTOR, Role.PATIENT)
   @ApiOperation({ summary: 'Lấy danh sách lịch hẹn' })
   @ApiQuery({
     name: 'page',
@@ -169,9 +169,9 @@ export class AppointmentController {
   }
 
   // ========== BOOKING APIS ==========
-
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.RECEPTIONIST, Role.DOCTOR, Role.PATIENT)
   @Get('booking/locations')
-  @Public()
   @ApiOperation({ summary: 'Lấy danh sách cơ sở phòng khám (locations)' })
   @ApiResponse({ status: 200, description: 'Lấy danh sách cơ sở thành công' })
   async getLocations() {
@@ -179,7 +179,8 @@ export class AppointmentController {
   }
 
   @Get('booking/services')
-  @Public()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.RECEPTIONIST, Role.DOCTOR, Role.PATIENT)
   @ApiOperation({ summary: 'Lấy danh sách dịch vụ khám' })
   @ApiResponse({ status: 200, description: 'Lấy danh sách dịch vụ thành công' })
   async getServices() {
@@ -187,7 +188,8 @@ export class AppointmentController {
   }
 
   @Get('booking/doctor-services')
-  @Public()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.RECEPTIONIST, Role.DOCTOR, Role.PATIENT)
   @ApiOperation({
     summary: 'Lấy danh sách bác sĩ cung cấp dịch vụ theo location và service',
   })
@@ -214,8 +216,82 @@ export class AppointmentController {
     );
   }
 
+  @Get('booking/available-dates')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.RECEPTIONIST, Role.DOCTOR, Role.PATIENT)
+  @ApiOperation({
+    summary:
+      'Lấy danh sách các ngày bác sĩ có thể làm việc trong khoảng thời gian',
+  })
+  @ApiQuery({
+    name: 'doctorServiceId',
+    required: true,
+    type: Number,
+    description: 'ID DoctorService',
+  })
+  @ApiQuery({
+    name: 'startDate',
+    required: true,
+    type: String,
+    description: 'Ngày bắt đầu (YYYY-MM-DD)',
+  })
+  @ApiQuery({
+    name: 'endDate',
+    required: true,
+    type: String,
+    description: 'Ngày kết thúc (YYYY-MM-DD)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy danh sách ngày khả dụng thành công',
+    schema: {
+      type: 'object',
+      properties: {
+        doctorId: { type: 'number' },
+        doctorName: { type: 'string' },
+        specialty: { type: 'string' },
+        serviceName: { type: 'string' },
+        serviceDuration: { type: 'number' },
+        availableDates: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              date: { type: 'string' },
+              dayOfWeek: { type: 'string' },
+              workingHours: {
+                type: 'object',
+                properties: {
+                  startTime: { type: 'string' },
+                  endTime: { type: 'string' },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Dữ liệu không hợp lệ' })
+  @ApiResponse({
+    status: 404,
+    description: 'Dịch vụ bác sĩ không tồn tại',
+  })
+  async getAvailableDates(
+    @Query('doctorServiceId') doctorServiceId: string,
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+  ) {
+    return await this.appointmentService.getAvailableDates(
+      Number(doctorServiceId),
+      startDate,
+      endDate,
+    );
+  }
+
   @Get('booking/doctor-availability')
-  @Public()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.RECEPTIONIST, Role.DOCTOR, Role.PATIENT)
   @ApiOperation({
     summary: 'Kiểm tra lịch bận của bác sĩ trong một ngày cụ thể',
   })

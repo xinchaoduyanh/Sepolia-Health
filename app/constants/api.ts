@@ -2,7 +2,7 @@
 export const API_CONFIG = {
   // Development URLs
   BASE_URL: __DEV__
-    ? 'http://10.2.50.101:3000/api' // Local development
+    ? 'http://10.2.51.19:3000/api' // Local development
     : 'https://your-production-api.com/api', // Production URL
 
   TIMEOUT: 10000, // 10 seconds
@@ -37,6 +37,7 @@ export const API_ENDPOINTS = {
     LOCATIONS: '/appointments/booking/locations',
     SERVICES: '/appointments/booking/services',
     DOCTOR_SERVICES: '/appointments/booking/doctor-services',
+    AVAILABLE_DATES: '/appointments/booking/available-dates',
     DOCTOR_AVAILABILITY: '/appointments/booking/doctor-availability',
   },
 
