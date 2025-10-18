@@ -19,7 +19,7 @@ Sepolia-Health là một giải pháp quản lý phòng khám hiện đại, cun
 
 ### 👨‍⚕️ Dành cho Bác sĩ
 
-- **Quản lý lịch làm việc**  ca khám
+- **Quản lý lịch làm việc** ca khám
 - **Xem danh sách bệnh nhân** đã đặt lịch
 - **Kê đơn thuốc** điện tử
 - **Theo dõi phản hồi** từ bệnh nhân
@@ -84,7 +84,7 @@ Sepolia-Health/
 
 ### Yêu cầu hệ thống
 
-- Node.js >= 18.0.0
+- Node.js 22
 - npm hoặc pnpm
 - PostgreSQL database
 - Redis server
@@ -93,7 +93,7 @@ Sepolia-Health/
 ### 1. Clone repository
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/xinchaoduyanh/Sepolia-Health.git
 cd Sepolia-Health
 ```
 
@@ -126,6 +126,7 @@ AWS_SECRET_ACCESS_KEY="your-aws-secret"
 cd Be
 npx prisma generate
 npx prisma db push
+# ?
 ```
 
 ### 5. Chạy Backend API
@@ -133,8 +134,8 @@ npx prisma db push
 ```bash
 cd Be
 npm run start:dev
-# API sẽ chạy tại http://localhost:3000
-# Swagger docs tại http://localhost:3000/api/docs
+# API sẽ chạy tại http://localhost:8000
+# Swagger docs tại http://localhost:8000/api/docs
 ```
 
 ### 6. Cài đặt Mobile App
@@ -147,10 +148,7 @@ npm install
 ### 7. Cấu hình Mobile App
 
 ```bash
-# Tạo file .env trong thư mục app/
-cp .env.example .env
-
-# Chỉnh sửa API_BASE_URL trong .env
+# Chỉnh sửa API_BASE_URL trong constants/api.ts theo ipconfig của be
 API_BASE_URL="http://localhost:3000/api"
 ```
 

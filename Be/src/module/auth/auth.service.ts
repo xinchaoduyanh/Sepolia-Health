@@ -92,7 +92,7 @@ export class AuthService {
     await this.redisService.setToken(
       accessTokenKey,
       tokens.accessToken,
-      Number(this.tokenConf.accessTokenExpiresInSeconds),
+      this.tokenConf.accessTokenExpiresInSeconds,
     );
     // Store refresh token with configured expiration
     await this.redisService.setToken(
