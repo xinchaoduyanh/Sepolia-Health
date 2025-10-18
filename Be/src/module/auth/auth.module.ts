@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigType } from '@nestjs/config';
+import { ConfigType } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
@@ -10,9 +10,7 @@ import { appConfig } from '@/common/config';
 
 @Module({
   imports: [
-    ConfigModule.forFeature(appConfig),
     JwtModule.registerAsync({
-      imports: [ConfigModule.forFeature(appConfig)],
       inject: [appConfig.KEY],
       useFactory: async (jwtConf: ConfigType<typeof appConfig>) => ({
         secret: jwtConf.secret,
