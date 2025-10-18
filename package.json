@@ -1,0 +1,8 @@
+{
+  "name": "Sepolia-Health",
+  "private": true,
+  "dependencies": {
+    "turbo": "^2.5.8"
+  },
+  "packageManager": "pnpm@8.10.1"
+}
