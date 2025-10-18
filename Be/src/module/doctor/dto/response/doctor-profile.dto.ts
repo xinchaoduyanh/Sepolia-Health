@@ -10,8 +10,6 @@ export class DoctorProfileDto {
   @ApiProperty()
   updatedAt: Date;
 
-  // deletedAt field removed in new schema
-
   @ApiProperty()
   specialty: string;
 

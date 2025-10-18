@@ -12,11 +12,14 @@ import { ReceptionistModule } from './receptionist/receptionist.module';
 import { UploadModule } from './upload/upload.module';
 import { UserModule } from './user/user.module';
 import { CustomZodValidationPipe } from '@/common/pipes';
+import { appConfig } from '@/common/config';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: '.env',
+      load: [appConfig],
     }),
     PrismaModule,
     CommonModule,

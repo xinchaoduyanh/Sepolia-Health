@@ -18,7 +18,7 @@ import {
 } from './auth.dto';
 import { AuthRepository } from './auth.repository';
 import { CustomJwtService, MailService, RedisService } from '@/common/modules';
-import { tokenStorageConfig } from '@/common/config';
+import { appConfig } from '@/common/config';
 import { ConfigType } from '@nestjs/config';
 import { ERROR_MESSAGES } from '@/common/constants/error-messages';
 
@@ -54,8 +54,8 @@ export class AuthService {
     private readonly mailService: MailService,
     private readonly authRepository: AuthRepository,
     private readonly redisService: RedisService,
-    @Inject(tokenStorageConfig.KEY)
-    private readonly tokenConf: ConfigType<typeof tokenStorageConfig>,
+    @Inject(appConfig.KEY)
+    private readonly tokenConf: ConfigType<typeof appConfig>,
   ) {}
 
   /**
@@ -92,7 +92,7 @@ export class AuthService {
     await this.redisService.setToken(
       accessTokenKey,
       tokens.accessToken,
-      this.tokenConf.accessTokenExpiresInSeconds,
+      Number(this.tokenConf.accessTokenExpiresInSeconds),
     );
     // Store refresh token with configured expiration
     await this.redisService.setToken(

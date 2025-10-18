@@ -6,14 +6,14 @@ import {
   GenerateTokenOptions,
   VerifyTokenResult,
 } from './jwt.types';
-import { jwtConfig } from '@/common/config';
+import { appConfig } from '@/common/config';
 import { ConfigType } from '@nestjs/config';
 
 @Injectable()
 export class CustomJwtService {
   constructor(
-    @Inject(jwtConfig.KEY)
-    private readonly jwtConf: ConfigType<typeof jwtConfig>,
+    @Inject(appConfig.KEY)
+    private readonly jwtConf: ConfigType<typeof appConfig>,
     private jwtService: JwtService,
   ) {}
 
