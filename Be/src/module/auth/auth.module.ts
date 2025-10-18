@@ -6,15 +6,15 @@ import { AuthService } from './auth.service';
 import { AuthRepository } from './auth.repository';
 import { PrismaModule } from '@/common/prisma/prisma.module';
 import { JwtAuthModule, MailModule, RedisModule } from '@/common/modules';
-import { jwtConfig, tokenStorageConfig } from '@/common/config';
+import { appConfig } from '@/common/config';
 
 @Module({
   imports: [
-    ConfigModule.forFeature(tokenStorageConfig),
+    ConfigModule.forFeature(appConfig),
     JwtModule.registerAsync({
-      imports: [ConfigModule.forFeature(jwtConfig)],
-      inject: [jwtConfig.KEY],
-      useFactory: async (jwtConf: ConfigType<typeof jwtConfig>) => ({
+      imports: [ConfigModule.forFeature(appConfig)],
+      inject: [appConfig.KEY],
+      useFactory: async (jwtConf: ConfigType<typeof appConfig>) => ({
         secret: jwtConf.secret,
         signOptions: { expiresIn: jwtConf.expiresIn },
       }),

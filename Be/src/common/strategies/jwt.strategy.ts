@@ -7,7 +7,7 @@ import {
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy, ExtractJwt } from 'passport-jwt';
 import { TokenPayload } from '../types/jwt.type';
-import { jwtConfig } from '../config';
+import { appConfig } from '../config';
 import { ConfigType } from '@nestjs/config';
 
 @Injectable()
@@ -15,8 +15,8 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   private readonly logger = new Logger(JwtStrategy.name);
 
   constructor(
-    @Inject(jwtConfig.KEY)
-    private readonly jwtConf: ConfigType<typeof jwtConfig>,
+    @Inject(appConfig.KEY)
+    private readonly jwtConf: ConfigType<typeof appConfig>,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),

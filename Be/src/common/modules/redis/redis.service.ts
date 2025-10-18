@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { createClient, RedisClientType } from 'redis';
 import { RedisSetOptions, RedisGetResult, RedisKeyValue } from './redis.types';
-import { redisConfig } from '../../config';
+import { appConfig } from '../../config';
 import { ConfigType } from '@nestjs/config';
 
 @Injectable()
@@ -10,8 +10,8 @@ export class RedisService implements OnModuleDestroy {
   private readonly client: RedisClientType;
 
   constructor(
-    @Inject(redisConfig.KEY)
-    private readonly redisConf: ConfigType<typeof redisConfig>,
+    @Inject(appConfig.KEY)
+    private readonly redisConf: ConfigType<typeof appConfig>,
   ) {
     this.client = createClient({
       url: this.redisConf.redisUrl,

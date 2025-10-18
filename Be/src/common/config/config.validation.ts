@@ -1,6 +1,6 @@
 import z from 'zod';
 
-const configSchema = z.object({
+export const configSchema = z.object({
   DATABASE_URL: z.string().nonempty(),
   REDIS_URL: z.string().nonempty(),
   FRONTEND_URL: z.string().nonempty(),
@@ -22,6 +22,3 @@ const configSchema = z.object({
   AWS_S3_BUCKET_NAME: z.string().nonempty(),
   AWS_S3_BUCKET_URL: z.string().nonempty(),
 });
-
-const parsed = configSchema.parse(process.env);
-export default parsed;

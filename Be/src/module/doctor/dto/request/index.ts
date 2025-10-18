@@ -1,4 +1,3 @@
-// Period enum no longer exists in new schema
 import { createZodDto } from 'nestjs-zod';
 import z from 'zod';
 
