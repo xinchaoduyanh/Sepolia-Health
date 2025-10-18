@@ -22,6 +22,7 @@ export interface CompleteRegisterRequest {
   password: string;
   dateOfBirth: string; // ISO date string
   gender: 'MALE' | 'FEMALE' | 'OTHER'; // Should match Prisma Gender enum
+  relationship: Relationship; // Required for patient profile creation
   role?: 'PATIENT' | 'DOCTOR' | 'ADMIN';
 }
 

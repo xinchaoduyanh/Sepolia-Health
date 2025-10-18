@@ -2,7 +2,7 @@
 export const API_CONFIG = {
   // Development URLs
   BASE_URL: __DEV__
-    ? 'http://10.2.51.19:3000/api' // Local development
+    ? 'http://192.168.1.7:3000/api' // Local development
     : 'https://your-production-api.com/api', // Production URL
 
   TIMEOUT: 10000, // 10 seconds
