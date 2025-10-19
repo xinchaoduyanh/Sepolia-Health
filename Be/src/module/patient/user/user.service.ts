@@ -61,7 +61,6 @@ export class UserService {
         nationality: patientProfile.nationality,
         address: patientProfile.address,
         healthDetailsJson: patientProfile.healthDetailsJson,
-        isPrimary: patientProfile.isPrimary,
         createdAt: patientProfile.createdAt.toISOString(),
         updatedAt: patientProfile.updatedAt.toISOString(),
       }),
@@ -359,10 +358,8 @@ export class UserService {
   ): Promise<CreatePatientProfileResponseDtoType> {
     await this.userRepository.findUserByIdSimple(userId);
 
-    // If setting as primary, unset other primary profiles
-    if (createData.isPrimary) {
-      await this.userRepository.unsetPrimaryProfiles(userId);
-    }
+    // Check if this is a SELF relationship profile
+    const isSelfProfile = createData.relationship === 'SELF';
 
     const patientProfile = await this.userRepository.createPatientProfile({
       firstName: createData.firstName,
@@ -377,7 +374,6 @@ export class UserService {
       nationality: createData.nationality,
       address: createData.address,
       healthDetailsJson: createData.healthDetailsJson,
-      isPrimary: createData.isPrimary || false,
       managerId: userId,
     });
 
@@ -396,7 +392,6 @@ export class UserService {
         nationality: patientProfile.nationality,
         address: patientProfile.address,
         healthDetailsJson: patientProfile.healthDetailsJson,
-        isPrimary: patientProfile.isPrimary,
         createdAt: patientProfile.createdAt.toISOString(),
         updatedAt: patientProfile.updatedAt.toISOString(),
       },
@@ -420,9 +415,8 @@ export class UserService {
     );
 
     // If setting as primary, unset other primary profiles
-    if (updateData.isPrimary) {
-      await this.userRepository.unsetPrimaryProfiles(userId, profileId);
-    }
+    // Check if this is a SELF relationship profile
+    const isSelfProfile = updateData.relationship === 'SELF';
 
     const updateDataFormatted: any = {};
     if (updateData.firstName)
@@ -446,8 +440,6 @@ export class UserService {
       updateDataFormatted.address = updateData.address;
     if (updateData.healthDetailsJson !== undefined)
       updateDataFormatted.healthDetailsJson = updateData.healthDetailsJson;
-    if (updateData.isPrimary !== undefined)
-      updateDataFormatted.isPrimary = updateData.isPrimary;
 
     const updatedProfile = await this.userRepository.updatePatientProfile(
       profileId,

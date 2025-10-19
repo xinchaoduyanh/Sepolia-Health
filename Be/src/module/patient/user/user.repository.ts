@@ -18,7 +18,7 @@ export class UserRepository {
         receptionistProfile: true,
         patientProfiles: {
           orderBy: [
-            { isPrimary: 'desc' }, // Primary profile first
+            { relationship: 'asc' }, // SELF profile first
             { createdAt: 'asc' }, // Then by creation date
           ],
         },
@@ -64,7 +64,7 @@ export class UserRepository {
     return this.prisma.patientProfile.findMany({
       where: { managerId: userId },
       orderBy: [
-        { isPrimary: 'desc' }, // Primary profile first
+        { relationship: 'asc' }, // SELF profile first
         { createdAt: 'asc' }, // Then by creation date
       ],
     });
@@ -86,7 +86,6 @@ export class UserRepository {
     nationality?: string;
     address?: string;
     healthDetailsJson?: any;
-    isPrimary: boolean;
     managerId: number;
   }) {
     return this.prisma.patientProfile.create({
@@ -123,17 +122,11 @@ export class UserRepository {
   }
 
   /**
-   * Unset primary profiles for a user
+   * Get primary profile (SELF relationship)
    */
-  async unsetPrimaryProfiles(userId: number, excludeId?: number) {
-    const whereCondition: any = { managerId: userId, isPrimary: true };
-    if (excludeId) {
-      whereCondition.id = { not: excludeId };
-    }
-
-    return this.prisma.patientProfile.updateMany({
-      where: whereCondition,
-      data: { isPrimary: false },
+  async getPrimaryProfile(userId: number) {
+    return this.prisma.patientProfile.findFirst({
+      where: { managerId: userId, relationship: 'SELF' },
     });
   }
 

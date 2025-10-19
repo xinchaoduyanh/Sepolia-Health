@@ -11,7 +11,7 @@ export default function PersonalInfoScreen() {
   // Parse profile data from params, fallback to user data
   const profileData: PatientProfile = params.profile
     ? JSON.parse(params.profile as string)
-    : user?.patientProfiles?.find((p) => p.isPrimary) || (user as any);
+    : user?.patientProfiles?.find((p) => p.relationship === 'SELF') || (user as any);
 
   // Helper function to calculate age from date of birth
   const calculateAge = (dateOfBirth: string): number => {

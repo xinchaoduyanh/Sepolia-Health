@@ -202,7 +202,7 @@ export class UploadController {
       where: { id: user.userId },
       include: {
         patientProfiles: {
-          where: { isPrimary: true },
+          where: { relationship: 'SELF' },
           take: 1,
         },
       },
@@ -258,7 +258,7 @@ export class UploadController {
       where: { id: user.userId },
       include: {
         patientProfiles: {
-          where: { isPrimary: true },
+          where: { relationship: 'SELF' },
           take: 1,
         },
       },

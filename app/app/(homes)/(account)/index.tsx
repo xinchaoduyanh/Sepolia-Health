@@ -12,7 +12,9 @@ export default function AccountScreen() {
   const patientProfiles = user?.patientProfiles || [];
 
   // Lấy primary profile (hồ sơ chính)
-  const primaryProfile = patientProfiles.find((profile: PatientProfile) => profile.isPrimary);
+  const primaryProfile = patientProfiles.find(
+    (profile: PatientProfile) => profile.relationship === 'SELF'
+  );
 
   const handleLogout = () => {
     Alert.alert('Đăng xuất', 'Bạn có chắc chắn muốn đăng xuất?', [

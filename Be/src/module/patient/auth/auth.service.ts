@@ -229,7 +229,7 @@ export class AuthService {
       gender,
       patientPhone: phone, // Use phone for patient profile
       relationship,
-      // isPrimary sẽ được set = true trong auth repository
+      // relationship SELF sẽ được set trong auth repository
     };
 
     const { user, patientProfile } =

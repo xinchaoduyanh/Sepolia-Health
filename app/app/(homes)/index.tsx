@@ -13,7 +13,7 @@ export default function HomeScreen() {
   const patientProfiles = user?.patientProfiles || [];
 
   // Lấy primary profile (hồ sơ chính)
-  const primaryProfile = patientProfiles.find((profile) => profile.isPrimary);
+  const primaryProfile = patientProfiles.find((profile) => profile.relationship === 'SELF');
 
   return (
     <View style={{ flex: 1, backgroundColor: '#E0F2FE' }}>

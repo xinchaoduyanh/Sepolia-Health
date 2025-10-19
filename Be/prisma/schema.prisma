@@ -19,12 +19,11 @@ enum Role {
 }
 
 enum AppointmentStatus {
-  REQUESTED    // Mới yêu cầu, chờ xác nhận
-  CONFIRMED    // Đã xác nhận
-  CHECKED_IN   // Đã đến làm thủ tục
-  COMPLETED    // Đã hoàn thành
-  CANCELLED    // Đã hủy
-  NO_SHOW      // Không đến
+  // Tạo cái này gồm 4 trạng thái là mới tạo/ chuẩn bị đến / đang diễn ra / đã hoàn thành
+  CREATED
+  UPCOMING
+  ON_GOING
+  COMPLETED
 }
 
 enum PaymentStatus {
@@ -34,10 +33,8 @@ enum PaymentStatus {
 }
 
 enum PaymentMethod {
-  CASH
-  BANK_TRANSFER
-  CARD
   ONLINE
+  OFFLINE
 }
 
 enum DayOfWeek {
@@ -178,7 +175,6 @@ model PatientProfile {
   // Quan hệ
   managerId    Int
   manager      User          @relation(fields: [managerId], references: [id])
-  isPrimary    Boolean       @default(false) // Là hồ sơ chính của người quản lý?
   appointments  Appointment[]
   prescriptions Prescription[]
   feedbacks     Feedback[]

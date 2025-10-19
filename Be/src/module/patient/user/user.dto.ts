@@ -83,7 +83,6 @@ export const PatientProfileResponseSchema = z.object({
   nationality: z.string().nullable(),
   address: z.string().nullable(),
   healthDetailsJson: z.any().nullable(),
-  isPrimary: z.boolean(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
@@ -128,7 +127,6 @@ export const CreatePatientProfileSchema = z.object({
   nationality: z.string().optional(),
   address: z.string().optional(),
   healthDetailsJson: z.any().optional(),
-  isPrimary: z.boolean().optional().default(false),
 });
 
 // Update Patient Profile Schema
@@ -148,7 +146,6 @@ export const UpdatePatientProfileSchema = z.object({
   nationality: z.string().optional(),
   address: z.string().optional(),
   healthDetailsJson: z.any().optional(),
-  isPrimary: z.boolean().optional(),
 });
 
 // Create Patient Profile Response Schema

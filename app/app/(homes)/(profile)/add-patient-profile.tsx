@@ -143,7 +143,6 @@ const AddPatientProfileScreen = () => {
         ...(avatar && { avatar: avatar }),
         occupation: undefined,
         address: '',
-        isPrimary: false,
       };
 
       const response = await userApi.createPatientProfile(profileData);

@@ -52,7 +52,6 @@ export class AdminPatientService {
           dateOfBirth: new Date(patientData.dateOfBirth),
           gender: patientData.gender as any,
           address: patientData.address,
-          isPrimary: true,
           relationship: 'SELF',
         },
       });
@@ -98,7 +97,7 @@ export class AdminPatientService {
         where,
         include: {
           patientProfiles: {
-            where: { isPrimary: true },
+            where: { relationship: 'SELF' },
             take: 1,
           },
         },

@@ -102,7 +102,6 @@ export interface PatientProfile {
   address?: string;
   healthDetailsJson?: any;
   managerId: number;
-  isPrimary: boolean;
   createdAt: string;
   updatedAt: string;
 }

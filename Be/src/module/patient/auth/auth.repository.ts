@@ -124,9 +124,8 @@ export class AuthRepository {
           dateOfBirth: data.dateOfBirth,
           gender: data.gender,
           phone: data.patientPhone,
-          relationship: data.relationship,
+          relationship: 'SELF', // Always SELF for self-registered patients
           managerId: user.id,
-          isPrimary: true, // Always true for self-registered patients
         },
       });
 

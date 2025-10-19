@@ -47,8 +47,8 @@ export default function AppointmentScreen() {
 
   // Get patient profiles
   const patientProfiles = user?.patientProfiles || [];
-  const primaryProfile = patientProfiles.find((profile) => profile.isPrimary);
-  const otherProfiles = patientProfiles.filter((profile) => !profile.isPrimary);
+  const primaryProfile = patientProfiles.find((profile) => profile.relationship === 'SELF');
+  const otherProfiles = patientProfiles.filter((profile) => profile.relationship !== 'SELF');
 
   // Auto-fill user info when component mounts (default to "Bản thân")
   useEffect(() => {

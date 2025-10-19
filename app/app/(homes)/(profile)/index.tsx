@@ -34,10 +34,14 @@ const ProfileScreen = () => {
   const patientProfiles = user?.patientProfiles || [];
 
   // Lấy primary profile (hồ sơ chính)
-  const primaryProfile = patientProfiles.find((profile: PatientProfile) => profile.isPrimary);
+  const primaryProfile = patientProfiles.find(
+    (profile: PatientProfile) => profile.relationship === 'SELF'
+  );
 
   // Lấy các profile khác (không phải primary)
-  const otherProfiles = patientProfiles.filter((profile: PatientProfile) => !profile.isPrimary);
+  const otherProfiles = patientProfiles.filter(
+    (profile: PatientProfile) => profile.relationship !== 'SELF'
+  );
 
   // Function để chọn và upload avatar
   const handleUploadAvatar = async (profileId?: number) => {

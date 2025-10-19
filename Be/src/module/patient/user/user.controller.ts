@@ -229,7 +229,6 @@ export class UserController {
           phone: '0987654321',
           relationship: 'CHILD',
           address: '123 Đường ABC, Quận 1, TP.HCM',
-          isPrimary: false,
         },
       },
     },
