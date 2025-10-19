@@ -13,46 +13,48 @@ export const API_CONFIG = {
 export const API_ENDPOINTS = {
   // Auth
   AUTH: {
-    LOGIN: '/auth/login',
-    REGISTER: '/auth/register',
-    VERIFY_EMAIL: '/auth/verify-email',
-    COMPLETE_REGISTER: '/auth/complete-register',
-    REFRESH: '/auth/refresh-token',
-    LOGOUT: '/auth/logout',
-    PROFILE: '/user/profile', // User profile endpoint
+    LOGIN: '/patient/auth/login',
+    REGISTER: '/patient/auth/register',
+    VERIFY_EMAIL: '/patient/auth/verify-email',
+    COMPLETE_REGISTER: '/patient/auth/complete-register',
+    REFRESH: '/patient/auth/refresh-token',
+    LOGOUT: '/patient/auth/logout',
+    PROFILE: '/patient/user/profile', // User profile endpoint
   },
 
   // Users
   USERS: {
-    BASE: '/user',
-    PROFILE: '/user/profile',
-    UPDATE_PROFILE: '/user/profile',
+    BASE: '/patient/user',
+    PROFILE: '/patient/user/profile',
+    UPDATE_PROFILE: '/patient/user/profile',
+    PATIENT_PROFILES: '/patient/user/patient-profiles',
+    UPLOAD_AVATAR: '/patient/user/upload-avatar',
   },
 
   // Appointments
   APPOINTMENTS: {
-    BASE: '/appointments',
-    MY_APPOINTMENTS: '/appointments/patient/my-appointments',
-    DOCTOR_APPOINTMENTS: '/appointments/doctor/my-appointments',
-    LOCATIONS: '/appointments/booking/locations',
-    SERVICES: '/appointments/booking/services',
-    DOCTOR_SERVICES: '/appointments/booking/doctor-services',
-    AVAILABLE_DATES: '/appointments/booking/available-dates',
-    DOCTOR_AVAILABILITY: '/appointments/booking/doctor-availability',
+    BASE: '/patient/appointments',
+    MY_APPOINTMENTS: '/patient/appointments/my-appointments',
+    DOCTOR_APPOINTMENTS: '/patient/appointments/doctor/my-appointments',
+    LOCATIONS: '/patient/appointments/booking/locations',
+    SERVICES: '/patient/appointments/booking/services',
+    DOCTOR_SERVICES: '/patient/appointments/booking/doctor-services',
+    AVAILABLE_DATES: '/patient/appointments/booking/available-dates',
+    DOCTOR_AVAILABILITY: '/patient/appointments/booking/doctor-availability',
   },
 
   // Doctors
   DOCTORS: {
-    BASE: '/doctor',
-    SERVICES: '/doctor/services',
-    BY_SERVICE: '/doctor',
-    TIMESLOTS: '/doctor/timeslot',
+    BASE: '/patient/doctor',
+    SERVICES: '/patient/doctor/services',
+    BY_SERVICE: '/patient/doctor',
+    TIMESLOTS: '/patient/doctor/timeslot',
   },
 
   // Health Records
   HEALTH_RECORDS: {
-    BASE: '/health-records',
-    UPLOAD: '/health-records/upload',
+    BASE: '/patient/health-records',
+    UPLOAD: '/patient/health-records/upload',
   },
 } as const;
 
