@@ -35,53 +35,15 @@ import { JwtAuthGuard, RolesGuard } from '@/common/guards';
 import { Roles } from '@/common/decorators';
 import { Role } from '@prisma/client';
 
-@ApiTags('Appointments')
-@Controller('appointments')
+@ApiTags('Patient Appointments')
+@Controller('patient/appointments')
 @ApiBearerAuth()
 export class AppointmentController {
   constructor(private readonly appointmentService: AppointmentService) {}
 
-  @Get()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.RECEPTIONIST, Role.DOCTOR, Role.PATIENT)
-  @ApiOperation({ summary: 'Lấy danh sách lịch hẹn' })
-  @ApiQuery({
-    name: 'page',
-    required: false,
-    type: Number,
-    description: 'Trang',
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    type: Number,
-    description: 'Số lượng mỗi trang',
-  })
-  @ApiQuery({
-    name: 'status',
-    required: false,
-    enum: ['scheduled', 'completed', 'cancelled'],
-  })
-  @ApiQuery({
-    name: 'paymentStatus',
-    required: false,
-    enum: ['pending', 'paid', 'refunded'],
-  })
-  @ApiQuery({ name: 'doctorId', required: false, type: String })
-  @ApiQuery({ name: 'patientId', required: false, type: String })
-  @ApiQuery({ name: 'dateFrom', required: false, type: String })
-  @ApiQuery({ name: 'dateTo', required: false, type: String })
-  @ApiResponse({ status: 200, description: 'Lấy danh sách thành công' })
-  // @ApiResponseOk(MESSAGES.APPOINTMENT.LIST_SUCCESS)
-  async findAll(
-    @Query() query: GetAppointmentsQueryDtoType,
-  ): Promise<AppointmentsListResponseDtoType> {
-    return this.appointmentService.findAll(query);
-  }
-
   @Get(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.RECEPTIONIST, Role.DOCTOR, Role.PATIENT)
+  @Roles(Role.PATIENT)
   @ApiOperation({ summary: 'Lấy thông tin lịch hẹn theo ID' })
   @ApiParam({ name: 'id', description: 'ID lịch hẹn' })
   @ApiResponse({ status: 200, description: 'Lấy thông tin thành công' })
@@ -93,7 +55,7 @@ export class AppointmentController {
 
   @Put(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.RECEPTIONIST, Role.DOCTOR, Role.PATIENT)
+  @Roles(Role.PATIENT)
   @ApiOperation({ summary: 'Cập nhật lịch hẹn' })
   @ApiParam({ name: 'id', description: 'ID lịch hẹn' })
   @ApiBody({ type: UpdateAppointmentDto })
@@ -114,7 +76,7 @@ export class AppointmentController {
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.RECEPTIONIST, Role.DOCTOR, Role.PATIENT)
+  @Roles(Role.PATIENT)
   @ApiOperation({ summary: 'Xóa lịch hẹn' })
   @ApiParam({ name: 'id', description: 'ID lịch hẹn' })
   @ApiResponse({ status: 200, description: 'Xóa thành công' })
@@ -148,30 +110,10 @@ export class AppointmentController {
     return this.appointmentService.getMyAppointments(query, user);
   }
 
-  @Get('doctor/my-appointments')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.DOCTOR, Role.ADMIN)
-  @ApiOperation({ summary: 'Lấy lịch hẹn của bác sĩ hiện tại' })
-  @ApiQuery({ name: 'page', required: false, type: Number })
-  @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiQuery({
-    name: 'status',
-    required: false,
-    enum: ['scheduled', 'completed', 'cancelled'],
-  })
-  @ApiResponse({ status: 200, description: 'Lấy danh sách thành công' })
-  // @ApiResponseOk(MESSAGES.DOCTOR.GET_APPOINTMENTS_SUCCESS)
-  async getDoctorAppointments(
-    @Query() query: GetAppointmentsQueryDtoType,
-    @CurrentUser() user: TokenPayload,
-  ): Promise<AppointmentsListResponseDtoType> {
-    return this.appointmentService.getDoctorAppointments(query, user);
-  }
-
   // ========== BOOKING APIS ==========
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.RECEPTIONIST, Role.DOCTOR, Role.PATIENT)
   @Get('booking/locations')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.PATIENT)
   @ApiOperation({ summary: 'Lấy danh sách cơ sở phòng khám (locations)' })
   @ApiResponse({ status: 200, description: 'Lấy danh sách cơ sở thành công' })
   async getLocations() {
@@ -180,7 +122,7 @@ export class AppointmentController {
 
   @Get('booking/services')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.RECEPTIONIST, Role.DOCTOR, Role.PATIENT)
+  @Roles(Role.PATIENT)
   @ApiOperation({ summary: 'Lấy danh sách dịch vụ khám' })
   @ApiResponse({ status: 200, description: 'Lấy danh sách dịch vụ thành công' })
   async getServices() {
@@ -189,7 +131,7 @@ export class AppointmentController {
 
   @Get('booking/doctor-services')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.RECEPTIONIST, Role.DOCTOR, Role.PATIENT)
+  @Roles(Role.PATIENT)
   @ApiOperation({
     summary: 'Lấy danh sách bác sĩ cung cấp dịch vụ theo location và service',
   })
@@ -218,7 +160,7 @@ export class AppointmentController {
 
   @Get('booking/available-dates')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.RECEPTIONIST, Role.DOCTOR, Role.PATIENT)
+  @Roles(Role.PATIENT)
   @ApiOperation({
     summary:
       'Lấy danh sách các ngày bác sĩ có thể làm việc trong khoảng thời gian',
@@ -291,7 +233,7 @@ export class AppointmentController {
 
   @Get('booking/doctor-availability')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.RECEPTIONIST, Role.DOCTOR, Role.PATIENT)
+  @Roles(Role.PATIENT)
   @ApiOperation({
     summary: 'Kiểm tra lịch bận của bác sĩ trong một ngày cụ thể',
   })
@@ -356,7 +298,7 @@ export class AppointmentController {
 
   @Post('booking/create')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.PATIENT, Role.ADMIN, Role.RECEPTIONIST)
+  @Roles(Role.PATIENT)
   @ApiOperation({ summary: 'Tạo lịch hẹn từ DoctorService' })
   @ApiBody({
     schema: {

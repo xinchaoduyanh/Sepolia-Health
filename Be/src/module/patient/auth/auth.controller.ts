@@ -21,8 +21,8 @@ import {
 } from './auth.dto';
 import { CurrentUser, Public } from '@/common/decorators';
 
-@ApiTags('Auth')
-@Controller('auth')
+@ApiTags('Patient Auth')
+@Controller('patient/auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 

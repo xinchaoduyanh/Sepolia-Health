@@ -58,8 +58,8 @@ import { CurrentUser } from '@/common/decorators';
 import { CustomZodValidationPipe } from '@/common/pipes';
 import { ApiBearerAuth } from '@nestjs/swagger';
 @ApiBearerAuth()
-@ApiTags('User Profile')
-@Controller('user')
+@ApiTags('Patient Profile')
+@Controller('patient/user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 

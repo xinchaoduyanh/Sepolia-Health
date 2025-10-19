@@ -1,13 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  HttpStatus,
-  Query,
-  Put,
-} from '@nestjs/common';
+import { Controller, Get, Param, HttpStatus, Query } from '@nestjs/common';
 import { DoctorService } from './doctor.service';
 import {
   ApiBearerAuth,
@@ -19,26 +10,17 @@ import {
   PaginatedDto,
   PaginationResultDto,
 } from '@/common/dto/pagination-result.dto';
-import { CurrentUser, Public } from '@/common/decorators';
+import { Public } from '@/common/decorators';
 import {
   GetDoctorServiceResponseDto,
   getTimeslotByDoctorIdAndDayResponseDto,
 } from './dto/response';
-import {
-  CreateDoctorProfileBodyDto,
-  GetDoctorServiceQueryDto,
-  updateDoctorProfileBodyDto,
-} from './dto/request';
-import { SuccessResponseDto } from '@/common/dto';
-import {
-  CreateDoctorProfileResponseDto,
-  GetDoctorProfileByServiceIdResponseDto,
-} from './dto/response/doctor-profile.dto';
+import { GetDoctorServiceQueryDto } from './dto/request';
+import { GetDoctorProfileByServiceIdResponseDto } from './dto/response/doctor-profile.dto';
 
-@Public()
 @ApiBearerAuth()
-@ApiTags('Doctor')
-@Controller('doctor')
+@ApiTags('Patient Doctor')
+@Controller('patient/doctor')
 export class DoctorController {
   constructor(private readonly doctorService: DoctorService) {}
 
@@ -87,37 +69,5 @@ export class DoctorController {
     @Param('doctorId') doctorId: string,
   ): Promise<getTimeslotByDoctorIdAndDayResponseDto[]> {
     return this.doctorService.getTimeslotByDoctorIdAndDay(Number(doctorId));
-  }
-
-  @Post()
-  @Public()
-  @ApiResponse({
-    status: HttpStatus.CREATED,
-    type: CreateDoctorProfileResponseDto,
-  })
-  @ApiOperation({
-    description: 'create doctor profile',
-  })
-  async createDoctorProfile(
-    @Body() body: CreateDoctorProfileBodyDto,
-    @CurrentUser('userId') userId: number,
-  ): Promise<CreateDoctorProfileResponseDto> {
-    return this.doctorService.createDoctorProfile(body, userId);
-  }
-
-  @Put()
-  @Public()
-  @ApiResponse({
-    status: HttpStatus.OK,
-    type: SuccessResponseDto,
-  })
-  @ApiOperation({
-    description: 'update doctor profile',
-  })
-  async updateDoctorProfile(
-    @Body() body: updateDoctorProfileBodyDto,
-    @CurrentUser('userId') userId: number,
-  ): Promise<SuccessResponseDto> {
-    return this.doctorService.updateDoctorProfile(body, userId);
   }
 }

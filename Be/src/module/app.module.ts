@@ -4,13 +4,9 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from '@/common/prisma/prisma.module';
 import { CommonModule } from '@/common/common.module';
-import { AuthModule } from './auth/auth.module';
 import { APP_PIPE } from '@nestjs/core';
-import { AppointmentModule } from './appointment/appointment.module';
-import { DoctorModule } from './doctor/doctor.module';
+import { PatientModule } from './patient/patient.module';
 import { ReceptionistModule } from './receptionist/receptionist.module';
-import { UploadModule } from './upload/upload.module';
-import { UserModule } from './user/user.module';
 import { CustomZodValidationPipe } from '@/common/pipes';
 import { appConfig } from '@/common/config';
 
@@ -23,12 +19,8 @@ import { appConfig } from '@/common/config';
     }),
     PrismaModule,
     CommonModule,
-    AuthModule,
-    AppointmentModule,
-    DoctorModule,
+    PatientModule,
     ReceptionistModule,
-    UploadModule,
-    UserModule,
   ],
   controllers: [AppController],
   providers: [

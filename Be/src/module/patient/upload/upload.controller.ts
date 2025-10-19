@@ -22,6 +22,10 @@ import { PrismaService } from '@/common/prisma/prisma.service';
 import { CurrentUser } from '@/common/decorators';
 import type { TokenPayload } from '@/common/types/jwt.type';
 import { ApiBearerAuth } from '@nestjs/swagger';
+import { UseGuards } from '@nestjs/common';
+import { JwtAuthGuard, RolesGuard } from '@/common/guards';
+import { Roles } from '@/common/decorators';
+import { Role } from '@prisma/client';
 // DTOs
 type UploadUrlDtoType = {
   url: string;
@@ -34,8 +38,8 @@ type UploadFileResponseDtoType = {
 };
 
 @ApiBearerAuth()
-@ApiTags('Upload')
-@Controller('upload')
+@ApiTags('Patient Upload')
+@Controller('patient/upload')
 export class UploadController {
   constructor(
     private readonly uploadService: UploadService,
@@ -44,6 +48,8 @@ export class UploadController {
 
   @Post('file')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.PATIENT)
   @UseInterceptors(FileInterceptor('file'))
   @ApiOperation({ summary: 'Upload file lên S3' })
   @ApiConsumes('multipart/form-data')
@@ -64,6 +70,7 @@ export class UploadController {
     description: 'Upload file thành công',
   })
   async uploadFile(
+    @CurrentUser() user: TokenPayload,
     @UploadedFile() file: any,
   ): Promise<UploadFileResponseDtoType> {
     if (!file) {
@@ -92,6 +99,8 @@ export class UploadController {
 
   @Post('url')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.PATIENT)
   @ApiOperation({ summary: 'Upload từ URL (sẽ lưu URL trực tiếp)' })
   @ApiBody({
     schema: {
@@ -109,7 +118,10 @@ export class UploadController {
     status: 200,
     description: 'Lưu URL thành công',
   })
-  uploadFromUrl(@Body() body: UploadUrlDtoType): UploadFileResponseDtoType {
+  uploadFromUrl(
+    @CurrentUser() user: TokenPayload,
+    @Body() body: UploadUrlDtoType,
+  ): UploadFileResponseDtoType {
     // Validate URL
     try {
       new URL(body.url);
@@ -127,6 +139,8 @@ export class UploadController {
 
   @Post('avatar/file')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.PATIENT)
   @UseInterceptors(FileInterceptor('avatar'))
   @ApiOperation({ summary: 'Upload avatar từ file' })
   @ApiConsumes('multipart/form-data')
@@ -183,12 +197,10 @@ export class UploadController {
       );
     }
 
-    // Update profile avatar URL based on role
+    // Update patient profile avatar URL
     const userData = await this.prisma.user.findUnique({
       where: { id: user.userId },
       include: {
-        doctorProfile: true,
-        receptionistProfile: true,
         patientProfiles: {
           where: { isPrimary: true },
           take: 1,
@@ -196,25 +208,12 @@ export class UploadController {
       },
     });
 
-    if (userData?.role === 'DOCTOR' && userData.doctorProfile) {
-      await this.prisma.doctorProfile.update({
-        where: { id: userData.doctorProfile.id },
-        data: { avatar: uploadResult.url },
-      });
-    } else if (
-      userData?.role === 'RECEPTIONIST' &&
-      userData.receptionistProfile
-    ) {
-      await this.prisma.receptionistProfile.update({
-        where: { id: userData.receptionistProfile.id },
-        data: { avatar: uploadResult.url },
-      });
-    } else if (
-      userData?.role === 'PATIENT' &&
-      userData.patientProfiles.length > 0
+    if (
+      userData?.patientProfiles?.length &&
+      userData?.patientProfiles?.length > 0
     ) {
       await this.prisma.patientProfile.update({
-        where: { id: userData.patientProfiles[0].id },
+        where: { id: userData?.patientProfiles?.[0]?.id },
         data: { avatar: uploadResult.url },
       });
     }
@@ -224,6 +223,8 @@ export class UploadController {
 
   @Post('avatar/url')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.PATIENT)
   @ApiOperation({ summary: 'Upload avatar từ URL' })
   @ApiBody({
     schema: {
@@ -252,12 +253,10 @@ export class UploadController {
       throw new BadRequestException('URL không hợp lệ');
     }
 
-    // Update profile avatar URL based on role
+    // Update patient profile avatar URL
     const userData = await this.prisma.user.findUnique({
       where: { id: user.userId },
       include: {
-        doctorProfile: true,
-        receptionistProfile: true,
         patientProfiles: {
           where: { isPrimary: true },
           take: 1,
@@ -265,25 +264,12 @@ export class UploadController {
       },
     });
 
-    if (userData?.role === 'DOCTOR' && userData.doctorProfile) {
-      await this.prisma.doctorProfile.update({
-        where: { id: userData.doctorProfile.id },
-        data: { avatar: body.url },
-      });
-    } else if (
-      userData?.role === 'RECEPTIONIST' &&
-      userData.receptionistProfile
-    ) {
-      await this.prisma.receptionistProfile.update({
-        where: { id: userData.receptionistProfile.id },
-        data: { avatar: body.url },
-      });
-    } else if (
-      userData?.role === 'PATIENT' &&
-      userData.patientProfiles.length > 0
+    if (
+      userData?.patientProfiles?.length &&
+      userData?.patientProfiles?.length > 0
     ) {
       await this.prisma.patientProfile.update({
-        where: { id: userData.patientProfiles[0].id },
+        where: { id: userData?.patientProfiles?.[0]?.id },
         data: { avatar: body.url },
       });
     }
