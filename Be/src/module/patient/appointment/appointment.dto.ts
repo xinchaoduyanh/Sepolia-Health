@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { AppointmentStatus, PaymentStatus, Gender } from '@prisma/client';
+import { createZodDto } from 'nestjs-zod';
 
 // Helper function to convert Prisma enum to array
 const appointmentStatusValues = Object.values(AppointmentStatus) as [
@@ -13,7 +14,7 @@ const paymentStatusValues = Object.values(PaymentStatus) as [
 const genderValues = Object.values(Gender) as [string, ...string[]];
 
 // Create Appointment DTO
-export const CreateAppointmentDto = z.object({
+export const CreateAppointmentSchema = z.object({
   doctorId: z.number().min(1, 'Bác sĩ không được để trống'),
   serviceId: z.number().min(1, 'Dịch vụ không được để trống'),
   date: z.iso.datetime('Ngày hẹn không hợp lệ'),
@@ -47,7 +48,7 @@ export const CreateAppointmentFromDoctorServiceDto = z.object({
 });
 
 // Update Appointment DTO
-export const UpdateAppointmentDto = z.object({
+export const UpdateAppointmentSchema = z.object({
   date: z.string().date('Ngày hẹn không hợp lệ').optional(),
   startTime: z
     .string()
@@ -62,7 +63,7 @@ export const UpdateAppointmentDto = z.object({
 });
 
 // Get Appointments Query DTO
-export const GetAppointmentsQueryDto = z.object({
+export const GetAppointmentsQuerySchema = z.object({
   page: z
     .string()
     .transform(Number)
@@ -110,8 +111,8 @@ export const AppointmentResponseDto = z.object({
     price: z.number(),
     duration: z.number(),
   }),
-  createdAt: z.string().datetime(),
-  updatedAt: z.string().datetime(),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
 });
 
 export const AppointmentsListResponseDto = z.object({
@@ -122,15 +123,20 @@ export const AppointmentsListResponseDto = z.object({
 });
 
 // Export types
-export type CreateAppointmentDtoType = z.infer<typeof CreateAppointmentDto>;
+export type CreateAppointmentDtoType = z.infer<typeof CreateAppointmentSchema>;
 export type CreateAppointmentFromDoctorServiceDtoType = z.infer<
   typeof CreateAppointmentFromDoctorServiceDto
 >;
-export type UpdateAppointmentDtoType = z.infer<typeof UpdateAppointmentDto>;
 export type GetAppointmentsQueryDtoType = z.infer<
-  typeof GetAppointmentsQueryDto
+  typeof GetAppointmentsQuerySchema
 >;
 export type AppointmentResponseDtoType = z.infer<typeof AppointmentResponseDto>;
 export type AppointmentsListResponseDtoType = z.infer<
   typeof AppointmentsListResponseDto
 >;
+export class UpdateAppointmentDto extends createZodDto(
+  UpdateAppointmentSchema,
+) {}
+export class GetAppointmentsQueryDto extends createZodDto(
+  GetAppointmentsQuerySchema,
+) {}

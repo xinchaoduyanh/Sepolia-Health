@@ -10,10 +10,10 @@ import { DayOfWeek, AppointmentStatus, PaymentStatus } from '@prisma/client';
 import type { TokenPayload } from '@/common/types';
 import type {
   CreateAppointmentFromDoctorServiceDtoType,
-  UpdateAppointmentDtoType,
   GetAppointmentsQueryDtoType,
   AppointmentResponseDtoType,
   AppointmentsListResponseDtoType,
+  UpdateAppointmentDto,
 } from './appointment.dto';
 import { CurrentUser } from '@/common/decorators';
 
@@ -129,7 +129,7 @@ export class AppointmentService {
    */
   async update(
     id: number,
-    updateAppointmentDto: UpdateAppointmentDtoType,
+    updateAppointmentDto: UpdateAppointmentDto,
     @CurrentUser() user: TokenPayload,
   ): Promise<AppointmentResponseDtoType> {
     const appointment = await this.prisma.appointment.findUnique({

@@ -20,14 +20,13 @@ import {
   ApiQuery,
   ApiBody,
 } from '@nestjs/swagger';
-import { UpdateAppointmentDto } from './swagger';
 import { AppointmentService } from './appointment.service';
-import type {
-  CreateAppointmentFromDoctorServiceDtoType,
-  UpdateAppointmentDtoType,
-  GetAppointmentsQueryDtoType,
-  AppointmentResponseDtoType,
-  AppointmentsListResponseDtoType,
+import {
+  type CreateAppointmentFromDoctorServiceDtoType,
+  type GetAppointmentsQueryDtoType,
+  type AppointmentResponseDtoType,
+  type AppointmentsListResponseDtoType,
+  UpdateAppointmentDto,
 } from './appointment.dto';
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import type { TokenPayload } from '@/common/types/jwt.type';
@@ -64,7 +63,7 @@ export class AppointmentController {
   // @ApiResponseOk(MESSAGES.APPOINTMENT.UPDATE_SUCCESS)
   async update(
     @Param('id') id: string,
-    @Body() updateAppointmentDto: UpdateAppointmentDtoType,
+    @Body() updateAppointmentDto: UpdateAppointmentDto,
     @CurrentUser() user: TokenPayload,
   ): Promise<AppointmentResponseDtoType> {
     return this.appointmentService.update(
