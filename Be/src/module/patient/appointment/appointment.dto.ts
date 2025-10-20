@@ -1,4 +1,16 @@
 import { z } from 'zod';
+import { AppointmentStatus, PaymentStatus, Gender } from '@prisma/client';
+
+// Helper function to convert Prisma enum to array
+const appointmentStatusValues = Object.values(AppointmentStatus) as [
+  string,
+  ...string[],
+];
+const paymentStatusValues = Object.values(PaymentStatus) as [
+  string,
+  ...string[],
+];
+const genderValues = Object.values(Gender) as [string, ...string[]];
 
 // Create Appointment DTO
 export const CreateAppointmentDto = z.object({
@@ -10,7 +22,7 @@ export const CreateAppointmentDto = z.object({
   patientName: z.string().min(1, 'Họ tên không được để trống'),
   patientDob: z.string().date('Ngày sinh không hợp lệ'),
   patientPhone: z.string().min(10, 'Số điện thoại không hợp lệ'),
-  patientGender: z.enum(['MALE', 'FEMALE', 'OTHER'], 'Giới tính không hợp lệ'),
+  patientGender: z.enum(genderValues, 'Giới tính không hợp lệ'),
   clinicId: z.number().min(1, 'Cơ sở phòng khám không được để trống'),
 });
 
@@ -31,7 +43,7 @@ export const CreateAppointmentFromDoctorServiceDto = z.object({
   patientName: z.string().min(1, 'Họ tên không được để trống'),
   patientDob: z.string().date('Ngày sinh không hợp lệ'),
   patientPhone: z.string().min(10, 'Số điện thoại không hợp lệ'),
-  patientGender: z.enum(['MALE', 'FEMALE', 'OTHER'], 'Giới tính không hợp lệ'),
+  patientGender: z.enum(genderValues, 'Giới tính không hợp lệ'),
 });
 
 // Update Appointment DTO
@@ -44,17 +56,8 @@ export const UpdateAppointmentDto = z.object({
       'Thời gian bắt đầu không hợp lệ (HH:mm)',
     )
     .optional(),
-  status: z
-    .enum([
-      'REQUESTED',
-      'CONFIRMED',
-      'CHECKED_IN',
-      'COMPLETED',
-      'CANCELLED',
-      'NO_SHOW',
-    ])
-    .optional(),
-  paymentStatus: z.enum(['PENDING', 'PAID', 'REFUNDED']).optional(),
+  status: z.enum(appointmentStatusValues).optional(),
+  paymentStatus: z.enum(paymentStatusValues).optional(),
   notes: z.string().optional(),
 });
 
@@ -68,17 +71,8 @@ export const GetAppointmentsQueryDto = z.object({
     .string()
     .transform(Number)
     .default(() => 10),
-  status: z
-    .enum([
-      'REQUESTED',
-      'CONFIRMED',
-      'CHECKED_IN',
-      'COMPLETED',
-      'CANCELLED',
-      'NO_SHOW',
-    ])
-    .optional(),
-  paymentStatus: z.enum(['PENDING', 'PAID', 'REFUNDED']).optional(),
+  status: z.enum(appointmentStatusValues).optional(),
+  paymentStatus: z.enum(paymentStatusValues).optional(),
   doctorId: z.number().optional(),
   patientId: z.number().optional(),
   dateFrom: z.iso.datetime().optional(),

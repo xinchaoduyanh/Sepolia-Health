@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { MESSAGES } from '@/common/constants/messages';
 import { PrismaService } from '@/common/prisma/prisma.service';
-import { DayOfWeek } from '@prisma/client';
+import { DayOfWeek, AppointmentStatus, PaymentStatus } from '@prisma/client';
 import type { TokenPayload } from '@/common/types';
 import type {
   CreateAppointmentFromDoctorServiceDtoType,
@@ -163,10 +163,10 @@ export class AppointmentService {
           startTime: updateAppointmentDto.startTime,
         }),
         ...(updateAppointmentDto.status && {
-          status: updateAppointmentDto.status,
+          status: updateAppointmentDto.status as AppointmentStatus,
         }),
         ...(updateAppointmentDto.paymentStatus && {
-          paymentStatus: updateAppointmentDto.paymentStatus,
+          paymentStatus: updateAppointmentDto.paymentStatus as PaymentStatus,
         }),
         ...(updateAppointmentDto.notes !== undefined && {
           notes: updateAppointmentDto.notes,
@@ -565,7 +565,7 @@ export class AppointmentService {
         date: new Date(date),
         startTime,
         endTime,
-        status: 'REQUESTED',
+        status: 'CREATED',
         paymentStatus: 'PENDING',
         notes,
         patientProfileId: validatedPatientProfileId,
@@ -729,7 +729,7 @@ export class AppointmentService {
         doctorId: doctorService.doctor.id,
         date: targetDate,
         status: {
-          in: ['REQUESTED', 'CONFIRMED', 'CHECKED_IN'],
+          in: ['CREATED', 'UPCOMING', 'ON_GOING'],
         },
       },
       select: {

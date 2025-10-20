@@ -1,5 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { z } from 'zod';
+import { Gender } from '@prisma/client';
+
+const genderValues = Object.values(Gender) as [string, ...string[]];
 
 // Zod schemas
 export const CreatePatientSchema = z.object({
@@ -8,7 +11,7 @@ export const CreatePatientSchema = z.object({
   fullName: z.string().min(1, 'Họ tên không được để trống'),
   phone: z.string().min(1, 'Số điện thoại không được để trống'),
   dateOfBirth: z.string().min(1, 'Ngày sinh không được để trống'),
-  gender: z.enum(['MALE', 'FEMALE', 'OTHER'], {
+  gender: z.enum(genderValues, {
     message: 'Giới tính không hợp lệ',
   }),
   address: z.string().optional(),
@@ -51,7 +54,7 @@ export class CreatePatientDtoClass {
   @ApiProperty({
     description: 'Giới tính',
     example: 'MALE',
-    enum: ['MALE', 'FEMALE', 'OTHER'],
+    enum: genderValues,
   })
   gender: string;
 
@@ -68,7 +71,7 @@ export const UpdatePatientSchema = z.object({
   phone: z.string().min(1, 'Số điện thoại không được để trống').optional(),
   dateOfBirth: z.string().min(1, 'Ngày sinh không được để trống').optional(),
   gender: z
-    .enum(['MALE', 'FEMALE', 'OTHER'], {
+    .enum(genderValues, {
       message: 'Giới tính không hợp lệ',
     })
     .optional(),
@@ -102,7 +105,7 @@ export class UpdatePatientDtoClass {
   @ApiProperty({
     description: 'Giới tính',
     example: 'MALE',
-    enum: ['MALE', 'FEMALE', 'OTHER'],
+    enum: genderValues,
     required: false,
   })
   gender?: string;
