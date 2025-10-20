@@ -42,7 +42,7 @@ import { TokenPayload } from '@/common/types/jwt.type';
 @Controller('admin/patients')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(Role.ADMIN)  
+@Roles(Role.ADMIN)
 export class AdminPatientController {
   constructor(private readonly adminPatientService: AdminPatientService) {}
 
