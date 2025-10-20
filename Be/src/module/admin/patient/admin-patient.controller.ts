@@ -35,14 +35,14 @@ import {
 import { JwtAuthGuard, RolesGuard } from '@/common/guards';
 import { Roles, CurrentUser } from '@/common/decorators';
 import { Role } from '@prisma/client';
-import type { TokenPayload } from '@/common/types/jwt.type';
 import { CustomZodValidationPipe } from '@/common/pipes';
+import { TokenPayload } from '@/common/types/jwt.type';
 
 @ApiTags('Admin Patient Management')
 @Controller('admin/patients')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(Role.ADMIN)
+@Roles(Role.ADMIN)  
 export class AdminPatientController {
   constructor(private readonly adminPatientService: AdminPatientService) {}
 

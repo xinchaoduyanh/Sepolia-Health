@@ -1,13 +1,13 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '@/common/prisma/prisma.service';
+import { CustomJwtService } from '@/common/modules/jwt/jwt.service';
 import { AdminLoginDto, AdminLoginResponseDto } from './admin-auth.dto';
 
 @Injectable()
 export class AdminAuthService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly jwtService: JwtService,
+    private readonly jwtService: CustomJwtService,
   ) {}
 
   async login(loginDto: AdminLoginDto): Promise<AdminLoginResponseDto> {
@@ -20,7 +20,6 @@ export class AdminAuthService {
         role: 'ADMIN',
       },
     });
-
     if (!admin) {
       throw new UnauthorizedException('Email hoặc mật khẩu không đúng');
     }
@@ -30,19 +29,15 @@ export class AdminAuthService {
       throw new UnauthorizedException('Email hoặc mật khẩu không đúng');
     }
 
-    // Generate tokens
-    const payload = {
+    // Generate tokens using CustomJwtService
+    const tokens = this.jwtService.generateTokens({
       userId: admin.id,
-      email: admin.email,
       role: admin.role,
-    };
-
-    const accessToken = this.jwtService.sign(payload, { expiresIn: '1h' });
-    const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+    });
 
     return {
-      accessToken,
-      refreshToken,
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
       admin: {
         id: admin.id,
         email: admin.email,
