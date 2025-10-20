@@ -27,7 +27,7 @@ export class AdminAuthController {
   })
   @ApiResponse({ status: 401, description: 'Email hoặc mật khẩu không đúng' })
   async login(
-    @Body(new CustomZodValidationPipe(AdminLoginSchema))
+    @Body()
     loginDto: AdminLoginDto,
   ): Promise<AdminLoginResponseDto> {
     return this.adminAuthService.login(loginDto);

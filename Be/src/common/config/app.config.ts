@@ -14,9 +14,10 @@ export default registerAs('app', () => {
     resendApiKey: parsed.RESEND_API_KEY,
     frontendUrl: parsed.FRONTEND_URL,
     secret: parsed.JWT_SECRET,
-    expiresIn: parsed.JWT_EXPIRES_IN,
+    expiresIn: parsed.JWT_EXPIRES_IN as `${number}${'s' | 'm' | 'h' | 'd'}`,
     refreshSecret: parsed.JWT_REFRESH_SECRET,
-    refreshExpiresIn: parsed.JWT_REFRESH_EXPIRES_IN,
+    refreshExpiresIn:
+      parsed.JWT_REFRESH_EXPIRES_IN as `${number}${'s' | 'm' | 'h' | 'd'}`,
     redisUrl: parsed.REDIS_URL,
     accessTokenExpiresInSeconds: Number(parsed.TOKEN_ACCESS_EXPIRES_IN_SECONDS),
     refreshTokenExpiresInSeconds: Number(

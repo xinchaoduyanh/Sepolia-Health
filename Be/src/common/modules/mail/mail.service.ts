@@ -1,17 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Resend } from 'resend';
-import {
-  SendEmailOptions,
-  EmailResult,
-  WelcomeEmailData,
-  ResetPasswordEmailData,
-} from './mail.types';
-import {
-  getWelcomeEmailTemplate,
-  getResetPasswordEmailTemplate,
-  getAppointmentConfirmationTemplate,
-  AppointmentConfirmationData,
-} from './templates';
+import { SendEmailOptions, EmailResult } from './mail.types';
 import { ConfigType } from '@nestjs/config';
 import { appConfig } from '@/common/config';
 
@@ -61,53 +50,5 @@ export class MailService {
         error: error.message,
       };
     }
-  }
-
-  /**
-   * Send welcome email to new user
-   */
-  async sendWelcomeEmail(
-    to: string,
-    data: WelcomeEmailData,
-  ): Promise<EmailResult> {
-    const template = getWelcomeEmailTemplate(data);
-
-    return this.sendEmail({
-      to,
-      subject: template.subject,
-      html: template.html,
-    });
-  }
-
-  /**
-   * Send reset password email
-   */
-  async sendResetPasswordEmail(
-    to: string,
-    data: ResetPasswordEmailData,
-  ): Promise<EmailResult> {
-    const template = getResetPasswordEmailTemplate(data);
-
-    return this.sendEmail({
-      to,
-      subject: template.subject,
-      html: template.html,
-    });
-  }
-
-  /**
-   * Send appointment confirmation email
-   */
-  async sendAppointmentConfirmationEmail(
-    to: string,
-    data: AppointmentConfirmationData,
-  ): Promise<EmailResult> {
-    const template = getAppointmentConfirmationTemplate(data);
-
-    return this.sendEmail({
-      to,
-      subject: template.subject,
-      html: template.html,
-    });
   }
 }

@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 // Zod schema
 export const AdminLoginSchema = z.object({
-  email: z.string().email('Email không hợp lệ'),
+  email: z.email('Email không hợp lệ'),
   password: z.string().min(6, 'Mật khẩu phải có ít nhất 6 ký tự'),
 });
 
