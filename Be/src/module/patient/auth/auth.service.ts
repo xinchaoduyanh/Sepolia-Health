@@ -200,7 +200,6 @@ export class AuthService {
       phone,
       dateOfBirth,
       gender,
-      relationship,
     } = completeRegisterDto;
 
     // Verify OTP again
@@ -228,8 +227,7 @@ export class AuthService {
       dateOfBirth: parseDate(dateOfBirth),
       gender,
       patientPhone: phone, // Use phone for patient profile
-      relationship,
-      // relationship SELF sẽ được set trong auth repository
+      // relationship SELF sẽ được set mặc định trong auth repository
     };
 
     const { user, patientProfile } =

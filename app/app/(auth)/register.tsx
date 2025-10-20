@@ -179,7 +179,7 @@ export default function RegisterScreen() {
         password,
         dateOfBirth: dateOfBirth!.toISOString().split('T')[0], // Convert to YYYY-MM-DD format
         gender: gender!,
-        relationship: 'SELF', // User is registering for themselves
+        // relationship không cần gửi lên, BE sẽ mặc định là SELF
         role: 'PATIENT',
       });
       Alert.alert('Thành công', 'Đăng ký thành công!', [

@@ -101,7 +101,7 @@ export class AuthRepository {
     dateOfBirth: Date;
     gender: Gender;
     patientPhone: string;
-    relationship: Relationship;
+    // relationship không cần truyền vào, mặc định là SELF
   }) {
     return await this.prisma.$transaction(async (tx) => {
       // Create user first
@@ -124,7 +124,7 @@ export class AuthRepository {
           dateOfBirth: data.dateOfBirth,
           gender: data.gender,
           phone: data.patientPhone,
-          relationship: 'SELF', // Always SELF for self-registered patients
+          relationship: Relationship.SELF, // Always SELF for self-registered patients
           managerId: user.id,
         },
       });

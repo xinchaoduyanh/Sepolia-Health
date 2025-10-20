@@ -33,7 +33,7 @@ const CompleteRegisterSchema = z.object({
     .string()
     .refine((val) => !isNaN(Date.parse(val)), 'Ngày sinh không hợp lệ'),
   gender: z.nativeEnum(Gender, 'Giới tính không hợp lệ'),
-  relationship: z.nativeEnum(Relationship, 'Mối quan hệ không hợp lệ'),
+  // relationship không cần truyền lên, mặc định là SELF
 });
 
 // Refresh Token DTO
