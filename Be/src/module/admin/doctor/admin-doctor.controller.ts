@@ -61,9 +61,8 @@ export class AdminDoctorController {
   async createDoctor(
     @Body(new CustomZodValidationPipe(CreateDoctorSchema))
     createDoctorDto: CreateDoctorDto,
-    @CurrentUser() admin: TokenPayload,
   ): Promise<CreateDoctorResponseDto> {
-    return this.adminDoctorService.createDoctor(createDoctorDto, admin.userId);
+    return this.adminDoctorService.createDoctor(createDoctorDto);
   }
 
   @Get()

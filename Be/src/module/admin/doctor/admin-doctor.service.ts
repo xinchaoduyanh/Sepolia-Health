@@ -20,7 +20,6 @@ export class AdminDoctorService {
 
   async createDoctor(
     createDoctorDto: CreateDoctorDto,
-    adminId: number,
   ): Promise<CreateDoctorResponseDto> {
     const { email, password, ...doctorData } = createDoctorDto;
 
@@ -33,7 +32,28 @@ export class AdminDoctorService {
       throw new ConflictException('Email đã được sử dụng');
     }
 
-    // Create user and doctor profile
+    // Validate clinic
+    const clinic = await this.prisma.clinic.findUnique({
+      where: { id: doctorData.clinicId },
+    });
+
+    if (!clinic || !clinic.isActive) {
+      throw new NotFoundException(
+        'Phòng khám không tồn tại hoặc không hoạt động',
+      );
+    }
+
+    // Validate services
+    const uniqueServiceIds = Array.from(new Set(doctorData.serviceIds));
+    const services = await this.prisma.service.findMany({
+      where: { id: { in: uniqueServiceIds } },
+      select: { id: true },
+    });
+    if (services.length !== uniqueServiceIds.length) {
+      throw new NotFoundException('Một hoặc nhiều dịch vụ không tồn tại');
+    }
+
+    // Create user and doctor profile + relations
     const result = await this.prisma.$transaction(async (tx) => {
       // Create user
       const user = await tx.user.create({
@@ -54,8 +74,33 @@ export class AdminDoctorService {
           specialty: doctorData.specialty,
           experience: doctorData.experienceYears?.toString() || '',
           contactInfo: doctorData.phone,
+          clinicId: doctorData.clinicId,
         },
       });
+
+      // Create doctor services
+      if (uniqueServiceIds.length > 0) {
+        await tx.doctorService.createMany({
+          data: uniqueServiceIds.map((serviceId) => ({
+            doctorId: doctorProfile.id,
+            serviceId,
+          })),
+          skipDuplicates: true,
+        });
+      }
+
+      // Create weekly availabilities (optional)
+      if (doctorData.availabilities && doctorData.availabilities.length > 0) {
+        await tx.doctorAvailability.createMany({
+          data: doctorData.availabilities.map((a) => ({
+            doctorId: doctorProfile.id,
+            dayOfWeek: a.dayOfWeek as any,
+            startTime: a.startTime,
+            endTime: a.endTime,
+          })),
+          skipDuplicates: true,
+        });
+      }
 
       return { user, doctorProfile };
     });

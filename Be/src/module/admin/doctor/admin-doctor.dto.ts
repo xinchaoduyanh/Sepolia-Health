@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { z } from 'zod';
+import { DayOfWeek } from '@prisma/client';
 
 // Zod schemas
 export const CreateDoctorSchema = z.object({
@@ -11,6 +12,19 @@ export const CreateDoctorSchema = z.object({
   experienceYears: z.number().min(0, 'Số năm kinh nghiệm phải >= 0'),
   description: z.string().optional(),
   address: z.string().optional(),
+  clinicId: z.number().int().positive({ message: 'Clinic ID không hợp lệ' }),
+  serviceIds: z
+    .array(z.number().int().positive())
+    .min(1, 'Cần chọn ít nhất một dịch vụ'),
+  availabilities: z
+    .array(
+      z.object({
+        dayOfWeek: z.nativeEnum(DayOfWeek),
+        startTime: z.string().min(1, 'Giờ bắt đầu không được để trống'),
+        endTime: z.string().min(1, 'Giờ kết thúc không được để trống'),
+      }),
+    )
+    .optional(),
 });
 
 export type CreateDoctorDto = z.infer<typeof CreateDoctorSchema>;
@@ -66,6 +80,41 @@ export class CreateDoctorDtoClass {
     required: false,
   })
   address?: string;
+
+  @ApiProperty({
+    description: 'ID cơ sở phòng khám (Clinic)',
+    example: 1,
+  })
+  clinicId: number;
+
+  @ApiProperty({
+    description: 'Danh sách dịch vụ bác sĩ cung cấp (Service IDs)',
+    example: [1, 2, 3],
+    isArray: true,
+    type: Number,
+  })
+  serviceIds: number[];
+
+  @ApiProperty({
+    description: 'Lịch làm việc hàng tuần (tùy chọn)',
+    required: false,
+    example: [
+      { dayOfWeek: 'MONDAY', startTime: '08:00', endTime: '17:00' },
+      { dayOfWeek: 'WEDNESDAY', startTime: '08:00', endTime: '17:00' },
+    ],
+  })
+  availabilities?: Array<{
+    dayOfWeek:
+      | 'MONDAY'
+      | 'TUESDAY'
+      | 'WEDNESDAY'
+      | 'THURSDAY'
+      | 'FRIDAY'
+      | 'SATURDAY'
+      | 'SUNDAY';
+    startTime: string;
+    endTime: string;
+  }>;
 }
 
 export const UpdateDoctorSchema = z.object({
@@ -220,20 +269,7 @@ export class DoctorDetailResponseDto extends CreateDoctorResponseDto {
 }
 
 export const CreateDoctorScheduleSchema = z.object({
-  dayOfWeek: z.enum(
-    [
-      'MONDAY',
-      'TUESDAY',
-      'WEDNESDAY',
-      'THURSDAY',
-      'FRIDAY',
-      'SATURDAY',
-      'SUNDAY',
-    ],
-    {
-      message: 'Thứ trong tuần không hợp lệ',
-    },
-  ),
+  dayOfWeek: z.nativeEnum(DayOfWeek),
   startTime: z.string().min(1, 'Giờ bắt đầu không được để trống'),
   endTime: z.string().min(1, 'Giờ kết thúc không được để trống'),
   locationId: z.number().min(1, 'ID cơ sở phòng khám không hợp lệ'),
