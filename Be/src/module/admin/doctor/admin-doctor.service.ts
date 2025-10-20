@@ -4,6 +4,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '@/common/prisma/prisma.service';
+import { UserStatus, Role } from '@prisma/client';
 import {
   CreateDoctorDto,
   UpdateDoctorDto,
@@ -39,7 +40,8 @@ export class AdminDoctorService {
         data: {
           email,
           password: password, // Store password as plain text
-          role: 'DOCTOR',
+          role: Role.DOCTOR,
+          status: UserStatus.ACTIVE,
         },
       });
 

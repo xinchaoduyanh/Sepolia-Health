@@ -1,7 +1,7 @@
 import { PrismaClient, DayOfWeek } from '@prisma/client';
 import { fakerVI as faker } from '@faker-js/faker';
 import * as bcrypt from 'bcrypt';
-
+import { UserStatus } from '@prisma/client';
 const prisma = new PrismaClient();
 
 // --- CẤU HÌNH ---
@@ -91,7 +91,7 @@ async function main() {
             password: hashedPassword,
             phone,
             role: 'DOCTOR',
-            isVerified: true,
+            status: UserStatus.ACTIVE,
           },
         });
 

@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '@/common/prisma/prisma.service';
-import { User, Role, Gender, Relationship } from '@prisma/client';
+import { User, Role, Gender, Relationship, UserStatus } from '@prisma/client';
 import { ERROR_MESSAGES } from '@/common/constants/error-messages';
 
 @Injectable()
@@ -53,8 +53,7 @@ export class AuthRepository {
     password: string;
     phone?: string;
     role: Role;
-    isVerified: boolean;
-    verifiedAt: Date;
+    status: UserStatus;
   }): Promise<User> {
     return await this.prisma.user.create({
       data: userData,
@@ -94,8 +93,7 @@ export class AuthRepository {
     password: string;
     phone?: string;
     role: Role;
-    isVerified: boolean;
-    verifiedAt: Date;
+    status: UserStatus;
     firstName: string;
     lastName: string;
     dateOfBirth: Date;
@@ -111,8 +109,7 @@ export class AuthRepository {
           password: data.password,
           phone: data.phone,
           role: data.role,
-          isVerified: data.isVerified,
-          verifiedAt: data.verifiedAt,
+          status: data.status as any,
         },
       });
 
@@ -140,16 +137,6 @@ export class AuthRepository {
     return await this.prisma.user.update({
       where: { id },
       data: userData,
-    });
-  }
-
-  /**
-   * Update last login
-   */
-  async updateLastLogin(id: number): Promise<void> {
-    await this.prisma.user.update({
-      where: { id },
-      data: { lastLoginAt: new Date() },
     });
   }
 }

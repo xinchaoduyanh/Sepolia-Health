@@ -1,6 +1,6 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
-import { Gender, Relationship } from '@prisma/client';
+import { Gender, Relationship, Role, UserStatus } from '@prisma/client';
 
 // Update User Profile DTO Schema
 export const UpdateUserProfileSchema = z.object({
@@ -52,8 +52,8 @@ export const UserProfileResponseSchema = z.object({
   dateOfBirth: z.string().nullable(),
   gender: z.string().nullable(),
   avatar: z.string().nullable(),
-  role: z.string(),
-  isVerified: z.boolean(),
+  role: z.nativeEnum(Role),
+  status: z.nativeEnum(UserStatus),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
@@ -98,8 +98,8 @@ export const UserProfileWithPatientProfilesResponseSchema = z.object({
   dateOfBirth: z.string().nullable(),
   gender: z.string().nullable(),
   avatar: z.string().nullable(),
-  role: z.string(),
-  isVerified: z.boolean(),
+  role: z.nativeEnum(Role),
+  status: z.nativeEnum(UserStatus),
   createdAt: z.string(),
   updatedAt: z.string(),
   patientProfiles: z.array(PatientProfileResponseSchema),

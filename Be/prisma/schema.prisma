@@ -56,6 +56,12 @@ enum Gender {
   OTHER
 }
 
+enum UserStatus {
+  UNVERIFIED
+  ACTIVE
+  DEACTIVE
+}
+
 enum Relationship {
   SELF        // Bản thân
   SPOUSE      // Vợ/Chồng
@@ -89,9 +95,7 @@ model User {
   // Quan hệ với giao dịch
   transactions        Transaction[]
 
-  isVerified  Boolean  @default(false)
-  verifiedAt  DateTime?
-  lastLoginAt DateTime?
+  status      UserStatus @default(UNVERIFIED)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   deletedAt   DateTime?

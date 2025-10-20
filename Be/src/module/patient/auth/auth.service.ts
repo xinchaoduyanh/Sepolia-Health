@@ -5,6 +5,7 @@ import {
   Inject,
 } from '@nestjs/common';
 import { PrismaService } from '@/common/prisma/prisma.service';
+import { UserStatus } from '@prisma/client';
 import { StringUtil } from '@/common/utils';
 import {
   CompleteRegisterDto,
@@ -70,7 +71,7 @@ export class AuthService {
       throw new UnauthorizedException(ERROR_MESSAGES.AUTH.INVALID_PASSWORD);
     }
 
-    if (!user.isVerified) {
+    if (user.status !== UserStatus.ACTIVE) {
       throw new UnauthorizedException(ERROR_MESSAGES.AUTH.USER_NOT_VERIFIED);
     }
 
@@ -100,9 +101,6 @@ export class AuthService {
       tokens.refreshToken,
       this.tokenConf.refreshTokenExpiresInSeconds,
     );
-
-    // Update last login
-    await this.authRepository.updateLastLogin(user.id);
 
     return {
       accessToken: tokens.accessToken,
@@ -219,8 +217,7 @@ export class AuthService {
       password,
       phone: phone, // Use phone for user.phone
       role,
-      isVerified: true,
-      verifiedAt: new Date(),
+      status: UserStatus.ACTIVE,
       // Patient profile data - basic info for registration
       firstName,
       lastName,

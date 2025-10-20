@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Role, UserStatus } from '@prisma/client';
 
 export class DoctorProfileDto {
   @ApiProperty()
@@ -33,11 +34,11 @@ export class UserProfileDto {
   @ApiProperty({ nullable: true })
   phone?: string | null;
 
-  @ApiProperty()
-  role: string;
+  @ApiProperty({ enum: Role })
+  role: Role;
 
-  @ApiProperty()
-  isVerified: boolean;
+  @ApiProperty({ enum: UserStatus })
+  status: UserStatus;
 
   @ApiProperty()
   createdAt: Date;
