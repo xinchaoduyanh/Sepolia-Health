@@ -2,6 +2,7 @@ import { ResetPasswordEmailData } from '../mail.types';
 
 export const getResetPasswordEmailTemplate = (data: ResetPasswordEmailData) => {
   return {
+    to: data.email,
     subject: 'Đặt lại mật khẩu - Sepolia Clinic',
     html: `
       <!DOCTYPE html>

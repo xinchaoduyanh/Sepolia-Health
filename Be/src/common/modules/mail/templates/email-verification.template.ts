@@ -1,5 +1,8 @@
-export const getVerifyEmailTemplate = (otp: string) => {
+import { EmailVerificationData } from '../mail.types';
+
+export const getVerifyEmailTemplate = (data: EmailVerificationData) => {
   return {
+    to: data.email,
     subject: 'Mã xác thực đăng ký - Phòng khám Sepolia',
     html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -14,7 +17,7 @@ export const getVerifyEmailTemplate = (otp: string) => {
             <p>Mã xác thực của bạn là:</p>
 
             <div style="text-align: center; margin: 30px 0;">
-              <span style="font-size: 32px; font-weight: bold; color: #e74c3c; background-color: #fff; padding: 15px 30px; border-radius: 10px; border: 2px dashed #e74c3c;">${otp}</span>
+              <span style="font-size: 32px; font-weight: bold; color: #e74c3c; background-color: #fff; padding: 15px 30px; border-radius: 10px; border: 2px dashed #e74c3c;">${data.otp}</span>
             </div>
 
             <p><strong>Lưu ý:</strong></p>

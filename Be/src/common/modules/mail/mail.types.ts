@@ -1,3 +1,7 @@
+export interface BaseEmailData {
+  email: string;
+}
+
 export interface SendEmailOptions {
   to: string;
   subject: string;
@@ -28,8 +32,11 @@ export interface WelcomeEmailData {
   loginUrl: string;
 }
 
-export interface ResetPasswordEmailData {
-  // userName: string;
+export interface ResetPasswordEmailData extends BaseEmailData {
   resetLink: string;
   expiresIn: number;
+}
+
+export interface EmailVerificationData extends BaseEmailData {
+  otp: string;
 }

@@ -122,10 +122,7 @@ export class AuthService {
     await this.redisService.setOtp(email, otp, 5 * 60, 'register');
 
     // Send OTP via email
-    await this.mailService.sendEmail({
-      to: email,
-      ...getVerifyEmailTemplate(otp),
-    });
+    await this.mailService.sendEmail(getVerifyEmailTemplate({ otp, email }));
 
     return {
       email,
@@ -139,10 +136,7 @@ export class AuthService {
     const otp = StringUtil.random(6, '0123456789');
     await this.redisService.setOtp(email, otp, 5 * 60, 'register');
 
-    await this.mailService.sendEmail({
-      to: email,
-      ...getVerifyEmailTemplate(otp),
-    });
+    await this.mailService.sendEmail(getVerifyEmailTemplate({ email, otp }));
 
     return new SuccessResponseDto();
   }
@@ -289,10 +283,9 @@ export class AuthService {
 
     const resetLink = `${this.tokenConf.frontendUrl}/reset-password?email=${email}&otp=${otp}`;
 
-    await this.mailService.sendEmail({
-      to: email,
-      ...getResetPasswordEmailTemplate({ resetLink, expiresIn }),
-    });
+    await this.mailService.sendEmail(
+      getResetPasswordEmailTemplate({ resetLink, expiresIn, email }),
+    );
 
     return new SuccessResponseDto();
   }
