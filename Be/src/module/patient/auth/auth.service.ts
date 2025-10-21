@@ -10,19 +10,25 @@ import { StringUtil } from '@/common/utils';
 import {
   CompleteRegisterDto,
   CompleteRegisterResponseDto,
+  ForgotPasswordDto,
   LoginDto,
   LoginResponseDto,
   RefreshTokenDto,
   RegisterDto,
   RegisterResponseDto,
   VerifyEmailDto,
-} from './auth.dto';
+} from './dto/auth.dto';
 import { AuthRepository } from './auth.repository';
 import { CustomJwtService, MailService, RedisService } from '@/common/modules';
 import { appConfig } from '@/common/config';
 import { ConfigType } from '@nestjs/config';
 import { ERROR_MESSAGES } from '@/common/constants/error-messages';
-import { getVerifyEmailTemplate } from '@/common/modules/mail/templates';
+import {
+  getResetPasswordEmailTemplate,
+  getVerifyEmailTemplate,
+} from '@/common/modules/mail/templates';
+import { SuccessResponseDto } from '@/common/dto';
+import { ResetPasswordBodyDto } from './dto/request';
 
 // Helper function to parse date string safely
 function parseDate(dateString: string): Date {
@@ -68,16 +74,12 @@ export class AuthService {
 
     const user = await this.authRepository.findByEmail(email);
 
-    if (!user) {
-      throw new UnauthorizedException(ERROR_MESSAGES.AUTH.INVALID_PASSWORD);
+    if (!user || user.password !== password) {
+      throw new UnauthorizedException(ERROR_MESSAGES.AUTH.INVALID_CREADENTIALS);
     }
 
     if (user.status !== UserStatus.ACTIVE) {
       throw new UnauthorizedException(ERROR_MESSAGES.AUTH.USER_NOT_VERIFIED);
-    }
-
-    if (user.password !== password) {
-      throw new UnauthorizedException(ERROR_MESSAGES.AUTH.INVALID_PASSWORD);
     }
 
     // Generate tokens
@@ -103,10 +105,7 @@ export class AuthService {
       this.tokenConf.refreshTokenExpiresInSeconds,
     );
 
-    return {
-      accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken,
-    };
+    return tokens;
   }
 
   /**
@@ -121,7 +120,6 @@ export class AuthService {
     // Generate OTP
     const otp = StringUtil.random(6, '0123456789');
     await this.redisService.setOtp(email, otp, 5 * 60, 'register');
-    console.log('OTP:', otp);
 
     // Send OTP via email
     await this.mailService.sendEmail({
@@ -132,6 +130,21 @@ export class AuthService {
     return {
       email,
     };
+  }
+
+  async resendOtpEmail(body: RegisterDto): Promise<SuccessResponseDto> {
+    const { email } = body;
+    await this.authRepository.isEmailExists(email);
+
+    const otp = StringUtil.random(6, '0123456789');
+    await this.redisService.setOtp(email, otp, 5 * 60, 'register');
+
+    await this.mailService.sendEmail({
+      to: email,
+      ...getVerifyEmailTemplate(otp),
+    });
+
+    return new SuccessResponseDto();
   }
 
   /**
@@ -150,8 +163,6 @@ export class AuthService {
     if (!isOtpValid) {
       throw new BadRequestException(ERROR_MESSAGES.AUTH.INVALID_OTP);
     }
-
-    return;
   }
 
   /**
@@ -187,7 +198,7 @@ export class AuthService {
     const userData = {
       email,
       password,
-      phone: phone, // Use phone for user.phone
+      phone, // Use phone for user.phone
       role,
       status: UserStatus.ACTIVE,
       // Patient profile data - basic info for registration
@@ -196,7 +207,6 @@ export class AuthService {
       dateOfBirth: parseDate(dateOfBirth),
       gender,
       patientPhone: phone, // Use phone for patient profile
-      // relationship SELF sẽ được set mặc định trong auth repository
     };
 
     const { user, patientProfile } =
@@ -254,11 +264,9 @@ export class AuthService {
       this.tokenConf.refreshTokenExpiresInSeconds,
     );
 
-    return {
-      accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken,
-    };
+    return tokens;
   }
+
   /**
    * Logout user - xóa cả access token và refresh token khỏi Redis
    */
@@ -268,7 +276,53 @@ export class AuthService {
 
     // Xóa tất cả tokens của user khỏi Redis
     await this.redisService.deleteTokens(tokens);
+  }
 
-    return;
+  async forgotPassword(body: ForgotPasswordDto): Promise<SuccessResponseDto> {
+    const { email } = body;
+    // Check if user exists
+    await this.authRepository.findByEmail(email);
+
+    const otp = StringUtil.random();
+    const expiresIn = 5 * 60;
+    await this.redisService.setOtp(email, otp, expiresIn, 'reset_password');
+
+    const resetLink = `${this.tokenConf.frontendUrl}/reset-password?email=${email}&otp=${otp}`;
+
+    await this.mailService.sendEmail({
+      to: email,
+      ...getResetPasswordEmailTemplate({ resetLink, expiresIn }),
+    });
+
+    return new SuccessResponseDto();
+  }
+
+  // async verifyResetPasswordLink() {}
+
+  async resetPassword(body: ResetPasswordBodyDto): Promise<SuccessResponseDto> {
+    const { email, otp, newPassword } = body;
+
+    const isOtpValid = await this.redisService.verifyOtp(
+      email,
+      otp,
+      'reset_password',
+    );
+
+    if (!isOtpValid) {
+      throw new BadRequestException(ERROR_MESSAGES.AUTH.INVALID_OTP);
+    }
+
+    const user = await this.authRepository.findByEmail(email);
+    if (!user) {
+      throw new BadRequestException(ERROR_MESSAGES.AUTH.USER_NOT_FOUND);
+    }
+
+    await this.authRepository.updateUser(user.id, { password: newPassword });
+    // udpate redis
+    await this.logout(user.id);
+
+    // todo send mail
+
+    return new SuccessResponseDto();
   }
 }

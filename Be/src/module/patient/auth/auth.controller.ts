@@ -5,21 +5,21 @@ import {
   ApiResponse,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import type { TokenPayload } from '@/common/types/jwt.type';
 import { AuthService } from './auth.service';
 import {
   CompleteRegisterDto,
   CompleteRegisterResponseDto,
+  ForgotPasswordDto,
   LoginDto,
   LoginResponseDto,
-  LogoutDto,
   RefreshTokenDto,
   RegisterDto,
   RegisterResponseDto,
   VerifyEmailDto,
-  VerifyEmailResponseDto,
-} from './auth.dto';
+} from './dto/auth.dto';
 import { CurrentUser, Public } from '@/common/decorators';
+import { SuccessResponseDto } from '@/common/dto';
+import { ResetPasswordBodyDto } from './dto/request';
 
 @ApiTags('Patient Auth')
 @Controller('patient/auth')
@@ -31,11 +31,13 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Đăng nhập tài khoản' })
   @ApiResponse({
-    status: 200,
-    description: 'Đăng nhập thành công',
+    status: HttpStatus.OK,
     type: LoginResponseDto,
   })
-  @ApiResponse({ status: 401, description: 'Email hoặc mật khẩu không đúng' })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Email hoặc mật khẩu không đúng',
+  })
   async login(@Body() loginDto: LoginDto): Promise<LoginResponseDto> {
     return this.authService.login(loginDto);
   }
@@ -45,11 +47,13 @@ export class AuthController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Đăng ký tài khoản mới' })
   @ApiResponse({
-    status: 201,
-    description: 'Đăng ký thành công, vui lòng kiểm tra email',
+    status: HttpStatus.CREATED,
     type: RegisterResponseDto,
   })
-  @ApiResponse({ status: 409, description: 'Email đã được sử dụng' })
+  @ApiResponse({
+    status: HttpStatus.CONFLICT,
+    description: 'Email đã được sử dụng',
+  })
   async register(
     @Body() registerDto: RegisterDto,
   ): Promise<RegisterResponseDto> {
@@ -61,12 +65,10 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Xác thực email với OTP' })
   @ApiResponse({
-    status: 200,
-    description: 'Xác thực email thành công',
-    type: VerifyEmailResponseDto,
+    status: HttpStatus.OK,
   })
   @ApiResponse({
-    status: 400,
+    status: HttpStatus.BAD_REQUEST,
     description: 'Mã OTP không hợp lệ hoặc đã hết hạn',
   })
   async verifyEmail(@Body() verifyEmailDto: VerifyEmailDto): Promise<void> {
@@ -78,12 +80,11 @@ export class AuthController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Hoàn tất đăng ký sau khi xác thực email' })
   @ApiResponse({
-    status: 201,
-    description: 'Đăng ký hoàn tất thành công',
+    status: HttpStatus.CREATED,
     type: CompleteRegisterResponseDto,
   })
   @ApiResponse({
-    status: 400,
+    status: HttpStatus.BAD_REQUEST,
     description: 'Mã OTP không hợp lệ hoặc đã hết hạn',
   })
   async completeRegister(
@@ -97,11 +98,13 @@ export class AuthController {
   @ApiOperation({ summary: 'Làm mới access token' })
   @ApiBearerAuth()
   @ApiResponse({
-    status: 200,
-    description: 'Làm mới token thành công',
+    status: HttpStatus.OK,
     type: LoginResponseDto,
   })
-  @ApiResponse({ status: 401, description: 'Refresh token không hợp lệ' })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Refresh token không hợp lệ',
+  })
   async refreshToken(
     @Body() refreshTokenDto: RefreshTokenDto,
   ): Promise<LoginResponseDto> {
@@ -112,12 +115,34 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Đăng xuất tài khoản' })
   @ApiBearerAuth()
-  @ApiResponse({ status: 200, description: 'Đăng xuất thành công' })
-  async logout(
-    @CurrentUser() user: TokenPayload,
-    @Body() logoutDto: LogoutDto,
-  ): Promise<void> {
-    console.log(logoutDto);
-    return this.authService.logout(user.userId);
+  @ApiResponse({ status: HttpStatus.OK, description: 'Đăng xuất thành công' })
+  async logout(@CurrentUser('userId') userId: number): Promise<void> {
+    return this.authService.logout(userId);
+  }
+
+  @Public()
+  @Post('forgot-password')
+  @ApiOperation({ summary: 'Quên mật khẩu' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    type: SuccessResponseDto,
+  })
+  async forgotPassword(
+    @Body() body: ForgotPasswordDto,
+  ): Promise<SuccessResponseDto> {
+    return this.authService.forgotPassword(body);
+  }
+
+  @Public()
+  @Post('reset-password')
+  @ApiOperation({ summary: 'Đặt lại mật khẩu' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    type: SuccessResponseDto,
+  })
+  async resetPassword(
+    @Body() body: ResetPasswordBodyDto,
+  ): Promise<SuccessResponseDto> {
+    return this.authService.resetPassword(body);
   }
 }

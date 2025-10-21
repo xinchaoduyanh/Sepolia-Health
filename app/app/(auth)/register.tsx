@@ -47,7 +47,7 @@ export default function RegisterScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [dateOfBirth, setDateOfBirth] = useState<Date | null>(null);
-  const [gender, setGender] = useState<'MALE' | 'FEMALE' | 'OTHER' | null>(null);
+  const [gender, setGender] = useState<'MALE' | 'FEMALE' | null>(null);
 
   // Validation errors
   const [emailError, setEmailError] = useState('');
@@ -179,7 +179,6 @@ export default function RegisterScreen() {
         password,
         dateOfBirth: dateOfBirth!.toISOString().split('T')[0], // Convert to YYYY-MM-DD format
         gender: gender!,
-        // relationship không cần gửi lên, BE sẽ mặc định là SELF
         role: 'PATIENT',
       });
       Alert.alert('Thành công', 'Đăng ký thành công!', [

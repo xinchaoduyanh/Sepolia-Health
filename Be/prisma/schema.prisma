@@ -48,8 +48,6 @@ enum DayOfWeek {
   SATURDAY
 }
 
-
-
 enum Gender {
   MALE
   FEMALE
@@ -72,8 +70,6 @@ enum Relationship {
   FRIEND      // Bạn bè
   OTHER       // Khác
 }
-
-
 
 // ----------------- CORE MODELS -----------------
 
@@ -190,7 +186,6 @@ model PatientProfile {
   @@index([phone]) // Tối ưu tìm kiếm theo SĐT
 }
 
-
 // ----------------- SCHEDULING MODELS -----------------
 
 /// Lịch làm việc cố định hàng tuần của bác sĩ
@@ -218,7 +213,6 @@ model AvailabilityOverride {
 
   @@unique([doctorId, date])
 }
-
 
 // ----------------- APPOINTMENT & RELATED MODELS -----------------
 
@@ -254,7 +248,6 @@ model Appointment {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 }
-
 
 /// Đơn thuốc: Gắn với một hồ sơ bệnh nhân cụ thể.
 model Prescription {

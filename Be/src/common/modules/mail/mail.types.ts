@@ -29,7 +29,7 @@ export interface WelcomeEmailData {
 }
 
 export interface ResetPasswordEmailData {
-  userName: string;
+  // userName: string;
   resetLink: string;
-  expiresIn: string;
+  expiresIn: number;
 }

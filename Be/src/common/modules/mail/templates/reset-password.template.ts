@@ -80,7 +80,7 @@ export const getResetPasswordEmailTemplate = (data: ResetPasswordEmailData) => {
           </div>
           
           <div class="content">
-            <p>Xin chào <strong>${data.userName}</strong>,</p>
+            <p>Xin chào thành viên Sepolia Clinic,</p>
             <p>Bạn đã yêu cầu đặt lại mật khẩu cho tài khoản của mình tại Sepolia Clinic.</p>
             
             <p>Nhấp vào nút bên dưới để đặt lại mật khẩu:</p>
@@ -89,7 +89,7 @@ export const getResetPasswordEmailTemplate = (data: ResetPasswordEmailData) => {
             <div class="warning">
               <strong>⚠️ Lưu ý quan trọng:</strong>
               <ul>
-                <li>Liên kết này sẽ hết hạn sau <strong>${data.expiresIn}</strong></li>
+                <li>Liên kết này sẽ hết hạn sau <strong>${data.expiresIn} giây</strong></li>
                 <li>Chỉ sử dụng liên kết này một lần</li>
                 <li>Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này</li>
               </ul>
