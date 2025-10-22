@@ -7,7 +7,6 @@ import {
 import { MESSAGES } from '@/common/constants/messages';
 import { PrismaService } from '@/common/prisma/prisma.service';
 import { DayOfWeek, AppointmentStatus, PaymentStatus } from '@prisma/client';
-import type { TokenPayload } from '@/common/types';
 import type {
   CreateAppointmentFromDoctorServiceDtoType,
   GetAppointmentsQueryDtoType,
@@ -16,6 +15,7 @@ import type {
   UpdateAppointmentDto,
 } from './appointment.dto';
 import { CurrentUser } from '@/common/decorators';
+import { TokenPayload } from '@/common/modules';
 
 @Injectable()
 export class AppointmentService {

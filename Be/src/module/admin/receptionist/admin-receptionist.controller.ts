@@ -35,7 +35,6 @@ import {
 import { JwtAuthGuard, RolesGuard } from '@/common/guards';
 import { Roles, CurrentUser } from '@/common/decorators';
 import { Role } from '@prisma/client';
-import type { TokenPayload } from '@/common/types/jwt.type';
 import { CustomZodValidationPipe } from '@/common/pipes';
 
 @ApiTags('Admin Receptionist Management')
@@ -60,11 +59,11 @@ export class AdminReceptionistController {
   async createReceptionist(
     @Body(new CustomZodValidationPipe(CreateReceptionistSchema))
     createReceptionistDto: CreateReceptionistDto,
-    @CurrentUser() admin: TokenPayload,
+    @CurrentUser('userId') userId: number,
   ): Promise<CreateReceptionistResponseDto> {
     return this.adminReceptionistService.createReceptionist(
       createReceptionistDto,
-      admin.userId,
+      userId,
     );
   }
 

@@ -21,10 +21,7 @@ export class CustomJwtService {
    * Generate access token
    */
   generateAccessToken(payload: Omit<TokenPayload, 'exp' | 'iat'>): string {
-    return this.jwtService.sign(payload, {
-      secret: this.jwtConf.secret,
-      expiresIn: this.jwtConf.expiresIn,
-    });
+    return this.jwtService.sign(payload);
   }
 
   /**
@@ -55,17 +52,10 @@ export class CustomJwtService {
     type: 'access' | 'refresh' = 'access',
   ): VerifyTokenResult {
     try {
-      let secret: string;
+      let secret = this.jwtConf.secret;
 
-      switch (type) {
-        case 'access':
-          secret = this.jwtConf.secret;
-          break;
-        case 'refresh':
-          secret = this.jwtConf.refreshSecret;
-          break;
-        default:
-          secret = this.jwtConf.secret;
+      if (type === 'refresh') {
+        secret = this.jwtConf.refreshSecret;
       }
 
       const payload = this.jwtService.verify(token, { secret });
@@ -79,16 +69,6 @@ export class CustomJwtService {
         error: error.message,
       };
     }
-  }
-
-  /**
-   * Extract token from Authorization header
-   */
-  extractTokenFromHeader(authHeader: string): string | null {
-    if (!authHeader) return null;
-
-    const [type, token] = authHeader.split(' ');
-    return type === 'Bearer' ? token : null;
   }
 
   /**

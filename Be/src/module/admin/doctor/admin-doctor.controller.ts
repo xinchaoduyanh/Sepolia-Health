@@ -36,9 +36,8 @@ import {
   CreateDoctorScheduleSchema,
 } from './admin-doctor.dto';
 import { JwtAuthGuard, RolesGuard } from '@/common/guards';
-import { Roles, CurrentUser } from '@/common/decorators';
+import { Roles } from '@/common/decorators';
 import { Role } from '@prisma/client';
-import type { TokenPayload } from '@/common/types/jwt.type';
 import { CustomZodValidationPipe } from '@/common/pipes';
 
 @ApiTags('Admin Doctor Management')

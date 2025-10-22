@@ -17,10 +17,8 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { UploadService } from '@/common/modules';
-// zod no longer needed
 import { PrismaService } from '@/common/prisma/prisma.service';
 import { CurrentUser } from '@/common/decorators';
-import type { TokenPayload } from '@/common/types/jwt.type';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { UseGuards } from '@nestjs/common';
 import { JwtAuthGuard, RolesGuard } from '@/common/guards';
@@ -70,7 +68,6 @@ export class UploadController {
     description: 'Upload file thành công',
   })
   async uploadFile(
-    @CurrentUser() user: TokenPayload,
     @UploadedFile() file: any,
   ): Promise<UploadFileResponseDtoType> {
     if (!file) {
@@ -118,10 +115,7 @@ export class UploadController {
     status: 200,
     description: 'Lưu URL thành công',
   })
-  uploadFromUrl(
-    @CurrentUser() user: TokenPayload,
-    @Body() body: UploadUrlDtoType,
-  ): UploadFileResponseDtoType {
+  uploadFromUrl(@Body() body: UploadUrlDtoType): UploadFileResponseDtoType {
     // Validate URL
     try {
       new URL(body.url);
@@ -161,7 +155,7 @@ export class UploadController {
     description: 'Upload avatar thành công',
   })
   async uploadAvatarFile(
-    @CurrentUser() user: TokenPayload,
+    @CurrentUser('userId') userId: number,
     @UploadedFile() file: any,
   ): Promise<UploadFileResponseDtoType> {
     if (!file) {
@@ -182,7 +176,7 @@ export class UploadController {
 
     // Generate unique filename
     const fileExtension = file.originalname.split('.').pop();
-    const fileName = `avatars/${user.userId}-${Date.now()}.${fileExtension}`;
+    const fileName = `avatars/${userId}-${Date.now()}.${fileExtension}`;
 
     // Upload to S3
     const uploadResult = await this.uploadService.uploadFile({
@@ -199,7 +193,7 @@ export class UploadController {
 
     // Update patient profile avatar URL
     const userData = await this.prisma.user.findUnique({
-      where: { id: user.userId },
+      where: { id: userId },
       include: {
         patientProfiles: {
           where: { relationship: 'SELF' },
@@ -243,7 +237,7 @@ export class UploadController {
     description: 'Cập nhật avatar thành công',
   })
   async uploadAvatarUrl(
-    @CurrentUser() user: TokenPayload,
+    @CurrentUser('userId') userId: number,
     @Body() body: UploadUrlDtoType,
   ): Promise<UploadFileResponseDtoType> {
     // Validate URL
@@ -255,7 +249,7 @@ export class UploadController {
 
     // Update patient profile avatar URL
     const userData = await this.prisma.user.findUnique({
-      where: { id: user.userId },
+      where: { id: userId },
       include: {
         patientProfiles: {
           where: { relationship: 'SELF' },

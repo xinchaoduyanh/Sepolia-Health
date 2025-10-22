@@ -29,10 +29,10 @@ import {
   UpdateAppointmentDto,
 } from './appointment.dto';
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
-import type { TokenPayload } from '@/common/types/jwt.type';
 import { JwtAuthGuard, RolesGuard } from '@/common/guards';
 import { Roles } from '@/common/decorators';
 import { Role } from '@prisma/client';
+import { TokenPayload } from '@/common/modules';
 
 @ApiTags('Patient Appointments')
 @Controller('patient/appointments')
@@ -47,7 +47,6 @@ export class AppointmentController {
   @ApiParam({ name: 'id', description: 'ID lịch hẹn' })
   @ApiResponse({ status: 200, description: 'Lấy thông tin thành công' })
   @ApiResponse({ status: 404, description: 'Không tìm thấy lịch hẹn' })
-  // @ApiResponseOk(MESSAGES.APPOINTMENT.GET_SUCCESS)
   async findOne(@Param('id') id: string): Promise<AppointmentResponseDtoType> {
     return this.appointmentService.findOne(Number(id));
   }
@@ -60,7 +59,6 @@ export class AppointmentController {
   @ApiBody({ type: UpdateAppointmentDto })
   @ApiResponse({ status: 200, description: 'Cập nhật thành công' })
   @ApiResponse({ status: 404, description: 'Không tìm thấy lịch hẹn' })
-  // @ApiResponseOk(MESSAGES.APPOINTMENT.UPDATE_SUCCESS)
   async update(
     @Param('id') id: string,
     @Body() updateAppointmentDto: UpdateAppointmentDto,
@@ -81,7 +79,6 @@ export class AppointmentController {
   @ApiResponse({ status: 200, description: 'Xóa thành công' })
   @ApiResponse({ status: 404, description: 'Không tìm thấy lịch hẹn' })
   @HttpCode(HttpStatus.OK)
-  // @ApiResponseOk(MESSAGES.APPOINTMENT.DELETE_SUCCESS)
   async remove(
     @Param('id') id: string,
     @CurrentUser() user: TokenPayload,
@@ -101,7 +98,6 @@ export class AppointmentController {
     enum: ['scheduled', 'completed', 'cancelled'],
   })
   @ApiResponse({ status: 200, description: 'Lấy danh sách thành công' })
-  // @ApiResponseOk(MESSAGES.PATIENT.GET_APPOINTMENTS_SUCCESS)
   async getMyAppointments(
     @Query() query: GetAppointmentsQueryDtoType,
     @CurrentUser() user: TokenPayload,

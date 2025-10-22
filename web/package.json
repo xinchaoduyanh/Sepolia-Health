@@ -12,11 +12,11 @@
     "devDependencies": {
         "@workspace/eslint-config": "workspace:*",
         "@workspace/typescript-config": "workspace:*",
+        "lefthook": "^1.13.6",
         "prettier": "^3.6.2",
         "tsx": "^4.20.6",
-        "turbo": "^2.5.5",
-        "typescript": "^5.9.2",
-        "lefthook": "^1.11.8"
+        "turbo": "^2.5.8",
+        "typescript": "^5.9.3"
     },
     "packageManager": "pnpm@10.4.1",
     "engines": {

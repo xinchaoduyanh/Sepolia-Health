@@ -1,4 +1,3 @@
-export { RequireAccessToken } from './access-token.decorator';
 export {
   ApiResponse,
   ApiResponseOk,

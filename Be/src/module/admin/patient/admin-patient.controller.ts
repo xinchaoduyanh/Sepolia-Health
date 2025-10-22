@@ -36,7 +36,6 @@ import { JwtAuthGuard, RolesGuard } from '@/common/guards';
 import { Roles, CurrentUser } from '@/common/decorators';
 import { Role } from '@prisma/client';
 import { CustomZodValidationPipe } from '@/common/pipes';
-import { TokenPayload } from '@/common/types/jwt.type';
 
 @ApiTags('Admin Patient Management')
 @Controller('admin/patients')
@@ -58,12 +57,9 @@ export class AdminPatientController {
   async createPatient(
     @Body(new CustomZodValidationPipe(CreatePatientSchema))
     createPatientDto: CreatePatientDto,
-    @CurrentUser() admin: TokenPayload,
+    @CurrentUser('userId') userId: number,
   ): Promise<CreatePatientResponseDto> {
-    return this.adminPatientService.createPatient(
-      createPatientDto,
-      admin.userId,
-    );
+    return this.adminPatientService.createPatient(createPatientDto, userId);
   }
 
   @Get()

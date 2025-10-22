@@ -5,10 +5,8 @@ import {
   AdminLoginDto,
   AdminLoginResponseDto,
   AdminLoginDtoClass,
-  AdminLoginSchema,
 } from './admin-auth.dto';
 import { Public } from '@/common/decorators';
-import { CustomZodValidationPipe } from '@/common/pipes';
 
 @ApiTags('Admin Auth')
 @Controller('admin/auth')

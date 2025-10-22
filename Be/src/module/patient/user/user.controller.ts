@@ -21,7 +21,6 @@ import {
   ApiConsumes,
   ApiBody,
 } from '@nestjs/swagger';
-import type { TokenPayload } from '@/common/types/jwt.type';
 import { UserService } from './user.service';
 import type {
   UpdateUserProfileDtoType,
@@ -73,9 +72,9 @@ export class UserController {
   })
   // @ApiResponseOk(MESSAGES.USER.GET_PROFILE_SUCCESS)
   async getProfile(
-    @CurrentUser() user: TokenPayload,
+    @CurrentUser('userId') userId: number,
   ): Promise<UserProfileWithPatientProfilesResponseDtoType> {
-    return this.userService.getProfile(user.userId);
+    return this.userService.getProfile(userId);
   }
 
   @Put('profile')
@@ -108,11 +107,11 @@ export class UserController {
     },
   })
   async updateProfile(
-    @CurrentUser() user: TokenPayload,
+    @CurrentUser('userId') userId: number,
     @Body(new CustomZodValidationPipe(UpdateUserProfileSchema))
     updateData: UpdateUserProfileDtoType,
   ): Promise<UpdateUserProfileResponseDtoType> {
-    return this.userService.updateProfile(user.userId, updateData);
+    return this.userService.updateProfile(userId, updateData);
   }
 
   @Put('change-password')
@@ -142,11 +141,11 @@ export class UserController {
     },
   })
   async changePassword(
-    @CurrentUser() user: TokenPayload,
+    @CurrentUser('userId') userId: number,
     @Body(new CustomZodValidationPipe(ChangePasswordSchema))
     changePasswordData: ChangePasswordDtoType,
   ): Promise<ChangePasswordResponseDtoType> {
-    return this.userService.changePassword(user.userId, changePasswordData);
+    return this.userService.changePassword(userId, changePasswordData);
   }
 
   @Post('upload-avatar')
@@ -172,13 +171,13 @@ export class UserController {
   })
   // @ApiResponseOk('Upload ảnh đại diện thành công')
   async uploadAvatar(
-    @CurrentUser() user: TokenPayload,
+    @CurrentUser('userId') userId: number,
     @UploadedFile() file: any,
   ): Promise<UploadAvatarResponseDtoType> {
     if (!file) {
       throw new BadRequestException('Vui lòng chọn file ảnh');
     }
-    return this.userService.uploadAvatar(user.userId, file);
+    return this.userService.uploadAvatar(userId, file);
   }
 
   @Get('patient-profiles')
@@ -194,9 +193,9 @@ export class UserController {
     description: 'Không tìm thấy người dùng',
   })
   async getPatientProfiles(
-    @CurrentUser() user: TokenPayload,
+    @CurrentUser('userId') userId: number,
   ): Promise<PatientProfilesResponseDtoType> {
-    return this.userService.getPatientProfiles(user.userId);
+    return this.userService.getPatientProfiles(userId);
   }
 
   @Post('patient-profiles')
@@ -234,11 +233,11 @@ export class UserController {
     },
   })
   async createPatientProfile(
-    @CurrentUser() user: TokenPayload,
+    @CurrentUser('userId') userId: number,
     @Body(new CustomZodValidationPipe(CreatePatientProfileSchema))
     createData: CreatePatientProfileDtoType,
   ): Promise<CreatePatientProfileResponseDtoType> {
-    return this.userService.createPatientProfile(user.userId, createData);
+    return this.userService.createPatientProfile(userId, createData);
   }
 
   @Put('patient-profiles/:profileId')
@@ -273,16 +272,12 @@ export class UserController {
     },
   })
   async updatePatientProfile(
-    @CurrentUser() user: TokenPayload,
+    @CurrentUser('userId') userId: number,
     @Param('profileId', ParseIntPipe) profileId: number,
     @Body(new CustomZodValidationPipe(UpdatePatientProfileSchema))
     updateData: UpdatePatientProfileDtoType,
   ): Promise<UpdatePatientProfileResponseDtoType> {
-    return this.userService.updatePatientProfile(
-      user.userId,
-      profileId,
-      updateData,
-    );
+    return this.userService.updatePatientProfile(userId, profileId, updateData);
   }
 
   @Post('patient-profiles/:profileId/upload-avatar')
@@ -315,18 +310,14 @@ export class UserController {
     description: 'Không tìm thấy hồ sơ bệnh nhân',
   })
   async uploadPatientProfileAvatar(
-    @CurrentUser() user: TokenPayload,
+    @CurrentUser('userId') userId: number,
     @Param('profileId', ParseIntPipe) profileId: number,
     @UploadedFile() file: any,
   ): Promise<UploadAvatarResponseDtoType> {
     if (!file) {
       throw new BadRequestException('Vui lòng chọn file ảnh');
     }
-    return this.userService.uploadPatientProfileAvatar(
-      user.userId,
-      profileId,
-      file,
-    );
+    return this.userService.uploadPatientProfileAvatar(userId, profileId, file);
   }
 
   @Delete('patient-profiles/:profileId')
@@ -346,9 +337,9 @@ export class UserController {
     description: 'Không tìm thấy hồ sơ bệnh nhân',
   })
   async deletePatientProfile(
-    @CurrentUser() user: TokenPayload,
+    @CurrentUser('userId') userId: number,
     @Param('profileId', ParseIntPipe) profileId: number,
   ): Promise<DeletePatientProfileResponseDtoType> {
-    return this.userService.deletePatientProfile(user.userId, profileId);
+    return this.userService.deletePatientProfile(userId, profileId);
   }
 }

@@ -1,6 +1,9 @@
 {
   "name": "Sepolia-Health",
   "private": true,
+  "scripts": {
+    "dev": "turbo run dev"
+  },
   "dependencies": {
     "turbo": "^2.5.8"
   },
