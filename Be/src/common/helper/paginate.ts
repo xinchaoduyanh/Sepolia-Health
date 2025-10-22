@@ -1,5 +1,3 @@
-import { PaginationResultDto } from '../dto/pagination-result.dto';
-
 export async function paginate(
   model: any,
   page: number,

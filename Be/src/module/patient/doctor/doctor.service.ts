@@ -3,7 +3,6 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { PaginationResultDto } from '@/common/dto/pagination-result.dto';
 import { paginate } from '@/common/helper/paginate';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '@/common/prisma/prisma.service';
@@ -17,7 +16,7 @@ import {
   GetDoctorServiceQueryDto,
   updateDoctorProfileBodyDto,
 } from './dto/request';
-import { SuccessResponseDto } from '@/common/dto';
+import { PaginationResponseDto, SuccessResponseDto } from '@/common/dto';
 import {
   CreateDoctorProfileResponseDto,
   GetDoctorProfileByServiceIdResponseDto,
@@ -30,7 +29,7 @@ export class DoctorService {
 
   async getDoctorServices(
     query: GetDoctorServiceQueryDto,
-  ): Promise<PaginationResultDto<GetDoctorServiceResponseDto>> {
+  ): Promise<PaginationResponseDto<GetDoctorServiceResponseDto>> {
     return paginate(this.prismaService.service, query.page, query.limit);
   }
 

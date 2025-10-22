@@ -6,16 +6,13 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import {
-  PaginatedDto,
-  PaginationResultDto,
-} from '@/common/dto/pagination-result.dto';
 import { Public } from '@/common/decorators';
 import {
   GetDoctorServiceResponseDto,
   getTimeslotByDoctorIdAndDayResponseDto,
 } from './dto/response';
 import { GetDoctorServiceQueryDto } from './dto/request';
+import { createPaginateSwaggerType, PaginationResponseDto } from '@/common/dto';
 import { GetDoctorProfileByServiceIdResponseDto } from './dto/response/doctor-profile.dto';
 
 @ApiBearerAuth()
@@ -28,14 +25,14 @@ export class DoctorController {
   @Public()
   @ApiResponse({
     status: HttpStatus.OK,
-    type: PaginatedDto(GetDoctorServiceResponseDto),
+    type: createPaginateSwaggerType(GetDoctorServiceResponseDto),
   })
   @ApiOperation({
     description: 'get doctor service',
   })
   async getDoctorServices(
     @Query() dto: GetDoctorServiceQueryDto,
-  ): Promise<PaginationResultDto<GetDoctorServiceResponseDto>> {
+  ): Promise<PaginationResponseDto<GetDoctorServiceResponseDto>> {
     return this.doctorService.getDoctorServices(dto);
   }
 
