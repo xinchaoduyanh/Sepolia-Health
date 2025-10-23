@@ -1,16 +1,17 @@
+import { AdminSidebar } from '@/components/Sidebar'
 import { Header } from '@/components/Header'
-import { Sidebar } from '@/components/Sidebar'
+import { SidebarProvider, SidebarInset } from '@workspace/ui/components/Sidebar'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
     return (
-        <div className="min-h-screen bg-background">
-            <Header />
-            <div className="flex">
-                <Sidebar />
+        <SidebarProvider>
+            <AdminSidebar />
+            <SidebarInset>
+                <Header />
                 <main className="flex-1 p-4 overflow-auto">
                     <div className="max-w-full mx-auto">{children}</div>
                 </main>
-            </div>
-        </div>
+            </SidebarInset>
+        </SidebarProvider>
     )
 }
