@@ -42,12 +42,58 @@ export class AdminLoginResponseDto {
     example: {
       id: 1,
       email: 'admin@sepolia.com',
+      phone: '+84901234567',
       role: 'ADMIN',
+      status: 'ACTIVE',
+      createdAt: '2024-01-01T00:00:00.000Z',
+      updatedAt: '2024-01-01T00:00:00.000Z',
     },
   })
   admin: {
     id: number;
     email: string;
+    phone: string | null;
     role: string;
+    status: string;
+    createdAt: Date;
+    updatedAt: Date;
   };
+}
+
+export class AdminMeResponseDto {
+  @ApiProperty({
+    description: 'Thông tin admin hiện tại',
+    example: {
+      id: 1,
+      email: 'admin@sepolia.com',
+      phone: '+84901234567',
+      role: 'ADMIN',
+      status: 'ACTIVE',
+      createdAt: '2024-01-01T00:00:00.000Z',
+      updatedAt: '2024-01-01T00:00:00.000Z',
+    },
+  })
+  admin: {
+    id: number;
+    email: string;
+    phone: string | null;
+    role: string;
+    status: string;
+    createdAt: Date;
+    updatedAt: Date;
+  };
+}
+
+export class AdminRefreshResponseDto {
+  @ApiProperty({
+    description: 'Access token mới',
+    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+  })
+  accessToken: string;
+
+  @ApiProperty({
+    description: 'Refresh token mới',
+    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+  })
+  refreshToken: string;
 }

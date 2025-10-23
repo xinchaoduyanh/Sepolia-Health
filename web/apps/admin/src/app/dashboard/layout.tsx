@@ -1,13 +1,27 @@
+'use client'
+
 import { DashboardLayout } from '@/layouts/DashboardLayout'
-import { cookies } from 'next/headers'
+import { ProtectedRoute } from '@/components/ProtectedRoute'
+import { useAuth } from '@/shared/hooks/useAuth'
+import { useEffect, useState } from 'react'
 
 interface LayoutProps {
     children: React.ReactNode
 }
 
-export default async function Layout({ children }: LayoutProps) {
-    const cookieStore = await cookies()
-    const defaultOpen = cookieStore.get('sidebar_state')?.value !== 'false'
+export default function Layout({ children }: LayoutProps) {
+    const [defaultOpen, setDefaultOpen] = useState(true)
+    const { isAuthenticated, isLoading } = useAuth()
 
-    return <DashboardLayout defaultOpen={defaultOpen}>{children}</DashboardLayout>
+    useEffect(() => {
+        // Get sidebar state from localStorage
+        const sidebarState = localStorage.getItem('sidebar_state')
+        setDefaultOpen(sidebarState !== 'false')
+    }, [])
+
+    return (
+        <ProtectedRoute requiredRole="ADMIN">
+            <DashboardLayout defaultOpen={defaultOpen}>{children}</DashboardLayout>
+        </ProtectedRoute>
+    )
 }

@@ -12,6 +12,7 @@ import {
     useSidebar,
 } from '@workspace/ui/components/Sidebar'
 import { ThemeSwitcher } from '@/shared/components/ThemeSwitcher'
+import { useAuth, useAdminLogout } from '@/shared/hooks/useAuth'
 import Image from 'next/image'
 import {
     BarChart3,
@@ -164,13 +165,14 @@ export function DashboardLayout({ children, defaultOpen = true }: DashboardLayou
         // router.push('/dashboard/account')
     }
 
+    const { user } = useAuth()
+    const logoutMutation = useAdminLogout()
+
     const handleLogout = () => {
-        // TODO: Implement logout logic
-        console.log('Logout')
+        logoutMutation.mutate()
         setIsDropdownOpen(false)
         setIsSidebarDropdownOpen(false)
-        // Clear auth tokens, redirect to login, etc.
-        // router.push('/login')
+        // Navigation is handled by the logout mutation
     }
 
     // Close dropdown when clicking outside
@@ -276,7 +278,7 @@ export function DashboardLayout({ children, defaultOpen = true }: DashboardLayou
                                 >
                                     <Avatar>
                                         <AvatarFallback className="bg-primary text-primary-foreground">
-                                            HP
+                                            {user?.email ? user.email.charAt(0).toUpperCase() : 'A'}
                                         </AvatarFallback>
                                     </Avatar>
                                 </button>
@@ -284,6 +286,17 @@ export function DashboardLayout({ children, defaultOpen = true }: DashboardLayou
                                 {isMounted && isDropdownOpen && (
                                     <div className="absolute right-0 top-full mt-2 w-56 bg-popover border border-border rounded-lg shadow-popover z-50">
                                         <div className="p-1">
+                                            <div className="px-3 py-2 border-b border-border">
+                                                <p className="text-sm font-medium text-popover-foreground">
+                                                    {user?.email || 'admin@sepoliahealth.com'}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    {user?.email || 'admin@sepoliahealth.com'}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    Role: {user?.role || 'ADMIN'}
+                                                </p>
+                                            </div>
                                             <button
                                                 onClick={handleAccountInfo}
                                                 className="w-full flex items-center gap-3 px-3 py-2 text-sm text-popover-foreground hover:bg-accent hover:text-accent-foreground rounded-sm transition-colors cursor-pointer"
