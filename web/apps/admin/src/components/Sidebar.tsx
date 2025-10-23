@@ -12,6 +12,7 @@ import {
     Monitor,
     Stethoscope,
     Users,
+    UserCheck,
 } from 'lucide-react'
 import {
     Sidebar,
@@ -87,6 +88,11 @@ const managementItems = [
         title: 'Quản lý bác sĩ',
         url: '/dashboard/doctor-management',
         icon: Stethoscope,
+    },
+    {
+        title: 'Quản lý bệnh nhân',
+        url: '/dashboard/patient-management',
+        icon: UserCheck,
     },
     {
         title: 'Quản lý khuyến mại',

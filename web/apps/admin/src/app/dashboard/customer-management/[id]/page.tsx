@@ -185,7 +185,10 @@ export default function UserDetailPage() {
                             <div className="flex items-center space-x-3">
                                 <Calendar className="h-4 w-4 text-muted-foreground" />
                                 <span className="text-sm">
-                                    Tạo: {new Date(userData.createdAt).toLocaleDateString('vi-VN')}
+                                    Tạo:{' '}
+                                    {typeof window !== 'undefined'
+                                        ? new Date(userData.createdAt).toLocaleDateString('vi-VN')
+                                        : userData.createdAt}
                                 </span>
                             </div>
                             <div className="flex items-center space-x-3">
@@ -209,7 +212,7 @@ export default function UserDetailPage() {
                 {userData.patientProfiles && userData.patientProfiles.length > 0 ? (
                     <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
                         {userData.patientProfiles.map((profile, index) => (
-                            <Card key={profile.id} className="relative">
+                            <Card key={`${profile.id}-${index}`} className="relative">
                                 <CardHeader className="pb-3">
                                     <div className="flex items-center space-x-3">
                                         <Avatar className="h-12 w-12">
@@ -264,7 +267,9 @@ export default function UserDetailPage() {
                                                 Ngày sinh
                                             </label>
                                             <p className="text-sm">
-                                                {new Date(profile.dateOfBirth).toLocaleDateString('vi-VN')}
+                                                {typeof window !== 'undefined'
+                                                    ? new Date(profile.dateOfBirth).toLocaleDateString('vi-VN')
+                                                    : profile.dateOfBirth}
                                             </p>
                                         </div>
                                     </div>
@@ -343,7 +348,10 @@ export default function UserDetailPage() {
 
                                     <div className="pt-2 border-t">
                                         <p className="text-xs text-muted-foreground">
-                                            Tạo: {new Date(profile.createdAt).toLocaleDateString('vi-VN')}
+                                            Tạo:{' '}
+                                            {typeof window !== 'undefined'
+                                                ? new Date(profile.createdAt).toLocaleDateString('vi-VN')
+                                                : profile.createdAt}
                                         </p>
                                     </div>
                                 </CardContent>

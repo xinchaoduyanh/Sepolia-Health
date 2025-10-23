@@ -7,7 +7,7 @@ import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
 export class ApiClient {
     private client: AxiosInstance
 
-    constructor(baseURL: string = 'http://localhost:8000/api') {
+    constructor(baseURL: string = '/api') {
         this.client = axios.create({
             baseURL,
             timeout: 10000,
@@ -27,9 +27,25 @@ export class ApiClient {
                 return response
             },
             async error => {
-                // Handle 401 errors (unauthorized) - redirect to login
+                // Handle 401 errors (unauthorized)
                 if (error.response?.status === 401) {
                     if (typeof window !== 'undefined') {
+                        // Try to refresh token first
+                        try {
+                            const refreshResponse = await fetch('/api/auth/refresh', {
+                                method: 'POST',
+                                credentials: 'include',
+                            })
+
+                            if (refreshResponse.ok) {
+                                // Token refreshed successfully, retry the original request
+                                return this.client.request(error.config)
+                            }
+                        } catch (refreshError) {
+                            console.error('Token refresh failed:', refreshError)
+                        }
+
+                        // If refresh fails or this is not a retry, redirect to login
                         window.location.href = '/login'
                     }
                 }

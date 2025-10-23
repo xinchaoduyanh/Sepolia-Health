@@ -19,12 +19,19 @@ export async function POST() {
         // 1. Đọc refresh token từ cookie 🍪
         const refreshToken = cookieStore.get('refreshToken')?.value
 
+        console.log('🔄 Refresh attempt - Refresh token present:', !!refreshToken)
+        console.log(
+            '🍪 All cookies:',
+            cookieStore.getAll().map(c => `${c.name}=${c.value.substring(0, 10)}...`),
+        )
+
         if (!refreshToken) {
+            console.log('❌ No refresh token found')
             return NextResponse.json({ error: 'No refresh token' }, { status: 401 })
         }
 
         // 2. Gọi API backend để refresh token
-        const res = await fetch(`${BACKEND_URL}/admin/auth/refresh`, {
+        const res = await fetch(`${BACKEND_URL}/auth/refresh`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -47,7 +54,7 @@ export async function POST() {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             path: '/',
-            maxAge: 60 * 15, // 15 phút
+            maxAge: 60 * 60 * 24 * 15, // 15 ngày
             sameSite: 'lax',
         })
 
@@ -55,8 +62,8 @@ export async function POST() {
             cookieStore.set('refreshToken', data.refreshToken, {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === 'production',
-                path: '/api/auth/refresh',
-                maxAge: 60 * 60 * 24 * 7, // 7 ngày
+                path: '/', // Available for all paths
+                maxAge: 60 * 60 * 24 * 15, // 15 ngày
                 sameSite: 'lax',
             })
         }

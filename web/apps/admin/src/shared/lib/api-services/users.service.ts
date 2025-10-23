@@ -101,70 +101,70 @@ export class UsersService {
      * Get users list with pagination and filters
      */
     async getUsers(params: UsersListParams = {}): Promise<UsersListResponse> {
-        return apiClient.get<UsersListResponse>('/admin/users', { params })
+        return apiClient.get<UsersListResponse>('/users', { params })
     }
 
     /**
      * Get user by ID
      */
     async getUser(id: number): Promise<User> {
-        return apiClient.get<User>(`/admin/users/${id}`)
+        return apiClient.get<User>(`/users/${id}`)
     }
 
     /**
      * Create new user
      */
     async createUser(userData: CreateUserRequest): Promise<User> {
-        return apiClient.post<User>('/admin/users', userData)
+        return apiClient.post<User>('/users', userData)
     }
 
     /**
      * Update user
      */
     async updateUser(id: number, userData: UpdateUserRequest): Promise<User> {
-        return apiClient.put<User>(`/admin/users/${id}`, userData)
+        return apiClient.put<User>(`/users/${id}`, userData)
     }
 
     /**
      * Delete user
      */
     async deleteUser(id: number): Promise<void> {
-        return apiClient.delete<void>(`/admin/users/${id}`)
+        return apiClient.delete<void>(`/users/${id}`)
     }
 
     /**
      * Update user status
      */
     async updateUserStatus(id: number, status: string): Promise<User> {
-        return apiClient.patch<User>(`/admin/users/${id}/status`, { status })
+        return apiClient.patch<User>(`/users/${id}`, { status })
     }
 
     /**
      * Get doctors list
      */
     async getDoctors(params: UsersListParams = {}): Promise<UsersListResponse> {
-        return apiClient.get<UsersListResponse>('/admin/doctors', { params })
+        return apiClient.get<UsersListResponse>('/doctors', { params })
     }
 
     /**
      * Get doctor by ID
      */
     async getDoctor(id: number): Promise<User> {
-        return apiClient.get<User>(`/admin/doctors/${id}`)
+        return apiClient.get<User>(`/doctors/${id}`)
     }
 
     /**
      * Get patients list
      */
     async getPatients(params: UsersListParams = {}): Promise<UsersListResponse> {
-        return apiClient.get<UsersListResponse>('/admin/patients', { params })
+        return apiClient.get<UsersListResponse>('/patients', { params })
     }
 
     /**
      * Get patient by ID
      */
     async getPatient(id: number): Promise<User> {
-        return apiClient.get<User>(`/admin/patients/${id}`)
+        return apiClient.get<User>(`/patients/${id}`)
     }
 }
 

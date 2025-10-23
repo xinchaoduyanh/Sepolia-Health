@@ -16,14 +16,22 @@ interface AdminProfile {
 export async function GET() {
     try {
         // 1. Đọc cookie từ trình duyệt 🍪
-        const token = (await cookies()).get('accessToken')?.value
+        const cookieStore = await cookies()
+        const token = cookieStore.get('accessToken')?.value
+
+        console.log('🍪 Profile check - Access token present:', !!token)
+        console.log(
+            '🍪 All cookies:',
+            cookieStore.getAll().map(c => `${c.name}=${c.value.substring(0, 10)}...`),
+        )
 
         if (!token) {
+            console.log('❌ No access token found')
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
         // 2. Dùng token gọi API backend THẬT
-        const res = await fetch(`${BACKEND_URL}/admin/profile`, {
+        const res = await fetch(`${BACKEND_URL}/auth/me`, {
             headers: {
                 Authorization: `Bearer ${token}`,
             },

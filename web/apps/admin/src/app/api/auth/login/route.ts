@@ -38,7 +38,7 @@ export async function POST(request: Request) {
         // 1. Gọi API backend thật
         let res: Response
         try {
-            res = await fetch(`${BACKEND_URL}/admin/auth/login`, {
+            res = await fetch(`${BACKEND_URL}/auth/login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -62,7 +62,14 @@ export async function POST(request: Request) {
             } catch {
                 errorData = { error: `Backend returned ${res.status}: ${res.statusText}` }
             }
-            console.error('❌ Backend error:', errorData)
+
+            // Chỉ log error nếu không phải 401 (401 là lỗi bình thường của user)
+            if (res.status !== 401) {
+                console.error('❌ Backend error:', errorData)
+            } else {
+                console.log('🔐 Login failed for:', body.email, '- Invalid credentials')
+            }
+
             return NextResponse.json(errorData, { status: res.status })
         }
 
@@ -80,15 +87,15 @@ export async function POST(request: Request) {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             path: '/',
-            maxAge: 60 * 15, // 15 phút
+            maxAge: 60 * 60 * 24 * 15, // 15 ngày
             sameSite: 'lax',
         })
 
         cookieStore.set('refreshToken', data.refreshToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            path: '/api/auth/refresh', // Chỉ cho endpoint refresh
-            maxAge: 60 * 60 * 24 * 7, // 7 ngày
+            path: '/', // Available for all paths
+            maxAge: 60 * 60 * 24 * 15, // 15 ngày
             sameSite: 'lax',
         })
 

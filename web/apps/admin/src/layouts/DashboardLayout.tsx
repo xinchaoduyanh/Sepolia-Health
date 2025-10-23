@@ -208,7 +208,7 @@ export function DashboardLayout({ children, defaultOpen = true }: DashboardLayou
                     </div>
                 </SidebarHeader>
 
-                <SidebarContent className="gap-0 p-2">
+                <SidebarContent className="gap-0 p-2">  
                     <SidebarNavigationMenu
                         title="Chính"
                         linkComponent={Link}

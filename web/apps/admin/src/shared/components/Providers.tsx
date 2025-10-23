@@ -1,16 +1,32 @@
 'use client'
 
-import React from 'react'
-import { ThemeProvider } from 'next-themes'
-import { matchQuery, MutationCache, QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
-import { BsProvider } from '@workspace/ui/components/Provider'
+import React, { useEffect } from 'react'
+import { matchQuery, MutationCache, QueryClient } from '@tanstack/react-query'
+import dynamic from 'next/dynamic'
+import { Toaster } from '@workspace/ui/components/Sonner'
+import { ClientOnly } from './ClientOnly'
+import { useCheckAuth } from '../hooks/useAuth'
+import { CookieDebugger } from './CookieDebugger'
+
+// Dynamic import để tránh hydration issues
+const QueryClientProvider = dynamic(() => import('@tanstack/react-query').then(d => d.QueryClientProvider), {
+    ssr: false,
+})
+
+const BsProvider = dynamic(() => import('@workspace/ui/components/Provider').then(d => d.BsProvider), { ssr: false })
+
+// Dynamic import để tránh hydration issues
+const ReactQueryDevtools = dynamic(() => import('@tanstack/react-query-devtools').then(d => d.ReactQueryDevtools), {
+    ssr: false,
+})
 
 const queryClient = new QueryClient({
     defaultOptions: {
         queries: {
             retry: 1,
             refetchOnWindowFocus: false,
+            refetchOnMount: false,
+            refetchOnReconnect: false,
             staleTime: 1000 * 60,
         },
     },
@@ -28,14 +44,26 @@ const queryClient = new QueryClient({
 })
 
 export function Providers({ children }: { children: React.ReactNode }) {
+    const { checkAuth } = useCheckAuth()
+
+    useEffect(() => {
+        // Check authentication status on app startup
+        checkAuth()
+    }, [checkAuth])
+
     return (
-        <BsProvider>
-            <ThemeProvider attribute="class" defaultTheme="light" disableTransitionOnChange enableColorScheme>
-                <QueryClientProvider client={queryClient}>
-                    {children}
-                    <ReactQueryDevtools initialIsOpen={false} />
-                </QueryClientProvider>
-            </ThemeProvider>
-        </BsProvider>
+        <div suppressHydrationWarning>
+            <ClientOnly>
+                <BsProvider>
+                    <QueryClientProvider client={queryClient}>
+                        {children}
+                        <ClientOnly>
+                            <Toaster />
+                        </ClientOnly>
+                        <ReactQueryDevtools initialIsOpen={false} />
+                    </QueryClientProvider>
+                </BsProvider>
+            </ClientOnly>
+        </div>
     )
 }

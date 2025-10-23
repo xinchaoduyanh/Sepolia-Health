@@ -13,7 +13,7 @@ export async function POST() {
         if (token) {
             // 2. Gọi API backend để logout (để invalidate token trên server)
             try {
-                await fetch(`${BACKEND_URL}/admin/auth/logout`, {
+                await fetch(`${BACKEND_URL}/auth/logout`, {
                     method: 'POST',
                     headers: {
                         Authorization: `Bearer ${token}`,

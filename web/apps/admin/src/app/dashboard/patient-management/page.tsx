@@ -16,50 +16,6 @@ import {
 } from '@workspace/ui/components/DropdownMenu'
 import { usePatients, useDeletePatient, useUpdatePatientStatus } from '@/shared/hooks'
 
-// Action cell component to handle hooks properly
-function ActionCell({ patient }: { patient: any }) {
-    const deletePatient = useDeletePatient()
-    const updateStatus = useUpdatePatientStatus()
-
-    const handleStatusChange = (newStatus: 'ACTIVE' | 'DEACTIVE' | 'UNVERIFIED') => {
-        updateStatus.mutate({ id: patient.id, status: newStatus })
-    }
-
-    const handleDelete = () => {
-        if (confirm('Bạn có chắc chắn muốn xóa bệnh nhân này?')) {
-            deletePatient.mutate(patient.id)
-        }
-    }
-
-    return (
-        <div className="flex items-center justify-center space-x-1">
-            <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0"
-                onClick={() => (window.location.href = `/dashboard/customer-management/${patient.id}`)}
-            >
-                <Eye className="h-4 w-4" />
-            </Button>
-            <DropdownMenu>
-                <DropdownMenuTrigger>
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                        <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                    <DropdownMenuItem onSelect={() => handleStatusChange('ACTIVE')}>Kích hoạt</DropdownMenuItem>
-                    <DropdownMenuItem onSelect={() => handleStatusChange('DEACTIVE')}>Tạm khóa</DropdownMenuItem>
-                    <DropdownMenuItem onSelect={() => handleStatusChange('UNVERIFIED')}>Chưa xác thực</DropdownMenuItem>
-                    <DropdownMenuItem onSelect={handleDelete} className="text-red-600">
-                        Xóa
-                    </DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
-        </div>
-    )
-}
-
 const columns: any[] = [
     {
         accessorKey: 'id',
@@ -110,7 +66,7 @@ const columns: any[] = [
         ),
     },
     {
-        id: 'patientProfileInfo',
+        id: 'patientProfile',
         header: 'Thông tin hồ sơ',
         cell: ({ row }: { row: any }) => {
             const patientProfiles = row.original.patientProfiles || []
@@ -183,12 +139,65 @@ const columns: any[] = [
         size: 80,
         cell: ({ row }: { row: any }) => {
             const patient = row.original
-            return <ActionCell patient={patient} />
+            const deletePatient = useDeletePatient()
+            const updateStatus = useUpdatePatientStatus()
+
+            const handleStatusChange = (newStatus: 'ACTIVE' | 'DEACTIVE' | 'UNVERIFIED') => {
+                updateStatus.mutate({ id: patient.id, status: newStatus })
+            }
+
+            const handleDelete = () => {
+                if (confirm('Bạn có chắc chắn muốn xóa bệnh nhân này?')) {
+                    deletePatient.mutate(patient.id)
+                }
+            }
+
+            return (
+                <div className="flex items-center justify-center space-x-1">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        onClick={() => (window.location.href = `/dashboard/patient-management/${patient.id}`)}
+                    >
+                        <Eye className="h-4 w-4" />
+                    </Button>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                            <DropdownMenuItem>
+                                <button onClick={() => handleStatusChange('ACTIVE')} className="w-full text-left">
+                                    Kích hoạt
+                                </button>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                                <button onClick={() => handleStatusChange('DEACTIVE')} className="w-full text-left">
+                                    Tạm khóa
+                                </button>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                                <button onClick={() => handleStatusChange('UNVERIFIED')} className="w-full text-left">
+                                    Chưa xác thực
+                                </button>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                                <button onClick={handleDelete} className="w-full text-left text-red-600">
+                                    Xóa
+                                </button>
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
+            )
         },
     },
 ]
 
-export default function CustomerListPage() {
+export default function PatientListPage() {
     const [searchTerm, setSearchTerm] = useState('')
     const [currentPage, setCurrentPage] = useState(1)
     const [statusFilter, setStatusFilter] = useState<'UNVERIFIED' | 'ACTIVE' | 'DEACTIVE' | ''>('')
@@ -215,18 +224,13 @@ export default function CustomerListPage() {
     // Fetch patients data
     const { data: patientsResponse, isLoading, error } = usePatients(queryParams)
 
-    // Debug log to track API calls
-    console.log('🔍 CustomerListPage - Query params:', queryParams)
-    console.log('🔍 CustomerListPage - Loading:', isLoading)
-    console.log('🔍 CustomerListPage - Data:', patientsResponse)
-
     // Handle loading and error states
     if (isLoading) {
         return (
             <div className="space-y-6">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold text-foreground">Quản lý danh sách khách hàng</h1>
+                        <h1 className="text-3xl font-bold text-foreground">Quản lý bệnh nhân</h1>
                         <p className="text-sm text-muted-foreground mt-1">Đang tải dữ liệu...</p>
                     </div>
                 </div>
@@ -244,7 +248,7 @@ export default function CustomerListPage() {
             <div className="space-y-6">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold text-foreground">Quản lý danh sách khách hàng</h1>
+                        <h1 className="text-3xl font-bold text-foreground">Quản lý bệnh nhân</h1>
                         <p className="text-sm text-muted-foreground mt-1">Có lỗi xảy ra khi tải dữ liệu</p>
                     </div>
                 </div>
@@ -265,15 +269,15 @@ export default function CustomerListPage() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold text-foreground">Quản lý danh sách khách hàng</h1>
-                    <p className="text-sm text-muted-foreground mt-1">Quản lý thông tin khách hàng trong hệ thống</p>
+                    <h1 className="text-3xl font-bold text-foreground">Quản lý bệnh nhân</h1>
+                    <p className="text-sm text-muted-foreground mt-1">Quản lý thông tin bệnh nhân trong hệ thống</p>
                 </div>
                 <Button
                     className="flex items-center space-x-2"
                     onClick={() => (window.location.href = '/dashboard/patient-management/create')}
                 >
                     <Plus className="h-4 w-4" />
-                    <span>Thêm khách hàng mới</span>
+                    <span>Thêm bệnh nhân mới</span>
                 </Button>
             </div>
 
@@ -315,7 +319,7 @@ export default function CustomerListPage() {
                     <div className="text-sm text-muted-foreground">
                         Hiển thị {(currentPage - 1) * itemsPerPage + 1} đến{' '}
                         {Math.min(currentPage * itemsPerPage, patientsResponse?.data?.total || 0)} trong tổng số{' '}
-                        {patientsResponse?.data?.total || 0} khách hàng
+                        {patientsResponse?.data?.total || 0} bệnh nhân
                     </div>
                     <Pagination value={currentPage} pageCount={totalPages} onChange={setCurrentPage} />
                 </div>

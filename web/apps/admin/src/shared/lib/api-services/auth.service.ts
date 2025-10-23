@@ -1,3 +1,5 @@
+import { apiClient } from '../api-client'
+
 // Types for auth API - matching BE DTOs
 export interface AdminLoginRequest {
     email: string
@@ -51,12 +53,13 @@ export class AuthService {
             headers: {
                 'Content-Type': 'application/json',
             },
+            credentials: 'include', // Include cookies
             body: JSON.stringify(credentials),
         })
 
         if (!response.ok) {
             const errorData = await response.json()
-            throw new Error(errorData.error || 'Login failed')
+            throw new Error(errorData.message || errorData.error || 'Login failed')
         }
 
         return response.json()
@@ -68,6 +71,7 @@ export class AuthService {
     async refreshToken(): Promise<{ success: boolean }> {
         const response = await fetch('/api/auth/refresh', {
             method: 'POST',
+            credentials: 'include', // Include cookies
         })
 
         if (!response.ok) {
@@ -84,6 +88,7 @@ export class AuthService {
     async getProfile(): Promise<AdminProfile> {
         const response = await fetch('/api/profile', {
             method: 'GET',
+            credentials: 'include', // Include cookies
         })
 
         if (!response.ok) {
@@ -100,6 +105,7 @@ export class AuthService {
     async logout(): Promise<LogoutResponse> {
         const response = await fetch('/api/auth/logout', {
             method: 'POST',
+            credentials: 'include', // Include cookies
         })
 
         if (!response.ok) {

@@ -25,6 +25,38 @@ const PatientProfileSchema = z.object({
   healthDetailsJson: z.record(z.string(), z.any()).optional(),
 });
 
+// Query schemas
+export const GetPatientsQuerySchema = z.object({
+  page: z.coerce.number().min(1).default(1),
+  limit: z.coerce.number().min(1).max(100).default(10),
+  search: z.string().optional(),
+});
+
+export type GetPatientsQueryDto = z.infer<typeof GetPatientsQuerySchema>;
+
+export class GetPatientsQueryDtoClass {
+  @ApiProperty({
+    description: 'Trang hiện tại',
+    example: 1,
+    required: false,
+  })
+  page?: number;
+
+  @ApiProperty({
+    description: 'Số lượng mỗi trang',
+    example: 10,
+    required: false,
+  })
+  limit?: number;
+
+  @ApiProperty({
+    description: 'Tìm kiếm theo tên, email, số điện thoại',
+    example: 'Nguyễn Văn A',
+    required: false,
+  })
+  search?: string;
+}
+
 // Zod schemas
 export const CreatePatientSchema = z.object({
   // User fields
