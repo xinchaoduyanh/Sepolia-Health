@@ -7,87 +7,138 @@ import { Pagination } from '@workspace/ui/components/Pagination'
 import { Button } from '@workspace/ui/components/Button'
 import { Badge } from '@workspace/ui/components/Badge'
 import { Avatar, AvatarFallback } from '@workspace/ui/components/Avatar'
-import { Eye, Edit, Trash2, Plus } from 'lucide-react'
+import { Eye, Plus } from 'lucide-react'
 
-// Mock data for customers
+// Mock data based on API structure
 const mockCustomers = [
     {
         id: 1,
-        customerId: 'CUS001',
-        name: 'Nguyễn Văn An',
         email: 'nguyenvanan@email.com',
-        phone: '0901234567',
-        gender: 'Nam',
-        birthDate: '15/01/1990',
-        address: 'Hà Nội',
-        status: 'active',
-        createdAt: '15/01/2024',
-        lastVisit: '20/01/2024',
+        fullName: 'Nguyễn Văn An',
+        phoneNumber: '0901234567',
+        status: 'ACTIVE',
+        createdAt: '2024-01-15T00:00:00.000Z',
+        updatedAt: '2024-01-20T00:00:00.000Z',
+        patientProfiles: [
+            {
+                id: '1',
+                role: 'SELF',
+                relationship: 'SELF',
+                gender: 'Male',
+                dateOfBirth: '1990-01-15T00:00:00.000Z',
+                address: 'Hà Nội',
+                createdAt: '2024-01-15T00:00:00.000Z',
+                updatedAt: '2024-01-20T00:00:00.000Z',
+                userId: '1',
+            },
+        ],
+        profileCount: 1,
     },
     {
         id: 2,
-        customerId: 'CUS002',
-        name: 'Trần Thị Bình',
         email: 'tranthibinh@email.com',
-        phone: '0901234568',
-        gender: 'Nữ',
-        birthDate: '16/02/1985',
-        address: 'TP. Hồ Chí Minh',
-        status: 'active',
-        createdAt: '16/01/2024',
-        lastVisit: '19/01/2024',
+        fullName: 'Trần Thị Bình',
+        phoneNumber: '0901234568',
+        status: 'ACTIVE',
+        createdAt: '2024-01-16T00:00:00.000Z',
+        updatedAt: '2024-01-19T00:00:00.000Z',
+        patientProfiles: [
+            {
+                id: '2',
+                role: 'SELF',
+                relationship: 'SELF',
+                gender: 'Female',
+                dateOfBirth: '1985-02-16T00:00:00.000Z',
+                address: 'TP. Hồ Chí Minh',
+                createdAt: '2024-01-16T00:00:00.000Z',
+                updatedAt: '2024-01-19T00:00:00.000Z',
+                userId: '2',
+            },
+        ],
+        profileCount: 1,
     },
     {
         id: 3,
-        customerId: 'CUS003',
-        name: 'Lê Văn Cường',
         email: 'levancuong@email.com',
-        phone: '0901234569',
-        gender: 'Nam',
-        birthDate: '17/03/1992',
-        address: 'Đà Nẵng',
-        status: 'inactive',
-        createdAt: '17/01/2024',
-        lastVisit: '18/01/2024',
+        fullName: 'Lê Văn Cường',
+        phoneNumber: '0901234569',
+        status: 'ACTIVE',
+        createdAt: '2024-01-17T00:00:00.000Z',
+        updatedAt: '2024-01-18T00:00:00.000Z',
+        patientProfiles: [
+            {
+                id: '3',
+                role: 'SELF',
+                relationship: 'SELF',
+                gender: 'Male',
+                dateOfBirth: '1992-03-17T00:00:00.000Z',
+                address: 'Đà Nẵng',
+                createdAt: '2024-01-17T00:00:00.000Z',
+                updatedAt: '2024-01-18T00:00:00.000Z',
+                userId: '3',
+            },
+        ],
+        profileCount: 1,
     },
     {
         id: 4,
-        customerId: 'CUS004',
-        name: 'Phạm Thị Dung',
         email: 'phamthidung@email.com',
-        phone: '0901234570',
-        gender: 'Nữ',
-        birthDate: '18/04/1988',
-        address: 'Hải Phòng',
-        status: 'active',
-        createdAt: '18/01/2024',
-        lastVisit: '20/01/2024',
+        fullName: 'Phạm Thị Dung',
+        phoneNumber: '0901234570',
+        status: 'ACTIVE',
+        createdAt: '2024-01-18T00:00:00.000Z',
+        updatedAt: '2024-01-20T00:00:00.000Z',
+        patientProfiles: [
+            {
+                id: '4',
+                role: 'SELF',
+                relationship: 'SELF',
+                gender: 'Female',
+                dateOfBirth: '1988-04-18T00:00:00.000Z',
+                address: 'Hải Phòng',
+                createdAt: '2024-01-18T00:00:00.000Z',
+                updatedAt: '2024-01-20T00:00:00.000Z',
+                userId: '4',
+            },
+        ],
+        profileCount: 1,
     },
     {
         id: 5,
-        customerId: 'CUS005',
-        name: 'Hoàng Văn Em',
         email: 'hoangvanem@email.com',
-        phone: '0901234571',
-        gender: 'Nam',
-        birthDate: '19/05/1991',
-        address: 'Cần Thơ',
-        status: 'pending',
-        createdAt: '19/01/2024',
-        lastVisit: 'Chưa có',
+        fullName: 'Hoàng Văn Em',
+        phoneNumber: '0901234571',
+        status: 'ACTIVE',
+        createdAt: '2024-01-19T00:00:00.000Z',
+        updatedAt: '2024-01-19T00:00:00.000Z',
+        patientProfiles: [
+            {
+                id: '5',
+                role: 'SELF',
+                relationship: 'SELF',
+                gender: 'Male',
+                dateOfBirth: '1991-05-19T00:00:00.000Z',
+                address: 'Cần Thơ',
+                createdAt: '2024-01-19T00:00:00.000Z',
+                updatedAt: '2024-01-19T00:00:00.000Z',
+                userId: '5',
+            },
+        ],
+        profileCount: 1,
     },
 ]
 
 const columns: any[] = [
     {
-        accessorKey: 'customerId',
-        header: 'ID khách hàng',
+        accessorKey: 'id',
+        header: 'ID',
+        size: 80,
         cell: ({ getValue }: { getValue: () => any }) => (
-            <span className="font-medium text-primary">{getValue() as string}</span>
+            <span className="font-medium text-primary text-sm">{getValue() as string}</span>
         ),
     },
     {
-        accessorKey: 'name',
+        accessorKey: 'fullName',
         header: 'Họ và tên',
         cell: ({ getValue }: { getValue: () => any }) => (
             <div className="flex items-center space-x-3">
@@ -104,31 +155,49 @@ const columns: any[] = [
         ),
     },
     {
-        accessorKey: 'phone',
+        accessorKey: 'email',
+        header: 'Email',
+        size: 250,
+        cell: ({ getValue }: { getValue: () => any }) => (
+            <span className="text-muted-foreground text-sm">{getValue() as string}</span>
+        ),
+    },
+    {
+        accessorKey: 'phoneNumber',
         header: 'Số điện thoại',
         cell: ({ getValue }: { getValue: () => any }) => (
-            <span className="text-muted-foreground">{getValue() as string}</span>
+            <span className="text-muted-foreground text-sm">{getValue() as string}</span>
         ),
     },
     {
-        accessorKey: 'gender',
-        header: 'Giới tính',
-        cell: ({ getValue }: { getValue: () => any }) => (
-            <span className="text-muted-foreground">{getValue() as string}</span>
-        ),
+        id: 'patientProfile',
+        header: 'Hồ sơ bệnh nhân',
+        cell: ({ row }: { row: any }) => {
+            const patientProfiles = row.original.patientProfiles || []
+            const selfProfile = patientProfiles.find((profile: any) => profile.role === 'SELF')
+
+            if (selfProfile) {
+                return (
+                    <div className="space-y-1">
+                        <div className="text-sm font-medium">{selfProfile.gender === 'Male' ? 'Nam' : 'Nữ'}</div>
+                        <div className="text-xs text-muted-foreground">
+                            {new Date(selfProfile.dateOfBirth).toLocaleDateString('vi-VN')}
+                        </div>
+                        <div className="text-xs text-muted-foreground">{selfProfile.address}</div>
+                    </div>
+                )
+            }
+            return <span className="text-muted-foreground">Chưa có</span>
+        },
     },
     {
-        accessorKey: 'birthDate',
-        header: 'Ngày sinh',
+        accessorKey: 'profileCount',
+        header: 'Số hồ sơ',
+        size: 100,
         cell: ({ getValue }: { getValue: () => any }) => (
-            <span className="text-muted-foreground">{getValue() as string}</span>
-        ),
-    },
-    {
-        accessorKey: 'address',
-        header: 'Địa chỉ',
-        cell: ({ getValue }: { getValue: () => any }) => (
-            <span className="text-muted-foreground">{getValue() as string}</span>
+            <div className="flex items-center justify-center">
+                <span className="text-sm font-medium">{getValue() as number}</span>
+            </div>
         ),
     },
     {
@@ -137,14 +206,14 @@ const columns: any[] = [
         cell: ({ getValue }: { getValue: () => any }) => {
             const status = getValue() as string
             const statusColors = {
-                active: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
-                inactive: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300',
-                pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
+                ACTIVE: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
+                INACTIVE: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300',
+                PENDING: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
             }
             const statusText = {
-                active: 'Hoạt động',
-                inactive: 'Không hoạt động',
-                pending: 'Chờ duyệt',
+                ACTIVE: 'Hoạt động',
+                INACTIVE: 'Không hoạt động',
+                PENDING: 'Chờ duyệt',
             }
             return (
                 <Badge className={statusColors[status as keyof typeof statusColors] || 'bg-gray-100 text-gray-800'}>
@@ -154,25 +223,27 @@ const columns: any[] = [
         },
     },
     {
-        accessorKey: 'lastVisit',
-        header: 'Lần khám cuối',
+        accessorKey: 'createdAt',
+        header: 'Ngày tạo',
         cell: ({ getValue }: { getValue: () => any }) => (
-            <span className="text-muted-foreground">{getValue() as string}</span>
+            <span className="text-muted-foreground text-sm">
+                {new Date(getValue() as string).toLocaleDateString('vi-VN')}
+            </span>
         ),
     },
     {
         id: 'actions',
         header: 'Thao tác',
-        cell: ({ row: _row }: { row: any }) => (
-            <div className="flex items-center space-x-2">
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+        size: 80,
+        cell: ({ row }: { row: any }) => (
+            <div className="flex items-center justify-center">
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    onClick={() => (window.location.href = `/dashboard/customer-management/${row.original.id}`)}
+                >
                     <Eye className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                    <Edit className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive">
-                    <Trash2 className="h-4 w-4" />
                 </Button>
             </div>
         ),
@@ -184,16 +255,35 @@ export default function CustomerListPage() {
     const [currentPage, setCurrentPage] = useState(1)
     const itemsPerPage = 10
 
-    // Filter customers based on search term
+    // Filter customers based on search term and prioritize users with SELF profile
     const filteredCustomers = useMemo(() => {
-        if (!searchTerm) return mockCustomers
-        return mockCustomers.filter(
+        if (!searchTerm) {
+            // Sort by users with SELF profile first
+            return mockCustomers.sort((a, b) => {
+                const aHasSelf = a.patientProfiles?.some(profile => profile.role === 'SELF')
+                const bHasSelf = b.patientProfiles?.some(profile => profile.role === 'SELF')
+                if (aHasSelf && !bHasSelf) return -1
+                if (!aHasSelf && bHasSelf) return 1
+                return 0
+            })
+        }
+
+        const filtered = mockCustomers.filter(
             customer =>
-                customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                customer.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                customer.customerId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                customer.phone.includes(searchTerm),
+                customer.id.toString().includes(searchTerm) ||
+                customer.phoneNumber.includes(searchTerm),
         )
+
+        // Sort by users with SELF profile first
+        return filtered.sort((a, b) => {
+            const aHasSelf = a.patientProfiles?.some(profile => profile.role === 'SELF')
+            const bHasSelf = b.patientProfiles?.some(profile => profile.role === 'SELF')
+            if (aHasSelf && !bHasSelf) return -1
+            if (!aHasSelf && bHasSelf) return 1
+            return 0
+        })
     }, [searchTerm])
 
     // Paginate customers
