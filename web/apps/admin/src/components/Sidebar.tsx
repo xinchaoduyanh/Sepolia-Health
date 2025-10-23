@@ -10,182 +10,132 @@ import {
     Percent,
     HelpCircle,
     Monitor,
-    ChevronDown,
-    Dot,
-    User,
     Stethoscope,
     Users,
-    Settings,
 } from 'lucide-react'
-import { useState } from 'react'
-import Image from 'next/image'
+import {
+    Sidebar,
+    SidebarContent,
+    SidebarHeader,
+    SidebarGroup,
+    SidebarGroupLabel,
+} from '@workspace/ui/components/Sidebar'
+import { SidebarNavigationMenu } from '@workspace/ui/components/Sidebar.helpers'
 
 const menuItems = [
     {
-        id: 'overview',
-        label: 'Tổng quan',
+        title: 'Tổng quan',
+        url: '/dashboard/overview',
         icon: BarChart3,
-        href: '/dashboard/overview',
     },
     {
-        id: 'products',
-        label: 'Sản phẩm',
+        title: 'Sản phẩm',
+        url: '/dashboard/products',
         icon: Package,
-        href: '/dashboard/products',
     },
     {
-        id: 'revenue',
-        label: 'Doanh thu',
+        title: 'Doanh thu',
+        url: '/dashboard/revenue',
         icon: DollarSign,
-        href: '/dashboard/revenue',
     },
     {
-        id: 'info-programs',
-        label: 'Thông tin & Chương trình',
+        title: 'Thông tin & Chương trình',
+        url: '/dashboard/info-programs',
         icon: FileText,
-        href: '/dashboard/info-programs',
     },
     {
-        id: 'promotions',
-        label: 'Khuyến mại',
+        title: 'Khuyến mại',
+        url: '/dashboard/promotions',
         icon: Percent,
-        href: '/dashboard/promotions',
     },
     {
-        id: 'faq',
-        label: 'Câu hỏi thường gặp',
+        title: 'Câu hỏi thường gặp',
+        url: '/dashboard/faq',
         icon: HelpCircle,
-        href: '/dashboard/faq',
     },
     {
-        id: 'remote-healthcare',
-        label: 'Chăm sóc sức khỏe từ xa',
+        title: 'Chăm sóc sức khỏe từ xa',
+        url: '/dashboard/remote-healthcare',
         icon: Monitor,
-        hasSubmenu: true,
-        submenu: [
+        items: [
             {
-                id: 'appointments',
-                label: 'Danh sách đặt khám',
-                href: '/dashboard/remote-healthcare/appointments',
+                title: 'Danh sách đặt khám',
+                url: '/dashboard/remote-healthcare/appointments',
             },
             {
-                id: 'schedule-appointment',
-                label: 'Đặt lịch khám',
-                href: '/dashboard/remote-healthcare/schedule-appointment',
+                title: 'Đặt lịch khám',
+                url: '/dashboard/remote-healthcare/schedule-appointment',
             },
             {
-                id: 'customers',
-                label: 'Danh sách khách hàng',
-                href: '/dashboard/remote-healthcare/customers',
+                title: 'Danh sách khách hàng',
+                url: '/dashboard/remote-healthcare/customers',
             },
         ],
     },
+]
+
+const managementItems = [
     {
-        id: 'product-management',
-        label: 'Quản lý sản phẩm',
-        icon: Dot,
-        href: '/dashboard/product-management',
+        title: 'Quản lý sản phẩm',
+        url: '/dashboard/product-management',
+        icon: Package,
     },
     {
-        id: 'doctor-management',
-        label: 'Quản lý bác sĩ',
+        title: 'Quản lý bác sĩ',
+        url: '/dashboard/doctor-management',
         icon: Stethoscope,
-        href: '/dashboard/doctor-management',
     },
     {
-        id: 'promotion-management',
-        label: 'Quản lý khuyến mại',
-        icon: Dot,
-        href: '/dashboard/promotion-management',
+        title: 'Quản lý khuyến mại',
+        url: '/dashboard/promotion-management',
+        icon: Percent,
     },
     {
-        id: 'user-management',
-        label: 'Quản lý người dùng',
+        title: 'Quản lý người dùng',
+        url: '/dashboard/user-management',
         icon: Users,
-        href: '/dashboard/user-management',
     },
 ]
 
-export function Sidebar() {
+export function AdminSidebar() {
     const pathname = usePathname()
-    const [expandedItems, setExpandedItems] = useState<string[]>(['remote-healthcare'])
-
-    const toggleExpanded = (itemId: string) => {
-        setExpandedItems(prev => (prev.includes(itemId) ? prev.filter(id => id !== itemId) : [...prev, itemId]))
-    }
-
-    const isActive = (href: string) => pathname === href
-    const isParentActive = (submenu: any[]) => submenu.some(item => isActive(item.href))
 
     return (
-        <aside className="w-64 bg-card border-r border-border h-[calc(100vh-80px)] flex flex-col shadow-sm">
-            {/* Logo */}
+        <Sidebar>
+            <SidebarHeader className="border-b border-sidebar-border">
+                <div className="flex items-center gap-2 px-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                        <BarChart3 className="h-4 w-4" />
+                    </div>
+                    <div className="grid flex-1 text-left text-sm leading-tight">
+                        <span className="truncate font-semibold">Sepolia Health</span>
+                        <span className="truncate text-xs text-sidebar-foreground/70">Admin Dashboard</span>
+                    </div>
+                </div>
+            </SidebarHeader>
+            <SidebarContent className="gap-0 p-2">
+                <SidebarGroup>
+                    <SidebarGroupLabel>Chính</SidebarGroupLabel>
+                    <SidebarNavigationMenu
+                        items={menuItems}
+                        currentPathname={pathname}
+                        linkComponent={({ href, children }: { href: string; children: React.ReactNode }) => (
+                            <Link href={href}>{children}</Link>
+                        )}
+                    />
+                </SidebarGroup>
 
-            {/* Navigation */}
-            <nav className="flex-1 p-4 space-y-2">
-                {menuItems.map(item => {
-                    const Icon = item.icon
-                    const isItemActive = isActive(item.href || '')
-                    const isParentItemActive = item.submenu ? isParentActive(item.submenu) : false
-                    const isExpanded = expandedItems.includes(item.id)
-
-                    return (
-                        <div key={item.id}>
-                            {item.hasSubmenu ? (
-                                <div>
-                                    <button
-                                        onClick={() => toggleExpanded(item.id)}
-                                        className={`w-full flex items-center justify-between px-3 py-3 text-left rounded-lg transition-all duration-200 ${
-                                            isParentItemActive
-                                                ? 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 shadow-sm'
-                                                : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:shadow-sm'
-                                        }`}
-                                    >
-                                        <div className="flex items-center space-x-3">
-                                            <Icon className="w-5 h-5" />
-                                            <span className="text-sm font-medium">{item.label}</span>
-                                        </div>
-                                        <ChevronDown
-                                            className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
-                                        />
-                                    </button>
-
-                                    {isExpanded && item.submenu && (
-                                        <div className="ml-6 mt-2 space-y-1">
-                                            {item.submenu.map(subItem => (
-                                                <Link
-                                                    key={subItem.id}
-                                                    href={subItem.href}
-                                                    className={`flex items-center space-x-3 px-3 py-2 text-sm rounded-lg transition-all duration-200 ${
-                                                        isActive(subItem.href)
-                                                            ? 'bg-slate-200 text-slate-900 dark:bg-slate-700 dark:text-slate-100 font-medium shadow-sm'
-                                                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-200'
-                                                    }`}
-                                                >
-                                                    <Dot className="w-4 h-4" />
-                                                    <span>{subItem.label}</span>
-                                                </Link>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            ) : (
-                                <Link
-                                    href={item.href || '#'}
-                                    className={`flex items-center space-x-3 px-3 py-3 rounded-lg transition-all duration-200 ${
-                                        isItemActive
-                                            ? 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 shadow-sm'
-                                            : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:shadow-sm'
-                                    }`}
-                                >
-                                    <Icon className="w-5 h-5" />
-                                    <span className="text-sm font-medium">{item.label}</span>
-                                </Link>
-                            )}
-                        </div>
-                    )
-                })}
-            </nav>
-        </aside>
+                <SidebarGroup>
+                    <SidebarGroupLabel>Quản lý</SidebarGroupLabel>
+                    <SidebarNavigationMenu
+                        items={managementItems}
+                        currentPathname={pathname}
+                        linkComponent={({ href, children }: { href: string; children: React.ReactNode }) => (
+                            <Link href={href}>{children}</Link>
+                        )}
+                    />
+                </SidebarGroup>
+            </SidebarContent>
+        </Sidebar>
     )
 }

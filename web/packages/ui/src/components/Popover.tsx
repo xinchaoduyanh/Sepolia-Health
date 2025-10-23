@@ -23,7 +23,6 @@ const Popover = ({
         offset={offset}
         className={composeRenderProps(className, className =>
             cn(
-                // "dark", // dark mode only, disable it if you want to use it in both modes
                 'z-50 rounded-lg border bg-popover/80 backdrop-blur-xl text-popover-foreground shadow-popover outline-none',
                 /* Entering */
                 isAnimated && 'data-[entering]:animate-in data-[entering]:fade-in-0',
@@ -39,7 +38,7 @@ const Popover = ({
 )
 
 function PopoverDialog({ className, ...props }: AriaDialogProps) {
-    return <AriaDialog className={cn('p-3 outline outline-0', className)} {...props} />
+    return <AriaDialog className={cn('p-3 outline-0', className)} {...props} />
 }
 
 export { Popover, PopoverDialog, PopoverTrigger }
