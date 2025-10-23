@@ -53,7 +53,9 @@ function SidebarNavigationMenu({
             <SidebarMenu>
                 {items.map(item => {
                     const hasChildren = item.items && item.items.length > 0
-                    const isRootItemActive = currentPathname?.startsWith(item.url)
+                    // Root item is active only if it has no children or if it's exactly the current path
+                    const isRootItemActive =
+                        !hasChildren && (currentPathname === item.url || currentPathname?.startsWith(item.url + '/'))
 
                     // no children
                     if (!hasChildren) {
@@ -88,7 +90,10 @@ function SidebarNavigationMenu({
                                             {item.items?.map((subItem, index) => (
                                                 <SidebarMenuSubItem key={`${item.title}-sub-${index}-${subItem.title}`}>
                                                     <SidebarMenuSubButton
-                                                        isActive={currentPathname?.startsWith(subItem.url)}
+                                                        isActive={
+                                                            currentPathname === subItem.url ||
+                                                            currentPathname?.startsWith(subItem.url + '/')
+                                                        }
                                                         asChild
                                                     >
                                                         <LinkComponent href={subItem.url}>
@@ -127,7 +132,10 @@ function SidebarNavigationMenu({
                                                 key={`${item.title}-expanded-sub-${index}-${subItem.title}`}
                                             >
                                                 <SidebarMenuSubButton
-                                                    isActive={currentPathname?.startsWith(subItem.url)}
+                                                    isActive={
+                                                        currentPathname === subItem.url ||
+                                                        currentPathname?.startsWith(subItem.url + '/')
+                                                    }
                                                     asChild
                                                 >
                                                     <LinkComponent href={subItem.url}>

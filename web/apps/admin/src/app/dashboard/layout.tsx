@@ -1,17 +1,13 @@
-import { AdminSidebar } from '@/components/Sidebar'
-import { Header } from '@/components/Header'
-import { SidebarProvider, SidebarInset } from '@workspace/ui/components/Sidebar'
+import { DashboardLayout } from '@/layouts/DashboardLayout'
+import { cookies } from 'next/headers'
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-    return (
-        <SidebarProvider>
-            <AdminSidebar />
-            <SidebarInset>
-                <Header />
-                <main className="flex-1 p-4 overflow-auto">
-                    <div className="max-w-full mx-auto">{children}</div>
-                </main>
-            </SidebarInset>
-        </SidebarProvider>
-    )
+interface LayoutProps {
+    children: React.ReactNode
+}
+
+export default async function Layout({ children }: LayoutProps) {
+    const cookieStore = await cookies()
+    const defaultOpen = cookieStore.get('sidebar_state')?.value !== 'false'
+
+    return <DashboardLayout defaultOpen={defaultOpen}>{children}</DashboardLayout>
 }
