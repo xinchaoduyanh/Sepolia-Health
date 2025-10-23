@@ -19,6 +19,9 @@ import {
     SidebarHeader,
     SidebarGroup,
     SidebarGroupLabel,
+    SidebarMenu,
+    SidebarMenuItem,
+    SidebarMenuButton,
 } from '@workspace/ui/components/Sidebar'
 import { SidebarNavigationMenu } from '@workspace/ui/components/Sidebar.helpers'
 
@@ -101,7 +104,7 @@ export function AdminSidebar() {
     const pathname = usePathname()
 
     return (
-        <Sidebar>
+        <Sidebar collapsible="icon">
             <SidebarHeader className="border-b border-sidebar-border">
                 <div className="flex items-center gap-2 px-2">
                     <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">

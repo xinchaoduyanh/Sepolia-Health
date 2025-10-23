@@ -3,11 +3,15 @@
 import { Phone, User } from 'lucide-react'
 import Image from 'next/image'
 import { ThemeSwitcher } from '@/shared/components/ThemeSwitcher'
+import { SidebarTrigger } from '@workspace/ui/components/Sidebar'
 
 export function Header() {
     return (
         <header className="bg-background border-b border-border px-6 py-3 flex items-center justify-between shadow-sm overflow-hidden">
             <div className="flex items-center space-x-4">
+                {/* Sidebar Toggle */}
+                <SidebarTrigger />
+
                 {/* Logo */}
                 <div className="flex items-center">
                     <div className="w-16 h-16 relative transform scale-[2] origin-left -ml-2">
