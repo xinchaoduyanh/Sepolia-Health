@@ -5,6 +5,9 @@
     "scripts": {
         "build": "turbo build",
         "dev": "turbo dev",
+        "dev:admin": "turbo dev --filter=admin",
+        "dev:doctor": "turbo dev --filter=doctor",
+        "dev:receptionist": "turbo dev --filter=receptionist",
         "lint": "turbo lint",
         "format": "prettier --write \"**/*.{ts,tsx,md}\"",
         "prepare": "lefthook install"

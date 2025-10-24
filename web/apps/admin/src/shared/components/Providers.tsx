@@ -1,12 +1,12 @@
 'use client'
 
-import React, { useEffect } from 'react'
+import React, { useEffect, useRef } from 'react'
 import { matchQuery, MutationCache, QueryClient } from '@tanstack/react-query'
 import dynamic from 'next/dynamic'
 import { Toaster } from '@workspace/ui/components/Sonner'
 import { ClientOnly } from './ClientOnly'
-import { useCheckAuth } from '../hooks/useAuth'
-import { CookieDebugger } from './CookieDebugger'
+import { initializeApiClient } from '../lib/api-client'
+import { useAuthStore } from '../stores/auth.store'
 
 // Dynamic import để tránh hydration issues
 const QueryClientProvider = dynamic(() => import('@tanstack/react-query').then(d => d.QueryClientProvider), {
@@ -27,7 +27,8 @@ const queryClient = new QueryClient({
             refetchOnWindowFocus: false,
             refetchOnMount: false,
             refetchOnReconnect: false,
-            staleTime: 1000 * 60,
+            staleTime: 1000 * 60 * 5, // 5 minutes
+            gcTime: 1000 * 60 * 10, // 10 minutes (renamed from cacheTime in v5)
         },
     },
     mutationCache: new MutationCache({
@@ -44,12 +45,30 @@ const queryClient = new QueryClient({
 })
 
 export function Providers({ children }: { children: React.ReactNode }) {
-    const { checkAuth } = useCheckAuth()
+    const authStore = useAuthStore()
+    const initialized = useRef(false)
 
     useEffect(() => {
-        // Check authentication status on app startup
-        checkAuth()
-    }, [checkAuth])
+        console.log('🔄 Providers: Auth store state:', {
+            hasAuthStore: !!authStore,
+            hasAccessToken: !!authStore?.accessToken,
+            hasRefreshToken: !!authStore?.refreshToken,
+            isAuthenticated: authStore?.isAuthenticated,
+            isLoading: authStore?.isLoading,
+            hasHydrated: authStore?.hasHydrated,
+            user: authStore?.user,
+            tokenPreview: authStore?.accessToken?.substring(0, 20) + '...',
+        })
+
+        // Only initialize API client AFTER rehydration is complete
+        if (!initialized.current && authStore?.hasHydrated) {
+            console.log('🔧 Rehydration complete! Initializing API client with auth store...')
+            initializeApiClient(authStore)
+            initialized.current = true
+        } else if (!authStore?.hasHydrated) {
+            console.log('⏳ Waiting for auth store rehydration to complete...')
+        }
+    }, [authStore])
 
     return (
         <div suppressHydrationWarning>

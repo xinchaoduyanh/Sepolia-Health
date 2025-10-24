@@ -1,4 +1,6 @@
 import { apiClient } from '../api-client'
+import { config } from '../config'
+import { normalizeApiResponse, normalizeApiError } from '../api-response-normalizer'
 
 // Types for auth API - matching BE DTOs
 export interface AdminLoginRequest {
@@ -45,75 +47,55 @@ export interface LogoutResponse {
 
 export class AuthService {
     /**
-     * Admin login - gọi proxy route
+     * Admin login - gọi thẳng tới backend API
      */
-    async login(credentials: AdminLoginRequest): Promise<AdminProfile> {
-        const response = await fetch('/api/auth/login', {
+    async login(credentials: AdminLoginRequest): Promise<AdminLoginResponse> {
+        const response = await fetch(`${config.apiUrl}/auth/login`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            credentials: 'include', // Include cookies
             body: JSON.stringify(credentials),
         })
 
         if (!response.ok) {
             const errorData = await response.json()
-            throw new Error(errorData.message || errorData.error || 'Login failed')
+            throw new Error(normalizeApiError(errorData))
         }
 
-        return response.json()
+        const responseData = await response.json()
+
+        // Normalize response structure using utility
+        return normalizeApiResponse<AdminLoginResponse>(responseData)
     }
 
     /**
-     * Refresh access token - gọi proxy route
+     * Refresh access token - gọi thẳng tới backend API
      */
-    async refreshToken(): Promise<{ success: boolean }> {
-        const response = await fetch('/api/auth/refresh', {
-            method: 'POST',
-            credentials: 'include', // Include cookies
-        })
-
-        if (!response.ok) {
-            const errorData = await response.json()
-            throw new Error(errorData.error || 'Token refresh failed')
-        }
-
-        return response.json()
+    async refreshToken(): Promise<RefreshTokenResponse> {
+        // This method should be called with the refresh token from the store
+        // The actual implementation will be handled by the API client interceptor
+        throw new Error('This method should not be called directly. Use API client instead.')
     }
 
     /**
-     * Get current admin profile - gọi proxy route
+     * Get current admin profile - gọi thẳng tới backend API
      */
     async getProfile(): Promise<AdminProfile> {
-        const response = await fetch('/api/profile', {
-            method: 'GET',
-            credentials: 'include', // Include cookies
-        })
-
-        if (!response.ok) {
-            const errorData = await response.json()
-            throw new Error(errorData.error || 'Failed to get profile')
-        }
-
-        return response.json()
+        return apiClient.get('/auth/me')
     }
 
     /**
-     * Admin logout - gọi proxy route
+     * Admin logout - gọi thẳng tới backend API
      */
     async logout(): Promise<LogoutResponse> {
-        const response = await fetch('/api/auth/logout', {
-            method: 'POST',
-            credentials: 'include', // Include cookies
-        })
-
-        if (!response.ok) {
-            const errorData = await response.json()
-            throw new Error(errorData.error || 'Logout failed')
+        try {
+            return await apiClient.post('/auth/logout')
+        } catch (error) {
+            // Even if logout fails on server, we should still clear local state
+            console.error('Logout API call failed:', error)
+            return { message: 'Logged out locally' }
         }
-
-        return response.json()
     }
 }
 

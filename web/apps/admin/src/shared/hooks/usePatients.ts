@@ -13,15 +13,30 @@ import { queryKeys } from '../lib/query-keys'
  */
 export function usePatients(params: PatientsListParams = {}) {
     console.log('🔍 usePatients called with params:', params)
-    
+
     return useQuery({
         queryKey: queryKeys.admin.patients.list(params),
         queryFn: () => {
             console.log('🚀 API call to getPatients with params:', params)
+            console.log('🔍 Full URL will be:', `/patients?${new URLSearchParams(params as any).toString()}`)
             return patientsService.getPatients(params)
         },
+        enabled: true, // Always enabled
         staleTime: 5 * 60 * 1000, // 5 minutes
-        retry: 2,
+        retry: (failureCount, error: any) => {
+            console.log('🔄 usePatients retry attempt:', failureCount, 'Error:', error)
+            // Don't retry on 401 errors (unauthorized)
+            if (error?.response?.status === 401) {
+                console.log('❌ 401 error in usePatients, not retrying')
+                return false
+            }
+            // Retry up to 1 time for other errors
+            return failureCount < 1
+        },
+        refetchOnWindowFocus: false, // Prevent refetch on window focus
+        refetchOnMount: true, // Allow refetch on mount for fresh data
+        refetchOnReconnect: false, // Prevent refetch on network reconnect
+        refetchInterval: false, // Disable automatic refetch
     })
 }
 

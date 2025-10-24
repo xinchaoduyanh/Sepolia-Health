@@ -1,29 +1,18 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import { DataTable } from '@workspace/ui/components/DataTable'
 import { BsSearchField } from '@workspace/ui/components/Searchfield'
 import { Pagination } from '@workspace/ui/components/Pagination'
 import { Button } from '@workspace/ui/components/Button'
 import { Badge } from '@workspace/ui/components/Badge'
 import { Avatar, AvatarFallback } from '@workspace/ui/components/Avatar'
-import { Eye, Plus, MoreHorizontal } from 'lucide-react'
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from '@workspace/ui/components/DropdownMenu'
-import { usePatients, useDeletePatient, useUpdatePatientStatus } from '@/shared/hooks'
+import { Eye, Plus, Trash2 } from 'lucide-react'
+import { usePatients, useDeletePatient } from '@/shared/hooks'
 
 // Action cell component to handle hooks properly
 function ActionCell({ patient }: { patient: any }) {
     const deletePatient = useDeletePatient()
-    const updateStatus = useUpdatePatientStatus()
-
-    const handleStatusChange = (newStatus: 'ACTIVE' | 'DEACTIVE' | 'UNVERIFIED') => {
-        updateStatus.mutate({ id: patient.id, status: newStatus })
-    }
 
     const handleDelete = () => {
         if (confirm('Bạn có chắc chắn muốn xóa bệnh nhân này?')) {
@@ -41,21 +30,14 @@ function ActionCell({ patient }: { patient: any }) {
             >
                 <Eye className="h-4 w-4" />
             </Button>
-            <DropdownMenu>
-                <DropdownMenuTrigger>
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                        <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                    <DropdownMenuItem onSelect={() => handleStatusChange('ACTIVE')}>Kích hoạt</DropdownMenuItem>
-                    <DropdownMenuItem onSelect={() => handleStatusChange('DEACTIVE')}>Tạm khóa</DropdownMenuItem>
-                    <DropdownMenuItem onSelect={() => handleStatusChange('UNVERIFIED')}>Chưa xác thực</DropdownMenuItem>
-                    <DropdownMenuItem onSelect={handleDelete} className="text-red-600">
-                        Xóa
-                    </DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
+            <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                onClick={handleDelete}
+            >
+                <Trash2 className="h-4 w-4" />
+            </Button>
         </div>
     )
 }
@@ -190,19 +172,32 @@ const columns: any[] = [
 
 export default function CustomerListPage() {
     const [searchTerm, setSearchTerm] = useState('')
+    const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
     const [currentPage, setCurrentPage] = useState(1)
     const [statusFilter, setStatusFilter] = useState<'UNVERIFIED' | 'ACTIVE' | 'DEACTIVE' | ''>('')
     const itemsPerPage = 10
 
-    // Build query parameters
+    // Debug: Track component renders
+    console.log('🔄 CustomerListPage rendered')
+
+    // Debounce search term to avoid too many API calls
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearchTerm(searchTerm)
+        }, 500) // 500ms delay
+
+        return () => clearTimeout(timer)
+    }, [searchTerm])
+
+    // Build query parameters - memoize to prevent unnecessary re-renders
     const queryParams = useMemo(() => {
         const params: any = {
             page: currentPage,
             limit: itemsPerPage,
         }
 
-        if (searchTerm) {
-            params.search = searchTerm
+        if (debouncedSearchTerm) {
+            params.search = debouncedSearchTerm
         }
 
         if (statusFilter) {
@@ -210,15 +205,31 @@ export default function CustomerListPage() {
         }
 
         return params
-    }, [currentPage, searchTerm, statusFilter])
+    }, [currentPage, debouncedSearchTerm, statusFilter])
+
+    // Memoize handlers to prevent re-renders
+    const handleSearchChange = useCallback((value: string) => {
+        setSearchTerm(value)
+    }, [])
+
+    const handleStatusFilterChange = useCallback((value: string) => {
+        setStatusFilter(value as any)
+    }, [])
+
+    const handlePageChange = useCallback((page: number) => {
+        setCurrentPage(page)
+    }, [])
 
     // Fetch patients data
     const { data: patientsResponse, isLoading, error } = usePatients(queryParams)
 
-    // Debug log to track API calls
-    console.log('🔍 CustomerListPage - Query params:', queryParams)
-    console.log('🔍 CustomerListPage - Loading:', isLoading)
-    console.log('🔍 CustomerListPage - Data:', patientsResponse)
+    // Debug log to track API calls - only log when params change
+    useEffect(() => {
+        console.log('🔍 CustomerListPage - Query params changed:', queryParams)
+        console.log('🔍 CustomerListPage - Loading:', isLoading)
+        console.log('🔍 CustomerListPage - Error:', error)
+        console.log('🔍 CustomerListPage - Data:', patientsResponse)
+    }, [queryParams, isLoading, error, patientsResponse])
 
     // Handle loading and error states
     if (isLoading) {
@@ -270,7 +281,7 @@ export default function CustomerListPage() {
                 </div>
                 <Button
                     className="flex items-center space-x-2"
-                    onClick={() => (window.location.href = '/dashboard/patient-management/create')}
+                    onClick={() => (window.location.href = '/dashboard/customer-management/create')}
                 >
                     <Plus className="h-4 w-4" />
                     <span>Thêm khách hàng mới</span>
@@ -286,14 +297,14 @@ export default function CustomerListPage() {
                             <BsSearchField
                                 placeholder="Tìm theo tên, email, ID hoặc số điện thoại"
                                 value={searchTerm}
-                                onChange={setSearchTerm}
+                                onChange={handleSearchChange}
                                 className="w-full"
                             />
                         </div>
                         <div className="flex gap-2">
                             <select
                                 value={statusFilter}
-                                onChange={e => setStatusFilter(e.target.value as any)}
+                                onChange={e => handleStatusFilterChange(e.target.value)}
                                 className="px-3 py-2 border border-border rounded-md text-sm"
                             >
                                 <option value="">Tất cả trạng thái</option>
@@ -317,7 +328,7 @@ export default function CustomerListPage() {
                         {Math.min(currentPage * itemsPerPage, patientsResponse?.data?.total || 0)} trong tổng số{' '}
                         {patientsResponse?.data?.total || 0} khách hàng
                     </div>
-                    <Pagination value={currentPage} pageCount={totalPages} onChange={setCurrentPage} />
+                    <Pagination value={currentPage} pageCount={totalPages} onChange={handlePageChange} />
                 </div>
             </div>
         </div>

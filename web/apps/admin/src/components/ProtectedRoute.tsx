@@ -14,18 +14,15 @@ export function ProtectedRoute({ children, requiredRole, fallback }: ProtectedRo
     const { isAuthenticated, user, isLoading } = useAuth()
     const router = useRouter()
 
+    // Redirect logic - only after loading is complete
     useEffect(() => {
         if (!isLoading) {
             if (!isAuthenticated) {
-                // Redirect to login page
+                console.log('❌ Not authenticated, redirecting to login')
                 router.push('/login')
-                return
-            }
-
-            if (requiredRole && user?.role !== requiredRole) {
-                // Redirect to unauthorized page or dashboard
-                router.push('/unauthorized')
-                return
+            } else if (requiredRole && user?.role !== requiredRole) {
+                console.log('❌ Role mismatch, redirecting to login')
+                router.push('/login')
             }
         }
     }, [isAuthenticated, user, isLoading, requiredRole, router])
@@ -59,8 +56,8 @@ export function ProtectedRoute({ children, requiredRole, fallback }: ProtectedRo
             fallback || (
                 <div className="flex items-center justify-center min-h-screen">
                     <div className="text-center">
-                        <h2 className="text-2xl font-bold text-red-600 mb-4">Unauthorized</h2>
-                        <p className="text-gray-600">You don't have permission to access this page.</p>
+                        <h2 className="text-2xl font-bold text-red-600 mb-4">Access Denied</h2>
+                        <p className="text-gray-600">You don&apos;t have permission to access this page.</p>
                         <p className="text-sm text-gray-500 mt-2">
                             Required role: {requiredRole} | Your role: {user?.role}
                         </p>

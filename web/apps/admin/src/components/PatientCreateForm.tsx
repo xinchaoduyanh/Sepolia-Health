@@ -122,7 +122,7 @@ export function PatientCreateForm() {
 
         try {
             await createPatient.mutateAsync(submitData)
-            router.push('/dashboard/patient-management')
+            router.push('/dashboard/customer-management')
         } catch (_error) {
             // Error handling is done in the hook
         }

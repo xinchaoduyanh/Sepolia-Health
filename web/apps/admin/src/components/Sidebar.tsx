@@ -91,7 +91,7 @@ const managementItems = [
     },
     {
         title: 'Quản lý bệnh nhân',
-        url: '/dashboard/patient-management',
+        url: '/dashboard/customer-management',
         icon: UserCheck,
     },
     {
