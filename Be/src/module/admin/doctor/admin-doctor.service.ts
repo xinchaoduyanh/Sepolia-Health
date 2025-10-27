@@ -12,6 +12,7 @@ import {
   DoctorListResponseDto,
   DoctorDetailResponseDto,
   CreateDoctorScheduleDto,
+  GetDoctorsQueryDto,
 } from './admin-doctor.dto';
 
 @Injectable()
@@ -109,45 +110,81 @@ export class AdminDoctorService {
       id: result.doctorProfile.id,
       email: result.user.email,
       fullName: `${result.doctorProfile.firstName} ${result.doctorProfile.lastName}`,
+      phone: result.user.phone || '',
       specialty: result.doctorProfile.specialty,
       experienceYears: parseInt(result.doctorProfile.experience || '0'),
-      status: 'ACTIVE',
+      status: result.user.status,
+      createdAt: result.doctorProfile.createdAt,
     };
   }
 
-  async getDoctors(
-    page: number = 1,
-    limit: number = 10,
-    search?: string,
-  ): Promise<DoctorListResponseDto> {
+  async getDoctors(query: GetDoctorsQueryDto): Promise<DoctorListResponseDto> {
+    const { page = 1, limit = 10, search, clinicId, serviceId } = query;
     const skip = (page - 1) * limit;
 
-    const where = search
-      ? {
-          role: 'DOCTOR' as const,
-          doctorProfile: {
-            is: {
-              OR: [
-                {
-                  firstName: { contains: search, mode: 'insensitive' as const },
-                },
-                {
-                  lastName: { contains: search, mode: 'insensitive' as const },
-                },
-                {
-                  specialty: { contains: search, mode: 'insensitive' as const },
-                },
-              ],
+    const where: any = {
+      role: 'DOCTOR' as const,
+    };
+
+    // Search filter
+    if (search) {
+      where.doctorProfile = {
+        is: {
+          OR: [
+            {
+              firstName: { contains: search, mode: 'insensitive' as const },
+            },
+            {
+              lastName: { contains: search, mode: 'insensitive' as const },
+            },
+            {
+              specialty: { contains: search, mode: 'insensitive' as const },
+            },
+          ],
+        },
+      };
+    }
+
+    // Clinic filter
+    if (clinicId) {
+      where.doctorProfile = {
+        ...(where.doctorProfile || {}),
+        is: {
+          ...(where.doctorProfile?.is || {}),
+          clinicId,
+        },
+      };
+    }
+
+    // Service filter
+    if (serviceId) {
+      where.doctorProfile = {
+        ...(where.doctorProfile || {}),
+        is: {
+          ...(where.doctorProfile?.is || {}),
+          services: {
+            some: {
+              serviceId,
             },
           },
-        }
-      : { role: 'DOCTOR' as const };
+        },
+      };
+    }
 
     const [doctors, total] = await Promise.all([
       this.prisma.user.findMany({
         where,
         include: {
-          doctorProfile: true,
+          doctorProfile: {
+            include: {
+              clinic: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+          },
         },
         skip,
         take: limit,
@@ -161,9 +198,17 @@ export class AdminDoctorService {
         id: doctor.doctorProfile!.id,
         email: doctor.email,
         fullName: `${doctor.doctorProfile!.firstName} ${doctor.doctorProfile!.lastName}`,
+        phone: doctor.phone || '',
         specialty: doctor.doctorProfile!.specialty,
         experienceYears: parseInt(doctor.doctorProfile!.experience || '0'),
-        status: 'ACTIVE',
+        status: doctor.status,
+        clinic: doctor.doctorProfile!.clinic
+          ? {
+              id: doctor.doctorProfile!.clinic.id,
+              name: doctor.doctorProfile!.clinic.name,
+            }
+          : null,
+        createdAt: doctor.createdAt,
       })),
       total,
       page,
@@ -327,5 +372,43 @@ export class AdminDoctorService {
         endTime: schedule.endTime,
       })),
     };
+  }
+
+  async getClinics() {
+    const clinics = await this.prisma.clinic.findMany({
+      where: {
+        isActive: true,
+      },
+      select: {
+        id: true,
+        name: true,
+        address: true,
+        phone: true,
+        email: true,
+        description: true,
+      },
+      orderBy: {
+        name: 'asc',
+      },
+    });
+
+    return clinics;
+  }
+
+  async getServices() {
+    const services = await this.prisma.service.findMany({
+      select: {
+        id: true,
+        name: true,
+        price: true,
+        duration: true,
+        description: true,
+      },
+      orderBy: {
+        name: 'asc',
+      },
+    });
+
+    return services;
   }
 }

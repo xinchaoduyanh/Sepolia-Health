@@ -1,6 +1,17 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { z } from 'zod';
 
+// Query schemas
+export const GetReceptionistsQuerySchema = z.object({
+  page: z.coerce.number().min(1).default(1),
+  limit: z.coerce.number().min(1).max(100).default(10),
+  search: z.string().optional(),
+});
+
+export type GetReceptionistsQueryDto = z.infer<
+  typeof GetReceptionistsQuerySchema
+>;
+
 // Zod schemas
 export const CreateReceptionistSchema = z.object({
   email: z.string().email('Email không hợp lệ'),
@@ -97,10 +108,23 @@ export class CreateReceptionistResponseDto {
   fullName: string;
 
   @ApiProperty({
+    description: 'Số điện thoại',
+    example: '0987654321',
+  })
+  phone: string;
+
+  @ApiProperty({
     description: 'Trạng thái',
     example: 'ACTIVE',
   })
   status: string;
+
+  @ApiProperty({
+    description: 'Ngày tạo',
+    example: '2024-01-01T00:00:00.000Z',
+    required: false,
+  })
+  createdAt?: Date;
 }
 
 export class ReceptionistListResponseDto {
@@ -129,12 +153,36 @@ export class ReceptionistListResponseDto {
   limit: number;
 }
 
-export class ReceptionistDetailResponseDto extends CreateReceptionistResponseDto {
+export class ReceptionistDetailResponseDto {
+  @ApiProperty({
+    description: 'ID receptionist',
+    example: 1,
+  })
+  id: number;
+
+  @ApiProperty({
+    description: 'Email receptionist',
+    example: 'receptionist@sepolia.com',
+  })
+  email: string;
+
+  @ApiProperty({
+    description: 'Họ tên receptionist',
+    example: 'Nguyễn Thị B',
+  })
+  fullName: string;
+
   @ApiProperty({
     description: 'Số điện thoại',
     example: '0987654321',
   })
   phone: string;
+
+  @ApiProperty({
+    description: 'Trạng thái',
+    example: 'ACTIVE',
+  })
+  status: string;
 
   @ApiProperty({
     description: 'Địa chỉ',

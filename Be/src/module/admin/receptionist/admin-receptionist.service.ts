@@ -11,6 +11,7 @@ import {
   CreateReceptionistResponseDto,
   ReceptionistListResponseDto,
   ReceptionistDetailResponseDto,
+  GetReceptionistsQueryDto,
 } from './admin-receptionist.dto';
 
 @Injectable()
@@ -61,15 +62,16 @@ export class AdminReceptionistService {
       id: result.receptionistProfile.id,
       email: result.user.email,
       fullName: `${result.receptionistProfile.firstName} ${result.receptionistProfile.lastName}`,
-      status: 'ACTIVE',
+      phone: result.user.phone || '',
+      status: result.user.status,
+      createdAt: result.receptionistProfile.createdAt,
     };
   }
 
   async getReceptionists(
-    page: number = 1,
-    limit: number = 10,
-    search?: string,
+    query: GetReceptionistsQueryDto,
   ): Promise<ReceptionistListResponseDto> {
+    const { page = 1, limit = 10, search } = query;
     const skip = (page - 1) * limit;
 
     const where = search
@@ -102,7 +104,9 @@ export class AdminReceptionistService {
         id: receptionist.receptionistProfile!.id,
         email: receptionist.email,
         fullName: `${receptionist.receptionistProfile!.firstName} ${receptionist.receptionistProfile!.lastName}`,
-        status: 'ACTIVE',
+        phone: receptionist.phone || '',
+        status: receptionist.status,
+        createdAt: receptionist.createdAt,
       })),
       total,
       page,
@@ -169,7 +173,8 @@ export class AdminReceptionistService {
       id: updatedReceptionist.id,
       email: updatedReceptionist.user.email,
       fullName: `${updatedReceptionist.firstName} ${updatedReceptionist.lastName}`,
-      status: 'ACTIVE',
+      phone: updatedReceptionist.user.phone || '',
+      status: updatedReceptionist.user.status,
     };
   }
 

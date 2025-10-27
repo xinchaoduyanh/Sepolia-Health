@@ -25,6 +25,7 @@ import {
     Stethoscope,
     Users,
     User,
+    UserCheck,
     LogOut,
 } from 'lucide-react'
 import Link from 'next/link'
@@ -113,19 +114,44 @@ const MANAGEMENT_ITEMS: Array<SidebarNavigationMenuItem> = [
         icon: Package,
     },
     {
-        title: 'Quản lý bác sĩ',
-        url: '/dashboard/doctor-management',
-        icon: Stethoscope,
-    },
-    {
         title: 'Quản lý khuyến mại',
         url: '/dashboard/promotion-management',
         icon: Percent,
     },
     {
+        title: 'Quản lý bác sĩ',
+        url: '/dashboard/doctor-management',
+        icon: Stethoscope,
+        items: [
+            {
+                title: 'Tạo lập hồ sơ',
+                url: '/dashboard/doctor-management/create',
+            },
+            {
+                title: 'Quản lý danh sách',
+                url: '/dashboard/doctor-management/doctor-list',
+            },
+        ],
+    },
+    {
+        title: 'Quản lý lễ tân',
+        url: '/dashboard/receptionist-management',
+        icon: Users,
+        items: [
+            {
+                title: 'Tạo lập hồ sơ',
+                url: '/dashboard/receptionist-management/create',
+            },
+            {
+                title: 'Quản lý danh sách',
+                url: '/dashboard/receptionist-management/receptionist-list',
+            },
+        ],
+    },
+    {
         title: 'Quản lý khách hàng',
         url: '/dashboard/customer-management',
-        icon: Users,
+        icon: UserCheck,
         items: [
             {
                 title: 'Tạo lập hồ sơ',
