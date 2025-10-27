@@ -305,7 +305,7 @@ export default function CustomerListPage() {
                             <select
                                 value={statusFilter}
                                 onChange={e => handleStatusFilterChange(e.target.value)}
-                                className="px-3 py-2 border border-border rounded-md text-sm"
+                                className="px-3 py-2 bg-background text-foreground border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                             >
                                 <option value="">Tất cả trạng thái</option>
                                 <option value="ACTIVE">Hoạt động</option>

@@ -3,45 +3,29 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@workspace/ui/components/Button'
-import { ArrowLeft, Plus, Trash2 } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, AlertCircle } from 'lucide-react'
 import { useCreatePatient } from '@/shared/hooks'
 import type { CreatePatientRequest } from '@/shared/lib/api-services/patients.service'
 
 interface PatientProfileForm {
-    id?: string // For form management
+    id?: string
     firstName: string
     lastName: string
     dateOfBirth: string
     gender: 'MALE' | 'FEMALE' | 'OTHER'
     phone: string
     relationship: 'SELF' | 'SPOUSE' | 'CHILD' | 'PARENT' | 'SIBLING' | 'RELATIVE' | 'FRIEND' | 'OTHER'
-    avatar?: string
-    idCardNumber?: string
-    occupation?: string
-    nationality?: string
     address?: string
-    healthDetailsJson?: Record<string, any>
 }
 
 export function PatientCreateForm() {
     const router = useRouter()
     const createPatient = useCreatePatient()
 
-    const [formData, setFormData] = useState<CreatePatientRequest>({
+    const [accountInfo, setAccountInfo] = useState({
         email: '',
         password: '',
         phone: '',
-        patientProfiles: [
-            {
-                firstName: '',
-                lastName: '',
-                dateOfBirth: '',
-                gender: 'MALE',
-                phone: '',
-                relationship: 'SELF',
-                address: '',
-            },
-        ],
     })
 
     const [profiles, setProfiles] = useState<PatientProfileForm[]>([
@@ -57,11 +41,18 @@ export function PatientCreateForm() {
         },
     ])
 
-    const handleInputChange = (field: keyof CreatePatientRequest, value: string) => {
-        setFormData(prev => ({
-            ...prev,
-            [field]: value,
-        }))
+    // Helper functions
+    const hasSelfProfile = profiles.some(profile => profile.relationship === 'SELF')
+    const isAccountValid = accountInfo.email && accountInfo.password && accountInfo.phone
+
+    const getValidProfiles = () =>
+        profiles.filter(profile => profile.firstName && profile.lastName && profile.dateOfBirth && profile.phone)
+
+    const hasValidProfile = getValidProfiles().length > 0
+    const canSubmit = isAccountValid && hasValidProfile && hasSelfProfile && !createPatient.isPending
+
+    const handleAccountChange = (field: 'email' | 'password' | 'phone', value: string) => {
+        setAccountInfo(prev => ({ ...prev, [field]: value }))
     }
 
     const handleProfileChange = (profileId: string, field: keyof PatientProfileForm, value: string) => {
@@ -83,40 +74,26 @@ export function PatientCreateForm() {
     }
 
     const removeProfile = (profileId: string) => {
-        if (profiles.length > 1) {
-            setProfiles(prev => prev.filter(profile => profile.id !== profileId))
-        }
+        // Không cho xóa profile đầu tiên (SELF)
+        if (profileId === '1') return
+        setProfiles(prev => prev.filter(profile => profile.id !== profileId))
     }
+
+    // Check if profile is the first one (SELF)
+    const isFirstProfile = (profileId: string) => profileId === '1'
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
 
-        // Validate form
-        if (!formData.email || !formData.password || !formData.phone) {
-            alert('Vui lòng điền đầy đủ thông tin tài khoản')
-            return
-        }
+        if (!canSubmit) return
 
-        // Validate profiles
-        const validProfiles = profiles.filter(
-            profile => profile.firstName && profile.lastName && profile.dateOfBirth && profile.phone,
-        )
+        // Prepare data
+        const validProfiles = getValidProfiles()
 
-        if (validProfiles.length === 0) {
-            alert('Vui lòng điền ít nhất một hồ sơ bệnh nhân')
-            return
-        }
-
-        // Check if there's at least one SELF profile
-        const hasSelfProfile = validProfiles.some(profile => profile.relationship === 'SELF')
-        if (!hasSelfProfile) {
-            alert('Phải có ít nhất một hồ sơ với mối quan hệ là "Bản thân"')
-            return
-        }
-
-        // Prepare data for API
         const submitData: CreatePatientRequest = {
-            ...formData,
+            email: accountInfo.email,
+            password: accountInfo.password,
+            phone: accountInfo.phone,
             patientProfiles: validProfiles.map(({ id, ...profile }) => profile),
         }
 
@@ -145,6 +122,9 @@ export function PatientCreateForm() {
         { value: 'OTHER', label: 'Khác' },
     ]
 
+    const inputClassName =
+        'w-full px-3 py-2 bg-background text-foreground border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-transparent transition-colors'
+
     return (
         <div className="space-y-6">
             {/* Header */}
@@ -159,53 +139,73 @@ export function PatientCreateForm() {
                 </div>
             </div>
 
+            {/* Warning Alert */}
+            {!hasSelfProfile && (
+                <div className="bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 flex items-start space-x-3">
+                    <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-0.5 flex-shrink-0" />
+                    <div>
+                        <h4 className="font-medium text-yellow-800 dark:text-yellow-300">Lưu ý quan trọng</h4>
+                        <p className="text-sm text-yellow-700 dark:text-yellow-400 mt-1">
+                            Bạn phải có ít nhất một hồ sơ với mối quan hệ là <strong>&quot;Bản thân&quot;</strong> để có
+                            thể tạo tài khoản.
+                        </p>
+                    </div>
+                </div>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Account Information */}
-                <div className="bg-white rounded-lg shadow-sm border p-6">
+                {/* Account Information Section */}
+                <div className="bg-card rounded-lg shadow-sm border border-border p-6">
                     <div className="mb-4">
-                        <h3 className="text-lg font-semibold">Thông tin tài khoản</h3>
+                        <h3 className="text-lg font-semibold text-foreground">Thông tin tài khoản</h3>
+                        <p className="text-sm text-muted-foreground mt-1">
+                            Thông tin đăng nhập của bệnh nhân (người quản lý tài khoản)
+                        </p>
                     </div>
                     <div className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <label htmlFor="email" className="block text-sm font-medium">
-                                    Email *
+                                <label htmlFor="email" className="block text-sm font-medium text-foreground">
+                                    Email đăng nhập *
                                 </label>
                                 <input
                                     id="email"
                                     type="email"
-                                    value={formData.email}
-                                    onChange={(e: any) => handleInputChange('email', e.target.value)}
-                                    placeholder="Nhập email"
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                                    value={accountInfo.email}
+                                    onChange={e => handleAccountChange('email', e.target.value)}
+                                    placeholder="example@email.com"
+                                    className={inputClassName}
                                     required
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label htmlFor="password" className="block text-sm font-medium">
+                                <label htmlFor="password" className="block text-sm font-medium text-foreground">
                                     Mật khẩu *
                                 </label>
                                 <input
                                     id="password"
                                     type="password"
-                                    value={formData.password}
-                                    onChange={(e: any) => handleInputChange('password', e.target.value)}
-                                    placeholder="Nhập mật khẩu"
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                                    value={accountInfo.password}
+                                    onChange={e => handleAccountChange('password', e.target.value)}
+                                    placeholder="Tối thiểu 6 ký tự"
+                                    className={inputClassName}
                                     required
+                                    minLength={6}
                                 />
                             </div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <label htmlFor="phone" className="block text-sm font-medium">
+                                <label htmlFor="phone" className="block text-sm font-medium text-foreground">
                                     Số điện thoại đăng nhập *
                                 </label>
                                 <input
                                     id="phone"
                                     type="tel"
-                                    value={formData.phone}
-                                    onChange={(e: any) => handleInputChange('phone', e.target.value)}
-                                    placeholder="Nhập số điện thoại"
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                                    value={accountInfo.phone}
+                                    onChange={e => handleAccountChange('phone', e.target.value)}
+                                    placeholder="0123456789"
+                                    className={inputClassName}
                                     required
                                 />
                             </div>
@@ -213,174 +213,214 @@ export function PatientCreateForm() {
                     </div>
                 </div>
 
-                {/* Patient Profiles */}
-                <div className="bg-white rounded-lg shadow-sm border p-6">
+                {/* Patient Profiles Section */}
+                <div className="bg-card rounded-lg shadow-sm border border-border p-6">
                     <div className="mb-4">
                         <div className="flex items-center justify-between">
-                            <h3 className="text-lg font-semibold">Hồ sơ bệnh nhân</h3>
+                            <div>
+                                <h3 className="text-lg font-semibold text-foreground">Hồ sơ bệnh nhân</h3>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                    Ít nhất một hồ sơ với mối quan hệ &quot;Bản thân&quot; (bắt buộc)
+                                </p>
+                            </div>
                             <Button type="button" variant="outline" size="sm" onClick={addProfile}>
                                 <Plus className="h-4 w-4 mr-2" />
                                 Thêm hồ sơ
                             </Button>
                         </div>
                     </div>
-                    <div className="space-y-6">
-                        {profiles.map((profile, index) => (
-                            <div key={`${profile.id}-${index}`} className="border rounded-lg p-4 space-y-4">
-                                <div className="flex items-center justify-between">
-                                    <h4 className="font-medium">Hồ sơ {index + 1}</h4>
-                                    {profiles.length > 1 && (
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => removeProfile(profile.id!)}
-                                            className="text-red-600 hover:text-red-700"
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                    )}
-                                </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <label
-                                            htmlFor={`firstName-${profile.id}`}
-                                            className="block text-sm font-medium"
-                                        >
-                                            Tên *
-                                        </label>
-                                        <input
-                                            id={`firstName-${profile.id}`}
-                                            value={profile.firstName}
-                                            onChange={(e: any) =>
-                                                handleProfileChange(profile.id!, 'firstName', e.target.value)
-                                            }
-                                            placeholder="Nhập tên"
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                                            required
-                                        />
+                    <div className="space-y-4">
+                        {profiles.map((profile, index) => {
+                            const isSelfProfile = profile.relationship === 'SELF'
+                            const isFirst = isFirstProfile(profile.id!)
+                            return (
+                                <div
+                                    key={`${profile.id}-${index}`}
+                                    className={`border rounded-lg p-5 space-y-4 ${
+                                        isSelfProfile
+                                            ? 'border-blue-500 dark:border-blue-400 bg-blue-50 dark:bg-blue-950/20'
+                                            : 'border-border bg-card'
+                                    }`}
+                                >
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center space-x-2">
+                                            <h4 className="font-medium text-foreground">
+                                                Hồ sơ {index + 1}
+                                                {isSelfProfile && (
+                                                    <span className="ml-2 text-xs bg-blue-600 dark:bg-blue-500 text-white px-2 py-1 rounded-full">
+                                                        Bản thân (Bắt buộc)
+                                                    </span>
+                                                )}
+                                            </h4>
+                                        </div>
+                                        {profiles.length > 1 && !isFirst && (
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => removeProfile(profile.id!)}
+                                                className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        )}
                                     </div>
-                                    <div className="space-y-2">
-                                        <label htmlFor={`lastName-${profile.id}`} className="block text-sm font-medium">
-                                            Họ *
-                                        </label>
-                                        <input
-                                            id={`lastName-${profile.id}`}
-                                            value={profile.lastName}
-                                            onChange={(e: any) =>
-                                                handleProfileChange(profile.id!, 'lastName', e.target.value)
-                                            }
-                                            placeholder="Nhập họ"
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                                            required
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label
-                                            htmlFor={`dateOfBirth-${profile.id}`}
-                                            className="block text-sm font-medium"
-                                        >
-                                            Ngày sinh *
-                                        </label>
-                                        <input
-                                            id={`dateOfBirth-${profile.id}`}
-                                            type="date"
-                                            value={profile.dateOfBirth}
-                                            onChange={(e: any) =>
-                                                handleProfileChange(profile.id!, 'dateOfBirth', e.target.value)
-                                            }
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                                            required
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label htmlFor={`gender-${profile.id}`} className="block text-sm font-medium">
-                                            Giới tính *
-                                        </label>
-                                        <select
-                                            value={profile.gender}
-                                            onChange={(e: any) =>
-                                                handleProfileChange(profile.id!, 'gender', e.target.value)
-                                            }
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                                        >
-                                            {genderOptions.map(option => (
-                                                <option key={option.value} value={option.value}>
-                                                    {option.label}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label
-                                            htmlFor={`profilePhone-${profile.id}`}
-                                            className="block text-sm font-medium"
-                                        >
-                                            Số điện thoại *
-                                        </label>
-                                        <input
-                                            id={`profilePhone-${profile.id}`}
-                                            type="tel"
-                                            value={profile.phone}
-                                            onChange={(e: any) =>
-                                                handleProfileChange(profile.id!, 'phone', e.target.value)
-                                            }
-                                            placeholder="Nhập số điện thoại"
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                                            required
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label
-                                            htmlFor={`relationship-${profile.id}`}
-                                            className="block text-sm font-medium"
-                                        >
-                                            Mối quan hệ *
-                                        </label>
-                                        <select
-                                            value={profile.relationship}
-                                            onChange={(e: any) =>
-                                                handleProfileChange(profile.id!, 'relationship', e.target.value)
-                                            }
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                                        >
-                                            {relationshipOptions.map(option => (
-                                                <option key={option.value} value={option.value}>
-                                                    {option.label}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                </div>
 
-                                <div className="space-y-2">
-                                    <label htmlFor={`address-${profile.id}`} className="block text-sm font-medium">
-                                        Địa chỉ
-                                    </label>
-                                    <textarea
-                                        id={`address-${profile.id}`}
-                                        value={profile.address}
-                                        onChange={(e: any) =>
-                                            handleProfileChange(profile.id!, 'address', e.target.value)
-                                        }
-                                        placeholder="Nhập địa chỉ"
-                                        rows={2}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                                    />
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <label
+                                                htmlFor={`firstName-${profile.id}`}
+                                                className="block text-sm font-medium text-foreground"
+                                            >
+                                                Tên bệnh nhân *
+                                            </label>
+                                            <input
+                                                id={`firstName-${profile.id}`}
+                                                value={profile.firstName}
+                                                onChange={e =>
+                                                    handleProfileChange(profile.id!, 'firstName', e.target.value)
+                                                }
+                                                placeholder="Văn A"
+                                                className={inputClassName}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label
+                                                htmlFor={`lastName-${profile.id}`}
+                                                className="block text-sm font-medium text-foreground"
+                                            >
+                                                Họ bệnh nhân *
+                                            </label>
+                                            <input
+                                                id={`lastName-${profile.id}`}
+                                                value={profile.lastName}
+                                                onChange={e =>
+                                                    handleProfileChange(profile.id!, 'lastName', e.target.value)
+                                                }
+                                                placeholder="Nguyễn"
+                                                className={inputClassName}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label
+                                                htmlFor={`dateOfBirth-${profile.id}`}
+                                                className="block text-sm font-medium text-foreground"
+                                            >
+                                                Ngày sinh *
+                                            </label>
+                                            <input
+                                                id={`dateOfBirth-${profile.id}`}
+                                                type="date"
+                                                value={profile.dateOfBirth}
+                                                onChange={e =>
+                                                    handleProfileChange(profile.id!, 'dateOfBirth', e.target.value)
+                                                }
+                                                max={new Date().toISOString().split('T')[0]}
+                                                className={inputClassName}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label
+                                                htmlFor={`gender-${profile.id}`}
+                                                className="block text-sm font-medium text-foreground"
+                                            >
+                                                Giới tính *
+                                            </label>
+                                            <select
+                                                value={profile.gender}
+                                                onChange={e =>
+                                                    handleProfileChange(profile.id!, 'gender', e.target.value)
+                                                }
+                                                className={inputClassName}
+                                            >
+                                                {genderOptions.map(option => (
+                                                    <option key={option.value} value={option.value}>
+                                                        {option.label}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label
+                                                htmlFor={`profilePhone-${profile.id}`}
+                                                className="block text-sm font-medium text-foreground"
+                                            >
+                                                Số điện thoại liên lạc *
+                                            </label>
+                                            <input
+                                                id={`profilePhone-${profile.id}`}
+                                                type="tel"
+                                                value={profile.phone}
+                                                onChange={e =>
+                                                    handleProfileChange(profile.id!, 'phone', e.target.value)
+                                                }
+                                                placeholder="0123456789"
+                                                className={inputClassName}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label
+                                                htmlFor={`relationship-${profile.id}`}
+                                                className="block text-sm font-medium text-foreground"
+                                            >
+                                                Mối quan hệ *
+                                            </label>
+                                            <select
+                                                value={profile.relationship}
+                                                onChange={e =>
+                                                    handleProfileChange(profile.id!, 'relationship', e.target.value)
+                                                }
+                                                disabled={isFirst}
+                                                className={`${inputClassName} ${isFirst ? 'opacity-60 cursor-not-allowed' : ''}`}
+                                            >
+                                                {relationshipOptions.map(option => (
+                                                    <option key={option.value} value={option.value}>
+                                                        {option.label}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            {isFirst && (
+                                                <p className="text-xs text-muted-foreground">
+                                                    Mối quan hệ &quot;Bản thân&quot; là bắt buộc và không thể thay đổi
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label
+                                            htmlFor={`address-${profile.id}`}
+                                            className="block text-sm font-medium text-foreground"
+                                        >
+                                            Địa chỉ (Tùy chọn)
+                                        </label>
+                                        <textarea
+                                            id={`address-${profile.id}`}
+                                            value={profile.address || ''}
+                                            onChange={e => handleProfileChange(profile.id!, 'address', e.target.value)}
+                                            placeholder="Nhập địa chỉ"
+                                            rows={2}
+                                            className={inputClassName}
+                                        />
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            )
+                        })}
                     </div>
                 </div>
 
                 {/* Submit Button */}
-                <div className="flex justify-end space-x-4">
+                <div className="flex justify-end space-x-4 bg-card rounded-lg shadow-sm border border-border p-6">
                     <Button type="button" variant="outline" onClick={() => router.back()}>
                         Hủy
                     </Button>
-                    <Button type="submit" isDisabled={createPatient.isPending}>
-                        {createPatient.isPending ? 'Đang tạo...' : 'Tạo bệnh nhân'}
+                    <Button type="submit" isDisabled={!canSubmit || createPatient.isPending}>
+                        {createPatient.isPending ? 'Đang tạo...' : 'Tạo tài khoản bệnh nhân'}
                     </Button>
                 </div>
             </form>

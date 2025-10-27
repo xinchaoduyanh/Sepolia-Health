@@ -129,7 +129,7 @@ const MANAGEMENT_ITEMS: Array<SidebarNavigationMenuItem> = [
         items: [
             {
                 title: 'Tạo lập hồ sơ',
-                url: '/dashboard/customer-management',
+                url: '/dashboard/customer-management/create',
             },
             {
                 title: 'Quản lý danh sách',
@@ -208,7 +208,7 @@ export function DashboardLayout({ children, defaultOpen = true }: DashboardLayou
                     </div>
                 </SidebarHeader>
 
-                <SidebarContent className="gap-0 p-2">  
+                <SidebarContent className="gap-0 p-2">
                     <SidebarNavigationMenu
                         title="Chính"
                         linkComponent={Link}
