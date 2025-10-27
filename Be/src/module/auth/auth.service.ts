@@ -7,17 +7,6 @@ import {
 import { PrismaService } from '@/common/prisma/prisma.service';
 import { UserStatus } from '@prisma/client';
 import { StringUtil } from '@/common/utils';
-import {
-  CompleteRegisterDto,
-  CompleteRegisterResponseDto,
-  ForgotPasswordDto,
-  LoginDto,
-  LoginResponseDto,
-  RefreshTokenDto,
-  RegisterDto,
-  RegisterResponseDto,
-  VerifyEmailDto,
-} from './dto/auth.dto';
 import { AuthRepository } from './auth.repository';
 import { CustomJwtService, MailService, RedisService } from '@/common/modules';
 import { appConfig } from '@/common/config';
@@ -28,7 +17,20 @@ import {
   getVerifyEmailTemplate,
 } from '@/common/modules/mail/templates';
 import { SuccessResponseDto } from '@/common/dto';
-import { ResetPasswordBodyDto } from './dto/request';
+import {
+  CompleteRegisterDto,
+  ForgotPasswordDto,
+  LoginDto,
+  RefreshTokenDto,
+  RegisterDto,
+  ResetPasswordBodyDto,
+  VerifyEmailDto,
+} from './dto/request';
+import {
+  CompleteRegisterResponseDto,
+  LoginResponseDto,
+  RegisterResponseDto,
+} from './dto/response';
 
 // Helper function to parse date string safely
 function parseDate(dateString: string): Date {
@@ -195,7 +197,6 @@ export class AuthService {
       phone, // Use phone for user.phone
       role,
       status: UserStatus.ACTIVE,
-      // Patient profile data - basic info for registration
       firstName,
       lastName,
       dateOfBirth: parseDate(dateOfBirth),

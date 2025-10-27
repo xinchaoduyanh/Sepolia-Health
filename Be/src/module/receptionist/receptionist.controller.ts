@@ -12,7 +12,7 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser, Public } from '@/common/decorators';
 
 @Public()
-@ApiTags('receptionist')
+@ApiTags('Receptionist')
 @ApiBearerAuth()
 @Controller('receptionist')
 export class ReceptionistController {

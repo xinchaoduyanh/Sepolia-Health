@@ -26,14 +26,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="(profile)"
+        name="(appointment)"
         options={{
-          title: 'Hồ sơ',
+          title: 'Đặt lịch',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="folder-outline" size={size} color={color} />
+            <Ionicons name="calendar-outline" size={size} color={color} />
           ),
         }}
       />
+
       <Tabs.Screen
         name="(qr-scanner)"
         options={{
@@ -104,11 +105,11 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="(appointment)"
+        name="(profile)"
         options={{
-          title: 'Đặt lịch',
+          title: 'Hồ sơ',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="calendar-outline" size={size} color={color} />
+            <Ionicons name="folder-outline" size={size} color={color} />
           ),
         }}
       />

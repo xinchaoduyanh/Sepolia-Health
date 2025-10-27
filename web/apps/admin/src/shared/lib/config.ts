@@ -4,7 +4,7 @@
 
 export const config = {
     // Backend API URL - update this to your backend URL
-    apiUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001/api/admin',
+    apiUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/admin',
 
     // App settings
     app: {
