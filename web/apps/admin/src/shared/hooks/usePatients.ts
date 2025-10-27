@@ -16,8 +16,8 @@ export function usePatients(params: PatientsListParams = {}, isReady: boolean) {
     console.trace('🔍 usePatients called from:')
 
     return useQuery({
-        // queryKey: queryKeys.admin.patients.list(params),
-        queryKey: ['admin', 'patients', 'list', params.page, params.limit, params.search, params.status],
+        queryKey: queryKeys.admin.patients.list(params),
+        // queryKey: ['admin', 'patients', 'list', params.page, params.limit, params.search, params.status],
         queryFn: () => {
             console.log('🚀 API call to getPatients with params:', params)
             console.log('🔍 Full URL will be:', `/patients?${new URLSearchParams(params as any).toString()}`)
