@@ -35,7 +35,7 @@ const SkeletonTable = ({ columns }: { columns: any[] }) => {
                         </tr>
                     </thead>
                     <tbody className="[&_tr:last-child]:border-0">
-                        {[...Array(8)].map((_, rowIdx) => (
+                        {[...Array(7)].map((_, rowIdx) => (
                             <tr
                                 key={rowIdx}
                                 className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"

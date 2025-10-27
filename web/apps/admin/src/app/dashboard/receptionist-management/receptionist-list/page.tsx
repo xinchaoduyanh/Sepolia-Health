@@ -9,6 +9,72 @@ import { Badge } from '@workspace/ui/components/Badge'
 import { Avatar, AvatarFallback } from '@workspace/ui/components/Avatar'
 import { Eye, Plus, Trash2 } from 'lucide-react'
 import { useReceptionists, useDeleteReceptionist } from '@/shared/hooks'
+import { Skeleton } from '@workspace/ui/components/Skeleton'
+
+// Skeleton table component for loading state
+const SkeletonTable = ({ columns }: { columns: any[] }) => {
+    return (
+        <div className="relative grid bg-background-secondary rounded-md overflow-hidden border min-h-[400px]">
+            <div className="w-full overflow-x-auto">
+                <table className="group w-full caption-bottom text-sm">
+                    <thead className="[&_tr]:border-b">
+                        <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+                            {columns.map((col, idx) => (
+                                <th
+                                    key={idx}
+                                    className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0"
+                                    style={{
+                                        minWidth: col.size || 180,
+                                        maxWidth: col.size || 180,
+                                    }}
+                                >
+                                    {col.header}
+                                </th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody className="[&_tr:last-child]:border-0">
+                        {[...Array(7)].map((_, rowIdx) => (
+                            <tr
+                                key={rowIdx}
+                                className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
+                            >
+                                {columns.map((col, colIdx) => (
+                                    <td
+                                        key={colIdx}
+                                        className="p-4 align-middle [&:has([role=checkbox])]:pr-0"
+                                        style={{
+                                            minWidth: col.size || 180,
+                                            maxWidth: col.size || 180,
+                                        }}
+                                    >
+                                        {col.accessorKey === 'id' && <Skeleton className="h-4 w-16" />}
+                                        {col.accessorKey === 'fullName' && (
+                                            <div className="flex items-center space-x-3">
+                                                <Skeleton className="h-8 w-8 rounded-full" />
+                                                <Skeleton className="h-4 w-32" />
+                                            </div>
+                                        )}
+                                        {col.accessorKey === 'email' && <Skeleton className="h-4 w-40" />}
+                                        {col.accessorKey === 'phone' && <Skeleton className="h-4 w-24" />}
+                                        {col.accessorKey === 'status' && <Skeleton className="h-5 w-24" />}
+                                        {col.accessorKey === 'createdAt' && <Skeleton className="h-4 w-24" />}
+                                        {col.id === 'actions' && (
+                                            <div className="flex items-center space-x-1">
+                                                <Skeleton className="h-8 w-8" />
+                                                <Skeleton className="h-8 w-8" />
+                                            </div>
+                                        )}
+                                    </td>
+                                ))}
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    )
+}
 
 // Action cell component
 function ActionCell({ receptionist }: { receptionist: any }) {
@@ -169,43 +235,7 @@ export default function ReceptionistListPage() {
     }, [])
 
     // Fetch receptionists data
-    const { data: receptionistsResponse, isLoading, error } = useReceptionists(queryParams, isQueryReady)
-
-    if (isLoading) {
-        return (
-            <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-3xl font-bold text-foreground">Quản lý danh sách lễ tân</h1>
-                        <p className="text-sm text-muted-foreground mt-1">Đang tải dữ liệu...</p>
-                    </div>
-                </div>
-                <div className="bg-card rounded-lg shadow-sm border border-border p-6">
-                    <div className="flex items-center justify-center h-64">
-                        <div className="text-muted-foreground">Đang tải...</div>
-                    </div>
-                </div>
-            </div>
-        )
-    }
-
-    if (error) {
-        return (
-            <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-3xl font-bold text-foreground">Quản lý danh sách lễ tân</h1>
-                        <p className="text-sm text-muted-foreground mt-1">Có lỗi xảy ra khi tải dữ liệu</p>
-                    </div>
-                </div>
-                <div className="bg-card rounded-lg shadow-sm border border-border p-6">
-                    <div className="flex items-center justify-center h-64">
-                        <div className="text-red-500">Lỗi: {error.message}</div>
-                    </div>
-                </div>
-            </div>
-        )
-    }
+    const { data: receptionistsResponse, isLoading } = useReceptionists(queryParams, isQueryReady)
 
     const receptionists = receptionistsResponse?.data?.receptionists || []
     const totalPages = Math.ceil((receptionistsResponse?.data?.total || 0) / itemsPerPage)
@@ -243,7 +273,11 @@ export default function ReceptionistListPage() {
 
                 {/* Data Table */}
                 <div className="p-6">
-                    <DataTable data={receptionists} columns={columns} containerClassName="min-h-[400px]" />
+                    {isLoading ? (
+                        <SkeletonTable columns={columns} />
+                    ) : (
+                        <DataTable data={receptionists} columns={columns} containerClassName="min-h-[400px]" />
+                    )}
                 </div>
 
                 {/* Pagination */}

@@ -9,6 +9,80 @@ import { Badge } from '@workspace/ui/components/Badge'
 import { Avatar, AvatarFallback } from '@workspace/ui/components/Avatar'
 import { Eye, Plus, Trash2 } from 'lucide-react'
 import { usePatients, useDeletePatient } from '@/shared/hooks'
+import { Skeleton } from '@workspace/ui/components/Skeleton'
+
+// Skeleton table component for loading state
+const SkeletonTable = ({ columns }: { columns: any[] }) => {
+    return (
+        <div className="relative grid bg-background-secondary rounded-md overflow-hidden border min-h-[400px]">
+            <div className="w-full overflow-x-auto">
+                <table className="group w-full caption-bottom text-sm">
+                    <thead className="[&_tr]:border-b">
+                        <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+                            {columns.map((col, idx) => (
+                                <th
+                                    key={idx}
+                                    className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0"
+                                    style={{
+                                        minWidth: col.size || 180,
+                                        maxWidth: col.size || 180,
+                                    }}
+                                >
+                                    {col.header}
+                                </th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody className="[&_tr:last-child]:border-0">
+                        {[...Array(7)].map((_, rowIdx) => (
+                            <tr
+                                key={rowIdx}
+                                className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
+                            >
+                                {columns.map((col, colIdx) => (
+                                    <td
+                                        key={colIdx}
+                                        className="p-4 align-middle [&:has([role=checkbox])]:pr-0"
+                                        style={{
+                                            minWidth: col.size || 180,
+                                            maxWidth: col.size || 180,
+                                        }}
+                                    >
+                                        {col.accessorKey === 'id' && <Skeleton className="h-4 w-16" />}
+                                        {col.accessorKey === 'patientProfiles' && (
+                                            <div className="flex items-center space-x-3">
+                                                <Skeleton className="h-8 w-8 rounded-full" />
+                                                <Skeleton className="h-4 w-32" />
+                                            </div>
+                                        )}
+                                        {col.accessorKey === 'email' && <Skeleton className="h-4 w-40" />}
+                                        {col.accessorKey === 'phone' && <Skeleton className="h-4 w-24" />}
+                                        {col.id === 'patientProfileInfo' && (
+                                            <div className="space-y-1">
+                                                <Skeleton className="h-4 w-16" />
+                                                <Skeleton className="h-3 w-24" />
+                                                <Skeleton className="h-3 w-32" />
+                                            </div>
+                                        )}
+                                        {col.accessorKey === 'patientProfilesCount' && <Skeleton className="h-4 w-8" />}
+                                        {col.accessorKey === 'status' && <Skeleton className="h-5 w-24" />}
+                                        {col.accessorKey === 'createdAt' && <Skeleton className="h-4 w-24" />}
+                                        {col.id === 'actions' && (
+                                            <div className="flex items-center space-x-1">
+                                                <Skeleton className="h-8 w-8" />
+                                                <Skeleton className="h-8 w-8" />
+                                            </div>
+                                        )}
+                                    </td>
+                                ))}
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    )
+}
 
 // Action cell component to handle hooks properly
 function ActionCell({ patient }: { patient: any }) {
@@ -221,55 +295,13 @@ export default function CustomerListPage() {
     }, [])
 
     // Fetch patients data
-    const { data: patientsResponse, isLoading, error } = usePatients(queryParams, isQueryReady)
-
-    // Debug log to track API calls - only log when params change
-    useEffect(() => {
-        console.log('🔍 CustomerListPage - Query params changed:', queryParams)
-        console.log('🔍 CustomerListPage - Loading:', isLoading)
-        console.log('🔍 CustomerListPage - Error:', error)
-        console.log('🔍 CustomerListPage - Data:', patientsResponse)
-    }, [queryParams, isLoading, error, patientsResponse])
-
-    // Handle loading and error states
-    if (isLoading) {
-        return (
-            <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-3xl font-bold text-foreground">Quản lý danh sách khách hàng</h1>
-                        <p className="text-sm text-muted-foreground mt-1">Đang tải dữ liệu...</p>
-                    </div>
-                </div>
-                <div className="bg-card rounded-lg shadow-sm border border-border p-6">
-                    <div className="flex items-center justify-center h-64">
-                        <div className="text-muted-foreground">Đang tải...</div>
-                    </div>
-                </div>
-            </div>
-        )
-    }
-
-    if (error) {
-        return (
-            <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-3xl font-bold text-foreground">Quản lý danh sách khách hàng</h1>
-                        <p className="text-sm text-muted-foreground mt-1">Có lỗi xảy ra khi tải dữ liệu</p>
-                    </div>
-                </div>
-                <div className="bg-card rounded-lg shadow-sm border border-border p-6">
-                    <div className="flex items-center justify-center h-64">
-                        <div className="text-red-500">Lỗi: {error.message}</div>
-                    </div>
-                </div>
-            </div>
-        )
-    }
+    const { data: patientsResponse, isLoading } = usePatients(queryParams, isQueryReady)
 
     const patients = patientsResponse?.data?.patients || []
     const totalPages = Math.ceil((patientsResponse?.data?.total || 0) / itemsPerPage)
+
+    // Show skeleton when loading or query not ready
+    const showSkeleton = isLoading || !isQueryReady
 
     return (
         <div className="space-y-6">
@@ -318,7 +350,11 @@ export default function CustomerListPage() {
 
                 {/* Data Table */}
                 <div className="p-6">
-                    <DataTable data={patients} columns={columns} containerClassName="min-h-[400px]" />
+                    {showSkeleton ? (
+                        <SkeletonTable columns={columns} />
+                    ) : (
+                        <DataTable data={patients} columns={columns} containerClassName="min-h-[400px]" />
+                    )}
                 </div>
 
                 {/* Pagination */}
