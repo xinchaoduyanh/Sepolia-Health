@@ -8,7 +8,9 @@ import { Button } from '@workspace/ui/components/Button'
 import { Badge } from '@workspace/ui/components/Badge'
 import { Avatar, AvatarFallback } from '@workspace/ui/components/Avatar'
 import { Eye, Plus, Trash2 } from 'lucide-react'
-import { useDoctors, useDeleteDoctor } from '@/shared/hooks'
+import { useDoctors, useDeleteDoctor, useClinics, useServices } from '@/shared/hooks'
+import { BsSelect } from '@workspace/ui/components/Select'
+import { Spinner } from '@workspace/ui/components/Spinner'
 
 // Action cell component
 function ActionCell({ doctor }: { doctor: any }) {
@@ -54,7 +56,7 @@ const columns: any[] = [
     {
         accessorKey: 'fullName',
         header: 'Họ và tên',
-        cell: ({ getValue, row }: { getValue: () => any; row: any }) => {
+        cell: ({ getValue }: { getValue: () => any }) => {
             const fullName = getValue() as string
             return (
                 <div className="flex items-center space-x-3">
@@ -104,6 +106,14 @@ const columns: any[] = [
         ),
     },
     {
+        accessorKey: 'clinic',
+        header: 'Cơ sở',
+        cell: ({ getValue }: { getValue: () => any }) => {
+            const clinic = getValue() as { id: number; name: string } | null | undefined
+            return <span className="text-muted-foreground text-sm">{clinic?.name || 'Chưa có'}</span>
+        },
+    },
+    {
         accessorKey: 'status',
         header: 'Trạng thái',
         cell: ({ getValue }: { getValue: () => any }) => {
@@ -149,8 +159,10 @@ const columns: any[] = [
 
 export default function DoctorListPage() {
     const [searchTerm, setSearchTerm] = useState('')
-    const [debouncedSearchTerm, setDebouncedSearchTerm] = useState<string | undefined>(undefined)
+    const [debouncedSearchTerm, setDebouncedSearchTerm] = useState<string>('')
     const [currentPage, setCurrentPage] = useState(1)
+    const [selectedClinicId, setSelectedClinicId] = useState<string>('')
+    const [selectedServiceId, setSelectedServiceId] = useState<string>('')
     const itemsPerPage = 10
 
     // Debounce search term
@@ -168,14 +180,20 @@ export default function DoctorListPage() {
             limit: itemsPerPage,
         }
 
-        if (debouncedSearchTerm !== undefined) {
+        if (debouncedSearchTerm) {
             params.search = debouncedSearchTerm
         }
 
-        return params
-    }, [currentPage, debouncedSearchTerm])
+        if (selectedClinicId) {
+            params.clinicId = parseInt(selectedClinicId)
+        }
 
-    const isQueryReady = debouncedSearchTerm !== undefined
+        if (selectedServiceId) {
+            params.serviceId = parseInt(selectedServiceId)
+        }
+
+        return params
+    }, [currentPage, debouncedSearchTerm, selectedClinicId, selectedServiceId])
 
     const handleSearchChange = useCallback((value: string) => {
         setSearchTerm(value)
@@ -186,9 +204,23 @@ export default function DoctorListPage() {
     }, [])
 
     // Fetch doctors data
-    const { data: doctorsResponse, isLoading, error } = useDoctors(queryParams, isQueryReady)
+    const { data: doctorsResponse, isLoading, error } = useDoctors(queryParams, true)
 
-    if (isLoading) {
+    // Fetch clinics and services for filters
+    const { data: clinicsData, isLoading: isLoadingClinics } = useClinics()
+    const { data: servicesData, isLoading: isLoadingServices } = useServices()
+
+    // Extract arrays safely - ensure they are always arrays
+    const clinics = Array.isArray(clinicsData?.data) ? clinicsData.data : []
+    const services = Array.isArray(servicesData?.data) ? servicesData.data : []
+
+    // Reset page when filters change
+    useEffect(() => {
+        setCurrentPage(1)
+    }, [selectedClinicId, selectedServiceId])
+
+    // Show loading if clinics or services are still loading
+    if (isLoading || isLoadingClinics || isLoadingServices) {
         return (
             <div className="space-y-6">
                 <div className="flex items-center justify-between">
@@ -199,7 +231,10 @@ export default function DoctorListPage() {
                 </div>
                 <div className="bg-card rounded-lg shadow-sm border border-border p-6">
                     <div className="flex items-center justify-center h-64">
-                        <div className="text-muted-foreground">Đang tải...</div>
+                        <div className="flex flex-col items-center gap-4">
+                            <Spinner className="h-8 w-8 text-primary" />
+                            <div className="text-muted-foreground">Đang tải dữ liệu...</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -246,15 +281,49 @@ export default function DoctorListPage() {
 
             {/* Main Content */}
             <div className="bg-card rounded-lg shadow-sm border border-border">
-                {/* Search Bar */}
+                {/* Search and Filters Bar */}
                 <div className="p-6 border-b border-border">
-                    <div className="max-w-md">
-                        <BsSearchField
-                            placeholder="Tìm theo tên, email hoặc ID"
-                            value={searchTerm}
-                            onChange={handleSearchChange}
-                            className="w-full"
-                        />
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <BsSearchField
+                                placeholder="Tìm theo tên, email hoặc ID"
+                                value={searchTerm}
+                                onChange={handleSearchChange}
+                                className="w-full"
+                            />
+                        </div>
+                        <div>
+                            <BsSelect
+                                placeholder="Chọn cơ sở"
+                                selectedKey={selectedClinicId || null}
+                                onSelectionChange={key => {
+                                    setSelectedClinicId((key as string) || '')
+                                }}
+                                options={[
+                                    { id: '', name: 'Tất cả cơ sở' },
+                                    ...(Array.isArray(clinics) && clinics.length > 0
+                                        ? clinics.map(c => ({ id: c.id.toString(), name: c.name }))
+                                        : []),
+                                ]}
+                                className="w-full"
+                            />
+                        </div>
+                        <div>
+                            <BsSelect
+                                placeholder="Chọn dịch vụ"
+                                selectedKey={selectedServiceId || null}
+                                onSelectionChange={key => {
+                                    setSelectedServiceId((key as string) || '')
+                                }}
+                                options={[
+                                    { id: '', name: 'Tất cả dịch vụ' },
+                                    ...(Array.isArray(services) && services.length > 0
+                                        ? services.map(s => ({ id: s.id.toString(), name: s.name }))
+                                        : []),
+                                ]}
+                                className="w-full"
+                            />
+                        </div>
                     </div>
                 </div>
 

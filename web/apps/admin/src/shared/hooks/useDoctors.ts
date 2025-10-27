@@ -9,6 +9,30 @@ import {
 import { queryKeys } from '../lib/query-keys'
 
 /**
+ * Hook to get clinics list
+ */
+export function useClinics() {
+    return useQuery({
+        queryKey: queryKeys.admin.doctors.clinics(),
+        queryFn: () => doctorsService.getClinics(),
+        staleTime: 10 * 60 * 1000, // 10 minutes
+        retry: 2,
+    })
+}
+
+/**
+ * Hook to get services list
+ */
+export function useServices() {
+    return useQuery({
+        queryKey: queryKeys.admin.doctors.services(),
+        queryFn: () => doctorsService.getServices(),
+        staleTime: 10 * 60 * 1000, // 10 minutes
+        retry: 2,
+    })
+}
+
+/**
  * Hook to get doctors list with pagination and filters
  */
 export function useDoctors(params: DoctorsListParams = {}, isReady: boolean) {

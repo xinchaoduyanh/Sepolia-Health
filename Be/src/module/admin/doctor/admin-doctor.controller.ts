@@ -80,6 +80,28 @@ export class AdminDoctorController {
     return this.adminDoctorService.getDoctors(query);
   }
 
+  @Get('clinics/list')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Lấy danh sách cơ sở phòng khám' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy danh sách cơ sở thành công',
+  })
+  async getClinics() {
+    return this.adminDoctorService.getClinics();
+  }
+
+  @Get('services/list')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Lấy danh sách dịch vụ' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy danh sách dịch vụ thành công',
+  })
+  async getServices() {
+    return this.adminDoctorService.getServices();
+  }
+
   @Get(':id')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Lấy thông tin chi tiết bác sĩ' })

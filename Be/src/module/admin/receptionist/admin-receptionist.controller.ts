@@ -17,7 +17,6 @@ import {
   ApiResponse,
   ApiBearerAuth,
   ApiParam,
-  ApiQuery,
   ApiBody,
 } from '@nestjs/swagger';
 import { AdminReceptionistService } from './admin-receptionist.service';

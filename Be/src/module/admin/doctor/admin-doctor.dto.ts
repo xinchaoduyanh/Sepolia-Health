@@ -7,6 +7,8 @@ export const GetDoctorsQuerySchema = z.object({
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(100).default(10),
   search: z.string().optional(),
+  clinicId: z.coerce.number().optional(),
+  serviceId: z.coerce.number().optional(),
 });
 
 export type GetDoctorsQueryDto = z.infer<typeof GetDoctorsQuerySchema>;
@@ -224,6 +226,13 @@ export class CreateDoctorResponseDto {
     example: 'ACTIVE',
   })
   status: string;
+
+  @ApiProperty({
+    description: 'Thông tin cơ sở',
+    example: { id: 1, name: 'Phòng khám Sepolia' },
+    required: false,
+  })
+  clinic?: { id: number; name: string } | null;
 
   @ApiProperty({
     description: 'Ngày tạo',

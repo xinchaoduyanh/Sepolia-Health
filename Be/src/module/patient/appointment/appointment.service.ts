@@ -530,6 +530,7 @@ export class AppointmentService {
 
     // Validate patientProfileId if provided
     let validatedPatientProfileId: number | null = null;
+    console.log('patientProfileId', patientProfileId);
     if (patientProfileId) {
       const patientProfile = await this.prisma.patientProfile.findUnique({
         where: { id: patientProfileId },
@@ -558,6 +559,72 @@ export class AppointmentService {
     const endHour = Math.floor(endMinutes / 60);
     const endMinute = endMinutes % 60;
     const endTime = `${endHour.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}`;
+
+    // Check doctor availability
+    const appointmentDate = new Date(date);
+    const dayOfWeek = this.getDayOfWeek(appointmentDate);
+
+    // Get doctor's working hours for the day
+    const workingHours = await this.prisma.doctorAvailability.findUnique({
+      where: {
+        doctorId_dayOfWeek: {
+          doctorId: doctorService.doctor.id,
+          dayOfWeek: dayOfWeek,
+        },
+      },
+    });
+
+    if (!workingHours) {
+      throw new BadRequestException(
+        MESSAGES.APPOINTMENT.DOCTOR_NOT_AVAILABLE_ON_DATE,
+      );
+    }
+
+    // Check if requested time is within working hours
+    const workingStart = this.timeToMinutes(workingHours.startTime);
+    const workingEnd = this.timeToMinutes(workingHours.endTime);
+
+    if (
+      startMinutes < workingStart ||
+      startMinutes + doctorService.service.duration > workingEnd
+    ) {
+      throw new BadRequestException(
+        MESSAGES.APPOINTMENT.APPOINTMENT_OUTSIDE_WORKING_HOURS,
+      );
+    }
+
+    // Check for conflicts with existing appointments
+    const existingAppointments = await this.prisma.appointment.findMany({
+      where: {
+        doctorId: doctorService.doctor.id,
+        date: appointmentDate,
+        status: {
+          in: ['CREATED', 'UPCOMING', 'ON_GOING'],
+        },
+      },
+      select: {
+        startTime: true,
+        endTime: true,
+      },
+    });
+
+    // Check if new appointment conflicts with existing ones
+    const hasConflict = existingAppointments.some((apt) => {
+      const aptStart = this.timeToMinutes(apt.startTime);
+      const aptEnd = this.timeToMinutes(apt.endTime);
+
+      // Check for overlap - new appointment must not overlap with any existing appointment
+      return (
+        startMinutes < aptEnd &&
+        startMinutes + doctorService.service.duration > aptStart
+      );
+    });
+
+    if (hasConflict) {
+      throw new BadRequestException(
+        MESSAGES.APPOINTMENT.TIME_SLOT_ALREADY_BOOKED,
+      );
+    }
 
     // Create appointment using data from DoctorService
     const appointment = await this.prisma.appointment.create({

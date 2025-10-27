@@ -27,6 +27,8 @@ export const queryKeys = {
             list: (filters: Record<string, any>) => [...queryKeys.admin.doctors.lists(), { filters }] as const,
             details: () => [...queryKeys.admin.doctors.all(), 'detail'] as const,
             detail: (id: string) => [...queryKeys.admin.doctors.details(), id] as const,
+            clinics: () => [...queryKeys.admin.doctors.all(), 'clinics'] as const,
+            services: () => [...queryKeys.admin.doctors.all(), 'services'] as const,
         },
         receptionists: {
             all: () => [...queryKeys.admin.all, 'receptionists'] as const,

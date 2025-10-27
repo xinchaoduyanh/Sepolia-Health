@@ -9,6 +9,7 @@ export interface Doctor {
     specialty: string
     experienceYears: number
     status: string
+    clinic?: { id: number; name: string } | null
     createdAt: string
 }
 
@@ -16,6 +17,25 @@ export interface DoctorsListParams {
     page?: number
     limit?: number
     search?: string
+    clinicId?: number
+    serviceId?: number
+}
+
+export interface Clinic {
+    id: number
+    name: string
+    address: string
+    phone?: string
+    email?: string
+    description?: string
+}
+
+export interface Service {
+    id: number
+    name: string
+    price: number
+    duration: number
+    description?: string
 }
 
 export interface DoctorsListResponse {
@@ -106,6 +126,22 @@ export class DoctorsService {
      */
     async deleteDoctor(id: number): Promise<void> {
         return apiClient.delete<void>(`/doctors/${id}`)
+    }
+
+    /**
+     * Get list of clinics
+     * GET /doctors/clinics/list
+     */
+    async getClinics(): Promise<{ data: Clinic[]; total: number }> {
+        return apiClient.get<{ data: Clinic[]; total: number }>('/doctors/clinics/list')
+    }
+
+    /**
+     * Get list of services
+     * GET /doctors/services/list
+     */
+    async getServices(): Promise<{ data: Service[]; total: number }> {
+        return apiClient.get<{ data: Service[]; total: number }>('/doctors/services/list')
     }
 }
 

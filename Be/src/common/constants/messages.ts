@@ -57,6 +57,10 @@ export const MESSAGES = {
     GET_DOCTOR_SERVICES_SUCCESS: 'Lấy danh sách bác sĩ thành công',
     PATIENT_PROFILE_NOT_FOUND: 'Không tìm thấy hồ sơ bệnh nhân',
     PATIENT_PROFILE_NOT_OWNED: 'Hồ sơ bệnh nhân không thuộc về bạn',
+    APPOINTMENT_OUTSIDE_WORKING_HOURS:
+      'Thời gian đặt lịch không nằm trong giờ làm việc của bác sĩ',
+    DOCTOR_NOT_AVAILABLE_ON_DATE: 'Bác sĩ không làm việc vào ngày này',
+    TIME_SLOT_ALREADY_BOOKED: 'Thời gian đã được đặt lịch',
   },
 
   // Medicine messages

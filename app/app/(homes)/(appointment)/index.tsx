@@ -53,6 +53,7 @@ export default function AppointmentScreen() {
   // Auto-fill user info when component mounts (default to "Bản thân")
   useEffect(() => {
     if (user && selectedCustomer === 'me' && primaryProfile) {
+      setSelectedProfile(primaryProfile); // Set profile ID for appointment
       setFullName(`${primaryProfile.firstName} ${primaryProfile.lastName}`);
       setDateOfBirth(new Date(primaryProfile.dateOfBirth));
       setPhoneNumber(primaryProfile.phone);
@@ -107,10 +108,10 @@ export default function AppointmentScreen() {
 
   const handleCustomerSelect = (customerId: string, profile?: PatientProfile) => {
     setSelectedCustomer(customerId);
-    setSelectedProfile(profile || null);
 
     if (profile) {
       // Auto-fill form with profile data
+      setSelectedProfile(profile);
       setFullName(`${profile.firstName} ${profile.lastName}`);
       setDateOfBirth(new Date(profile.dateOfBirth));
       setPhoneNumber(profile.phone);
@@ -118,14 +119,15 @@ export default function AppointmentScreen() {
       // Sử dụng relationship từ profile
     } else if (customerId === 'add') {
       // Clear form for new customer
+      setSelectedProfile(null);
       setFullName('');
       setDateOfBirth(null);
       setPhoneNumber('');
       setGender(null);
       setPatientDescription('');
-    } else if (customerId === 'me') {
+    } else if (customerId === 'me' && primaryProfile) {
       // Set primary profile for "me"
-      setSelectedProfile(primaryProfile || null);
+      setSelectedProfile(primaryProfile);
       setPatientDescription('');
       // Thông tin user sẽ được auto-fill bởi useEffect
     }
@@ -230,7 +232,7 @@ export default function AppointmentScreen() {
         return `${year}-${month}-${day}`;
       };
 
-      const appointmentData = {
+      const appointmentData: any = {
         doctorServiceId: selectedDoctorServiceId || 0,
         date: selectedDate || formatDateForAPI(new Date()),
         startTime: selectedTimeSlot,
@@ -240,10 +242,17 @@ export default function AppointmentScreen() {
         patientPhone: phoneNumber || '',
         patientGender: gender || 'MALE',
         clinicId: selectedFacility?.id || 1,
-        patientProfileId: selectedProfile?.id,
       };
 
+      // Only include patientProfileId if it exists (when a profile is selected)
+      if (selectedProfile?.id) {
+        appointmentData.patientProfileId = selectedProfile.id;
+      }
+
       console.log('📝 Creating appointment:', appointmentData);
+      console.log('📝 Selected Profile:', selectedProfile);
+      console.log('📝 Patient Profile ID:', selectedProfile?.id);
+      console.log('📝 Selected Customer:', selectedCustomer);
 
       // Gọi API tạo appointment
       const result = await createAppointmentMutation.mutateAsync(appointmentData);
