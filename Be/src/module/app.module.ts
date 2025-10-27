@@ -11,6 +11,7 @@ import { ReceptionistModule } from './receptionist/receptionist.module';
 import { CustomZodValidationPipe } from '@/common/pipes';
 import { appConfig } from '@/common/config';
 import { JwtAuthGuard, RolesGuard } from '@/common/guards';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { JwtAuthGuard, RolesGuard } from '@/common/guards';
       load: [appConfig],
     }),
     PrismaModule,
+    AuthModule,
     CommonModule,
     PatientModule,
     AdminModule,

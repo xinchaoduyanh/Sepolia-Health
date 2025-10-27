@@ -17,12 +17,12 @@ export const API_CONFIG = {
 export const API_ENDPOINTS = {
   // Auth
   AUTH: {
-    LOGIN: '/patient/auth/login',
-    REGISTER: '/patient/auth/register',
-    VERIFY_EMAIL: '/patient/auth/verify-email',
-    COMPLETE_REGISTER: '/patient/auth/complete-register',
-    REFRESH: '/patient/auth/refresh-token',
-    LOGOUT: '/patient/auth/logout',
+    LOGIN: '/auth/login',
+    REGISTER: '/auth/register',
+    VERIFY_EMAIL: '/auth/verify-email',
+    COMPLETE_REGISTER: '/auth/complete-register',
+    REFRESH: '/auth/refresh-token',
+    LOGOUT: '/auth/logout',
     PROFILE: '/patient/user/profile', // User profile endpoint
   },
 
