@@ -32,12 +32,12 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
             <div className="max-w-md w-full space-y-8">
                 <div className="text-center">
                     <img className="mx-auto h-12 w-auto" src="/image/sepolia-icon.png" alt="Sepolia Health" />
-                    <h2 className="mt-6 text-3xl font-extrabold text-gray-900">Admin Login</h2>
-                    <p className="mt-2 text-sm text-gray-600">Sign in to your admin account</p>
+                    <h2 className="mt-6 text-3xl font-extrabold text-foreground">Admin Login</h2>
+                    <p className="mt-2 text-sm text-muted-foreground">Sign in to your admin account</p>
                 </div>
 
                 <Card>
@@ -90,7 +90,7 @@ export default function LoginPage() {
                 </Card>
 
                 <div className="text-center">
-                    <p className="text-sm text-gray-600">Sepolia Health Management System</p>
+                    <p className="text-sm text-muted-foreground">Sepolia Health Management System</p>
                 </div>
             </div>
         </div>

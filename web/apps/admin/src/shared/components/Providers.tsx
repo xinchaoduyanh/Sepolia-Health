@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useEffect } from 'react'
+import { ThemeProvider } from 'next-themes'
 import { matchQuery, MutationCache, QueryClient } from '@tanstack/react-query'
 import dynamic from 'next/dynamic'
 import { Toaster } from '@workspace/ui/components/Sonner'
@@ -70,19 +71,28 @@ export function Providers({ children }: { children: React.ReactNode }) {
         }
 
         // Chỉ lắng nghe 2 state này là đủ
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [authStore.isAuthenticated, authStore.hasHydrated])
 
     return (
         <div suppressHydrationWarning>
             <ClientOnly>
                 <BsProvider>
-                    <QueryClientProvider client={queryClient}>
-                        {children}
-                        <ClientOnly>
-                            <Toaster />
-                        </ClientOnly>
-                        <ReactQueryDevtools initialIsOpen={false} />
-                    </QueryClientProvider>
+                    <ThemeProvider
+                        attribute="class"
+                        defaultTheme="light"
+                        disableTransitionOnChange
+                        enableColorScheme
+                        storageKey="sepolia-theme"
+                    >
+                        <QueryClientProvider client={queryClient}>
+                            {children}
+                            <ClientOnly>
+                                <Toaster />
+                            </ClientOnly>
+                            <ReactQueryDevtools initialIsOpen={false} />
+                        </QueryClientProvider>
+                    </ThemeProvider>
                 </BsProvider>
             </ClientOnly>
         </div>
