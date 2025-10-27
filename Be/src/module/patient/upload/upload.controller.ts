@@ -20,8 +20,6 @@ import { UploadService } from '@/common/modules';
 import { PrismaService } from '@/common/prisma/prisma.service';
 import { CurrentUser } from '@/common/decorators';
 import { ApiBearerAuth } from '@nestjs/swagger';
-import { UseGuards } from '@nestjs/common';
-import { JwtAuthGuard, RolesGuard } from '@/common/guards';
 import { Roles } from '@/common/decorators';
 import { Role } from '@prisma/client';
 // DTOs
@@ -46,7 +44,6 @@ export class UploadController {
 
   @Post('file')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.PATIENT)
   @UseInterceptors(FileInterceptor('file'))
   @ApiOperation({ summary: 'Upload file lên S3' })
@@ -96,7 +93,6 @@ export class UploadController {
 
   @Post('url')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.PATIENT)
   @ApiOperation({ summary: 'Upload từ URL (sẽ lưu URL trực tiếp)' })
   @ApiBody({
@@ -133,7 +129,6 @@ export class UploadController {
 
   @Post('avatar/file')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.PATIENT)
   @UseInterceptors(FileInterceptor('avatar'))
   @ApiOperation({ summary: 'Upload avatar từ file' })
@@ -217,7 +212,6 @@ export class UploadController {
 
   @Post('avatar/url')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.PATIENT)
   @ApiOperation({ summary: 'Upload avatar từ URL' })
   @ApiBody({
