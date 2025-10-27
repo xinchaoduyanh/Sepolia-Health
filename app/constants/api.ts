@@ -1,8 +1,12 @@
+import { API_URL } from '@env';
+
+// console.log('not p', API_URL);
+// console.log('in p', process.env.API_URL);
 // API Configuration Constants
 export const API_CONFIG = {
   // Development URLs
   BASE_URL: __DEV__
-    ? 'http://10.0.2.2:8000/api' // Local development
+    ? (API_URL ?? 'http://localhost:8000/api') // Local development
     : 'https://your-production-api.com/api', // Production URL
 
   TIMEOUT: 10000, // 10 seconds

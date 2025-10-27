@@ -4,6 +4,10 @@ module.exports = function (api) {
 
   plugins.push('react-native-reanimated/plugin');
   plugins.push([
+    'module:react-native-dotenv',
+    { moduleName: '@env', path: '.env', allowUndefined: true, safe: true },
+  ]);
+  plugins.push([
     'module-resolver',
     {
       root: ['./'],
@@ -25,7 +29,6 @@ module.exports = function (api) {
 
   return {
     presets: [['babel-preset-expo', { jsxImportSource: 'nativewind' }], 'nativewind/babel'],
-
     plugins,
   };
 };
