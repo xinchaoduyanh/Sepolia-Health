@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect } from 'react'
 import { matchQuery, MutationCache, QueryClient } from '@tanstack/react-query'
 import dynamic from 'next/dynamic'
 import { Toaster } from '@workspace/ui/components/Sonner'
@@ -33,42 +33,44 @@ const queryClient = new QueryClient({
     },
     mutationCache: new MutationCache({
         onSuccess: async (_data, _variables, _context, mutation) => {
-            await queryClient.invalidateQueries({
-                predicate: query =>
-                    // invalidate all matching tags at once
-                    // or everything if no meta is provided
-                    (mutation.meta?.invalidates as any)?.some((queryKey: any) => matchQuery({ queryKey }, query)) ??
-                    true,
-            })
+            // Only invalidate specific queries, not all queries
+            if (mutation.meta?.invalidates) {
+                await queryClient.invalidateQueries({
+                    predicate: query =>
+                        (mutation.meta?.invalidates as any)?.some((queryKey: any) => matchQuery({ queryKey }, query)),
+                })
+            }
+            // Don't invalidate all queries by default
         },
     }),
 })
 
 export function Providers({ children }: { children: React.ReactNode }) {
     const authStore = useAuthStore()
-    const initialized = useRef(false)
+    const hasInitialized = React.useRef(false)
 
     useEffect(() => {
-        console.log('🔄 Providers: Auth store state:', {
-            hasAuthStore: !!authStore,
-            hasAccessToken: !!authStore?.accessToken,
-            hasRefreshToken: !!authStore?.refreshToken,
-            isAuthenticated: authStore?.isAuthenticated,
-            isLoading: authStore?.isLoading,
-            hasHydrated: authStore?.hasHydrated,
-            user: authStore?.user,
-            tokenPreview: authStore?.accessToken?.substring(0, 20) + '...',
-        })
-
-        // Only initialize API client AFTER rehydration is complete
-        if (!initialized.current && authStore?.hasHydrated) {
-            console.log('🔧 Rehydration complete! Initializing API client with auth store...')
-            initializeApiClient(authStore)
-            initialized.current = true
-        } else if (!authStore?.hasHydrated) {
-            console.log('⏳ Waiting for auth store rehydration to complete...')
+        // 1. Chờ store được hydrate
+        if (!authStore.hasHydrated) {
+            console.log('⏳ Waiting for auth store rehydration...')
+            return // Không làm gì cả cho đến khi hydrate xong
         }
-    }, [authStore])
+
+        // TRÁNH DOUBLE INITIALIZATION trong Strict Mode
+        if (!hasInitialized.current) {
+            console.log('🔧 Initializing API client (first time)...')
+            initializeApiClient(authStore)
+            hasInitialized.current = true
+        }
+
+        // Nếu người dùng logout (isAuthenticated là false)
+        if (!authStore.isAuthenticated) {
+            console.log('🔴 User is logged out. Clearing all query cache...')
+            queryClient.clear() // XÓA SẠCH cache để login lần sau không bị lỗi
+        }
+
+        // Chỉ lắng nghe 2 state này là đủ
+    }, [authStore.isAuthenticated, authStore.hasHydrated])
 
     return (
         <div suppressHydrationWarning>

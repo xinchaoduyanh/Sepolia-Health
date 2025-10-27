@@ -1,3 +1,4 @@
+import { get } from 'http'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
@@ -156,8 +157,11 @@ export const useAuthStore = create<AuthStore>()(
                     console.log('❌ No state found in localStorage')
                 }
 
-                // Mark as hydrated after rehydration completes
-                set({ hasHydrated: true })
+                // Mark as hydrated and set loading to false after rehydration completes
+                if (state) {
+                    state.hasHydrated = true
+                    state.isLoading = false
+                }
                 console.log('✅ Auth store rehydration completed')
             },
         },

@@ -117,7 +117,7 @@ const columns: any[] = [
         },
     },
     {
-        accessorKey: 'patientProfiles',
+        accessorKey: 'patientProfilesCount',
         header: 'Số hồ sơ',
         size: 100,
         cell: ({ getValue }: { getValue: () => any }) => (
@@ -172,7 +172,7 @@ const columns: any[] = [
 
 export default function CustomerListPage() {
     const [searchTerm, setSearchTerm] = useState('')
-    const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
+    const [debouncedSearchTerm, setDebouncedSearchTerm] = useState<string | undefined>(undefined)
     const [currentPage, setCurrentPage] = useState(1)
     const [statusFilter, setStatusFilter] = useState<'UNVERIFIED' | 'ACTIVE' | 'DEACTIVE' | ''>('')
     const itemsPerPage = 10
@@ -196,7 +196,7 @@ export default function CustomerListPage() {
             limit: itemsPerPage,
         }
 
-        if (debouncedSearchTerm) {
+        if (debouncedSearchTerm !== undefined) {
             params.search = debouncedSearchTerm
         }
 
@@ -206,7 +206,7 @@ export default function CustomerListPage() {
 
         return params
     }, [currentPage, debouncedSearchTerm, statusFilter])
-
+    const isQueryReady = debouncedSearchTerm !== undefined
     // Memoize handlers to prevent re-renders
     const handleSearchChange = useCallback((value: string) => {
         setSearchTerm(value)
@@ -221,7 +221,7 @@ export default function CustomerListPage() {
     }, [])
 
     // Fetch patients data
-    const { data: patientsResponse, isLoading, error } = usePatients(queryParams)
+    const { data: patientsResponse, isLoading, error } = usePatients(queryParams, isQueryReady)
 
     // Debug log to track API calls - only log when params change
     useEffect(() => {

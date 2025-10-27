@@ -55,26 +55,70 @@ export function useAdminLogout() {
 
     return useMutation({
         mutationFn: async () => {
-            // Clear localStorage first (Zustand store)
+            console.log('🔐 Starting logout process...', new Date().toISOString())
+            console.trace('🔐 Logout mutation called from:')
+
+            // Dispatch event to notify ProtectedRoute
+            if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('logout-start'))
+            }
+
+            // Step 1: Call API logout FIRST (while we still have token)
+            try {
+                console.log('🔐 Calling logout API...')
+
+                // Get token from localStorage directly for logout API
+                let token = null
+                try {
+                    const authStorage = localStorage.getItem('auth-storage')
+                    if (authStorage) {
+                        const parsed = JSON.parse(authStorage)
+                        token = parsed.state?.accessToken
+                    }
+                } catch (error) {
+                    console.error('Error reading token from localStorage:', error)
+                }
+
+                if (token) {
+                    // Call logout API directly with token
+                    const response = await fetch(`${config.apiUrl}/auth/logout`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            Authorization: `Bearer ${token}`,
+                        },
+                    })
+
+                    if (response.ok) {
+                        console.log('✅ Logout API call successful')
+                    } else {
+                        console.log('⚠️ Logout API call failed but continuing...')
+                    }
+                } else {
+                    console.log('⚠️ No token found, skipping logout API call')
+                }
+            } catch (error) {
+                console.error('❌ Logout API call failed:', error)
+                // Don't care about API response, continue with local cleanup
+            }
+
+            // Step 2: Clear local state AFTER API call
             console.log('🔐 Clearing local state...')
             logout()
             queryClient.clear()
-
-            // Call API logout (don't care about response)
-            try {
-                await authService.logout()
-            } catch (error) {
-                console.error('Logout API call failed:', error)
-                // Don't care about API response, continue
-            }
+            console.log('✅ Local state cleared')
         },
         onSuccess: () => {
+            console.log('🔐 Logout successful, redirecting to login...')
             // Redirect to login page
-            router.push('/login')
+            router.replace('/login')
         },
-        onError: () => {
-            // Even if logout fails, redirect to login
-            router.push('/login')
+        onError: error => {
+            console.error('❌ Logout mutation failed:', error)
+            // Even if logout fails, clear local state and redirect
+            logout()
+            queryClient.clear()
+            router.replace('/login')
         },
     })
 }
@@ -182,8 +226,22 @@ export function useCheckAuth() {
     const authStore = useAuthStore()
 
     const checkAuth = React.useCallback(async () => {
-        const { setUser, setLoading, hasTokens, accessToken, refreshToken, logout, setAccessToken } = authStore
+        const { setUser, setLoading, hasTokens, accessToken, refreshToken, logout, setAccessToken, hasHydrated } =
+            authStore
         console.log('🔍 Checking authentication status...')
+
+        // Don't check if not hydrated yet
+        if (!hasHydrated) {
+            console.log('⏳ Waiting for rehydration to complete...')
+            return
+        }
+
+        // Don't check if already authenticated with valid user
+        if (authStore.isAuthenticated && authStore.user && authStore.user.role) {
+            console.log('✅ Already authenticated with valid user, skipping check')
+            return
+        }
+
         setLoading(true)
 
         try {

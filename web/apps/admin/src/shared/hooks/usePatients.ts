@@ -11,17 +11,19 @@ import { queryKeys } from '../lib/query-keys'
 /**
  * Hook to get patients list with pagination and filters
  */
-export function usePatients(params: PatientsListParams = {}) {
-    console.log('🔍 usePatients called with params:', params)
+export function usePatients(params: PatientsListParams = {}, isReady: boolean) {
+    console.log('🔍 usePatients called with params:', params, new Date().toISOString())
+    console.trace('🔍 usePatients called from:')
 
     return useQuery({
-        queryKey: queryKeys.admin.patients.list(params),
+        // queryKey: queryKeys.admin.patients.list(params),
+        queryKey: ['admin', 'patients', 'list', params.page, params.limit, params.search, params.status],
         queryFn: () => {
             console.log('🚀 API call to getPatients with params:', params)
             console.log('🔍 Full URL will be:', `/patients?${new URLSearchParams(params as any).toString()}`)
             return patientsService.getPatients(params)
         },
-        enabled: true, // Always enabled
+        enabled: isReady,
         staleTime: 5 * 60 * 1000, // 5 minutes
         retry: (failureCount, error: any) => {
             console.log('🔄 usePatients retry attempt:', failureCount, 'Error:', error)
@@ -34,7 +36,7 @@ export function usePatients(params: PatientsListParams = {}) {
             return failureCount < 1
         },
         refetchOnWindowFocus: false, // Prevent refetch on window focus
-        refetchOnMount: true, // Allow refetch on mount for fresh data
+        // refetchOnMount: false, // Use global setting to prevent double calls
         refetchOnReconnect: false, // Prevent refetch on network reconnect
         refetchInterval: false, // Disable automatic refetch
     })

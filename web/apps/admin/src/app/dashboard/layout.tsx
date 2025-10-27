@@ -15,6 +15,7 @@ export default function Layout({ children }: LayoutProps) {
     const { isAuthenticated } = useAuth()
     const { checkAuth } = useCheckAuth()
     const authChecked = useRef(false)
+    const isCheckingAuth = useRef(false)
 
     useEffect(() => {
         // Get sidebar state from localStorage
@@ -25,13 +26,15 @@ export default function Layout({ children }: LayoutProps) {
     useEffect(() => {
         // Check authentication status - ONLY ONCE when dashboard layout mounts
         // Only check if we don't have user data yet
-        if (!authChecked.current && !isAuthenticated) {
+        if (!authChecked.current && !isAuthenticated && !isCheckingAuth.current) {
             console.log('🔍 Dashboard layout: Starting authentication check...')
+            isCheckingAuth.current = true
             checkAuth()
             authChecked.current = true
         } else if (isAuthenticated) {
             console.log('✅ Dashboard layout: Already authenticated, skipping check')
             authChecked.current = true
+            isCheckingAuth.current = false
         }
     }, [checkAuth, isAuthenticated])
 
