@@ -17,7 +17,6 @@ import {
   ApiResponse,
   ApiBearerAuth,
   ApiParam,
-  ApiQuery,
   ApiBody,
 } from '@nestjs/swagger';
 import { AdminDoctorService } from './admin-doctor.service';
@@ -34,6 +33,8 @@ import {
   CreateDoctorSchema,
   UpdateDoctorSchema,
   CreateDoctorScheduleSchema,
+  GetDoctorsQueryDto,
+  GetDoctorsQuerySchema,
 } from './admin-doctor.dto';
 import { JwtAuthGuard, RolesGuard } from '@/common/guards';
 import { Roles } from '@/common/decorators';
@@ -67,20 +68,16 @@ export class AdminDoctorController {
   @Get()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Lấy danh sách bác sĩ' })
-  @ApiQuery({ name: 'page', required: false, type: Number })
-  @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiQuery({ name: 'search', required: false, type: String })
   @ApiResponse({
     status: 200,
     description: 'Lấy danh sách thành công',
     type: DoctorListResponseDto,
   })
   async getDoctors(
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-    @Query('search') search?: string,
+    @Query(new CustomZodValidationPipe(GetDoctorsQuerySchema))
+    query: GetDoctorsQueryDto,
   ): Promise<DoctorListResponseDto> {
-    return this.adminDoctorService.getDoctors(page, limit, search);
+    return this.adminDoctorService.getDoctors(query);
   }
 
   @Get(':id')

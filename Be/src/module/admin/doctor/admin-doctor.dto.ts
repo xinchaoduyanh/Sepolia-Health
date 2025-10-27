@@ -2,6 +2,15 @@ import { ApiProperty } from '@nestjs/swagger';
 import { z } from 'zod';
 import { DayOfWeek } from '@prisma/client';
 
+// Query schemas
+export const GetDoctorsQuerySchema = z.object({
+  page: z.coerce.number().min(1).default(1),
+  limit: z.coerce.number().min(1).max(100).default(10),
+  search: z.string().optional(),
+});
+
+export type GetDoctorsQueryDto = z.infer<typeof GetDoctorsQuerySchema>;
+
 // Zod schemas
 export const CreateDoctorSchema = z.object({
   email: z.string().email('Email không hợp lệ'),
@@ -204,10 +213,24 @@ export class CreateDoctorResponseDto {
   experienceYears: number;
 
   @ApiProperty({
+    description: 'Số điện thoại',
+    example: '0123456789',
+    required: false,
+  })
+  phone?: string;
+
+  @ApiProperty({
     description: 'Trạng thái',
     example: 'ACTIVE',
   })
   status: string;
+
+  @ApiProperty({
+    description: 'Ngày tạo',
+    example: '2024-01-01T00:00:00.000Z',
+    required: false,
+  })
+  createdAt?: Date;
 }
 
 export class DoctorListResponseDto {
@@ -236,7 +259,37 @@ export class DoctorListResponseDto {
   limit: number;
 }
 
-export class DoctorDetailResponseDto extends CreateDoctorResponseDto {
+export class DoctorDetailResponseDto {
+  @ApiProperty({
+    description: 'ID bác sĩ',
+    example: 1,
+  })
+  id: number;
+
+  @ApiProperty({
+    description: 'Email bác sĩ',
+    example: 'doctor@sepolia.com',
+  })
+  email: string;
+
+  @ApiProperty({
+    description: 'Họ tên bác sĩ',
+    example: 'Nguyễn Văn A',
+  })
+  fullName: string;
+
+  @ApiProperty({
+    description: 'Chuyên khoa',
+    example: 'Tim mạch',
+  })
+  specialty: string;
+
+  @ApiProperty({
+    description: 'Số năm kinh nghiệm',
+    example: 5,
+  })
+  experienceYears: number;
+
   @ApiProperty({
     description: 'Số điện thoại',
     example: '0123456789',
@@ -254,6 +307,12 @@ export class DoctorDetailResponseDto extends CreateDoctorResponseDto {
     example: '123 Đường ABC, Quận 1, TP.HCM',
   })
   address?: string;
+
+  @ApiProperty({
+    description: 'Trạng thái',
+    example: 'ACTIVE',
+  })
+  status: string;
 
   @ApiProperty({
     description: 'Ngày tạo',

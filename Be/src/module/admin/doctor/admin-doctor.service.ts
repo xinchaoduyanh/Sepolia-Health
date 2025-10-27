@@ -12,6 +12,7 @@ import {
   DoctorListResponseDto,
   DoctorDetailResponseDto,
   CreateDoctorScheduleDto,
+  GetDoctorsQueryDto,
 } from './admin-doctor.dto';
 
 @Injectable()
@@ -109,17 +110,18 @@ export class AdminDoctorService {
       id: result.doctorProfile.id,
       email: result.user.email,
       fullName: `${result.doctorProfile.firstName} ${result.doctorProfile.lastName}`,
+      phone: result.user.phone || '',
       specialty: result.doctorProfile.specialty,
       experienceYears: parseInt(result.doctorProfile.experience || '0'),
-      status: 'ACTIVE',
+      status: result.user.status,
+      createdAt: result.doctorProfile.createdAt,
     };
   }
 
   async getDoctors(
-    page: number = 1,
-    limit: number = 10,
-    search?: string,
+    query: GetDoctorsQueryDto,
   ): Promise<DoctorListResponseDto> {
+    const { page = 1, limit = 10, search } = query;
     const skip = (page - 1) * limit;
 
     const where = search
@@ -161,9 +163,11 @@ export class AdminDoctorService {
         id: doctor.doctorProfile!.id,
         email: doctor.email,
         fullName: `${doctor.doctorProfile!.firstName} ${doctor.doctorProfile!.lastName}`,
+        phone: doctor.phone || '',
         specialty: doctor.doctorProfile!.specialty,
         experienceYears: parseInt(doctor.doctorProfile!.experience || '0'),
-        status: 'ACTIVE',
+        status: doctor.status,
+        createdAt: doctor.createdAt,
       })),
       total,
       page,

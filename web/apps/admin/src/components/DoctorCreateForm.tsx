@@ -1,323 +1,257 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@workspace/ui/components/Button'
-import { Select } from '@workspace/ui/components/Select'
-import { Textfield } from '@workspace/ui/components/Textfield'
-import { RadioGroup } from '@workspace/ui/components/RadioGroup'
-import { Checkbox } from '@workspace/ui/components/Checkbox'
-import { Card } from '@workspace/ui/components/Card'
-import { Uploader } from '@workspace/ui/components/Uploader'
-import { Camera, Upload, Save, ArrowLeft } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
+import { useCreateDoctor } from '@/shared/hooks'
+import type { CreateDoctorRequest } from '@/shared/lib/api-services/doctors.service'
 
-// Specialty options
-const specialtyOptions = [
-    { id: 'dermatology', name: 'Da liễu' },
-    { id: 'nutrition', name: 'Dinh dưỡng' },
-    { id: 'hematology', name: 'Huyết học' },
-    { id: 'ophthalmology', name: 'Mắt' },
-    { id: 'andrology', name: 'Nam Khoa' },
-    { id: 'pediatrics', name: 'Nhi Khoa' },
-]
+export function DoctorCreateForm() {
+    const router = useRouter()
+    const createDoctor = useCreateDoctor()
 
-// Site options
-const siteOptions = [
-    { id: 'hanoi', name: 'Hà Nội' },
-    { id: 'hcm', name: 'TP. Hồ Chí Minh' },
-    { id: 'danang', name: 'Đà Nẵng' },
-    { id: 'cantho', name: 'Cần Thơ' },
-]
-
-// CM options
-const cmOptions = [
-    { id: 'cm1', name: 'CM1' },
-    { id: 'cm2', name: 'CM2' },
-    { id: 'cm3', name: 'CM3' },
-]
-
-interface DoctorCreateFormProps {
-    onBack: () => void
-    onSave: (doctorData: any) => void
-}
-
-export function DoctorCreateForm({ onBack, onSave }: DoctorCreateFormProps) {
-    const [doctorType, setDoctorType] = useState<'vinmec' | 'external'>('vinmec')
-    const [gender, setGender] = useState<'male' | 'female' | 'unknown'>('male')
-    const [selectedSpecialties, setSelectedSpecialties] = useState<string[]>([])
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<CreateDoctorRequest>({
+        email: '',
+        password: '',
         fullName: '',
         phone: '',
-        email: '',
-        uid: '',
-        site: '',
-        cm: '',
-        profileId: '',
+        specialty: '',
+        experienceYears: 0,
+        description: '',
+        address: '',
+        clinicId: 1,
+        serviceIds: [],
     })
-    const [avatar, setAvatar] = useState<File | null>(null)
 
-    const handleInputChange = (field: string, value: string) => {
+    const handleChange = (field: keyof CreateDoctorRequest, value: string | number) => {
         setFormData(prev => ({ ...prev, [field]: value }))
     }
 
-    const handleSpecialtyChange = (specialtyId: string, checked: boolean) => {
-        setSelectedSpecialties(prev =>
-            checked 
-                ? [...prev, specialtyId]
-                : prev.filter(id => id !== specialtyId)
-        )
+    const handleServiceIdsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value
+        const ids = value.split(',').map(id => Number.parseInt(id.trim())).filter(id => !Number.isNaN(id))
+        setFormData(prev => ({ ...prev, serviceIds: ids }))
     }
 
-    const handleSave = () => {
-        const doctorData = {
-            doctorType,
-            gender,
-            selectedSpecialties,
-            formData,
-            avatar,
+    const isFormValid = 
+        formData.email && 
+        formData.password && 
+        formData.fullName && 
+        formData.phone && 
+        formData.specialty &&
+        formData.password.length >= 6 &&
+        formData.experienceYears >= 0 &&
+        formData.clinicId > 0 &&
+        formData.serviceIds.length > 0
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault()
+
+        if (!isFormValid) return
+
+        try {
+            await createDoctor.mutateAsync(formData)
+            router.push('/dashboard/doctor-management/doctor-list')
+        } catch (error) {
+            console.error('Error creating doctor:', error)
         }
-        onSave(doctorData)
     }
 
-    const handleAvatarUpload = (files: File[]) => {
-        if (files.length > 0) {
-            setAvatar(files[0])
-        }
-    }
+    const inputClassName = 'bg-background text-foreground border-border focus:ring-2 focus:ring-blue-500 focus:border-transparent'
 
     return (
-        <div className="space-y-6">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={onBack}
-                        className="flex items-center space-x-2"
-                    >
-                        <ArrowLeft className="h-4 w-4" />
-                        <span>Quay lại</span>
-                    </Button>
-                    <div>
-                        <h2 className="text-2xl font-bold text-foreground">Tạo lập hồ sơ bác sĩ</h2>
-                        <p className="text-sm text-muted-foreground mt-1">
-                            Thêm thông tin bác sĩ mới vào hệ thống
-                        </p>
-                    </div>
-                </div>
+        <div className="p-6 max-w-3xl mx-auto space-y-6">
+            <div className="flex items-center justify-between mb-6">
+                <button
+                    onClick={() => router.back()}
+                    className="flex items-center gap-2 text-foreground hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                >
+                    <ArrowLeft size={20} />
+                    <span className="font-medium">Quay lại</span>
+                </button>
+                <h2 className="text-2xl font-bold text-foreground">Tạo lập hồ sơ bác sĩ</h2>
             </div>
 
-            {/* Main Form */}
-            <Card className="p-6">
-                <div className="space-y-8">
-                    {/* Doctor Type Selection */}
-                    <div className="space-y-4">
-                        <h3 className="text-lg font-semibold text-foreground">Kiểu bác sĩ</h3>
-                        <RadioGroup
-                            value={doctorType}
-                            onChange={setDoctorType}
-                            options={[
-                                { value: 'vinmec', label: 'Bác sĩ Vinmec' },
-                                { value: 'external', label: 'Bác sĩ ngoài Vinmec' }
-                            ]}
-                        />
-                    </div>
-
-                    {/* General Information */}
-                    <div className="space-y-6">
-                        <h3 className="text-lg font-semibold text-foreground">Thông tin chung</h3>
-
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                            {/* Avatar Section */}
-                            <div className="space-y-4">
-                                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                                    Ảnh đại diện
-                                </label>
-                                <div className="flex flex-col items-center space-y-4">
-                                    {avatar ? (
-                                        <div className="w-32 h-32 rounded-full overflow-hidden border-2 border-slate-300 dark:border-slate-600">
-                                            <img
-                                                src={URL.createObjectURL(avatar)}
-                                                alt="Avatar preview"
-                                                className="w-full h-full object-cover"
-                                            />
-                                        </div>
-                                    ) : (
-                                        <div className="w-32 h-32 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-full flex items-center justify-center bg-slate-50 dark:bg-slate-800">
-                                            <div className="text-center">
-                                                <Camera className="w-8 h-8 text-slate-400 mx-auto mb-2" />
-                                                <span className="text-xs text-slate-500 dark:text-slate-400">
-                                                    Ảnh đại diện
-                                                </span>
-                                            </div>
-                                        </div>
-                                    )}
-                                    <Uploader
-                                        onUpload={handleAvatarUpload}
-                                        accept="image/*"
-                                        maxFiles={1}
-                                        className="w-full"
-                                    >
-                                        <Button variant="outline" size="sm" className="flex items-center space-x-2">
-                                            <Upload className="w-4 h-4" />
-                                            <span>Tải lên</span>
-                                        </Button>
-                                    </Uploader>
-                                </div>
-                            </div>
-
-                            {/* Form Fields */}
-                            <div className="lg:col-span-2 space-y-6">
-                                {/* Gender Selection */}
-                                <div className="space-y-3">
-                                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                                        Giới tính
-                                    </label>
-                                    <RadioGroup
-                                        value={gender}
-                                        onChange={setGender}
-                                        options={[
-                                            { value: 'male', label: 'Nam' },
-                                            { value: 'female', label: 'Nữ' },
-                                            { value: 'unknown', label: 'Không xác định' }
-                                        ]}
-                                    />
-                                </div>
-
-                                {/* Input Fields */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                                            Họ tên *
-                                        </label>
-                                        <Textfield
-                                            value={formData.fullName}
-                                            onChange={(value) => handleInputChange('fullName', value)}
-                                            placeholder="Nhập họ tên"
-                                            required
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                                            Số điện thoại *
-                                        </label>
-                                        <Textfield
-                                            type="tel"
-                                            value={formData.phone}
-                                            onChange={(value) => handleInputChange('phone', value)}
-                                            placeholder="Nhập số điện thoại"
-                                            required
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                                            Email *
-                                        </label>
-                                        <Textfield
-                                            type="email"
-                                            value={formData.email}
-                                            onChange={(value) => handleInputChange('email', value)}
-                                            placeholder="Nhập email"
-                                            required
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                                            UID
-                                        </label>
-                                        <Textfield
-                                            value={formData.uid}
-                                            onChange={(value) => handleInputChange('uid', value)}
-                                            placeholder="Nhập UID"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Additional Information */}
-                    <div className="space-y-6">
-                        <h3 className="text-lg font-semibold text-foreground">Thông tin bổ sung</h3>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Site *</label>
-                                <Select
-                                    value={formData.site}
-                                    onChange={(value) => handleInputChange('site', value)}
-                                    options={siteOptions}
-                                    placeholder="Chọn site"
-                                    required
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">CM *</label>
-                                <Select
-                                    value={formData.cm}
-                                    onChange={(value) => handleInputChange('cm', value)}
-                                    options={cmOptions}
-                                    placeholder="Chọn CM"
-                                    required
-                                />
-                            </div>
-                        </div>
-
-                        {/* Specialty Selection */}
-                        <div className="space-y-3">
-                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                                Chuyên khoa *
-                            </label>
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                                {specialtyOptions.map(specialty => (
-                                    <div key={specialty.id} className="flex items-center space-x-2">
-                                        <Checkbox
-                                            id={specialty.id}
-                                            checked={selectedSpecialties.includes(specialty.id)}
-                                            onChange={(checked) => handleSpecialtyChange(specialty.id, checked)}
-                                        />
-                                        <label 
-                                            htmlFor={specialty.id}
-                                            className="text-sm text-slate-700 dark:text-slate-300 cursor-pointer"
-                                        >
-                                            {specialty.name}
-                                        </label>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Profile ID Section */}
-                        <div className="space-y-3">
-                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                                Profile ID thông tin bác sĩ tại Vinmec.com
-                            </label>
-                            <div className="flex space-x-3">
-                                <Textfield
-                                    value={formData.profileId}
-                                    onChange={(value) => handleInputChange('profileId', value)}
-                                    placeholder="Nhập Profile ID"
-                                    className="flex-1"
-                                />
-                                <Button variant="outline" className="px-6">
-                                    Cập nhật
-                                </Button>
-                            </div>
-                        </div>
-                    </div>
+            <form onSubmit={handleSubmit} className="space-y-6 bg-card border border-border rounded-lg p-6">
+                {/* Email */}
+                <div className="space-y-2">
+                    <label htmlFor="email" className="block text-sm font-medium text-foreground">
+                        Email *
+                    </label>
+                    <input
+                        id="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={e => handleChange('email', e.target.value)}
+                        className={`w-full px-3 py-2 border rounded-md ${inputClassName}`}
+                        placeholder="doctor@sepolia.com"
+                        required
+                    />
                 </div>
 
-                {/* Action Buttons */}
-                <div className="flex justify-end space-x-4 pt-6 border-t border-border">
-                    <Button variant="outline" onClick={onBack}>
+                {/* Password */}
+                <div className="space-y-2">
+                    <label htmlFor="password" className="block text-sm font-medium text-foreground">
+                        Mật khẩu *
+                    </label>
+                    <input
+                        id="password"
+                        type="password"
+                        value={formData.password}
+                        onChange={e => handleChange('password', e.target.value)}
+                        className={`w-full px-3 py-2 border rounded-md ${inputClassName}`}
+                        placeholder="Ít nhất 6 ký tự"
+                        required
+                        minLength={6}
+                    />
+                </div>
+
+                {/* Full Name */}
+                <div className="space-y-2">
+                    <label htmlFor="fullName" className="block text-sm font-medium text-foreground">
+                        Họ và tên *
+                    </label>
+                    <input
+                        id="fullName"
+                        type="text"
+                        value={formData.fullName}
+                        onChange={e => handleChange('fullName', e.target.value)}
+                        className={`w-full px-3 py-2 border rounded-md ${inputClassName}`}
+                        placeholder="Nguyễn Văn A"
+                        required
+                    />
+                </div>
+
+                {/* Phone */}
+                <div className="space-y-2">
+                    <label htmlFor="phone" className="block text-sm font-medium text-foreground">
+                        Số điện thoại *
+                    </label>
+                    <input
+                        id="phone"
+                        type="tel"
+                        value={formData.phone}
+                        onChange={e => handleChange('phone', e.target.value)}
+                        className={`w-full px-3 py-2 border rounded-md ${inputClassName}`}
+                        placeholder="0123456789"
+                        required
+                    />
+                </div>
+
+                {/* Specialty */}
+                <div className="space-y-2">
+                    <label htmlFor="specialty" className="block text-sm font-medium text-foreground">
+                        Chuyên khoa *
+                    </label>
+                    <input
+                        id="specialty"
+                        type="text"
+                        value={formData.specialty}
+                        onChange={e => handleChange('specialty', e.target.value)}
+                        className={`w-full px-3 py-2 border rounded-md ${inputClassName}`}
+                        placeholder="Tim mạch"
+                        required
+                    />
+                </div>
+
+                {/* Experience Years */}
+                <div className="space-y-2">
+                    <label htmlFor="experienceYears" className="block text-sm font-medium text-foreground">
+                        Số năm kinh nghiệm *
+                    </label>
+                    <input
+                        id="experienceYears"
+                        type="number"
+                        value={formData.experienceYears}
+                        onChange={e => handleChange('experienceYears', Number.parseInt(e.target.value) || 0)}
+                        className={`w-full px-3 py-2 border rounded-md ${inputClassName}`}
+                        placeholder="5"
+                        required
+                        min={0}
+                    />
+                </div>
+
+                {/* Clinic ID */}
+                <div className="space-y-2">
+                    <label htmlFor="clinicId" className="block text-sm font-medium text-foreground">
+                        ID Phòng khám *
+                    </label>
+                    <input
+                        id="clinicId"
+                        type="number"
+                        value={formData.clinicId}
+                        onChange={e => handleChange('clinicId', Number.parseInt(e.target.value) || 1)}
+                        className={`w-full px-3 py-2 border rounded-md ${inputClassName}`}
+                        placeholder="1"
+                        required
+                        min={1}
+                    />
+                </div>
+
+                {/* Service IDs */}
+                <div className="space-y-2">
+                    <label htmlFor="serviceIds" className="block text-sm font-medium text-foreground">
+                        Danh sách ID Dịch vụ * <span className="text-xs text-muted-foreground">(phân cách bằng dấu phẩy)</span>
+                    </label>
+                    <input
+                        id="serviceIds"
+                        type="text"
+                        value={formData.serviceIds.join(', ')}
+                        onChange={handleServiceIdsChange}
+                        className={`w-full px-3 py-2 border rounded-md ${inputClassName}`}
+                        placeholder="1, 2, 3"
+                        required
+                    />
+                </div>
+
+                {/* Description */}
+                <div className="space-y-2">
+                    <label htmlFor="description" className="block text-sm font-medium text-foreground">
+                        Mô tả
+                    </label>
+                    <textarea
+                        id="description"
+                        value={formData.description}
+                        onChange={e => handleChange('description', e.target.value)}
+                        className={`w-full px-3 py-2 border rounded-md ${inputClassName}`}
+                        placeholder="Bác sĩ chuyên khoa tim mạch với 5 năm kinh nghiệm"
+                        rows={3}
+                    />
+                </div>
+
+                {/* Address */}
+                <div className="space-y-2">
+                    <label htmlFor="address" className="block text-sm font-medium text-foreground">
+                        Địa chỉ
+                    </label>
+                    <textarea
+                        id="address"
+                        value={formData.address}
+                        onChange={e => handleChange('address', e.target.value)}
+                        className={`w-full px-3 py-2 border rounded-md ${inputClassName}`}
+                        placeholder="123 Đường ABC, Quận 1, TP.HCM"
+                        rows={3}
+                    />
+                </div>
+
+                {/* Submit Button */}
+                <div className="flex justify-end gap-4 pt-4">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => router.back()}
+                    >
                         Hủy
                     </Button>
-                    <Button onClick={handleSave} className="flex items-center space-x-2">
-                        <Save className="h-4 w-4" />
-                        <span>Lưu bác sĩ</span>
+                    <Button
+                        type="submit"
+                        isDisabled={!isFormValid || createDoctor.isPending}
+                    >
+                        {createDoctor.isPending ? 'Đang tạo...' : 'Tạo lập hồ sơ'}
                     </Button>
                 </div>
-            </Card>
+            </form>
         </div>
     )
 }

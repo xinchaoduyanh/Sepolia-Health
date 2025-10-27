@@ -3,11 +3,11 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
-export default function DoctorManagementPage() {
+export default function ReceptionistManagementPage() {
     const router = useRouter()
 
     useEffect(() => {
-        router.replace('/dashboard/doctor-management/doctor-list')
+        router.replace('/dashboard/receptionist-management/receptionist-list')
     }, [router])
 
     return (

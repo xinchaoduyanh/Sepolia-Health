@@ -31,6 +31,8 @@ import {
   UpdateReceptionistDtoClass,
   CreateReceptionistSchema,
   UpdateReceptionistSchema,
+  GetReceptionistsQueryDto,
+  GetReceptionistsQuerySchema,
 } from './admin-receptionist.dto';
 import { JwtAuthGuard, RolesGuard } from '@/common/guards';
 import { Roles, CurrentUser } from '@/common/decorators';
@@ -70,20 +72,16 @@ export class AdminReceptionistController {
   @Get()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Lấy danh sách receptionist' })
-  @ApiQuery({ name: 'page', required: false, type: Number })
-  @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiQuery({ name: 'search', required: false, type: String })
   @ApiResponse({
     status: 200,
     description: 'Lấy danh sách thành công',
     type: ReceptionistListResponseDto,
   })
   async getReceptionists(
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-    @Query('search') search?: string,
+    @Query(new CustomZodValidationPipe(GetReceptionistsQuerySchema))
+    query: GetReceptionistsQueryDto,
   ): Promise<ReceptionistListResponseDto> {
-    return this.adminReceptionistService.getReceptionists(page, limit, search);
+    return this.adminReceptionistService.getReceptionists(query);
   }
 
   @Get(':id')
