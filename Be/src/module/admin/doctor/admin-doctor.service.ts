@@ -392,10 +392,7 @@ export class AdminDoctorService {
       },
     });
 
-    return {
-      data: clinics,
-      total: clinics.length,
-    };
+    return clinics;
   }
 
   async getServices() {
@@ -412,9 +409,6 @@ export class AdminDoctorService {
       },
     });
 
-    return {
-      data: services,
-      total: services.length,
-    };
+    return services;
   }
 }

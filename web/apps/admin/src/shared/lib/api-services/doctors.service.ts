@@ -132,16 +132,16 @@ export class DoctorsService {
      * Get list of clinics
      * GET /doctors/clinics/list
      */
-    async getClinics(): Promise<{ data: Clinic[]; total: number }> {
-        return apiClient.get<{ data: Clinic[]; total: number }>('/doctors/clinics/list')
+    async getClinics(): Promise<{ data: Clinic[] }> {
+        return apiClient.get<{ data: Clinic[] }>('/doctors/clinics/list')
     }
 
     /**
      * Get list of services
      * GET /doctors/services/list
      */
-    async getServices(): Promise<{ data: Service[]; total: number }> {
-        return apiClient.get<{ data: Service[]; total: number }>('/doctors/services/list')
+    async getServices(): Promise<{ data: Service[] }> {
+        return apiClient.get<{ data: Service[] }>('/doctors/services/list')
     }
 }
 

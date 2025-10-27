@@ -10,7 +10,75 @@ import { Avatar, AvatarFallback } from '@workspace/ui/components/Avatar'
 import { Eye, Plus, Trash2 } from 'lucide-react'
 import { useDoctors, useDeleteDoctor, useClinics, useServices } from '@/shared/hooks'
 import { BsSelect } from '@workspace/ui/components/Select'
-import { Spinner } from '@workspace/ui/components/Spinner'
+import { Skeleton } from '@workspace/ui/components/Skeleton'
+
+// Skeleton table component for loading state
+const SkeletonTable = ({ columns }: { columns: any[] }) => {
+    return (
+        <div className="relative grid bg-background-secondary rounded-md overflow-hidden border min-h-[400px]">
+            <div className="w-full overflow-x-auto">
+                <table className="group w-full caption-bottom text-sm">
+                    <thead className="[&_tr]:border-b">
+                        <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+                            {columns.map((col, idx) => (
+                                <th
+                                    key={idx}
+                                    className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0"
+                                    style={{
+                                        minWidth: col.size || 180,
+                                        maxWidth: col.size || 180,
+                                    }}
+                                >
+                                    {col.header}
+                                </th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody className="[&_tr:last-child]:border-0">
+                        {[...Array(8)].map((_, rowIdx) => (
+                            <tr
+                                key={rowIdx}
+                                className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
+                            >
+                                {columns.map((col, colIdx) => (
+                                    <td
+                                        key={colIdx}
+                                        className="p-4 align-middle [&:has([role=checkbox])]:pr-0"
+                                        style={{
+                                            minWidth: col.size || 180,
+                                            maxWidth: col.size || 180,
+                                        }}
+                                    >
+                                        {col.accessorKey === 'id' && <Skeleton className="h-4 w-16" />}
+                                        {col.accessorKey === 'fullName' && (
+                                            <div className="flex items-center space-x-3">
+                                                <Skeleton className="h-8 w-8 rounded-full" />
+                                                <Skeleton className="h-4 w-32" />
+                                            </div>
+                                        )}
+                                        {col.accessorKey === 'email' && <Skeleton className="h-4 w-40" />}
+                                        {col.accessorKey === 'phone' && <Skeleton className="h-4 w-24" />}
+                                        {col.accessorKey === 'specialty' && <Skeleton className="h-5 w-24" />}
+                                        {col.accessorKey === 'experienceYears' && <Skeleton className="h-4 w-16" />}
+                                        {col.accessorKey === 'clinic' && <Skeleton className="h-4 w-40" />}
+                                        {col.accessorKey === 'status' && <Skeleton className="h-5 w-24" />}
+                                        {col.accessorKey === 'createdAt' && <Skeleton className="h-4 w-24" />}
+                                        {col.id === 'actions' && (
+                                            <div className="flex items-center space-x-1">
+                                                <Skeleton className="h-8 w-8" />
+                                                <Skeleton className="h-8 w-8" />
+                                            </div>
+                                        )}
+                                    </td>
+                                ))}
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    )
+}
 
 // Action cell component
 function ActionCell({ doctor }: { doctor: any }) {
@@ -76,7 +144,7 @@ const columns: any[] = [
     {
         accessorKey: 'email',
         header: 'Email',
-        size: 250,
+        size: 280,
         cell: ({ getValue }: { getValue: () => any }) => (
             <span className="text-muted-foreground text-sm">{getValue() as string}</span>
         ),
@@ -84,6 +152,7 @@ const columns: any[] = [
     {
         accessorKey: 'phone',
         header: 'Số điện thoại',
+        size: 110,
         cell: ({ getValue }: { getValue: () => any }) => (
             <span className="text-muted-foreground text-sm">{getValue() || 'Chưa có'}</span>
         ),
@@ -108,6 +177,7 @@ const columns: any[] = [
     {
         accessorKey: 'clinic',
         header: 'Cơ sở',
+        size: 200,
         cell: ({ getValue }: { getValue: () => any }) => {
             const clinic = getValue() as { id: number; name: string } | null | undefined
             return <span className="text-muted-foreground text-sm">{clinic?.name || 'Chưa có'}</span>
@@ -116,6 +186,7 @@ const columns: any[] = [
     {
         accessorKey: 'status',
         header: 'Trạng thái',
+        size: 130,
         cell: ({ getValue }: { getValue: () => any }) => {
             const status = getValue() as string
             const statusColors = {
@@ -204,13 +275,14 @@ export default function DoctorListPage() {
     }, [])
 
     // Fetch doctors data
-    const { data: doctorsResponse, isLoading, error } = useDoctors(queryParams, true)
+    const { data: doctorsResponse, isLoading } = useDoctors(queryParams, true)
 
     // Fetch clinics and services for filters
-    const { data: clinicsData, isLoading: isLoadingClinics } = useClinics()
-    const { data: servicesData, isLoading: isLoadingServices } = useServices()
+    const { data: clinicsData } = useClinics()
+    const { data: servicesData } = useServices()
 
     // Extract arrays safely - ensure they are always arrays
+    // Note: clinicsData and servicesData are already arrays after apiClient unwraps the response
     const clinics = Array.isArray(clinicsData?.data) ? clinicsData.data : []
     const services = Array.isArray(servicesData?.data) ? servicesData.data : []
 
@@ -219,48 +291,11 @@ export default function DoctorListPage() {
         setCurrentPage(1)
     }, [selectedClinicId, selectedServiceId])
 
-    // Show loading if clinics or services are still loading
-    if (isLoading || isLoadingClinics || isLoadingServices) {
-        return (
-            <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-3xl font-bold text-foreground">Quản lý danh sách bác sĩ</h1>
-                        <p className="text-sm text-muted-foreground mt-1">Đang tải dữ liệu...</p>
-                    </div>
-                </div>
-                <div className="bg-card rounded-lg shadow-sm border border-border p-6">
-                    <div className="flex items-center justify-center h-64">
-                        <div className="flex flex-col items-center gap-4">
-                            <Spinner className="h-8 w-8 text-primary" />
-                            <div className="text-muted-foreground">Đang tải dữ liệu...</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        )
-    }
-
-    if (error) {
-        return (
-            <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-3xl font-bold text-foreground">Quản lý danh sách bác sĩ</h1>
-                        <p className="text-sm text-muted-foreground mt-1">Có lỗi xảy ra khi tải dữ liệu</p>
-                    </div>
-                </div>
-                <div className="bg-card rounded-lg shadow-sm border border-border p-6">
-                    <div className="flex items-center justify-center h-64">
-                        <div className="text-red-500">Lỗi: {error.message}</div>
-                    </div>
-                </div>
-            </div>
-        )
-    }
-
     const doctors = doctorsResponse?.data?.doctors || []
     const totalPages = Math.ceil((doctorsResponse?.data?.total || 0) / itemsPerPage)
+
+    // Loading state - only for initial data
+    const isInitialLoading = isLoading
 
     return (
         <div className="space-y-6">
@@ -329,7 +364,11 @@ export default function DoctorListPage() {
 
                 {/* Data Table */}
                 <div className="p-6">
-                    <DataTable data={doctors} columns={columns} containerClassName="min-h-[400px]" />
+                    {isInitialLoading ? (
+                        <SkeletonTable columns={columns} />
+                    ) : (
+                        <DataTable data={doctors} columns={columns} containerClassName="min-h-[400px]" />
+                    )}
                 </div>
 
                 {/* Pagination */}
