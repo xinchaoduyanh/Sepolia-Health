@@ -6,23 +6,25 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import {
-  CompleteRegisterDto,
-  CompleteRegisterResponseDto,
-  ForgotPasswordDto,
-  LoginDto,
-  LoginResponseDto,
-  RefreshTokenDto,
-  RegisterDto,
-  RegisterResponseDto,
-  VerifyEmailDto,
-} from './dto/auth.dto';
 import { CurrentUser, Public } from '@/common/decorators';
 import { SuccessResponseDto } from '@/common/dto';
-import { ResetPasswordBodyDto } from './dto/request';
+import {
+  CompleteRegisterDto,
+  ForgotPasswordDto,
+  LoginDto,
+  RefreshTokenDto,
+  RegisterDto,
+  ResetPasswordBodyDto,
+  VerifyEmailDto,
+} from './dto/request';
+import {
+  CompleteRegisterResponseDto,
+  LoginResponseDto,
+  RegisterResponseDto,
+} from './dto/response';
 
-@ApiTags('Patient Auth')
-@Controller('patient/auth')
+@ApiTags('Auth')
+@Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 

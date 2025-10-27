@@ -2,6 +2,12 @@ import { createZodDto } from 'nestjs-zod';
 import z from 'zod';
 import { Role, Gender } from '@prisma/client';
 
+const resetPasswordSchema = z.object({
+  email: z.email(),
+  otp: z.string(),
+  newPassword: z.string(),
+});
+
 // Login DTO
 const LoginSchema = z.object({
   email: z.email({ error: 'Email không hợp lệ' }),
@@ -40,34 +46,10 @@ const RefreshTokenSchema = z.object({
   refreshToken: z.string().min(1, 'Refresh token không được để trống'),
 });
 
-// Response DTOs
-const LoginResponseSchema = z.object({
-  accessToken: z.string(),
-  refreshToken: z.string(),
-});
-
-const RegisterResponseSchema = z.object({
-  email: z.string(),
-});
-
-const CompleteRegisterResponseSchema = z.object({
-  user: z.object({
-    id: z.number(),
-    email: z.string(),
-    firstName: z.string(),
-    lastName: z.string(),
-    role: z.string(),
-  }),
-});
-
 export class LoginDto extends createZodDto(LoginSchema) {}
 export class RegisterDto extends createZodDto(RegisterSchema) {}
 export class ForgotPasswordDto extends RegisterDto {}
 export class VerifyEmailDto extends createZodDto(VerifyEmailSchema) {}
 export class RefreshTokenDto extends createZodDto(RefreshTokenSchema) {}
-export class LoginResponseDto extends createZodDto(LoginResponseSchema) {}
+export class ResetPasswordBodyDto extends createZodDto(resetPasswordSchema) {}
 export class CompleteRegisterDto extends createZodDto(CompleteRegisterSchema) {}
-export class RegisterResponseDto extends createZodDto(RegisterResponseSchema) {}
-export class CompleteRegisterResponseDto extends createZodDto(
-  CompleteRegisterResponseSchema,
-) {}

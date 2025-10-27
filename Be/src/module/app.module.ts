@@ -10,7 +10,7 @@ import { AdminModule } from './admin/admin.module';
 import { ReceptionistModule } from './receptionist/receptionist.module';
 import { CustomZodValidationPipe } from '@/common/pipes';
 import { appConfig } from '@/common/config';
-import { JwtAuthGuard } from '@/common/guards';
+import { JwtAuthGuard, RolesGuard } from '@/common/guards';
 
 @Module({
   imports: [
@@ -35,6 +35,10 @@ import { JwtAuthGuard } from '@/common/guards';
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
     },
   ],
 })
