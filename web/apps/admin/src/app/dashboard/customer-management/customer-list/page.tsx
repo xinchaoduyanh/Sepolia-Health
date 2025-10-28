@@ -298,8 +298,8 @@ export default function CustomerListPage() {
     // Fetch patients data
     const { data: patientsResponse, isLoading } = usePatients(queryParams, isQueryReady)
 
-    const patients = patientsResponse?.data.patients || []
-    const totalPages = Math.ceil((patientsResponse?.data.total || 0) / itemsPerPage)
+    const patients = patientsResponse?.patients || []
+    const totalPages = Math.ceil((patientsResponse?.total || 0) / itemsPerPage)
 
     // Show skeleton when loading or query not ready
     const showSkeleton = isLoading || !isQueryReady
@@ -362,8 +362,8 @@ export default function CustomerListPage() {
                 <div className="px-6 py-4 border-t border-border flex items-center justify-between">
                     <div className="text-sm text-muted-foreground">
                         Hiển thị {(currentPage - 1) * itemsPerPage + 1} đến{' '}
-                        {Math.min(currentPage * itemsPerPage, patientsResponse?.data.total || 0)} trong tổng số{' '}
-                        {patientsResponse?.data.total || 0} khách hàng
+                        {Math.min(currentPage * itemsPerPage, patientsResponse?.total || 0)} trong tổng số{' '}
+                        {patientsResponse?.total || 0} khách hàng
                     </div>
                     <Pagination value={currentPage} pageCount={totalPages} onChange={handlePageChange} />
                 </div>
