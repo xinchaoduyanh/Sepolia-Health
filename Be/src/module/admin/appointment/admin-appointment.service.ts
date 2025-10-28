@@ -79,7 +79,6 @@ export class AdminAppointmentService {
               id: true,
               firstName: true,
               lastName: true,
-              specialty: true,
               avatar: true,
             },
           },
@@ -146,8 +145,6 @@ export class AdminAppointmentService {
           select: {
             id: true,
             firstName: true,
-            lastName: true,
-            specialty: true,
             avatar: true,
           },
         },

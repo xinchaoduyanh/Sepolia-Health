@@ -11,9 +11,6 @@ export class DoctorProfileDto {
   @ApiProperty()
   updatedAt: Date;
 
-  @ApiProperty()
-  specialty: string;
-
   @ApiProperty({ nullable: true })
   experience: string | null;
 

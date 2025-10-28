@@ -72,7 +72,6 @@ export class AdminDoctorService {
           userId: user.id,
           firstName: doctorData.fullName.split(' ')[0] || '',
           lastName: doctorData.fullName.split(' ').slice(1).join(' ') || '',
-          specialty: doctorData.specialty,
           experience: doctorData.experienceYears?.toString() || '',
           contactInfo: doctorData.phone,
           clinicId: doctorData.clinicId,
@@ -95,7 +94,7 @@ export class AdminDoctorService {
         await tx.doctorAvailability.createMany({
           data: doctorData.availabilities.map((a) => ({
             doctorId: doctorProfile.id,
-            dayOfWeek: a.dayOfWeek as any,
+            dayOfWeek: a.dayOfWeek,
             startTime: a.startTime,
             endTime: a.endTime,
           })),
@@ -106,12 +105,24 @@ export class AdminDoctorService {
       return { user, doctorProfile };
     });
 
+    // Get services for the doctor
+    const doctorServices = await this.prisma.doctorService.findMany({
+      where: { doctorId: result.doctorProfile.id },
+      include: {
+        service: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    });
+
     return {
       id: result.doctorProfile.id,
       email: result.user.email,
       fullName: `${result.doctorProfile.firstName} ${result.doctorProfile.lastName}`,
       phone: result.user.phone || '',
-      specialty: result.doctorProfile.specialty,
+      services: doctorServices.map((s) => s.service.name),
       experienceYears: parseInt(result.doctorProfile.experience || '0'),
       status: result.user.status,
       createdAt: result.doctorProfile.createdAt,
@@ -136,9 +147,6 @@ export class AdminDoctorService {
             },
             {
               lastName: { contains: search, mode: 'insensitive' as const },
-            },
-            {
-              specialty: { contains: search, mode: 'insensitive' as const },
             },
           ],
         },
@@ -183,6 +191,15 @@ export class AdminDoctorService {
                   name: true,
                 },
               },
+              services: {
+                include: {
+                  service: {
+                    select: {
+                      name: true,
+                    },
+                  },
+                },
+              },
             },
           },
         },
@@ -199,7 +216,7 @@ export class AdminDoctorService {
         email: doctor.email,
         fullName: `${doctor.doctorProfile!.firstName} ${doctor.doctorProfile!.lastName}`,
         phone: doctor.phone || '',
-        specialty: doctor.doctorProfile!.specialty,
+        services: doctor.doctorProfile!.services.map((s) => s.service.name),
         experienceYears: parseInt(doctor.doctorProfile!.experience || '0'),
         status: doctor.status,
         clinic: doctor.doctorProfile!.clinic
@@ -221,6 +238,15 @@ export class AdminDoctorService {
       where: { id },
       include: {
         user: true,
+        services: {
+          include: {
+            service: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -233,7 +259,7 @@ export class AdminDoctorService {
       email: doctor.user.email,
       fullName: `${doctor.firstName} ${doctor.lastName}`,
       phone: doctor.user.phone || '',
-      specialty: doctor.specialty,
+      services: doctor.services.map((s) => s.service.name),
       experienceYears: parseInt(doctor.experience || '0'),
       description: doctor.contactInfo || undefined,
       address: doctor.contactInfo || '',
@@ -262,8 +288,6 @@ export class AdminDoctorService {
       updateData.firstName = nameParts[0];
       updateData.lastName = nameParts.slice(1).join(' ');
     }
-    if (updateDoctorDto.specialty)
-      updateData.specialty = updateDoctorDto.specialty;
     if (updateDoctorDto.experienceYears !== undefined)
       updateData.experience = updateDoctorDto.experienceYears.toString();
     if (updateDoctorDto.phone) updateData.contactInfo = updateDoctorDto.phone;
@@ -271,14 +295,25 @@ export class AdminDoctorService {
     const updatedDoctor = await this.prisma.doctorProfile.update({
       where: { id },
       data: updateData,
-      include: { user: true },
+      include: {
+        user: true,
+        services: {
+          include: {
+            service: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     return {
       id: updatedDoctor.id,
       email: updatedDoctor.user.email,
       fullName: `${updatedDoctor.firstName} ${updatedDoctor.lastName}`,
-      specialty: updatedDoctor.specialty,
+      services: updatedDoctor.services.map((s) => s.service.name),
       experienceYears: parseInt(updatedDoctor.experience || '0'),
       status: 'ACTIVE',
     };
@@ -326,7 +361,7 @@ export class AdminDoctorService {
     const existingSchedule = await this.prisma.doctorAvailability.findFirst({
       where: {
         doctorId,
-        dayOfWeek: createScheduleDto.dayOfWeek as any,
+        dayOfWeek: createScheduleDto.dayOfWeek,
       },
     });
 
@@ -338,7 +373,7 @@ export class AdminDoctorService {
     await this.prisma.doctorAvailability.create({
       data: {
         doctorId,
-        dayOfWeek: createScheduleDto.dayOfWeek as any,
+        dayOfWeek: createScheduleDto.dayOfWeek,
         startTime: createScheduleDto.startTime,
         endTime: createScheduleDto.endTime,
       },

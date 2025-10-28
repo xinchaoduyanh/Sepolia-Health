@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { MESSAGES } from '@/common/constants/messages';
 import { PrismaService } from '@/common/prisma/prisma.service';
-import { DayOfWeek, AppointmentStatus, PaymentStatus } from '@prisma/client';
+import { AppointmentStatus, PaymentStatus } from '@prisma/client';
 import { CurrentUser } from '@/common/decorators';
 import { TokenPayload } from '@/common/modules';
 import {
@@ -74,7 +74,6 @@ export class AppointmentService {
               id: true,
               firstName: true,
               lastName: true,
-              specialty: true,
             },
           },
           service: true,
@@ -113,7 +112,6 @@ export class AppointmentService {
             id: true,
             firstName: true,
             lastName: true,
-            specialty: true,
           },
         },
         service: true,
@@ -189,7 +187,6 @@ export class AppointmentService {
             id: true,
             firstName: true,
             lastName: true,
-            specialty: true,
           },
         },
         service: true,
@@ -300,7 +297,6 @@ export class AppointmentService {
               id: true,
               firstName: true,
               lastName: true,
-              specialty: true,
             },
           },
           service: true,
@@ -430,7 +426,6 @@ export class AppointmentService {
             id: true,
             firstName: true,
             lastName: true,
-            specialty: true,
             experience: true,
             contactInfo: true,
             avatar: true,
@@ -458,7 +453,6 @@ export class AppointmentService {
         id: ds.doctor.id,
         firstName: ds.doctor.firstName,
         lastName: ds.doctor.lastName,
-        specialty: ds.doctor.specialty,
         experience: ds.doctor.experience,
         contactInfo: ds.doctor.contactInfo,
         avatar: ds.doctor.avatar,
@@ -603,7 +597,7 @@ export class AppointmentService {
         doctorId: doctorService.doctor.id,
         date: appointmentDate,
         status: {
-          in: ['CREATED', 'UPCOMING', 'ON_GOING'],
+          in: ['UPCOMING', 'ON_GOING'],
         },
       },
       select: {
@@ -636,7 +630,7 @@ export class AppointmentService {
         date: new Date(date),
         startTime,
         endTime,
-        status: 'CREATED',
+        status: 'UPCOMING',
         paymentStatus: 'PENDING',
         notes,
         patientProfileId: validatedPatientProfileId,
@@ -662,7 +656,6 @@ export class AppointmentService {
             id: true,
             firstName: true,
             lastName: true,
-            specialty: true,
           },
         },
         service: true,
@@ -746,7 +739,6 @@ export class AppointmentService {
             id: true,
             firstName: true,
             lastName: true,
-            specialty: true,
           },
         },
         service: {
@@ -781,7 +773,6 @@ export class AppointmentService {
       return {
         doctorId: doctorService.doctor.id,
         doctorName: `${doctorService.doctor.firstName} ${doctorService.doctor.lastName}`,
-        specialty: doctorService.doctor.specialty,
         serviceName: doctorService.service.name,
         serviceDuration: doctorService.service.duration,
         date: date,
@@ -799,7 +790,7 @@ export class AppointmentService {
         doctorId: doctorService.doctor.id,
         date: targetDate,
         status: {
-          in: ['CREATED', 'UPCOMING', 'ON_GOING'],
+          in: ['UPCOMING', 'ON_GOING'],
         },
       },
       select: {
@@ -824,7 +815,6 @@ export class AppointmentService {
     return {
       doctorId: doctorService.doctor.id,
       doctorName: `${doctorService.doctor.firstName} ${doctorService.doctor.lastName}`,
-      specialty: doctorService.doctor.specialty,
       serviceName: doctorService.service.name,
       serviceDuration: doctorService.service.duration,
       date: date,
@@ -870,7 +860,6 @@ export class AppointmentService {
             id: true,
             firstName: true,
             lastName: true,
-            specialty: true,
           },
         },
         service: {
@@ -902,7 +891,7 @@ export class AppointmentService {
 
     // Create a map of day of week to working hours
     const workingHoursMap = new Map<
-      DayOfWeek,
+      number,
       { startTime: string; endTime: string }
     >();
     workingHours.forEach((wh) => {
@@ -915,7 +904,7 @@ export class AppointmentService {
     // Generate available dates
     const availableDates: Array<{
       date: string;
-      dayOfWeek: DayOfWeek;
+      dayOfWeek: number;
       workingHours: {
         startTime: string;
         endTime: string;
@@ -945,7 +934,6 @@ export class AppointmentService {
     return {
       doctorId: doctorService.doctor.id,
       doctorName: `${doctorService.doctor.firstName} ${doctorService.doctor.lastName}`,
-      specialty: doctorService.doctor.specialty,
       serviceName: doctorService.service.name,
       serviceDuration: doctorService.service.duration,
       availableDates,
@@ -1021,18 +1009,9 @@ export class AppointmentService {
   }
 
   /**
-   * Get day of week from date
+   * Get day of week from date (returns 0-6, where 0=Sunday, 6=Saturday)
    */
-  private getDayOfWeek(date: Date): DayOfWeek {
-    const days: DayOfWeek[] = [
-      'SUNDAY',
-      'MONDAY',
-      'TUESDAY',
-      'WEDNESDAY',
-      'THURSDAY',
-      'FRIDAY',
-      'SATURDAY',
-    ];
-    return days[date.getDay()];
+  private getDayOfWeek(date: Date): number {
+    return date.getDay();
   }
 }

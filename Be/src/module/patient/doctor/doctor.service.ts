@@ -72,24 +72,15 @@ export class DoctorService {
 
     return DateUtil.getNextNDays(3).map((day) => {
       const dayOfWeek = day.getDay(); // 0 = Sunday, 1 = Monday, etc.
-      const dayName = [
-        'SUNDAY',
-        'MONDAY',
-        'TUESDAY',
-        'WEDNESDAY',
-        'THURSDAY',
-        'FRIDAY',
-        'SATURDAY',
-      ][dayOfWeek];
 
       // Check for override first
       const override = doctors.overrides.find(
         (o) => o.date.toDateString() === day.toDateString(),
       );
 
-      // Get regular availability for this day of week
+      // Get regular availability for this day of week (dayOfWeek is now 0-6)
       const availability = doctors.availabilities.find(
-        (a) => a.dayOfWeek === dayName,
+        (a) => a.dayOfWeek === dayOfWeek,
       );
 
       // Default to 3 slots if no availability found
@@ -123,7 +114,6 @@ export class DoctorService {
       data: {
         firstName: body.firstName,
         lastName: body.lastName,
-        specialty: body.specialty,
         experience: body.experience,
         contactInfo: body.contactInfo,
         userId,
@@ -151,18 +141,10 @@ export class DoctorService {
     if (!doctor) {
       throw new NotFoundException(ERROR_MESSAGES.COMMON.RESOURCE_NOT_FOUND);
     }
-    const {
-      firstName,
-      lastName,
-      specialty,
-      experience,
-      contactInfo,
-      serviceIds,
-    } = body;
+    const { firstName, lastName, experience, contactInfo, serviceIds } = body;
     const data: Prisma.DoctorProfileUpdateInput = {
       ...(firstName && { firstName }),
       ...(lastName && { lastName }),
-      ...(specialty && { specialty }),
       ...(experience && { experience }),
       ...(contactInfo && { contactInfo }),
     };

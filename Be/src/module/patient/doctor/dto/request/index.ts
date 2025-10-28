@@ -12,7 +12,6 @@ export class GetDoctorServiceQueryDto extends createZodDto(
 const createDoctorProfileSchema = z.object({
   firstName: z.string().min(2, 'Tên phải có ít nhất 2 ký tự'),
   lastName: z.string().min(2, 'Họ phải có ít nhất 2 ký tự'),
-  specialty: z.string(),
   experience: z.string().optional(),
   contactInfo: z.string().optional(),
   serviceIds: z.array(z.number()),
@@ -24,7 +23,6 @@ export class CreateDoctorProfileBodyDto extends createZodDto(
 const updateDoctorProfileSchema = z.object({
   firstName: z.string().min(2, 'Tên phải có ít nhất 2 ký tự').optional(),
   lastName: z.string().min(2, 'Họ phải có ít nhất 2 ký tự').optional(),
-  specialty: z.string().optional(),
   experience: z.string().optional(),
   contactInfo: z.string().optional(),
   serviceIds: z.array(z.number()).optional(),

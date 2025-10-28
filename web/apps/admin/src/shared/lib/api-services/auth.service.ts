@@ -50,7 +50,7 @@ export class AuthService {
      * Admin login - gọi thẳng tới backend API
      */
     async login(credentials: AdminLoginRequest): Promise<AdminLoginResponse> {
-        const response = await fetch(`${config.apiUrl}/auth/login`, {
+        const response = await fetch(`${config.authApiUrl}/auth/login`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
