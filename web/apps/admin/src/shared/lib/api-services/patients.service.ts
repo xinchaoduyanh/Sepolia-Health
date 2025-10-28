@@ -41,18 +41,13 @@ export interface PatientsListParams {
 }
 
 export interface PatientsListResponse {
-    data: {
-        patients: Patient[]
-        total: number
-        page: number
-        limit: number
-        totalPages: number
-    }
+    patients: Patient[]
+    total: number
+    page: number
+    limit: number
 }
 
-export interface PatientDetailResponse {
-    data: Patient
-}
+export interface PatientDetailResponse extends Patient {}
 
 export interface CreatePatientProfileRequest {
     firstName: string
@@ -104,60 +99,58 @@ export interface UpdatePatientRequest {
     }
 }
 
-export interface CreatePatientResponse {
-    data: Patient
-}
+export interface CreatePatientResponse extends Patient {}
 
 export class PatientsService {
     /**
      * Get patients list with pagination and filters
-     * GET /patients
+     * GET /admin/patients
      */
     async getPatients(params: PatientsListParams = {}): Promise<PatientsListResponse> {
-        return apiClient.get<PatientsListResponse>('/patients', { params })
+        return apiClient.get<PatientsListResponse>('/admin/patients', { params })
     }
 
     /**
      * Get patient by ID
-     * GET /patients/{id}
+     * GET /admin/patients/{id}
      */
     async getPatient(id: number): Promise<PatientDetailResponse> {
-        return apiClient.get<PatientDetailResponse>(`/patients/${id}`)
+        return apiClient.get<PatientDetailResponse>(`/admin/patients/${id}`)
     }
 
     /**
      * Create new patient
-     * POST /patients
+     * POST /admin/patients
      */
     async createPatient(patientData: CreatePatientRequest): Promise<CreatePatientResponse> {
-        return apiClient.post<CreatePatientResponse>('/patients', patientData)
+        return apiClient.post<CreatePatientResponse>('/admin/patients', patientData)
     }
 
     /**
      * Update patient
-     * PUT /patients/{id}
+     * PUT /admin/patients/{id}
      */
     async updatePatient(id: number, patientData: UpdatePatientRequest): Promise<PatientDetailResponse> {
-        return apiClient.put<PatientDetailResponse>(`/patients/${id}`, patientData)
+        return apiClient.put<PatientDetailResponse>(`/admin/patients/${id}`, patientData)
     }
 
     /**
      * Delete patient
-     * DELETE /patients/{id}
+     * DELETE /admin/patients/{id}
      */
     async deletePatient(id: number): Promise<void> {
-        return apiClient.delete<void>(`/patients/${id}`)
+        return apiClient.delete<void>(`/admin/patients/${id}`)
     }
 
     /**
      * Update patient status
-     * PATCH /patients/{id}
+     * PATCH /admin/patients/{id}
      */
     async updatePatientStatus(
         id: number,
         status: 'UNVERIFIED' | 'ACTIVE' | 'DEACTIVE',
     ): Promise<PatientDetailResponse> {
-        return apiClient.patch<PatientDetailResponse>(`/patients/${id}`, { status })
+        return apiClient.patch<PatientDetailResponse>(`/admin/patients/${id}`, { status })
     }
 }
 

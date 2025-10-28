@@ -195,7 +195,7 @@ export class AppointmentController {
             type: 'object',
             properties: {
               date: { type: 'string' },
-              dayOfWeek: { type: 'string' },
+              dayOfWeek: { type: 'number' },
               workingHours: {
                 type: 'object',
                 properties: {

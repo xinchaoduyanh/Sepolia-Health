@@ -17,18 +17,13 @@ export interface ReceptionistsListParams {
 }
 
 export interface ReceptionistsListResponse {
-    data: {
-        receptionists: Receptionist[]
-        total: number
-        page: number
-        limit: number
-        totalPages: number
-    }
+    receptionists: Receptionist[]
+    total: number
+    page: number
+    limit: number
 }
 
-export interface ReceptionistDetailResponse {
-    data: Receptionist
-}
+export interface ReceptionistDetailResponse extends Receptionist {}
 
 export interface CreateReceptionistRequest {
     email: string
@@ -46,52 +41,50 @@ export interface UpdateReceptionistRequest {
     address?: string
 }
 
-export interface CreateReceptionistResponse {
-    data: Receptionist
-}
+export interface CreateReceptionistResponse extends Receptionist {}
 
 export class ReceptionistsService {
     /**
      * Get receptionists list with pagination and filters
-     * GET /receptionists
+     * GET /admin/receptionists
      */
     async getReceptionists(params: ReceptionistsListParams = {}): Promise<ReceptionistsListResponse> {
-        return apiClient.get<ReceptionistsListResponse>('/receptionists', { params })
+        return apiClient.get<ReceptionistsListResponse>('/admin/receptionists', { params })
     }
 
     /**
      * Get receptionist by ID
-     * GET /receptionists/{id}
+     * GET /admin/receptionists/{id}
      */
     async getReceptionist(id: number): Promise<ReceptionistDetailResponse> {
-        return apiClient.get<ReceptionistDetailResponse>(`/receptionists/${id}`)
+        return apiClient.get<ReceptionistDetailResponse>(`/admin/receptionists/${id}`)
     }
 
     /**
      * Create new receptionist
-     * POST /receptionists
+     * POST /admin/receptionists
      */
     async createReceptionist(receptionistData: CreateReceptionistRequest): Promise<CreateReceptionistResponse> {
-        return apiClient.post<CreateReceptionistResponse>('/receptionists', receptionistData)
+        return apiClient.post<CreateReceptionistResponse>('/admin/receptionists', receptionistData)
     }
 
     /**
      * Update receptionist
-     * PUT /receptionists/{id}
+     * PUT /admin/receptionists/{id}
      */
     async updateReceptionist(
         id: number,
         receptionistData: UpdateReceptionistRequest,
     ): Promise<ReceptionistDetailResponse> {
-        return apiClient.put<ReceptionistDetailResponse>(`/receptionists/${id}`, receptionistData)
+        return apiClient.put<ReceptionistDetailResponse>(`/admin/receptionists/${id}`, receptionistData)
     }
 
     /**
      * Delete receptionist
-     * DELETE /receptionists/{id}
+     * DELETE /admin/receptionists/{id}
      */
     async deleteReceptionist(id: number): Promise<void> {
-        return apiClient.delete<void>(`/receptionists/${id}`)
+        return apiClient.delete<void>(`/admin/receptionists/${id}`)
     }
 }
 

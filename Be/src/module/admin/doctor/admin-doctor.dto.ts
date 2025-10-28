@@ -1,6 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { z } from 'zod';
-import { DayOfWeek } from '@prisma/client';
 
 // Query schemas
 export const GetDoctorsQuerySchema = z.object({
@@ -19,7 +18,6 @@ export const CreateDoctorSchema = z.object({
   password: z.string().min(6, 'Mật khẩu phải có ít nhất 6 ký tự'),
   fullName: z.string().min(1, 'Họ tên không được để trống'),
   phone: z.string().min(1, 'Số điện thoại không được để trống'),
-  specialty: z.string().min(1, 'Chuyên khoa không được để trống'),
   experienceYears: z.number().min(0, 'Số năm kinh nghiệm phải >= 0'),
   description: z.string().optional(),
   address: z.string().optional(),
@@ -30,7 +28,7 @@ export const CreateDoctorSchema = z.object({
   availabilities: z
     .array(
       z.object({
-        dayOfWeek: z.nativeEnum(DayOfWeek),
+        dayOfWeek: z.number().int().min(0).max(6), // 0 = Sunday, 6 = Saturday
         startTime: z.string().min(1, 'Giờ bắt đầu không được để trống'),
         endTime: z.string().min(1, 'Giờ kết thúc không được để trống'),
       }),
@@ -65,12 +63,6 @@ export class CreateDoctorDtoClass {
     example: '0123456789',
   })
   phone: string;
-
-  @ApiProperty({
-    description: 'Chuyên khoa',
-    example: 'Tim mạch',
-  })
-  specialty: string;
 
   @ApiProperty({
     description: 'Số năm kinh nghiệm',
@@ -110,19 +102,12 @@ export class CreateDoctorDtoClass {
     description: 'Lịch làm việc hàng tuần (tùy chọn)',
     required: false,
     example: [
-      { dayOfWeek: 'MONDAY', startTime: '08:00', endTime: '17:00' },
-      { dayOfWeek: 'WEDNESDAY', startTime: '08:00', endTime: '17:00' },
+      { dayOfWeek: 1, startTime: '08:00', endTime: '17:00' },
+      { dayOfWeek: 3, startTime: '08:00', endTime: '17:00' },
     ],
   })
   availabilities?: Array<{
-    dayOfWeek:
-      | 'MONDAY'
-      | 'TUESDAY'
-      | 'WEDNESDAY'
-      | 'THURSDAY'
-      | 'FRIDAY'
-      | 'SATURDAY'
-      | 'SUNDAY';
+    dayOfWeek: number; // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
     startTime: string;
     endTime: string;
   }>;
@@ -131,7 +116,6 @@ export class CreateDoctorDtoClass {
 export const UpdateDoctorSchema = z.object({
   fullName: z.string().min(1, 'Họ tên không được để trống').optional(),
   phone: z.string().min(1, 'Số điện thoại không được để trống').optional(),
-  specialty: z.string().min(1, 'Chuyên khoa không được để trống').optional(),
   experienceYears: z.number().min(0, 'Số năm kinh nghiệm phải >= 0').optional(),
   description: z.string().optional(),
   address: z.string().optional(),
@@ -153,13 +137,6 @@ export class UpdateDoctorDtoClass {
     required: false,
   })
   phone?: string;
-
-  @ApiProperty({
-    description: 'Chuyên khoa',
-    example: 'Tim mạch',
-    required: false,
-  })
-  specialty?: string;
 
   @ApiProperty({
     description: 'Số năm kinh nghiệm',
@@ -203,10 +180,12 @@ export class CreateDoctorResponseDto {
   fullName: string;
 
   @ApiProperty({
-    description: 'Chuyên khoa',
-    example: 'Tim mạch',
+    description: 'Danh sách chuyên khoa',
+    example: ['Tim mạch', 'Nội tổng quát'],
+    isArray: true,
+    type: String,
   })
-  specialty: string;
+  services: string[];
 
   @ApiProperty({
     description: 'Số năm kinh nghiệm',
@@ -288,10 +267,12 @@ export class DoctorDetailResponseDto {
   fullName: string;
 
   @ApiProperty({
-    description: 'Chuyên khoa',
-    example: 'Tim mạch',
+    description: 'Danh sách chuyên khoa',
+    example: ['Tim mạch', 'Nội tổng quát'],
+    isArray: true,
+    type: String,
   })
-  specialty: string;
+  services: string[];
 
   @ApiProperty({
     description: 'Số năm kinh nghiệm',
@@ -337,7 +318,7 @@ export class DoctorDetailResponseDto {
 }
 
 export const CreateDoctorScheduleSchema = z.object({
-  dayOfWeek: z.nativeEnum(DayOfWeek),
+  dayOfWeek: z.number().int().min(0).max(6), // 0 = Sunday, 6 = Saturday
   startTime: z.string().min(1, 'Giờ bắt đầu không được để trống'),
   endTime: z.string().min(1, 'Giờ kết thúc không được để trống'),
   locationId: z.number().min(1, 'ID cơ sở phòng khám không hợp lệ'),
@@ -350,19 +331,12 @@ export type CreateDoctorScheduleDto = z.infer<
 
 export class CreateDoctorScheduleDtoClass {
   @ApiProperty({
-    description: 'Thứ trong tuần',
-    example: 'MONDAY',
-    enum: [
-      'MONDAY',
-      'TUESDAY',
-      'WEDNESDAY',
-      'THURSDAY',
-      'FRIDAY',
-      'SATURDAY',
-      'SUNDAY',
-    ],
+    description: 'Thứ trong tuần (0 = Chủ nhật, 1 = Thứ 2, ..., 6 = Thứ 7)',
+    example: 1,
+    minimum: 0,
+    maximum: 6,
   })
-  dayOfWeek: string;
+  dayOfWeek: number;
 
   @ApiProperty({
     description: 'Giờ bắt đầu',

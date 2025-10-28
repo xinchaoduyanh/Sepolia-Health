@@ -1,4 +1,11 @@
-import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  HttpCode,
+  HttpStatus,
+  Get,
+} from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -20,6 +27,7 @@ import {
 import {
   CompleteRegisterResponseDto,
   LoginResponseDto,
+  MeResponseDto,
   RegisterResponseDto,
 } from './dto/response';
 
@@ -146,5 +154,21 @@ export class AuthController {
     @Body() body: ResetPasswordBodyDto,
   ): Promise<SuccessResponseDto> {
     return this.authService.resetPassword(body);
+  }
+
+  @Get('me')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Lấy thông tin profile hiện tại' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    type: MeResponseDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Chưa đăng nhập',
+  })
+  async getMe(@CurrentUser('userId') userId: number): Promise<MeResponseDto> {
+    return this.authService.getMe(userId);
   }
 }

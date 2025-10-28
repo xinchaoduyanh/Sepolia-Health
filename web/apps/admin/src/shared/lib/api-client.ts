@@ -127,7 +127,7 @@ export class ApiClient {
         }
 
         try {
-            const response = await fetch(`${config.apiUrl}/auth/refresh`, {
+            const response = await fetch(`${config.authApiUrl}/auth/refresh`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

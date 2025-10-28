@@ -19,8 +19,6 @@ enum Role {
 }
 
 enum AppointmentStatus {
-  // Tạo cái này gồm 4 trạng thái là mới tạo/ chuẩn bị đến / đang diễn ra / đã hoàn thành
-  CREATED
   UPCOMING
   ON_GOING
   COMPLETED
@@ -38,15 +36,6 @@ enum PaymentMethod {
   OFFLINE
 }
 
-enum DayOfWeek {
-  SUNDAY
-  MONDAY
-  TUESDAY
-  WEDNESDAY
-  THURSDAY
-  FRIDAY
-  SATURDAY
-}
 
 enum Gender {
   MALE
@@ -84,6 +73,7 @@ model User {
   // Quan hệ 1-1 với các hồ sơ chuyên môn
   doctorProfile       DoctorProfile?
   receptionistProfile ReceptionistProfile?
+  adminProfile        AdminProfile?
 
   // Quan hệ 1-nhiều: Một user có thể quản lý nhiều hồ sơ bệnh nhân
   patientProfiles     PatientProfile[]
@@ -109,7 +99,6 @@ model DoctorProfile {
   avatar        String?
 
   // Thông tin chuyên môn
-  specialty     String
   experience    String?
   contactInfo   String?
 
@@ -143,6 +132,24 @@ model ReceptionistProfile {
 
   // Thông tin công việc
   shift         String?
+
+  userId        Int      @unique
+  user          User     @relation(fields: [userId], references: [id])
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+/// Hồ sơ Admin: Chứa thông tin cơ bản về một admin.
+model AdminProfile {
+  id            Int      @id @default(autoincrement())
+
+  // Thông tin cá nhân của admin
+  firstName     String
+  lastName      String
+  dateOfBirth   DateTime? @db.Date
+  gender        Gender?
+  avatar        String?
 
   userId        Int      @unique
   user          User     @relation(fields: [userId], references: [id])
@@ -191,7 +198,7 @@ model PatientProfile {
 /// Lịch làm việc cố định hàng tuần của bác sĩ
 model DoctorAvailability {
   id        Int       @id @default(autoincrement())
-  dayOfWeek DayOfWeek
+  dayOfWeek Int       // 0 = Sunday, 1 = Monday, 2 = Tuesday, ..., 6 = Saturday
   startTime String
   endTime   String
 

@@ -81,7 +81,7 @@ export function useAdminLogout() {
 
                 if (token) {
                     // Call logout API directly with token
-                    const response = await fetch(`${config.apiUrl}/auth/logout`, {
+                    const response = await fetch(`${config.authApiUrl}/auth/logout`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -257,7 +257,7 @@ export function useCheckAuth() {
 
             // Step 2: Try to get profile with current access token
             try {
-                const response = await fetch(`${config.apiUrl}/auth/me`, {
+                const response = await fetch(`${config.authApiUrl}/auth/me`, {
                     headers: {
                         Authorization: `Bearer ${accessToken}`,
                         'Content-Type': 'application/json',
@@ -297,7 +297,7 @@ export function useCheckAuth() {
             }
 
             try {
-                const refreshResponse = await fetch(`${config.apiUrl}/auth/refresh`, {
+                const refreshResponse = await fetch(`${config.authApiUrl}/auth/refresh`, {
                     method: 'POST',
                     headers: {
                         Authorization: `Bearer ${refreshToken}`,
@@ -320,7 +320,7 @@ export function useCheckAuth() {
 
                     // Try profile again with new token
                     const newToken = refreshData.accessToken || accessToken
-                    const profileResponse = await fetch(`${config.apiUrl}/auth/me`, {
+                    const profileResponse = await fetch(`${config.authApiUrl}/auth/me`, {
                         headers: {
                             Authorization: `Bearer ${newToken}`,
                             'Content-Type': 'application/json',
