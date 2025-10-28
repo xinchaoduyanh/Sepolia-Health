@@ -6,6 +6,7 @@ import { Button } from '@workspace/ui/components/Button'
 import { ArrowLeft, Plus, Trash2, AlertCircle } from 'lucide-react'
 import { useCreatePatient } from '@/shared/hooks'
 import type { CreatePatientRequest } from '@/shared/lib/api-services/patients.service'
+import { AvatarUpload } from './AvatarUpload'
 
 interface PatientProfileForm {
     id?: string
@@ -16,6 +17,7 @@ interface PatientProfileForm {
     phone: string
     relationship: 'SELF' | 'SPOUSE' | 'CHILD' | 'PARENT' | 'SIBLING' | 'RELATIVE' | 'FRIEND' | 'OTHER'
     address?: string
+    avatar?: string
 }
 
 interface FieldErrors {
@@ -46,6 +48,7 @@ export function PatientCreateForm() {
             phone: '',
             relationship: 'SELF',
             address: '',
+            avatar: '',
         },
     ])
 
@@ -81,6 +84,7 @@ export function PatientCreateForm() {
             phone: '',
             relationship: 'OTHER',
             address: '',
+            avatar: '',
         }
         setProfiles(prev => [...prev, newProfile])
     }
@@ -316,6 +320,60 @@ export function PatientCreateForm() {
                                         )}
                                     </div>
 
+                                    {/* Avatar with Name Fields */}
+                                    <div className="flex items-start gap-4">
+                                        {/* Avatar Circle */}
+                                        <div>
+                                            <AvatarUpload
+                                                value={profile.avatar}
+                                                onChange={url => handleProfileChange(profile.id!, 'avatar', url)}
+                                            />
+                                        </div>
+
+                                        {/* Họ bệnh nhân and Giới tính */}
+                                        <div className="flex-1 grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <label
+                                                    htmlFor={`lastName-${profile.id}`}
+                                                    className="block text-sm font-medium text-foreground"
+                                                >
+                                                    Họ bệnh nhân *
+                                                </label>
+                                                <input
+                                                    id={`lastName-${profile.id}`}
+                                                    value={profile.lastName}
+                                                    onChange={e =>
+                                                        handleProfileChange(profile.id!, 'lastName', e.target.value)
+                                                    }
+                                                    placeholder="Nguyễn"
+                                                    className={inputClassName}
+                                                    required
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label
+                                                    htmlFor={`gender-${profile.id}`}
+                                                    className="block text-sm font-medium text-foreground"
+                                                >
+                                                    Giới tính *
+                                                </label>
+                                                <select
+                                                    value={profile.gender}
+                                                    onChange={e =>
+                                                        handleProfileChange(profile.id!, 'gender', e.target.value)
+                                                    }
+                                                    className={inputClassName}
+                                                >
+                                                    {genderOptions.map(option => (
+                                                        <option key={option.value} value={option.value}>
+                                                            {option.label}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div className="space-y-2">
                                             <label
@@ -331,24 +389,6 @@ export function PatientCreateForm() {
                                                     handleProfileChange(profile.id!, 'firstName', e.target.value)
                                                 }
                                                 placeholder="Văn A"
-                                                className={inputClassName}
-                                                required
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label
-                                                htmlFor={`lastName-${profile.id}`}
-                                                className="block text-sm font-medium text-foreground"
-                                            >
-                                                Họ bệnh nhân *
-                                            </label>
-                                            <input
-                                                id={`lastName-${profile.id}`}
-                                                value={profile.lastName}
-                                                onChange={e =>
-                                                    handleProfileChange(profile.id!, 'lastName', e.target.value)
-                                                }
-                                                placeholder="Nguyễn"
                                                 className={inputClassName}
                                                 required
                                             />
@@ -371,27 +411,6 @@ export function PatientCreateForm() {
                                                 className={inputClassName}
                                                 required
                                             />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label
-                                                htmlFor={`gender-${profile.id}`}
-                                                className="block text-sm font-medium text-foreground"
-                                            >
-                                                Giới tính *
-                                            </label>
-                                            <select
-                                                value={profile.gender}
-                                                onChange={e =>
-                                                    handleProfileChange(profile.id!, 'gender', e.target.value)
-                                                }
-                                                className={inputClassName}
-                                            >
-                                                {genderOptions.map(option => (
-                                                    <option key={option.value} value={option.value}>
-                                                        {option.label}
-                                                    </option>
-                                                ))}
-                                            </select>
                                         </div>
                                         <div className="space-y-2">
                                             <label

@@ -110,16 +110,9 @@ export default function UserDetailPage() {
                     <CardDescription>Thông tin tài khoản và liên hệ</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <div className="flex items-center space-x-4">
-                        <Avatar className="h-16 w-16">
-                            <AvatarFallback className="text-lg">
-                                {userData.email?.split('@')[0]?.substring(0, 2)?.toUpperCase() || 'US'}
-                            </AvatarFallback>
-                        </Avatar>
-                        <div>
-                            <h3 className="text-lg font-semibold">User #{userData.id}</h3>
-                            <p className="text-muted-foreground">Tài khoản chính</p>
-                        </div>
+                    <div>
+                        <h3 className="text-lg font-semibold">User #{userData.id}</h3>
+                        <p className="text-muted-foreground">Tài khoản chính</p>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -168,12 +161,20 @@ export default function UserDetailPage() {
                                 <CardHeader className="pb-3">
                                     <div className="flex items-center space-x-3">
                                         <Avatar className="h-12 w-12">
-                                            <AvatarFallback className="text-sm">
-                                                {profile.fullName
-                                                    ?.split(' ')
-                                                    ?.map((n: string) => n[0])
-                                                    ?.join('') || 'P'}
-                                            </AvatarFallback>
+                                            {profile.avatar ? (
+                                                <img
+                                                    src={profile.avatar}
+                                                    alt={profile.fullName}
+                                                    className="h-full w-full object-cover"
+                                                />
+                                            ) : (
+                                                <AvatarFallback className="text-sm">
+                                                    {profile.fullName
+                                                        ?.split(' ')
+                                                        ?.map((n: string) => n[0])
+                                                        ?.join('') || 'P'}
+                                                </AvatarFallback>
+                                            )}
                                         </Avatar>
                                         <div className="flex-1">
                                             <CardTitle className="text-lg">{profile.fullName}</CardTitle>

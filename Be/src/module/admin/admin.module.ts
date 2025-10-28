@@ -4,6 +4,7 @@ import { AdminDoctorModule } from './doctor/admin-doctor.module';
 import { AdminReceptionistModule } from './receptionist/admin-receptionist.module';
 import { AdminStatisticsModule } from './statistics/admin-statistics.module';
 import { AdminAppointmentModule } from './appointment/admin-appointment.module';
+import { AdminUploadModule } from './upload/admin-upload.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { AdminAppointmentModule } from './appointment/admin-appointment.module';
     AdminReceptionistModule,
     AdminStatisticsModule,
     AdminAppointmentModule,
+    AdminUploadModule,
   ],
   exports: [
     AdminPatientModule,
@@ -19,6 +21,7 @@ import { AdminAppointmentModule } from './appointment/admin-appointment.module';
     AdminReceptionistModule,
     AdminStatisticsModule,
     AdminAppointmentModule,
+    AdminUploadModule,
   ],
 })
 export class AdminModule {}
