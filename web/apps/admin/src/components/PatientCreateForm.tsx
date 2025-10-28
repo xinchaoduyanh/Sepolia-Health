@@ -18,6 +18,12 @@ interface PatientProfileForm {
     address?: string
 }
 
+interface FieldErrors {
+    email?: string
+    password?: string
+    phone?: string
+}
+
 export function PatientCreateForm() {
     const router = useRouter()
     const createPatient = useCreatePatient()
@@ -27,6 +33,8 @@ export function PatientCreateForm() {
         password: '',
         phone: '',
     })
+
+    const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
 
     const [profiles, setProfiles] = useState<PatientProfileForm[]>([
         {
@@ -53,6 +61,10 @@ export function PatientCreateForm() {
 
     const handleAccountChange = (field: 'email' | 'password' | 'phone', value: string) => {
         setAccountInfo(prev => ({ ...prev, [field]: value }))
+        // Clear field error when user types
+        if (fieldErrors[field]) {
+            setFieldErrors(prev => ({ ...prev, [field]: undefined }))
+        }
     }
 
     const handleProfileChange = (profileId: string, field: keyof PatientProfileForm, value: string) => {
@@ -87,6 +99,9 @@ export function PatientCreateForm() {
 
         if (!canSubmit) return
 
+        // Clear previous errors
+        setFieldErrors({})
+
         // Prepare data
         const validProfiles = getValidProfiles()
 
@@ -98,10 +113,26 @@ export function PatientCreateForm() {
         }
 
         try {
-            await createPatient.mutateAsync(submitData)
-            router.push('/dashboard/customer-management')
-        } catch (_error) {
-            // Error handling is done in the hook
+            const response = await createPatient.mutateAsync(submitData)
+
+            // Redirect to patient detail page with the new patient ID
+            if (response?.id) {
+                router.push(`/dashboard/customer-management/${response.id}`)
+            }
+        } catch (error: any) {
+            // Parse error message from backend
+            const errorMessage = error?.response?.data?.message || error?.message || ''
+
+            // Map error messages to specific fields
+            if (errorMessage.includes('Email đã được sử dụng') || errorMessage.toLowerCase().includes('email')) {
+                setFieldErrors(prev => ({ ...prev, email: errorMessage }))
+            } else if (
+                errorMessage.includes('Số điện thoại đã được sử dụng') ||
+                errorMessage.toLowerCase().includes('phone')
+            ) {
+                setFieldErrors(prev => ({ ...prev, phone: errorMessage }))
+            }
+            // Toast notification is handled by the hook
         }
     }
 
@@ -174,9 +205,15 @@ export function PatientCreateForm() {
                                     value={accountInfo.email}
                                     onChange={e => handleAccountChange('email', e.target.value)}
                                     placeholder="example@email.com"
-                                    className={inputClassName}
+                                    className={`${inputClassName} ${fieldErrors.email ? 'border-red-500 focus:ring-red-500' : ''}`}
                                     required
                                 />
+                                {fieldErrors.email && (
+                                    <div className="flex items-start gap-2 text-sm text-red-600 dark:text-red-400 mt-1">
+                                        <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                                        <span>{fieldErrors.email}</span>
+                                    </div>
+                                )}
                             </div>
                             <div className="space-y-2">
                                 <label htmlFor="password" className="block text-sm font-medium text-foreground">
@@ -188,10 +225,16 @@ export function PatientCreateForm() {
                                     value={accountInfo.password}
                                     onChange={e => handleAccountChange('password', e.target.value)}
                                     placeholder="Tối thiểu 6 ký tự"
-                                    className={inputClassName}
+                                    className={`${inputClassName} ${fieldErrors.password ? 'border-red-500 focus:ring-red-500' : ''}`}
                                     required
                                     minLength={6}
                                 />
+                                {fieldErrors.password && (
+                                    <div className="flex items-start gap-2 text-sm text-red-600 dark:text-red-400 mt-1">
+                                        <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                                        <span>{fieldErrors.password}</span>
+                                    </div>
+                                )}
                             </div>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -205,9 +248,15 @@ export function PatientCreateForm() {
                                     value={accountInfo.phone}
                                     onChange={e => handleAccountChange('phone', e.target.value)}
                                     placeholder="0123456789"
-                                    className={inputClassName}
+                                    className={`${inputClassName} ${fieldErrors.phone ? 'border-red-500 focus:ring-red-500' : ''}`}
                                     required
                                 />
+                                {fieldErrors.phone && (
+                                    <div className="flex items-start gap-2 text-sm text-red-600 dark:text-red-400 mt-1">
+                                        <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                                        <span>{fieldErrors.phone}</span>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -378,11 +427,13 @@ export function PatientCreateForm() {
                                                 disabled={isFirst}
                                                 className={`${inputClassName} ${isFirst ? 'opacity-60 cursor-not-allowed' : ''}`}
                                             >
-                                                {relationshipOptions.map(option => (
-                                                    <option key={option.value} value={option.value}>
-                                                        {option.label}
-                                                    </option>
-                                                ))}
+                                                {relationshipOptions
+                                                    .filter(option => isFirst || option.value !== 'SELF')
+                                                    .map(option => (
+                                                        <option key={option.value} value={option.value}>
+                                                            {option.label}
+                                                        </option>
+                                                    ))}
                                             </select>
                                             {isFirst && (
                                                 <p className="text-xs text-muted-foreground">

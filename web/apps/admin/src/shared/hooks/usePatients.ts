@@ -63,7 +63,7 @@ export function useCreatePatient() {
 
     return useMutation({
         mutationFn: (data: CreatePatientRequest) => patientsService.createPatient(data),
-        onSuccess: _response => {
+        onSuccess: () => {
             // Invalidate and refetch patients list
             queryClient.invalidateQueries({
                 queryKey: queryKeys.admin.patients.lists(),
@@ -76,10 +76,20 @@ export function useCreatePatient() {
         },
         onError: (error: any) => {
             const message = error?.response?.data?.message || 'Có lỗi xảy ra khi tạo tài khoản bệnh nhân'
-            toast.error({
-                title: 'Lỗi',
-                description: message,
-            })
+
+            // Don't show toast for field-specific errors (email/phone), they will be shown in the form
+            const isFieldError =
+                message.includes('Email đã được sử dụng') ||
+                message.includes('Số điện thoại đã được sử dụng') ||
+                message.toLowerCase().includes('email') ||
+                message.toLowerCase().includes('phone')
+
+            if (!isFieldError) {
+                toast.error({
+                    title: 'Lỗi',
+                    description: message,
+                })
+            }
         },
     })
 }

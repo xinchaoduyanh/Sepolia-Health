@@ -8,8 +8,9 @@ import { Button } from '@workspace/ui/components/Button'
 import { Badge } from '@workspace/ui/components/Badge'
 import { Avatar, AvatarFallback } from '@workspace/ui/components/Avatar'
 import { Eye, Plus, Trash2 } from 'lucide-react'
-import { usePatients, useDeletePatient } from '@/shared/hooks'
+import { usePatients } from '@/shared/hooks'
 import { Skeleton } from '@workspace/ui/components/Skeleton'
+import { PatientActionDialog } from '@/components/PatientActionDialog'
 
 // Skeleton table component for loading state
 const SkeletonTable = ({ columns }: { columns: any[] }) => {
@@ -86,33 +87,30 @@ const SkeletonTable = ({ columns }: { columns: any[] }) => {
 
 // Action cell component to handle hooks properly
 function ActionCell({ patient }: { patient: any }) {
-    const deletePatient = useDeletePatient()
-
-    const handleDelete = () => {
-        if (confirm('Bạn có chắc chắn muốn xóa bệnh nhân này?')) {
-            deletePatient.mutate(patient.id)
-        }
-    }
+    const [dialogOpen, setDialogOpen] = useState(false)
 
     return (
-        <div className="flex items-center justify-center space-x-1">
-            <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0"
-                onClick={() => (window.location.href = `/dashboard/customer-management/${patient.id}`)}
-            >
-                <Eye className="h-4 w-4" />
-            </Button>
-            <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                onClick={handleDelete}
-            >
-                <Trash2 className="h-4 w-4" />
-            </Button>
-        </div>
+        <>
+            <div className="flex items-center justify-center space-x-1">
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    onClick={() => (window.location.href = `/dashboard/customer-management/${patient.id}`)}
+                >
+                    <Eye className="h-4 w-4" />
+                </Button>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                    onClick={() => setDialogOpen(true)}
+                >
+                    <Trash2 className="h-4 w-4" />
+                </Button>
+            </div>
+            <PatientActionDialog patient={patient} open={dialogOpen} onOpenChange={setDialogOpen} />
+        </>
     )
 }
 
@@ -191,14 +189,17 @@ const columns: any[] = [
         },
     },
     {
-        accessorKey: 'patientProfilesCount',
+        id: 'patientProfilesCount',
         header: 'Số hồ sơ',
         size: 100,
-        cell: ({ getValue }: { getValue: () => any }) => (
-            <div className="flex items-center justify-center">
-                <span className="text-sm font-medium">{(getValue() as any[])?.length || 0}</span>
-            </div>
-        ),
+        cell: ({ row }: { row: any }) => {
+            const patientProfiles = row.original.patientProfiles || []
+            return (
+                <div className="flex items-center justify-center">
+                    <span className="text-sm font-medium">{patientProfiles.length}</span>
+                </div>
+            )
+        },
     },
     {
         accessorKey: 'status',
@@ -297,8 +298,8 @@ export default function CustomerListPage() {
     // Fetch patients data
     const { data: patientsResponse, isLoading } = usePatients(queryParams, isQueryReady)
 
-    const patients = patientsResponse?.data?.patients || []
-    const totalPages = Math.ceil((patientsResponse?.data?.total || 0) / itemsPerPage)
+    const patients = patientsResponse?.data.patients || []
+    const totalPages = Math.ceil((patientsResponse?.data.total || 0) / itemsPerPage)
 
     // Show skeleton when loading or query not ready
     const showSkeleton = isLoading || !isQueryReady
@@ -361,8 +362,8 @@ export default function CustomerListPage() {
                 <div className="px-6 py-4 border-t border-border flex items-center justify-between">
                     <div className="text-sm text-muted-foreground">
                         Hiển thị {(currentPage - 1) * itemsPerPage + 1} đến{' '}
-                        {Math.min(currentPage * itemsPerPage, patientsResponse?.data?.total || 0)} trong tổng số{' '}
-                        {patientsResponse?.data?.total || 0} khách hàng
+                        {Math.min(currentPage * itemsPerPage, patientsResponse?.data.total || 0)} trong tổng số{' '}
+                        {patientsResponse?.data.total || 0} khách hàng
                     </div>
                     <Pagination value={currentPage} pageCount={totalPages} onChange={handlePageChange} />
                 </div>

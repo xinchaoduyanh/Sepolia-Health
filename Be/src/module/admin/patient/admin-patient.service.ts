@@ -118,6 +118,7 @@ export class AdminPatientService {
     const where = search
       ? {
           role: 'PATIENT' as const,
+          deletedAt: null, // Exclude soft deleted users
           OR: [
             { email: { contains: search, mode: 'insensitive' as const } },
             { phone: { contains: search, mode: 'insensitive' as const } },
@@ -143,7 +144,7 @@ export class AdminPatientService {
             },
           ],
         }
-      : { role: 'PATIENT' as const };
+      : { role: 'PATIENT' as const, deletedAt: null };
 
     const [patients, total] = await Promise.all([
       this.prisma.user.findMany({
@@ -192,8 +193,8 @@ export class AdminPatientService {
   }
 
   async getPatientById(id: number): Promise<PatientDetailResponseDto> {
-    const user = await this.prisma.user.findUnique({
-      where: { id },
+    const user = await this.prisma.user.findFirst({
+      where: { id, deletedAt: null },
       include: {
         patientProfiles: true,
       },
@@ -235,8 +236,8 @@ export class AdminPatientService {
     id: number,
     updatePatientDto: UpdatePatientDto,
   ): Promise<CreatePatientResponseDto> {
-    const user = await this.prisma.user.findUnique({
-      where: { id },
+    const user = await this.prisma.user.findFirst({
+      where: { id, deletedAt: null },
       include: { patientProfiles: true },
     });
 
@@ -378,8 +379,8 @@ export class AdminPatientService {
   }
 
   async deletePatient(id: number): Promise<{ message: string }> {
-    const user = await this.prisma.user.findUnique({
-      where: { id },
+    const user = await this.prisma.user.findFirst({
+      where: { id, deletedAt: null },
       include: { patientProfiles: true },
     });
 
@@ -387,16 +388,12 @@ export class AdminPatientService {
       throw new NotFoundException('Không tìm thấy patient');
     }
 
-    await this.prisma.$transaction(async (tx) => {
-      // Delete all patient profiles
-      await tx.patientProfile.deleteMany({
-        where: { managerId: id },
-      });
-
-      // Delete user
-      await tx.user.delete({
-        where: { id },
-      });
+    // Soft delete: Update deleted_at instead of hard delete
+    await this.prisma.user.update({
+      where: { id },
+      data: {
+        deletedAt: new Date(),
+      },
     });
 
     return { message: 'Xóa patient thành công' };

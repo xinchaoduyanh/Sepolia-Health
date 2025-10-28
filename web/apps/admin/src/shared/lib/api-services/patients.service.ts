@@ -47,7 +47,7 @@ export interface PatientsListResponse {
     limit: number
 }
 
-export interface PatientDetailResponse extends Patient {}
+export type PatientDetailResponse = Patient
 
 export interface CreatePatientProfileRequest {
     firstName: string
@@ -99,7 +99,7 @@ export interface UpdatePatientRequest {
     }
 }
 
-export interface CreatePatientResponse extends Patient {}
+export type CreatePatientResponse = Patient
 
 export class PatientsService {
     /**
