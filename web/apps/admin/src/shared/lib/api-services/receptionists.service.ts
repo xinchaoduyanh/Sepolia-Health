@@ -46,7 +46,7 @@ export interface CreateReceptionistResponse extends Receptionist {}
 export class ReceptionistsService {
     /**
      * Get receptionists list with pagination and filters
-     * GET /admin/receptionists
+     * GET /receptionists
      */
     async getReceptionists(params: ReceptionistsListParams = {}): Promise<ReceptionistsListResponse> {
         return apiClient.get<ReceptionistsListResponse>('/admin/receptionists', { params })
@@ -54,7 +54,7 @@ export class ReceptionistsService {
 
     /**
      * Get receptionist by ID
-     * GET /admin/receptionists/{id}
+     * GET /receptionists/{id}
      */
     async getReceptionist(id: number): Promise<ReceptionistDetailResponse> {
         return apiClient.get<ReceptionistDetailResponse>(`/admin/receptionists/${id}`)
@@ -62,7 +62,7 @@ export class ReceptionistsService {
 
     /**
      * Create new receptionist
-     * POST /admin/receptionists
+     * POST /receptionists
      */
     async createReceptionist(receptionistData: CreateReceptionistRequest): Promise<CreateReceptionistResponse> {
         return apiClient.post<CreateReceptionistResponse>('/admin/receptionists', receptionistData)
@@ -70,7 +70,7 @@ export class ReceptionistsService {
 
     /**
      * Update receptionist
-     * PUT /admin/receptionists/{id}
+     * PUT /receptionists/{id}
      */
     async updateReceptionist(
         id: number,
@@ -81,7 +81,7 @@ export class ReceptionistsService {
 
     /**
      * Delete receptionist
-     * DELETE /admin/receptionists/{id}
+     * DELETE /receptionists/{id}
      */
     async deleteReceptionist(id: number): Promise<void> {
         return apiClient.delete<void>(`/admin/receptionists/${id}`)

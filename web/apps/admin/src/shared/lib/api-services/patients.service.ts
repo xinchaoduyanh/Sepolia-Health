@@ -104,7 +104,7 @@ export interface CreatePatientResponse extends Patient {}
 export class PatientsService {
     /**
      * Get patients list with pagination and filters
-     * GET /admin/patients
+     * GET /patients
      */
     async getPatients(params: PatientsListParams = {}): Promise<PatientsListResponse> {
         return apiClient.get<PatientsListResponse>('/admin/patients', { params })
@@ -112,7 +112,7 @@ export class PatientsService {
 
     /**
      * Get patient by ID
-     * GET /admin/patients/{id}
+     * GET /patients/{id}
      */
     async getPatient(id: number): Promise<PatientDetailResponse> {
         return apiClient.get<PatientDetailResponse>(`/admin/patients/${id}`)
@@ -120,7 +120,7 @@ export class PatientsService {
 
     /**
      * Create new patient
-     * POST /admin/patients
+     * POST /patients
      */
     async createPatient(patientData: CreatePatientRequest): Promise<CreatePatientResponse> {
         return apiClient.post<CreatePatientResponse>('/admin/patients', patientData)
@@ -128,7 +128,7 @@ export class PatientsService {
 
     /**
      * Update patient
-     * PUT /admin/patients/{id}
+     * PUT /patients/{id}
      */
     async updatePatient(id: number, patientData: UpdatePatientRequest): Promise<PatientDetailResponse> {
         return apiClient.put<PatientDetailResponse>(`/admin/patients/${id}`, patientData)
@@ -136,7 +136,7 @@ export class PatientsService {
 
     /**
      * Delete patient
-     * DELETE /admin/patients/{id}
+     * DELETE /patients/{id}
      */
     async deletePatient(id: number): Promise<void> {
         return apiClient.delete<void>(`/admin/patients/${id}`)
@@ -144,7 +144,7 @@ export class PatientsService {
 
     /**
      * Update patient status
-     * PATCH /admin/patients/{id}
+     * PATCH /patients/{id}
      */
     async updatePatientStatus(
         id: number,

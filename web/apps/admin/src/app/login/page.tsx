@@ -8,27 +8,42 @@ import { Label } from '@workspace/ui/components/Label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@workspace/ui/components/Card'
 import { AlertMessage } from '@workspace/ui/components/AlertMessage'
 import { Loader2 } from 'lucide-react'
+import { AccessDenied } from '@/components/AccessDenied'
 
 export default function LoginPage() {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [error, setError] = useState('')
+    const [showAccessDenied, setShowAccessDenied] = useState(false)
 
     const loginMutation = useAdminLogin()
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setError('')
+        setShowAccessDenied(false)
 
         try {
             await loginMutation.mutateAsync({ email, password })
             // Navigation is handled by the login mutation
         } catch (err: any) {
+            // Check if error is ACCESS_DENIED
+            if (err?.message === 'ACCESS_DENIED') {
+                setShowAccessDenied(true)
+                return
+            }
+
             // Lấy message từ error object
-            console.error('❌ Login error:1231231231231: ', err)
             const errorMessage = err?.message || 'Login failed'
             setError(errorMessage)
         }
+    }
+
+    // If access is denied, show AccessDenied component
+    if (showAccessDenied) {
+        return (
+            <AccessDenied message="Tài khoản của bạn không có quyền truy cập vào hệ thống quản trị. Hệ thống này chỉ dành cho quản trị viên (ADMIN)." />
+        )
     }
 
     return (

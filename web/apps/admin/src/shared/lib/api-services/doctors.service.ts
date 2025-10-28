@@ -6,8 +6,8 @@ export interface Doctor {
     fullName: string
     email: string
     phone: string
-    specialty: string
-    experienceYears: number
+    services: string[] // Array of specialties/services
+    experienceYears: number // Year started practicing (e.g., 2006)
     status: string
     clinic?: { id: number; name: string } | null
     createdAt: string
@@ -38,14 +38,20 @@ export interface Service {
     description?: string
 }
 
-export interface DoctorsListResponse {
+export interface DoctorsListData {
     doctors: Doctor[]
     total: number
     page: number
     limit: number
 }
 
-export interface DoctorDetailResponse extends Doctor {}
+export interface DoctorsListResponse {
+    data: DoctorsListData
+    message: string
+    statusCode: number
+}
+
+export type DoctorDetailResponse = Doctor
 
 export interface CreateDoctorRequest {
     email: string
@@ -78,12 +84,12 @@ export interface UpdateDoctorRequest {
     serviceIds?: number[]
 }
 
-export interface CreateDoctorResponse extends Doctor {}
+export type CreateDoctorResponse = Doctor
 
 export class DoctorsService {
     /**
      * Get doctors list with pagination and filters
-     * GET /admin/doctors
+     * GET /doctors
      */
     async getDoctors(params: DoctorsListParams = {}): Promise<DoctorsListResponse> {
         return apiClient.get<DoctorsListResponse>('/admin/doctors', { params })
@@ -91,7 +97,7 @@ export class DoctorsService {
 
     /**
      * Get doctor by ID
-     * GET /admin/doctors/{id}
+     * GET /doctors/{id}
      */
     async getDoctor(id: number): Promise<DoctorDetailResponse> {
         return apiClient.get<DoctorDetailResponse>(`/admin/doctors/${id}`)
@@ -99,7 +105,7 @@ export class DoctorsService {
 
     /**
      * Create new doctor
-     * POST /admin/doctors
+     * POST /doctors
      */
     async createDoctor(doctorData: CreateDoctorRequest): Promise<CreateDoctorResponse> {
         return apiClient.post<CreateDoctorResponse>('/admin/doctors', doctorData)
@@ -107,7 +113,7 @@ export class DoctorsService {
 
     /**
      * Update doctor
-     * PUT /admin/doctors/{id}
+     * PUT /doctors/{id}
      */
     async updateDoctor(id: number, doctorData: UpdateDoctorRequest): Promise<DoctorDetailResponse> {
         return apiClient.put<DoctorDetailResponse>(`/admin/doctors/${id}`, doctorData)
@@ -115,7 +121,7 @@ export class DoctorsService {
 
     /**
      * Delete doctor
-     * DELETE /admin/doctors/{id}
+     * DELETE /doctors/{id}
      */
     async deleteDoctor(id: number): Promise<void> {
         return apiClient.delete<void>(`/admin/doctors/${id}`)
@@ -123,18 +129,18 @@ export class DoctorsService {
 
     /**
      * Get list of clinics
-     * GET /admin/doctors/clinics/list
+     * GET /doctors/clinics/list
      */
     async getClinics(): Promise<{ data: Clinic[] }> {
-        return apiClient.get<{ data: Clinic[] }>('/admin/doctors/clinics/list')
+        return apiClient.get<{ data: Clinic[] }>('admin/doctors/clinics/list')
     }
 
     /**
      * Get list of services
-     * GET /admin/doctors/services/list
+     * GET /doctors/services/list
      */
     async getServices(): Promise<{ data: Service[] }> {
-        return apiClient.get<{ data: Service[] }>('/admin/doctors/services/list')
+        return apiClient.get<{ data: Service[] }>('admin/doctors/services/list')
     }
 }
 

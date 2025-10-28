@@ -339,60 +339,78 @@ export class AuthService {
       throw new UnauthorizedException(ERROR_MESSAGES.AUTH.USER_NOT_FOUND);
     }
 
-    return {
+    // Base response with common fields
+    const response: MeResponseDto = {
       id: user.id,
       email: user.email,
       phone: user.phone || undefined,
       role: user.role,
       status: user.status,
-      doctorProfile: user.doctorProfile
-        ? {
-            id: user.doctorProfile.id,
-            firstName: user.doctorProfile.firstName,
-            lastName: user.doctorProfile.lastName,
-            dateOfBirth: user.doctorProfile.dateOfBirth || undefined,
-            gender: user.doctorProfile.gender || undefined,
-            avatar: user.doctorProfile.avatar || undefined,
-            specialty: user.doctorProfile.experience || '',
-            experience: user.doctorProfile.experience || undefined,
-            contactInfo: user.doctorProfile.contactInfo || undefined,
-          }
-        : undefined,
-      patientProfiles: user.patientProfiles.map((profile) => ({
-        id: profile.id,
-        firstName: profile.firstName,
-        lastName: profile.lastName,
-        dateOfBirth: profile.dateOfBirth,
-        gender: profile.gender,
-        phone: profile.phone,
-        relationship: profile.relationship,
-        avatar: profile.avatar || undefined,
-        idCardNumber: profile.idCardNumber || undefined,
-        occupation: profile.occupation || undefined,
-        nationality: profile.nationality || undefined,
-        address: profile.address || undefined,
-      })),
-      receptionistProfile: user.receptionistProfile
-        ? {
-            id: user.receptionistProfile.id,
-            firstName: user.receptionistProfile.firstName,
-            lastName: user.receptionistProfile.lastName,
-            dateOfBirth: user.receptionistProfile.dateOfBirth || undefined,
-            gender: user.receptionistProfile.gender || undefined,
-            avatar: user.receptionistProfile.avatar || undefined,
-            shift: user.receptionistProfile.shift || undefined,
-          }
-        : undefined,
-      adminProfile: user.adminProfile
-        ? {
-            id: user.adminProfile.id,
-            firstName: user.adminProfile.firstName,
-            lastName: user.adminProfile.lastName,
-            dateOfBirth: user.adminProfile.dateOfBirth || undefined,
-            gender: user.adminProfile.gender || undefined,
-            avatar: user.adminProfile.avatar || undefined,
-          }
-        : undefined,
     };
+
+    // Return only the profile that matches the user's role
+    switch (user.role) {
+      case 'DOCTOR':
+        response.doctorProfile = user.doctorProfile
+          ? {
+              id: user.doctorProfile.id,
+              firstName: user.doctorProfile.firstName,
+              lastName: user.doctorProfile.lastName,
+              dateOfBirth: user.doctorProfile.dateOfBirth || undefined,
+              gender: user.doctorProfile.gender || undefined,
+              avatar: user.doctorProfile.avatar || undefined,
+              specialty: user.doctorProfile.experience || '',
+              experience: user.doctorProfile.experience || undefined,
+              contactInfo: user.doctorProfile.contactInfo || undefined,
+            }
+          : undefined;
+        break;
+
+      case 'PATIENT':
+        response.patientProfiles = user.patientProfiles.map((profile) => ({
+          id: profile.id,
+          firstName: profile.firstName,
+          lastName: profile.lastName,
+          dateOfBirth: profile.dateOfBirth,
+          gender: profile.gender,
+          phone: profile.phone,
+          relationship: profile.relationship,
+          avatar: profile.avatar || undefined,
+          idCardNumber: profile.idCardNumber || undefined,
+          occupation: profile.occupation || undefined,
+          nationality: profile.nationality || undefined,
+          address: profile.address || undefined,
+        }));
+        break;
+
+      case 'RECEPTIONIST':
+        response.receptionistProfile = user.receptionistProfile
+          ? {
+              id: user.receptionistProfile.id,
+              firstName: user.receptionistProfile.firstName,
+              lastName: user.receptionistProfile.lastName,
+              dateOfBirth: user.receptionistProfile.dateOfBirth || undefined,
+              gender: user.receptionistProfile.gender || undefined,
+              avatar: user.receptionistProfile.avatar || undefined,
+              shift: user.receptionistProfile.shift || undefined,
+            }
+          : undefined;
+        break;
+
+      case 'ADMIN':
+        response.adminProfile = user.adminProfile
+          ? {
+              id: user.adminProfile.id,
+              firstName: user.adminProfile.firstName,
+              lastName: user.adminProfile.lastName,
+              dateOfBirth: user.adminProfile.dateOfBirth || undefined,
+              gender: user.adminProfile.gender || undefined,
+              avatar: user.adminProfile.avatar || undefined,
+            }
+          : undefined;
+        break;
+    }
+
+    return response;
   }
 }

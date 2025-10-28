@@ -69,21 +69,21 @@ export class StatisticsService {
      * Get users chart data
      */
     async getUsersChartData(params?: StatisticsParams): Promise<UsersChartData> {
-        return apiClient.get<UsersChartData>('/statistics/users-chart', { params })
+        return apiClient.get<UsersChartData>('/admin/statistics/users-chart', { params })
     }
 
     /**
      * Get appointments chart data
      */
     async getAppointmentsChartData(params?: StatisticsParams): Promise<AppointmentsChartData> {
-        return apiClient.get<AppointmentsChartData>('/statistics/appointments-chart', { params })
+        return apiClient.get<AppointmentsChartData>('/admin/statistics/appointments-chart', { params })
     }
 
     /**
      * Get revenue chart data (if applicable)
      */
     async getRevenueChartData(params?: StatisticsParams): Promise<ChartData> {
-        return apiClient.get<ChartData>('/statistics/revenue-chart', { params })
+        return apiClient.get<ChartData>('/admin/statistics/revenue-chart', { params })
     }
 }
 

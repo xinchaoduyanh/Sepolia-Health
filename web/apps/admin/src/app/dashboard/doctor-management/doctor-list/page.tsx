@@ -58,7 +58,12 @@ const SkeletonTable = ({ columns }: { columns: any[] }) => {
                                         )}
                                         {col.accessorKey === 'email' && <Skeleton className="h-4 w-40" />}
                                         {col.accessorKey === 'phone' && <Skeleton className="h-4 w-24" />}
-                                        {col.accessorKey === 'specialty' && <Skeleton className="h-5 w-24" />}
+                                        {col.accessorKey === 'services' && (
+                                            <div className="flex gap-1">
+                                                <Skeleton className="h-5 w-20" />
+                                                <Skeleton className="h-5 w-24" />
+                                            </div>
+                                        )}
                                         {col.accessorKey === 'experienceYears' && <Skeleton className="h-4 w-16" />}
                                         {col.accessorKey === 'clinic' && <Skeleton className="h-4 w-40" />}
                                         {col.accessorKey === 'status' && <Skeleton className="h-5 w-24" />}
@@ -158,21 +163,35 @@ const columns: any[] = [
         ),
     },
     {
-        accessorKey: 'specialty',
+        accessorKey: 'services',
         header: 'Chuyên khoa',
-        cell: ({ getValue }: { getValue: () => any }) => (
-            <Badge variant="outline" className="text-foreground">
-                {getValue() as string}
-            </Badge>
-        ),
+        size: 280,
+        cell: ({ getValue }: { getValue: () => any }) => {
+            const services = getValue() as string[] | undefined
+            if (!services || services.length === 0) {
+                return <span className="text-muted-foreground text-sm">Chưa có</span>
+            }
+            return (
+                <div className="flex flex-wrap gap-1">
+                    {services.map((service: string, index: number) => (
+                        <Badge key={index} variant="outline" className="text-xs">
+                            {service}
+                        </Badge>
+                    ))}
+                </div>
+            )
+        },
     },
     {
         accessorKey: 'experienceYears',
         header: 'Kinh nghiệm',
         size: 120,
-        cell: ({ getValue }: { getValue: () => any }) => (
-            <span className="text-muted-foreground text-sm">{getValue()} năm</span>
-        ),
+        cell: ({ getValue }: { getValue: () => any }) => {
+            const startYear = getValue() as number
+            const currentYear = new Date().getFullYear()
+            const years = currentYear - startYear
+            return <span className="text-muted-foreground text-sm">{years} năm</span>
+        },
     },
     {
         accessorKey: 'clinic',

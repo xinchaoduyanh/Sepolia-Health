@@ -7,6 +7,31 @@ import { useAuthStore } from '../stores/auth.store'
 import { config } from '../lib/config'
 
 /**
+ * Utility function to decode JWT token
+ */
+function decodeJWT(token: string): any {
+    try {
+        const parts = token.split('.')
+        if (parts.length !== 3 || !parts[1]) {
+            return null
+        }
+
+        const base64Url = parts[1]
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
+        const jsonPayload = decodeURIComponent(
+            atob(base64)
+                .split('')
+                .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+                .join(''),
+        )
+        return JSON.parse(jsonPayload)
+    } catch (error) {
+        console.error('Failed to decode JWT:', error)
+        return null
+    }
+}
+
+/**
  * Hook for admin login
  */
 export function useAdminLogin() {
@@ -29,6 +54,22 @@ export function useAdminLogin() {
             console.log('🔐 Extracted tokens:', { accessToken: !!accessToken, refreshToken: !!refreshToken })
             console.log('🔐 Extracted admin:', admin)
 
+            // IMPORTANT: Check role BEFORE saving to store
+            if (accessToken) {
+                const decoded = decodeJWT(accessToken)
+
+                if (!decoded) {
+                    throw new Error('INVALID_TOKEN')
+                }
+
+                if (decoded.role !== 'ADMIN') {
+                    console.log('❌ Access denied: Role is not ADMIN:', decoded.role)
+                    throw new Error('ACCESS_DENIED')
+                }
+
+                console.log('✅ Token validated with ADMIN role')
+            }
+
             // Set admin data and tokens in Zustand store
             login(admin, { accessToken, refreshToken })
 
@@ -38,9 +79,6 @@ export function useAdminLogin() {
 
             // Redirect to dashboard immediately
             router.push('/dashboard')
-        },
-        onError: error => {
-            console.error('Login failed:', error)
         },
     })
 }
@@ -81,7 +119,7 @@ export function useAdminLogout() {
 
                 if (token) {
                     // Call logout API directly with token
-                    const response = await fetch(`${config.authApiUrl}/auth/logout`, {
+                    const response = await fetch(`${config.apiUrl}/auth/logout`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -257,7 +295,7 @@ export function useCheckAuth() {
 
             // Step 2: Try to get profile with current access token
             try {
-                const response = await fetch(`${config.authApiUrl}/auth/me`, {
+                const response = await fetch(`${config.apiUrl}/auth/me`, {
                     headers: {
                         Authorization: `Bearer ${accessToken}`,
                         'Content-Type': 'application/json',
@@ -297,7 +335,7 @@ export function useCheckAuth() {
             }
 
             try {
-                const refreshResponse = await fetch(`${config.authApiUrl}/auth/refresh`, {
+                const refreshResponse = await fetch(`${config.apiUrl}/auth/refresh`, {
                     method: 'POST',
                     headers: {
                         Authorization: `Bearer ${refreshToken}`,
@@ -320,7 +358,7 @@ export function useCheckAuth() {
 
                     // Try profile again with new token
                     const newToken = refreshData.accessToken || accessToken
-                    const profileResponse = await fetch(`${config.authApiUrl}/auth/me`, {
+                    const profileResponse = await fetch(`${config.apiUrl}/auth/me`, {
                         headers: {
                             Authorization: `Bearer ${newToken}`,
                             'Content-Type': 'application/json',
