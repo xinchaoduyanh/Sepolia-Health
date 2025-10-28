@@ -34,6 +34,7 @@ type UploadFileResponseDtoType = {
 };
 
 @ApiBearerAuth()
+@Roles(Role.PATIENT)
 @ApiTags('Patient Upload')
 @Controller('patient/upload')
 export class UploadController {
@@ -44,7 +45,6 @@ export class UploadController {
 
   @Post('file')
   @HttpCode(HttpStatus.OK)
-  @Roles(Role.PATIENT)
   @UseInterceptors(FileInterceptor('file'))
   @ApiOperation({ summary: 'Upload file lên S3' })
   @ApiConsumes('multipart/form-data')
@@ -61,7 +61,7 @@ export class UploadController {
     },
   })
   @ApiResponse({
-    status: 200,
+    status: HttpStatus.OK,
     description: 'Upload file thành công',
   })
   async uploadFile(
@@ -93,7 +93,6 @@ export class UploadController {
 
   @Post('url')
   @HttpCode(HttpStatus.OK)
-  @Roles(Role.PATIENT)
   @ApiOperation({ summary: 'Upload từ URL (sẽ lưu URL trực tiếp)' })
   @ApiBody({
     schema: {
@@ -108,7 +107,7 @@ export class UploadController {
     },
   })
   @ApiResponse({
-    status: 200,
+    status: HttpStatus.OK,
     description: 'Lưu URL thành công',
   })
   uploadFromUrl(@Body() body: UploadUrlDtoType): UploadFileResponseDtoType {
@@ -129,7 +128,6 @@ export class UploadController {
 
   @Post('avatar/file')
   @HttpCode(HttpStatus.OK)
-  @Roles(Role.PATIENT)
   @UseInterceptors(FileInterceptor('avatar'))
   @ApiOperation({ summary: 'Upload avatar từ file' })
   @ApiConsumes('multipart/form-data')
@@ -146,7 +144,7 @@ export class UploadController {
     },
   })
   @ApiResponse({
-    status: 200,
+    status: HttpStatus.OK,
     description: 'Upload avatar thành công',
   })
   async uploadAvatarFile(
@@ -212,7 +210,6 @@ export class UploadController {
 
   @Post('avatar/url')
   @HttpCode(HttpStatus.OK)
-  @Roles(Role.PATIENT)
   @ApiOperation({ summary: 'Upload avatar từ URL' })
   @ApiBody({
     schema: {
@@ -227,7 +224,7 @@ export class UploadController {
     },
   })
   @ApiResponse({
-    status: 200,
+    status: HttpStatus.OK,
     description: 'Cập nhật avatar thành công',
   })
   async uploadAvatarUrl(

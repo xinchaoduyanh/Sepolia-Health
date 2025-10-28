@@ -106,7 +106,7 @@ npm install
 pnpm install
 ```
 
-### 3. Cấu hình Database
+### 3. Cấu hình môi trường
 
 ```bash
 # Tạo file .env trong thư mục Be/
@@ -149,7 +149,10 @@ npm install
 
 ```bash
 # Chỉnh sửa API_BASE_URL trong constants/api.ts theo ipconfig của be
-API_BASE_URL="http://localhost:3000/api"
+API_BASE_URL="http://localhost:8000/api"
+# Hoặc có thể thêm vào .env của app
+cp .env.example .env
+API_URL=http://localhost:8000/api
 ```
 
 ### 8. Chạy Mobile App
