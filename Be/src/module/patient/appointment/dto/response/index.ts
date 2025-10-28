@@ -104,3 +104,62 @@ export class AppointmentsListResponseDto {
   @ApiProperty()
   limit: number;
 }
+
+export class WorkingHoursDto {
+  @ApiProperty()
+  startTime: string;
+
+  @ApiProperty()
+  endTime: string;
+}
+
+export class GetDoctorAvailabilityResponseDto {
+  @ApiProperty()
+  doctorId: number;
+
+  @ApiProperty()
+  doctorName: string;
+
+  @ApiProperty()
+  serviceName: string;
+
+  @ApiProperty()
+  serviceDuration: number;
+
+  @ApiProperty()
+  date: string;
+
+  @ApiProperty({ type: WorkingHoursDto })
+  workingHours: WorkingHoursDto;
+
+  @ApiProperty({ type: [WorkingHoursDto] })
+  availableTimeSlots: WorkingHoursDto[];
+}
+
+export class AvailableDateDto {
+  @ApiProperty()
+  date: string;
+
+  @ApiProperty()
+  dayOfWeek: number;
+
+  @ApiProperty({ type: WorkingHoursDto })
+  workingHours: WorkingHoursDto;
+}
+
+export class GetAvailabilityDateResponseDto {
+  @ApiProperty()
+  doctorId: number;
+
+  @ApiProperty()
+  doctorName: string;
+
+  @ApiProperty()
+  serviceName: string;
+
+  @ApiProperty()
+  serviceDuration: number;
+
+  @ApiProperty({ type: [AvailableDateDto] })
+  availableDates: AvailableDateDto[];
+}

@@ -7,8 +7,6 @@ import {
 import { MESSAGES } from '@/common/constants/messages';
 import { PrismaService } from '@/common/prisma/prisma.service';
 import { AppointmentStatus, PaymentStatus } from '@prisma/client';
-import { CurrentUser } from '@/common/decorators';
-import { TokenPayload } from '@/common/modules';
 import {
   UpdateAppointmentDto,
   AppointmentResponseDto,
@@ -18,6 +16,8 @@ import {
   AppointmentsListResponseDto,
   GetDoctorAvailabilityQueryDto,
   CreateAppointmentFromDoctorServiceBodyDto,
+  GetDoctorAvailabilityResponseDto,
+  GetAvailabilityDateResponseDto,
 } from './dto';
 
 @Injectable()
@@ -131,7 +131,7 @@ export class AppointmentService {
   async update(
     id: number,
     updateAppointmentDto: UpdateAppointmentDto,
-    @CurrentUser() user: TokenPayload,
+    userId: number,
   ): Promise<AppointmentResponseDto> {
     const appointment = await this.prisma.appointment.findUnique({
       where: { id },
@@ -147,9 +147,8 @@ export class AppointmentService {
 
     // Check permissions
     if (
-      user.role !== 'ADMIN' &&
-      appointment.patientProfile?.managerId !== user.userId &&
-      appointment.doctor.userId !== user.userId
+      appointment.patientProfile?.managerId !== userId &&
+      appointment.doctor.userId !== userId
     ) {
       throw new ForbiddenException(MESSAGES.APPOINTMENT.UNAUTHORIZED_ACCESS);
     }
@@ -199,10 +198,7 @@ export class AppointmentService {
   /**
    * Delete appointment
    */
-  async remove(
-    id: number,
-    @CurrentUser() user: TokenPayload,
-  ): Promise<{ message: string }> {
+  async remove(id: number, userId: number): Promise<{ message: string }> {
     const appointment = await this.prisma.appointment.findUnique({
       where: { id },
       include: { patientProfile: true },
@@ -213,10 +209,7 @@ export class AppointmentService {
     }
 
     // Check permissions
-    if (
-      user.role !== 'ADMIN' &&
-      appointment.patientProfile?.managerId !== user.userId
-    ) {
+    if (appointment.patientProfile?.managerId !== userId) {
       throw new ForbiddenException(MESSAGES.APPOINTMENT.UNAUTHORIZED_ACCESS);
     }
 
@@ -232,11 +225,11 @@ export class AppointmentService {
    */
   async getMyAppointments(
     query: GetAppointmentsQueryDto,
-    @CurrentUser() user: TokenPayload,
+    userId: number,
   ): Promise<AppointmentsListResponseDto> {
     // Find patient profiles managed by this user
     const patientProfiles = await this.prisma.patientProfile.findMany({
-      where: { managerId: user.userId },
+      where: { managerId: userId },
       select: { id: true },
     });
 
@@ -320,11 +313,11 @@ export class AppointmentService {
    */
   async getDoctorAppointments(
     query: GetAppointmentsQueryDto,
-    @CurrentUser() user: TokenPayload,
+    userId: number,
   ): Promise<AppointmentsListResponseDto> {
     // Get doctor profile
     const doctorProfile = await this.prisma.doctorProfile.findUnique({
-      where: { userId: user.userId },
+      where: { userId: userId },
     });
 
     if (!doctorProfile) {
@@ -478,7 +471,7 @@ export class AppointmentService {
    */
   async createFromDoctorService(
     createAppointmentDto: CreateAppointmentFromDoctorServiceBodyDto,
-    @CurrentUser() user: TokenPayload,
+    userId: number,
   ): Promise<AppointmentResponseDto> {
     const {
       doctorServiceId,
@@ -511,8 +504,6 @@ export class AppointmentService {
       );
     }
 
-    // Doctor is always active in new schema
-
     // Check if clinic exists and is active
     if (!doctorService.doctor.clinicId) {
       throw new BadRequestException(MESSAGES.APPOINTMENT.DOCTOR_NO_CLINIC);
@@ -528,7 +519,6 @@ export class AppointmentService {
 
     // Validate patientProfileId if provided
     let validatedPatientProfileId: number | null = null;
-    console.log('patientProfileId', patientProfileId);
     if (patientProfileId) {
       const patientProfile = await this.prisma.patientProfile.findUnique({
         where: { id: patientProfileId },
@@ -541,7 +531,7 @@ export class AppointmentService {
         );
       }
 
-      if (patientProfile.managerId !== user.userId) {
+      if (patientProfile.managerId !== userId) {
         throw new ForbiddenException(
           MESSAGES.APPOINTMENT.PATIENT_PROFILE_NOT_OWNED,
         );
@@ -715,7 +705,9 @@ export class AppointmentService {
   /**
    * Get doctor availability for a specific date (simple version)
    */
-  async getDoctorAvailability(query: GetDoctorAvailabilityQueryDto) {
+  async getDoctorAvailability(
+    query: GetDoctorAvailabilityQueryDto,
+  ): Promise<GetDoctorAvailabilityResponseDto> {
     const { doctorServiceId, date } = query;
     // Validate date format (like dateOfBirth in complete-register)
     if (isNaN(Date.parse(date))) {
@@ -829,7 +821,9 @@ export class AppointmentService {
   /**
    * Get available dates for a doctor service within a date range
    */
-  async getAvailableDates(query: GetAvailableDateQueryDto) {
+  async getAvailableDates(
+    query: GetAvailableDateQueryDto,
+  ): Promise<GetAvailabilityDateResponseDto> {
     const { doctorServiceId, startDate, endDate } = query;
     // Validate date formats
     if (isNaN(Date.parse(startDate)) || isNaN(Date.parse(endDate))) {
