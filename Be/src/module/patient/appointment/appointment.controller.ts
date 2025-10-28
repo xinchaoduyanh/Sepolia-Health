@@ -7,9 +7,7 @@ import {
   Body,
   Param,
   Query,
-  HttpCode,
-  HttpStatus,
-  UseGuards,
+  ParseIntPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -17,98 +15,79 @@ import {
   ApiResponse,
   ApiBearerAuth,
   ApiParam,
-  ApiQuery,
   ApiBody,
 } from '@nestjs/swagger';
 import { AppointmentService } from './appointment.service';
-import {
-  type CreateAppointmentFromDoctorServiceDtoType,
-  type GetAppointmentsQueryDtoType,
-  type AppointmentResponseDtoType,
-  type AppointmentsListResponseDtoType,
-  UpdateAppointmentDto,
-} from './appointment.dto';
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
-import { JwtAuthGuard, RolesGuard } from '@/common/guards';
 import { Roles } from '@/common/decorators';
 import { Role } from '@prisma/client';
 import { TokenPayload } from '@/common/modules';
+import {
+  UpdateAppointmentDto,
+  AppointmentResponseDto,
+  GetAppointmentsQueryDto,
+  GetAvailableDateQueryDto,
+  GetDoctorServicesQueryDto,
+  AppointmentsListResponseDto,
+  GetDoctorAvailabilityQueryDto,
+  CreateAppointmentFromDoctorServiceBodyDto,
+} from './dto';
 
+@ApiBearerAuth()
+@Roles(Role.PATIENT)
 @ApiTags('Patient Appointments')
 @Controller('patient/appointments')
-@ApiBearerAuth()
 export class AppointmentController {
   constructor(private readonly appointmentService: AppointmentService) {}
 
   @Get(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.PATIENT)
   @ApiOperation({ summary: 'Lấy thông tin lịch hẹn theo ID' })
   @ApiParam({ name: 'id', description: 'ID lịch hẹn' })
   @ApiResponse({ status: 200, description: 'Lấy thông tin thành công' })
   @ApiResponse({ status: 404, description: 'Không tìm thấy lịch hẹn' })
-  async findOne(@Param('id') id: string): Promise<AppointmentResponseDtoType> {
-    return this.appointmentService.findOne(Number(id));
+  async findOne(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<AppointmentResponseDto> {
+    return this.appointmentService.findOne(id);
   }
 
   @Put(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.PATIENT)
   @ApiOperation({ summary: 'Cập nhật lịch hẹn' })
   @ApiParam({ name: 'id', description: 'ID lịch hẹn' })
-  @ApiBody({ type: UpdateAppointmentDto })
   @ApiResponse({ status: 200, description: 'Cập nhật thành công' })
   @ApiResponse({ status: 404, description: 'Không tìm thấy lịch hẹn' })
   async update(
-    @Param('id') id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() updateAppointmentDto: UpdateAppointmentDto,
     @CurrentUser() user: TokenPayload,
-  ): Promise<AppointmentResponseDtoType> {
-    return this.appointmentService.update(
-      Number(id),
-      updateAppointmentDto,
-      user,
-    );
+  ): Promise<AppointmentResponseDto> {
+    return this.appointmentService.update(id, updateAppointmentDto, user);
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.PATIENT)
   @ApiOperation({ summary: 'Xóa lịch hẹn' })
   @ApiParam({ name: 'id', description: 'ID lịch hẹn' })
   @ApiResponse({ status: 200, description: 'Xóa thành công' })
   @ApiResponse({ status: 404, description: 'Không tìm thấy lịch hẹn' })
-  @HttpCode(HttpStatus.OK)
   async remove(
-    @Param('id') id: string,
+    @Param('id', ParseIntPipe) id: number,
     @CurrentUser() user: TokenPayload,
   ): Promise<{ message: string }> {
-    return this.appointmentService.remove(Number(id), user);
+    return this.appointmentService.remove(id, user);
   }
 
   @Get('patient/my-appointments')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.PATIENT)
   @ApiOperation({ summary: 'Lấy lịch hẹn của bệnh nhân hiện tại' })
-  @ApiQuery({ name: 'page', required: false, type: Number })
-  @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiQuery({
-    name: 'status',
-    required: false,
-    enum: ['scheduled', 'completed', 'cancelled'],
-  })
   @ApiResponse({ status: 200, description: 'Lấy danh sách thành công' })
   async getMyAppointments(
-    @Query() query: GetAppointmentsQueryDtoType,
+    @Query() query: GetAppointmentsQueryDto,
     @CurrentUser() user: TokenPayload,
-  ): Promise<AppointmentsListResponseDtoType> {
+  ): Promise<AppointmentsListResponseDto> {
     return this.appointmentService.getMyAppointments(query, user);
   }
 
   // ========== BOOKING APIS ==========
   @Get('booking/locations')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.PATIENT)
   @ApiOperation({ summary: 'Lấy danh sách cơ sở phòng khám (locations)' })
   @ApiResponse({ status: 200, description: 'Lấy danh sách cơ sở thành công' })
   async getLocations() {
@@ -116,8 +95,6 @@ export class AppointmentController {
   }
 
   @Get('booking/services')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.PATIENT)
   @ApiOperation({ summary: 'Lấy danh sách dịch vụ khám' })
   @ApiResponse({ status: 200, description: 'Lấy danh sách dịch vụ thành công' })
   async getServices() {
@@ -125,58 +102,18 @@ export class AppointmentController {
   }
 
   @Get('booking/doctor-services')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.PATIENT)
   @ApiOperation({
     summary: 'Lấy danh sách bác sĩ cung cấp dịch vụ theo location và service',
   })
-  @ApiQuery({
-    name: 'locationId',
-    required: true,
-    type: Number,
-    description: 'ID cơ sở phòng khám',
-  })
-  @ApiQuery({
-    name: 'serviceId',
-    required: true,
-    type: Number,
-    description: 'ID dịch vụ',
-  })
   @ApiResponse({ status: 200, description: 'Lấy danh sách bác sĩ thành công' })
-  async getDoctorServices(
-    @Query('locationId') locationId: string,
-    @Query('serviceId') serviceId: string,
-  ) {
-    return this.appointmentService.getDoctorServices(
-      Number(locationId),
-      Number(serviceId),
-    );
+  async getDoctorServices(@Query() query: GetDoctorServicesQueryDto) {
+    return this.appointmentService.getDoctorServices(query);
   }
 
   @Get('booking/available-dates')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.PATIENT)
   @ApiOperation({
     summary:
       'Lấy danh sách các ngày bác sĩ có thể làm việc trong khoảng thời gian',
-  })
-  @ApiQuery({
-    name: 'doctorServiceId',
-    required: true,
-    type: Number,
-    description: 'ID DoctorService',
-  })
-  @ApiQuery({
-    name: 'startDate',
-    required: true,
-    type: String,
-    description: 'Ngày bắt đầu (YYYY-MM-DD)',
-  })
-  @ApiQuery({
-    name: 'endDate',
-    required: true,
-    type: String,
-    description: 'Ngày kết thúc (YYYY-MM-DD)',
   })
   @ApiResponse({
     status: 200,
@@ -214,35 +151,13 @@ export class AppointmentController {
     status: 404,
     description: 'Dịch vụ bác sĩ không tồn tại',
   })
-  async getAvailableDates(
-    @Query('doctorServiceId') doctorServiceId: string,
-    @Query('startDate') startDate: string,
-    @Query('endDate') endDate: string,
-  ) {
-    return await this.appointmentService.getAvailableDates(
-      Number(doctorServiceId),
-      startDate,
-      endDate,
-    );
+  async getAvailableDates(@Query() query: GetAvailableDateQueryDto) {
+    return await this.appointmentService.getAvailableDates(query);
   }
 
   @Get('booking/doctor-availability')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.PATIENT)
   @ApiOperation({
     summary: 'Kiểm tra lịch bận của bác sĩ trong một ngày cụ thể',
-  })
-  @ApiQuery({
-    name: 'doctorServiceId',
-    required: true,
-    type: Number,
-    description: 'ID DoctorService',
-  })
-  @ApiQuery({
-    name: 'date',
-    required: true,
-    type: String,
-    description: 'Ngày cần kiểm tra (YYYY-MM-DD)',
   })
   @ApiResponse({
     status: 200,
@@ -281,19 +196,11 @@ export class AppointmentController {
     status: 404,
     description: 'Bác sĩ không làm việc vào ngày này',
   })
-  async getDoctorAvailability(
-    @Query('doctorServiceId') doctorServiceId: string,
-    @Query('date') date: string,
-  ) {
-    return await this.appointmentService.getDoctorAvailability(
-      Number(doctorServiceId),
-      date,
-    );
+  async getDoctorAvailability(@Query() query: GetDoctorAvailabilityQueryDto) {
+    return await this.appointmentService.getDoctorAvailability(query);
   }
 
   @Post('booking/create')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.PATIENT)
   @ApiOperation({ summary: 'Tạo lịch hẹn từ DoctorService' })
   @ApiBody({
     schema: {
@@ -342,11 +249,10 @@ export class AppointmentController {
   @ApiResponse({ status: 201, description: 'Tạo lịch hẹn thành công' })
   @ApiResponse({ status: 400, description: 'Dữ liệu không hợp lệ' })
   @ApiResponse({ status: 401, description: 'Không có quyền truy cập' })
-  @HttpCode(HttpStatus.CREATED)
   async createFromDoctorService(
-    @Body() createAppointmentDto: CreateAppointmentFromDoctorServiceDtoType,
+    @Body() createAppointmentDto: CreateAppointmentFromDoctorServiceBodyDto,
     @CurrentUser() user: TokenPayload,
-  ): Promise<AppointmentResponseDtoType> {
+  ): Promise<AppointmentResponseDto> {
     return this.appointmentService.createFromDoctorService(
       createAppointmentDto,
       user,

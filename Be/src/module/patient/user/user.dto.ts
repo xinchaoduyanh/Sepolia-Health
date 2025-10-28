@@ -98,8 +98,8 @@ export const UserProfileWithPatientProfilesResponseSchema = z.object({
   dateOfBirth: z.string().nullable(),
   gender: z.string().nullable(),
   avatar: z.string().nullable(),
-  role: z.nativeEnum(Role),
-  status: z.nativeEnum(UserStatus),
+  role: z.enum(Role),
+  status: z.enum(UserStatus),
   createdAt: z.string(),
   updatedAt: z.string(),
   patientProfiles: z.array(PatientProfileResponseSchema),
@@ -114,7 +114,7 @@ export const CreatePatientProfileSchema = z.object({
   firstName: z.string().min(1, 'Tên không được để trống'),
   lastName: z.string().min(1, 'Họ không được để trống'),
   dateOfBirth: z.string().datetime('Ngày sinh không hợp lệ'),
-  gender: z.nativeEnum(Gender, {
+  gender: z.enum(Gender, {
     message: 'Giới tính không hợp lệ',
   }),
   phone: z.string().regex(/^[0-9]{10,11}$/, 'Số điện thoại không hợp lệ'),

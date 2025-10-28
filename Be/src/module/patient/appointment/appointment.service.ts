@@ -7,15 +7,18 @@ import {
 import { MESSAGES } from '@/common/constants/messages';
 import { PrismaService } from '@/common/prisma/prisma.service';
 import { DayOfWeek, AppointmentStatus, PaymentStatus } from '@prisma/client';
-import type {
-  CreateAppointmentFromDoctorServiceDtoType,
-  GetAppointmentsQueryDtoType,
-  AppointmentResponseDtoType,
-  AppointmentsListResponseDtoType,
-  UpdateAppointmentDto,
-} from './appointment.dto';
 import { CurrentUser } from '@/common/decorators';
 import { TokenPayload } from '@/common/modules';
+import {
+  UpdateAppointmentDto,
+  AppointmentResponseDto,
+  GetAppointmentsQueryDto,
+  GetAvailableDateQueryDto,
+  GetDoctorServicesQueryDto,
+  AppointmentsListResponseDto,
+  GetDoctorAvailabilityQueryDto,
+  CreateAppointmentFromDoctorServiceBodyDto,
+} from './dto';
 
 @Injectable()
 export class AppointmentService {
@@ -25,8 +28,8 @@ export class AppointmentService {
    * Get all appointments with filters
    */
   async findAll(
-    query: GetAppointmentsQueryDtoType,
-  ): Promise<AppointmentsListResponseDtoType> {
+    query: GetAppointmentsQueryDto,
+  ): Promise<AppointmentsListResponseDto> {
     const {
       page = 1,
       limit = 10,
@@ -93,7 +96,7 @@ export class AppointmentService {
   /**
    * Get appointment by ID
    */
-  async findOne(id: number): Promise<AppointmentResponseDtoType> {
+  async findOne(id: number): Promise<AppointmentResponseDto> {
     const appointment = await this.prisma.appointment.findUnique({
       where: { id },
       include: {
@@ -131,7 +134,7 @@ export class AppointmentService {
     id: number,
     updateAppointmentDto: UpdateAppointmentDto,
     @CurrentUser() user: TokenPayload,
-  ): Promise<AppointmentResponseDtoType> {
+  ): Promise<AppointmentResponseDto> {
     const appointment = await this.prisma.appointment.findUnique({
       where: { id },
       include: {
@@ -231,9 +234,9 @@ export class AppointmentService {
    * Get current user's appointments
    */
   async getMyAppointments(
-    query: GetAppointmentsQueryDtoType,
+    query: GetAppointmentsQueryDto,
     @CurrentUser() user: TokenPayload,
-  ): Promise<AppointmentsListResponseDtoType> {
+  ): Promise<AppointmentsListResponseDto> {
     // Find patient profiles managed by this user
     const patientProfiles = await this.prisma.patientProfile.findMany({
       where: { managerId: user.userId },
@@ -320,9 +323,9 @@ export class AppointmentService {
    * Get doctor's appointments
    */
   async getDoctorAppointments(
-    query: GetAppointmentsQueryDtoType,
+    query: GetAppointmentsQueryDto,
     @CurrentUser() user: TokenPayload,
-  ): Promise<AppointmentsListResponseDtoType> {
+  ): Promise<AppointmentsListResponseDto> {
     // Get doctor profile
     const doctorProfile = await this.prisma.doctorProfile.findUnique({
       where: { userId: user.userId },
@@ -393,7 +396,8 @@ export class AppointmentService {
   /**
    * Get doctor services by location and service
    */
-  async getDoctorServices(locationId: number, serviceId: number) {
+  async getDoctorServices(query: GetDoctorServicesQueryDto) {
+    const { locationId, serviceId } = query;
     // First check if location exists
     const location = await this.prisma.clinic.findUnique({
       where: { id: locationId },
@@ -479,9 +483,9 @@ export class AppointmentService {
    * Create appointment from DoctorService
    */
   async createFromDoctorService(
-    createAppointmentDto: CreateAppointmentFromDoctorServiceDtoType,
+    createAppointmentDto: CreateAppointmentFromDoctorServiceBodyDto,
     @CurrentUser() user: TokenPayload,
-  ): Promise<AppointmentResponseDtoType> {
+  ): Promise<AppointmentResponseDto> {
     const {
       doctorServiceId,
       date,
@@ -671,9 +675,7 @@ export class AppointmentService {
   /**
    * Format appointment response
    */
-  private formatAppointmentResponse(
-    appointment: any,
-  ): AppointmentResponseDtoType {
+  private formatAppointmentResponse(appointment: any): AppointmentResponseDto {
     return {
       id: appointment.id,
       date: appointment.date.toISOString(),
@@ -720,7 +722,8 @@ export class AppointmentService {
   /**
    * Get doctor availability for a specific date (simple version)
    */
-  async getDoctorAvailability(doctorServiceId: number, date: string) {
+  async getDoctorAvailability(query: GetDoctorAvailabilityQueryDto) {
+    const { doctorServiceId, date } = query;
     // Validate date format (like dateOfBirth in complete-register)
     if (isNaN(Date.parse(date))) {
       throw new BadRequestException(MESSAGES.APPOINTMENT.INVALID_DATE);
@@ -836,11 +839,8 @@ export class AppointmentService {
   /**
    * Get available dates for a doctor service within a date range
    */
-  async getAvailableDates(
-    doctorServiceId: number,
-    startDate: string,
-    endDate: string,
-  ) {
+  async getAvailableDates(query: GetAvailableDateQueryDto) {
+    const { doctorServiceId, startDate, endDate } = query;
     // Validate date formats
     if (isNaN(Date.parse(startDate)) || isNaN(Date.parse(endDate))) {
       throw new BadRequestException(MESSAGES.APPOINTMENT.INVALID_DATE);

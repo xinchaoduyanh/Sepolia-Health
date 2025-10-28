@@ -1,4 +1,11 @@
-import { Controller, Get, Param, HttpStatus, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  HttpStatus,
+  Query,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { DoctorService } from './doctor.service';
 import {
   ApiBearerAuth,
@@ -63,8 +70,8 @@ export class DoctorController {
     description: 'get timeslot by doctor',
   })
   async getTimeslotByDoctorId(
-    @Param('doctorId') doctorId: string,
+    @Param('doctorId', ParseIntPipe) doctorId: number,
   ): Promise<getTimeslotByDoctorIdAndDayResponseDto[]> {
-    return this.doctorService.getTimeslotByDoctorIdAndDay(Number(doctorId));
+    return this.doctorService.getTimeslotByDoctorIdAndDay(doctorId);
   }
 }
