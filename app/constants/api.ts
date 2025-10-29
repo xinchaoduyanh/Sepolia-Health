@@ -1,7 +1,5 @@
 import { API_URL } from '@env';
 
-// console.log('not p', API_URL);
-// console.log('in p', process.env.API_URL);
 // API Configuration Constants
 export const API_CONFIG = {
   // Development URLs

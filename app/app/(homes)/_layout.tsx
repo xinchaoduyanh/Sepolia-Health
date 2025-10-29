@@ -28,7 +28,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="(appointment)"
         options={{
-          title: 'Đặt lịch',
+          title: 'Lịch hẹn',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="calendar-outline" size={size} color={color} />
           ),

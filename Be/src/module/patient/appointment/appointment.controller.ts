@@ -40,17 +40,6 @@ import {
 export class AppointmentController {
   constructor(private readonly appointmentService: AppointmentService) {}
 
-  @Get(':id')
-  @ApiOperation({ summary: 'Lấy thông tin lịch hẹn theo ID' })
-  @ApiParam({ name: 'id', description: 'ID lịch hẹn' })
-  @ApiResponse({ status: 200, description: 'Lấy thông tin thành công' })
-  @ApiResponse({ status: 404, description: 'Không tìm thấy lịch hẹn' })
-  async findOne(
-    @Param('id', ParseIntPipe) id: number,
-  ): Promise<AppointmentResponseDto> {
-    return this.appointmentService.findOne(id);
-  }
-
   @Put(':id')
   @ApiOperation({ summary: 'Cập nhật lịch hẹn' })
   @ApiParam({ name: 'id', description: 'ID lịch hẹn' })
@@ -76,7 +65,7 @@ export class AppointmentController {
     return this.appointmentService.remove(id, userId);
   }
 
-  @Get('patient/my-appointments')
+  @Get('my-appointments')
   @ApiOperation({ summary: 'Lấy lịch hẹn của bệnh nhân hiện tại' })
   @ApiResponse({ status: 200, description: 'Lấy danh sách thành công' })
   async getMyAppointments(
@@ -84,6 +73,17 @@ export class AppointmentController {
     @CurrentUser('userId') userId: number,
   ): Promise<AppointmentsListResponseDto> {
     return this.appointmentService.getMyAppointments(query, userId);
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Lấy thông tin lịch hẹn theo ID' })
+  @ApiParam({ name: 'id', description: 'ID lịch hẹn' })
+  @ApiResponse({ status: 200, description: 'Lấy thông tin thành công' })
+  @ApiResponse({ status: 404, description: 'Không tìm thấy lịch hẹn' })
+  async findOne(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<AppointmentResponseDto> {
+    return this.appointmentService.findOne(id);
   }
 
   // ========== BOOKING APIS ==========

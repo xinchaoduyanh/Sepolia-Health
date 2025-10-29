@@ -93,7 +93,7 @@ export class AppointmentResponseDto {
 
 export class AppointmentsListResponseDto {
   @ApiProperty({ type: [AppointmentResponseDto] })
-  appointments: AppointmentResponseDto[];
+  data: AppointmentResponseDto[];
 
   @ApiProperty()
   total: number;

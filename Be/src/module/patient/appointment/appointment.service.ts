@@ -83,7 +83,7 @@ export class AppointmentService {
     ]);
 
     return {
-      appointments: appointments.map((appointment) =>
+      data: appointments.map((appointment) =>
         this.formatAppointmentResponse(appointment),
       ),
       total,
@@ -238,7 +238,7 @@ export class AppointmentService {
     if (patientProfileIds.length === 0) {
       // Return empty result if no patient profiles
       return {
-        appointments: [],
+        data: [],
         total: 0,
         page: query.page || 1,
         limit: query.limit || 10,
@@ -299,7 +299,7 @@ export class AppointmentService {
     ]);
 
     return {
-      appointments: appointments.map((appointment) =>
+      data: appointments.map((appointment) =>
         this.formatAppointmentResponse(appointment),
       ),
       total,
