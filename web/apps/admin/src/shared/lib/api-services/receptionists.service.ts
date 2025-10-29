@@ -16,11 +16,17 @@ export interface ReceptionistsListParams {
     search?: string
 }
 
-export interface ReceptionistsListResponse {
+export interface ReceptionistsListData {
     receptionists: Receptionist[]
     total: number
     page: number
     limit: number
+}
+
+export interface ReceptionistsListResponse {
+    data: ReceptionistsListData
+    message: string
+    statusCode: number
 }
 
 export interface ReceptionistDetailResponse extends Receptionist {}
@@ -41,6 +47,10 @@ export interface UpdateReceptionistRequest {
     address?: string
 }
 
+export interface UpdateReceptionistStatusRequest {
+    status: 'UNVERIFIED' | 'ACTIVE' | 'DEACTIVE'
+}
+
 export interface CreateReceptionistResponse extends Receptionist {}
 
 export class ReceptionistsService {
@@ -48,8 +58,8 @@ export class ReceptionistsService {
      * Get receptionists list with pagination and filters
      * GET /receptionists
      */
-    async getReceptionists(params: ReceptionistsListParams = {}): Promise<ReceptionistsListResponse> {
-        return apiClient.get<ReceptionistsListResponse>('/admin/receptionists', { params })
+    async getReceptionists(params: ReceptionistsListParams = {}): Promise<ReceptionistsListData> {
+        return apiClient.get<ReceptionistsListData>('/admin/receptionists', { params })
     }
 
     /**
@@ -77,6 +87,17 @@ export class ReceptionistsService {
         receptionistData: UpdateReceptionistRequest,
     ): Promise<ReceptionistDetailResponse> {
         return apiClient.put<ReceptionistDetailResponse>(`/admin/receptionists/${id}`, receptionistData)
+    }
+
+    /**
+     * Update receptionist status
+     * PUT /admin/receptionists/{id}/status
+     */
+    async updateReceptionistStatus(
+        id: number,
+        statusData: UpdateReceptionistStatusRequest,
+    ): Promise<ReceptionistDetailResponse> {
+        return apiClient.put<ReceptionistDetailResponse>(`/admin/receptionists/${id}/status`, statusData)
     }
 
     /**

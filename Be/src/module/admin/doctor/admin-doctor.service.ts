@@ -8,6 +8,7 @@ import { UserStatus, Role } from '@prisma/client';
 import {
   CreateDoctorDto,
   UpdateDoctorDto,
+  UpdateDoctorStatusDto,
   CreateDoctorResponseDto,
   DoctorListResponseDto,
   DoctorDetailResponseDto,
@@ -184,6 +185,7 @@ export class AdminDoctorService {
         where,
         include: {
           doctorProfile: {
+            where: { deletedAt: null },
             include: {
               clinic: {
                 select: {
@@ -210,8 +212,13 @@ export class AdminDoctorService {
       this.prisma.user.count({ where }),
     ]);
 
+    // Filter out users that don't have doctorProfile
+    const validDoctors = doctors.filter(
+      (doctor) => doctor.doctorProfile !== null,
+    );
+
     return {
-      doctors: doctors.map((doctor) => ({
+      doctors: validDoctors.map((doctor) => ({
         id: doctor.doctorProfile!.id,
         email: doctor.email,
         fullName: `${doctor.doctorProfile!.firstName} ${doctor.doctorProfile!.lastName}`,
@@ -235,7 +242,7 @@ export class AdminDoctorService {
 
   async getDoctorById(id: number): Promise<DoctorDetailResponseDto> {
     const doctor = await this.prisma.doctorProfile.findUnique({
-      where: { id },
+      where: { id, deletedAt: null },
       include: {
         user: true,
         services: {
@@ -319,9 +326,12 @@ export class AdminDoctorService {
     };
   }
 
-  async deleteDoctor(id: number): Promise<{ message: string }> {
+  async updateDoctorStatus(
+    id: number,
+    updateStatusDto: UpdateDoctorStatusDto,
+  ): Promise<CreateDoctorResponseDto> {
     const doctor = await this.prisma.doctorProfile.findUnique({
-      where: { id },
+      where: { id, deletedAt: null },
       include: { user: true },
     });
 
@@ -329,16 +339,59 @@ export class AdminDoctorService {
       throw new NotFoundException('Không tìm thấy bác sĩ');
     }
 
-    await this.prisma.$transaction(async (tx) => {
-      // Delete doctor profile
-      await tx.doctorProfile.delete({
-        where: { id },
-      });
+    // Update user status
+    await this.prisma.user.update({
+      where: { id: doctor.userId },
+      data: { status: updateStatusDto.status },
+    });
 
-      // Delete user
-      await tx.user.delete({
-        where: { id: doctor.userId },
-      });
+    // Get updated doctor data
+    const updatedDoctor = await this.prisma.doctorProfile.findUnique({
+      where: { id },
+      include: {
+        user: true,
+        services: {
+          include: {
+            service: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!updatedDoctor) {
+      throw new NotFoundException('Không tìm thấy bác sĩ sau khi cập nhật');
+    }
+
+    return {
+      id: updatedDoctor.id,
+      email: updatedDoctor.user.email,
+      fullName: `${updatedDoctor.firstName} ${updatedDoctor.lastName}`,
+      services: updatedDoctor.services.map((s) => s.service.name),
+      experienceYears: parseInt(updatedDoctor.experience || '0'),
+      status: updatedDoctor.user.status,
+    };
+  }
+
+  async deleteDoctor(id: number): Promise<{ message: string }> {
+    const doctor = await this.prisma.doctorProfile.findUnique({
+      where: { id, deletedAt: null },
+      include: { user: true },
+    });
+
+    if (!doctor) {
+      throw new NotFoundException('Không tìm thấy bác sĩ');
+    }
+
+    // Soft delete: Update deleted_at instead of hard delete
+    await this.prisma.doctorProfile.update({
+      where: { id },
+      data: {
+        deletedAt: new Date(),
+      },
     });
 
     return { message: 'Xóa bác sĩ thành công' };
@@ -385,7 +438,7 @@ export class AdminDoctorService {
   async getDoctorSchedule(doctorId: number) {
     // Check if doctor exists
     const doctor = await this.prisma.doctorProfile.findUnique({
-      where: { id: doctorId },
+      where: { id: doctorId, deletedAt: null },
     });
 
     if (!doctor) {

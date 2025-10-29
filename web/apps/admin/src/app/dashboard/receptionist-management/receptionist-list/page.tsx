@@ -7,8 +7,9 @@ import { Pagination } from '@workspace/ui/components/Pagination'
 import { Button } from '@workspace/ui/components/Button'
 import { Badge } from '@workspace/ui/components/Badge'
 import { Avatar, AvatarFallback } from '@workspace/ui/components/Avatar'
-import { Eye, Plus, Trash2 } from 'lucide-react'
-import { useReceptionists, useDeleteReceptionist } from '@/shared/hooks'
+import { Eye, Plus, MoreHorizontal } from 'lucide-react'
+import { useReceptionists } from '@/shared/hooks'
+import { ReceptionistActionDialog } from '@/components/ReceptionistActionDialog'
 import { Skeleton } from '@workspace/ui/components/Skeleton'
 
 // Skeleton table component for loading state
@@ -76,35 +77,27 @@ const SkeletonTable = ({ columns }: { columns: any[] }) => {
     )
 }
 
-// Action cell component
+// Action cell component to handle hooks properly
 function ActionCell({ receptionist }: { receptionist: any }) {
-    const deleteReceptionist = useDeleteReceptionist()
-
-    const handleDelete = () => {
-        if (confirm('Bạn có chắc chắn muốn xóa lễ tân này?')) {
-            deleteReceptionist.mutate(receptionist.id)
-        }
-    }
+    const [dialogOpen, setDialogOpen] = useState(false)
 
     return (
-        <div className="flex items-center justify-center space-x-1">
-            <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0"
-                onClick={() => (window.location.href = `/dashboard/receptionist-management/${receptionist.id}`)}
-            >
-                <Eye className="h-4 w-4" />
-            </Button>
-            <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                onClick={handleDelete}
-            >
-                <Trash2 className="h-4 w-4" />
-            </Button>
-        </div>
+        <>
+            <div className="flex items-center justify-center space-x-1">
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    onClick={() => (window.location.href = `/dashboard/receptionist-management/${receptionist.id}`)}
+                >
+                    <Eye className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => setDialogOpen(true)}>
+                    <MoreHorizontal className="h-4 w-4" />
+                </Button>
+            </div>
+            <ReceptionistActionDialog receptionist={receptionist} open={dialogOpen} onOpenChange={setDialogOpen} />
+        </>
     )
 }
 
@@ -237,8 +230,8 @@ export default function ReceptionistListPage() {
     // Fetch receptionists data
     const { data: receptionistsResponse, isLoading } = useReceptionists(queryParams, isQueryReady)
 
-    const receptionists = receptionistsResponse?.data?.receptionists || []
-    const totalPages = Math.ceil((receptionistsResponse?.data?.total || 0) / itemsPerPage)
+    const receptionists = receptionistsResponse?.receptionists || []
+    const totalPages = Math.ceil((receptionistsResponse?.total || 0) / itemsPerPage)
 
     return (
         <div className="space-y-6">
@@ -284,8 +277,8 @@ export default function ReceptionistListPage() {
                 <div className="px-6 py-4 border-t border-border flex items-center justify-between">
                     <div className="text-sm text-muted-foreground">
                         Hiển thị {(currentPage - 1) * itemsPerPage + 1} đến{' '}
-                        {Math.min(currentPage * itemsPerPage, receptionistsResponse?.data?.total || 0)} trong tổng số{' '}
-                        {receptionistsResponse?.data?.total || 0} lễ tân
+                        {Math.min(currentPage * itemsPerPage, receptionistsResponse?.total || 0)} trong tổng số{' '}
+                        {receptionistsResponse?.total || 0} lễ tân
                     </div>
                     <Pagination value={currentPage} pageCount={totalPages} onChange={handlePageChange} />
                 </div>

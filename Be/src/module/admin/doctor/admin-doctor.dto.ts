@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { z } from 'zod';
+import { UserStatus } from '@prisma/client';
 
 // Query schemas
 export const GetDoctorsQuerySchema = z.object({
@@ -123,6 +124,12 @@ export const UpdateDoctorSchema = z.object({
 
 export type UpdateDoctorDto = z.infer<typeof UpdateDoctorSchema>;
 
+export const UpdateDoctorStatusSchema = z.object({
+  status: z.nativeEnum(UserStatus),
+});
+
+export type UpdateDoctorStatusDto = z.infer<typeof UpdateDoctorStatusSchema>;
+
 export class UpdateDoctorDtoClass {
   @ApiProperty({
     description: 'Họ tên bác sĩ',
@@ -158,6 +165,15 @@ export class UpdateDoctorDtoClass {
     required: false,
   })
   address?: string;
+}
+
+export class UpdateDoctorStatusDtoClass {
+  @ApiProperty({
+    description: 'Trạng thái tài khoản',
+    example: 'ACTIVE',
+    enum: UserStatus,
+  })
+  status: UserStatus;
 }
 
 export class CreateDoctorResponseDto {

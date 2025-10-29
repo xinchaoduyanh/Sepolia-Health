@@ -7,6 +7,7 @@ import { PrismaService } from '@/common/prisma/prisma.service';
 import {
   CreatePatientDto,
   UpdatePatientDto,
+  UpdatePatientStatusDto,
   CreatePatientResponseDto,
   PatientListResponseDto,
   PatientDetailResponseDto,
@@ -375,6 +376,56 @@ export class AdminPatientService {
       })),
       createdAt: result.createdAt,
       updatedAt: result.updatedAt,
+    };
+  }
+
+  async updatePatientStatus(
+    id: number,
+    updatePatientStatusDto: UpdatePatientStatusDto,
+  ): Promise<CreatePatientResponseDto> {
+    const user = await this.prisma.user.findFirst({
+      where: { id, deletedAt: null },
+      include: { patientProfiles: true },
+    });
+
+    if (!user || user.role !== 'PATIENT') {
+      throw new NotFoundException('Không tìm thấy patient');
+    }
+
+    // Update user status
+    const updatedUser = await this.prisma.user.update({
+      where: { id },
+      data: {
+        status: updatePatientStatusDto.status,
+      },
+      include: { patientProfiles: true },
+    });
+
+    return {
+      id: updatedUser.id,
+      email: updatedUser.email,
+      phone: updatedUser.phone || '',
+      status: updatedUser.status,
+      patientProfiles: updatedUser.patientProfiles.map((profile) => ({
+        id: profile.id,
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        fullName: `${profile.firstName} ${profile.lastName}`,
+        dateOfBirth: profile.dateOfBirth.toISOString().split('T')[0],
+        gender: profile.gender,
+        phone: profile.phone,
+        relationship: profile.relationship,
+        avatar: profile.avatar || undefined,
+        idCardNumber: profile.idCardNumber || undefined,
+        occupation: profile.occupation || undefined,
+        nationality: profile.nationality || undefined,
+        address: profile.address || undefined,
+        healthDetailsJson: (profile.healthDetailsJson as any) || undefined,
+        createdAt: profile.createdAt,
+        updatedAt: profile.updatedAt,
+      })),
+      createdAt: updatedUser.createdAt,
+      updatedAt: updatedUser.updatedAt,
     };
   }
 

@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { z } from 'zod';
+import { UserStatus } from '@prisma/client';
 
 // Query schemas
 export const GetReceptionistsQuerySchema = z.object({
@@ -201,4 +202,19 @@ export class ReceptionistDetailResponseDto {
     example: '2024-01-01T00:00:00.000Z',
   })
   updatedAt: Date;
+}
+
+export const UpdateReceptionistStatusSchema = z.object({
+  status: z.nativeEnum(UserStatus),
+});
+
+export type UpdateReceptionistStatusDto = z.infer<typeof UpdateReceptionistStatusSchema>;
+
+export class UpdateReceptionistStatusDtoClass {
+  @ApiProperty({
+    description: 'Trạng thái tài khoản',
+    example: 'ACTIVE',
+    enum: UserStatus,
+  })
+  status: UserStatus;
 }

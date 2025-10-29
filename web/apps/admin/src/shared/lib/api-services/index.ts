@@ -20,6 +20,9 @@ export {
 } from './patients.service'
 export { doctorsService } from './doctors.service'
 export { receptionistsService } from './receptionists.service'
+export { articlesService } from './articles.service'
+export { servicesService } from './services.service'
+export { clinicsService } from './clinics.service'
 export { uploadService } from './upload.service'
 
 // Re-export API client

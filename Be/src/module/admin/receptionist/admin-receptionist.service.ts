@@ -8,6 +8,7 @@ import { UserStatus, Role } from '@prisma/client';
 import {
   CreateReceptionistDto,
   UpdateReceptionistDto,
+  UpdateReceptionistStatusDto,
   CreateReceptionistResponseDto,
   ReceptionistListResponseDto,
   ReceptionistDetailResponseDto,
@@ -201,5 +202,41 @@ export class AdminReceptionistService {
     });
 
     return { message: 'Xóa receptionist thành công' };
+  }
+
+  async updateReceptionistStatus(
+    id: number,
+    updateReceptionistStatusDto: UpdateReceptionistStatusDto,
+  ): Promise<CreateReceptionistResponseDto> {
+    const receptionist = await this.prisma.receptionistProfile.findUnique({
+      where: { id },
+      include: { user: true },
+    });
+
+    if (!receptionist) {
+      throw new NotFoundException('Không tìm thấy receptionist');
+    }
+
+    // Update user status
+    const updatedUser = await this.prisma.user.update({
+      where: { id: receptionist.userId },
+      data: {
+        status: updateReceptionistStatusDto.status,
+      },
+      include: {
+        receptionistProfile: true,
+      },
+    });
+
+    const profile = updatedUser.receptionistProfile!;
+
+    return {
+      id: profile.id,
+      email: updatedUser.email,
+      fullName: `${profile.firstName} ${profile.lastName}`,
+      phone: updatedUser.phone || '',
+      status: updatedUser.status,
+      createdAt: profile.createdAt,
+    };
   }
 }

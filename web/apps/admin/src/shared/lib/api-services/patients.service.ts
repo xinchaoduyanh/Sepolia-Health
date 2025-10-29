@@ -99,6 +99,10 @@ export interface UpdatePatientRequest {
     }
 }
 
+export interface UpdatePatientStatusRequest {
+    status: 'UNVERIFIED' | 'ACTIVE' | 'DEACTIVE'
+}
+
 export type CreatePatientResponse = Patient
 
 export class PatientsService {
@@ -144,13 +148,10 @@ export class PatientsService {
 
     /**
      * Update patient status
-     * PATCH /patients/{id}
+     * PUT /admin/patients/{id}/status
      */
-    async updatePatientStatus(
-        id: number,
-        status: 'UNVERIFIED' | 'ACTIVE' | 'DEACTIVE',
-    ): Promise<PatientDetailResponse> {
-        return apiClient.patch<PatientDetailResponse>(`/admin/patients/${id}`, { status })
+    async updatePatientStatus(id: number, statusData: UpdatePatientStatusRequest): Promise<PatientDetailResponse> {
+        return apiClient.put<PatientDetailResponse>(`/admin/patients/${id}/status`, statusData)
     }
 }
 

@@ -164,7 +164,7 @@ export function useUpdatePatientStatus() {
 
     return useMutation({
         mutationFn: ({ id, status }: { id: number; status: 'UNVERIFIED' | 'ACTIVE' | 'DEACTIVE' }) =>
-            patientsService.updatePatientStatus(id, status),
+            patientsService.updatePatientStatus(id, { status }),
         onSuccess: (response, { id }) => {
             // Invalidate and refetch patients list and specific patient
             queryClient.invalidateQueries({

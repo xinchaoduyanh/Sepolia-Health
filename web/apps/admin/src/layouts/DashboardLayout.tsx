@@ -27,6 +27,9 @@ import {
     User,
     UserCheck,
     LogOut,
+    FileText as ArticleIcon,
+    Wrench,
+    Building2,
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
@@ -162,6 +165,21 @@ const MANAGEMENT_ITEMS: Array<SidebarNavigationMenuItem> = [
                 url: '/dashboard/customer-management/customer-list',
             },
         ],
+    },
+    {
+        title: 'Quản lý bài viết',
+        url: '/dashboard/article-management',
+        icon: ArticleIcon,
+    },
+    {
+        title: 'Quản lý dịch vụ',
+        url: '/dashboard/service-management',
+        icon: Wrench,
+    },
+    {
+        title: 'Quản lý phòng khám',
+        url: '/dashboard/clinic-management',
+        icon: Building2,
     },
 ]
 

@@ -4,6 +4,8 @@ import {
   UserStatisticsResponseDto,
   AppointmentStatisticsResponseDto,
   DashboardStatisticsResponseDto,
+  RevenueStatisticsResponseDto,
+  MonthlyAppointmentsResponseDto,
 } from './admin-statistics.dto';
 
 @Injectable()
@@ -19,10 +21,12 @@ export class AdminStatisticsService {
     // Get total counts
     const [totalPatients, totalDoctors, totalReceptionists, totalAdmins] =
       await Promise.all([
-        this.prisma.user.count({ where: { role: 'PATIENT' } }),
-        this.prisma.user.count({ where: { role: 'DOCTOR' } }),
-        this.prisma.user.count({ where: { role: 'RECEPTIONIST' } }),
-        this.prisma.user.count({ where: { role: 'ADMIN' } }),
+        this.prisma.user.count({ where: { role: 'PATIENT', ...dateFilter } }),
+        this.prisma.user.count({ where: { role: 'DOCTOR', ...dateFilter } }),
+        this.prisma.user.count({
+          where: { role: 'RECEPTIONIST', ...dateFilter },
+        }),
+        this.prisma.user.count({ where: { role: 'ADMIN', ...dateFilter } }),
       ]);
 
     // Get new users this month
@@ -185,6 +189,283 @@ export class AdminStatisticsService {
     };
   }
 
+  async getRevenueStatistics(
+    startDate?: string,
+    endDate?: string,
+  ): Promise<RevenueStatisticsResponseDto> {
+    const dateFilter = this.buildDateFilter(startDate, endDate);
+
+    // Get total revenue from billing
+    const totalRevenueResult = await this.prisma.billing.aggregate({
+      where: {
+        status: 'PAID',
+        appointment: dateFilter,
+      },
+      _sum: {
+        amount: true,
+      },
+    });
+    const totalRevenue = totalRevenueResult._sum.amount || 0;
+
+    // Get monthly revenue
+    const thisMonth = new Date();
+    thisMonth.setDate(1);
+    thisMonth.setHours(0, 0, 0, 0);
+
+    const monthlyRevenueResult = await this.prisma.billing.aggregate({
+      where: {
+        status: 'PAID',
+        appointment: {
+          createdAt: { gte: thisMonth },
+        },
+      },
+      _sum: {
+        amount: true,
+      },
+    });
+    const monthlyRevenue = monthlyRevenueResult._sum.amount || 0;
+
+    // Get today revenue
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const todayRevenueResult = await this.prisma.billing.aggregate({
+      where: {
+        status: 'PAID',
+        appointment: {
+          date: {
+            gte: today,
+            lt: tomorrow,
+          },
+        },
+      },
+      _sum: {
+        amount: true,
+      },
+    });
+    const todayRevenue = todayRevenueResult._sum.amount || 0;
+
+    // Get monthly revenue stats for last 12 months
+    const monthlyRevenueStats = await this.getMonthlyRevenueStats();
+
+    // Get revenue by service using raw SQL approach or simpler aggregation
+    const revenueByServiceData = await this.prisma.billing.findMany({
+      where: {
+        status: 'PAID',
+        appointment: dateFilter,
+      },
+      select: {
+        amount: true,
+        appointment: {
+          select: { serviceId: true },
+        },
+      },
+    });
+
+    const serviceRevenueMap = new Map<
+      number,
+      { revenue: number; count: number }
+    >();
+    revenueByServiceData.forEach((item) => {
+      const serviceId = item.appointment.serviceId;
+      const existing = serviceRevenueMap.get(serviceId) || {
+        revenue: 0,
+        count: 0,
+      };
+      serviceRevenueMap.set(serviceId, {
+        revenue: existing.revenue + item.amount,
+        count: existing.count + 1,
+      });
+    });
+
+    const revenueByServiceWithNames = await Promise.all(
+      Array.from(serviceRevenueMap.entries()).map(async ([serviceId, data]) => {
+        const service = await this.prisma.service.findUnique({
+          where: { id: serviceId },
+          select: { name: true },
+        });
+        return {
+          serviceId,
+          serviceName: service?.name || 'Unknown',
+          revenue: data.revenue,
+          count: data.count,
+        };
+      }),
+    );
+
+    // Get revenue by doctor
+    const revenueByDoctorData = await this.prisma.billing.findMany({
+      where: {
+        status: 'PAID',
+        appointment: dateFilter,
+      },
+      select: {
+        amount: true,
+        appointment: {
+          select: { doctorId: true },
+        },
+      },
+    });
+
+    const doctorRevenueMap = new Map<
+      number,
+      { revenue: number; count: number }
+    >();
+    revenueByDoctorData.forEach((item) => {
+      const doctorId = item.appointment.doctorId;
+      const existing = doctorRevenueMap.get(doctorId) || {
+        revenue: 0,
+        count: 0,
+      };
+      doctorRevenueMap.set(doctorId, {
+        revenue: existing.revenue + item.amount,
+        count: existing.count + 1,
+      });
+    });
+
+    const revenueByDoctorWithNames = await Promise.all(
+      Array.from(doctorRevenueMap.entries()).map(async ([doctorId, data]) => {
+        const doctor = await this.prisma.doctorProfile.findUnique({
+          where: { id: doctorId },
+          select: { firstName: true, lastName: true },
+        });
+        return {
+          doctorId,
+          doctorName:
+            `${doctor?.firstName || ''} ${doctor?.lastName || ''}`.trim() ||
+            'Unknown',
+          revenue: data.revenue,
+          count: data.count,
+        };
+      }),
+    );
+
+    return {
+      totalRevenue,
+      monthlyRevenue,
+      todayRevenue,
+      monthlyRevenueStats,
+      revenueByService: revenueByServiceWithNames,
+      revenueByDoctor: revenueByDoctorWithNames,
+    };
+  }
+
+  async getMonthlyAppointments(): Promise<MonthlyAppointmentsResponseDto> {
+    // Get current month start and end
+    const now = new Date();
+    const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+
+    // Get total appointments in current month
+    const totalAppointments = await this.prisma.appointment.count({
+      where: {
+        createdAt: {
+          gte: currentMonth,
+          lt: nextMonth,
+        },
+      },
+    });
+
+    // Get daily appointments for current month
+    const dailyAppointments: Array<{ date: string; count: number }> = [];
+    const daysInMonth = new Date(
+      now.getFullYear(),
+      now.getMonth() + 1,
+      0,
+    ).getDate();
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(now.getFullYear(), now.getMonth(), day);
+      const nextDay = new Date(date);
+      nextDay.setDate(nextDay.getDate() + 1);
+
+      const count = await this.prisma.appointment.count({
+        where: {
+          createdAt: {
+            gte: date,
+            lt: nextDay,
+          },
+        },
+      });
+
+      if (count > 0) {
+        dailyAppointments.push({
+          date: date.toISOString().split('T')[0],
+          count,
+        });
+      }
+    }
+
+    // Get appointments by status
+    const [upcomingCount, completedCount, cancelledCount] = await Promise.all([
+      this.prisma.appointment.count({
+        where: {
+          status: 'UPCOMING',
+          createdAt: {
+            gte: currentMonth,
+            lt: nextMonth,
+          },
+        },
+      }),
+      this.prisma.appointment.count({
+        where: {
+          status: 'COMPLETED',
+          createdAt: {
+            gte: currentMonth,
+            lt: nextMonth,
+          },
+        },
+      }),
+      this.prisma.appointment.count({
+        where: {
+          status: 'CANCELLED',
+          createdAt: {
+            gte: currentMonth,
+            lt: nextMonth,
+          },
+        },
+      }),
+    ]);
+
+    // Get appointments by service
+    const appointmentsByServiceRaw = await this.prisma.appointment.groupBy({
+      by: ['serviceId'],
+      where: {
+        createdAt: {
+          gte: currentMonth,
+          lt: nextMonth,
+        },
+      },
+      _count: true,
+    });
+
+    const appointmentsByService = await Promise.all(
+      appointmentsByServiceRaw.map(async (item) => {
+        const service = await this.prisma.service.findUnique({
+          where: { id: item.serviceId },
+          select: { name: true },
+        });
+        return {
+          serviceName: service?.name || 'Unknown',
+          count: item._count,
+        };
+      }),
+    );
+
+    return {
+      totalAppointments,
+      dailyAppointments,
+      appointmentsByStatus: {
+        UPCOMING: upcomingCount,
+        COMPLETED: completedCount,
+        CANCELLED: cancelledCount,
+      },
+      appointmentsByService,
+    };
+  }
+
   private buildDateFilter(startDate?: string, endDate?: string) {
     const filter: any = {};
 
@@ -278,6 +559,38 @@ export class AdminStatisticsService {
         total,
         completed,
         cancelled,
+      });
+    }
+
+    return stats;
+  }
+
+  private async getMonthlyRevenueStats() {
+    const stats: Array<{
+      month: string;
+      revenue: number;
+    }> = [];
+    const now = new Date();
+
+    for (let i = 11; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const nextMonth = new Date(date.getFullYear(), date.getMonth() + 1, 1);
+
+      const result = await this.prisma.billing.aggregate({
+        where: {
+          status: 'PAID',
+          appointment: {
+            createdAt: { gte: date, lt: nextMonth },
+          },
+        },
+        _sum: {
+          amount: true,
+        },
+      });
+
+      stats.push({
+        month: date.toISOString().substring(0, 7),
+        revenue: result._sum.amount || 0,
       });
     }
 

@@ -117,6 +117,7 @@ model DoctorProfile {
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+  deletedAt       DateTime?
 }
 
 /// Hồ sơ Lễ tân: Chứa TẤT CẢ thông tin về một lễ tân.
@@ -294,6 +295,8 @@ model Service {
   price         Float
   duration      Int      // thời lượng (phút)
   description   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime?
   appointments  Appointment[]
   doctorService DoctorService[] @relation("Doctor")
 }

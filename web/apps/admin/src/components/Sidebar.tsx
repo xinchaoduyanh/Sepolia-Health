@@ -11,8 +11,10 @@ import {
     HelpCircle,
     Monitor,
     Stethoscope,
-    Users,
     UserCheck,
+    FileText as ArticleIcon,
+    Wrench,
+    Building2,
 } from 'lucide-react'
 import {
     Sidebar,
@@ -95,14 +97,29 @@ const managementItems = [
         icon: UserCheck,
     },
     {
+        title: 'Quản lý lễ tân',
+        url: '/dashboard/receptionist-management',
+        icon: UserCheck,
+    },
+    {
         title: 'Quản lý khuyến mại',
         url: '/dashboard/promotion-management',
         icon: Percent,
     },
     {
-        title: 'Quản lý người dùng',
-        url: '/dashboard/user-management',
-        icon: Users,
+        title: 'Quản lý bài viết',
+        url: '/dashboard/article-management',
+        icon: ArticleIcon,
+    },
+    {
+        title: 'Quản lý dịch vụ',
+        url: '/dashboard/service-management',
+        icon: Wrench,
+    },
+    {
+        title: 'Quản lý phòng khám',
+        url: '/dashboard/clinic-management',
+        icon: Building2,
     },
 ]
 

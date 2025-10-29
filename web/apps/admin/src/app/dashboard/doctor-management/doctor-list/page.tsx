@@ -7,15 +7,16 @@ import { Pagination } from '@workspace/ui/components/Pagination'
 import { Button } from '@workspace/ui/components/Button'
 import { Badge } from '@workspace/ui/components/Badge'
 import { Avatar, AvatarFallback } from '@workspace/ui/components/Avatar'
-import { Eye, Plus, Trash2 } from 'lucide-react'
-import { useDoctors, useDeleteDoctor, useClinics, useServices } from '@/shared/hooks'
+import { Eye, Plus, MoreHorizontal } from 'lucide-react'
+import { useDoctors, useClinics, useServices } from '@/shared/hooks'
+import { DoctorActionDialog } from '@/components/DoctorActionDialog'
 import { BsSelect } from '@workspace/ui/components/Select'
 import { Skeleton } from '@workspace/ui/components/Skeleton'
 
 // Skeleton table component for loading state
 const SkeletonTable = ({ columns }: { columns: any[] }) => {
     return (
-        <div className="relative grid bg-background-secondary rounded-md overflow-hidden border min-h-[400px]">
+        <div className="relative grid bg-background-secondary rounded-md overflow-hidden border min-h-[400px] [&_tbody_tr]:h-12">
             <div className="w-full overflow-x-auto">
                 <table className="group w-full caption-bottom text-sm">
                     <thead className="[&_tr]:border-b">
@@ -87,33 +88,25 @@ const SkeletonTable = ({ columns }: { columns: any[] }) => {
 
 // Action cell component
 function ActionCell({ doctor }: { doctor: any }) {
-    const deleteDoctor = useDeleteDoctor()
-
-    const handleDelete = () => {
-        if (confirm('Bạn có chắc chắn muốn xóa bác sĩ này?')) {
-            deleteDoctor.mutate(doctor.id)
-        }
-    }
+    const [dialogOpen, setDialogOpen] = useState(false)
 
     return (
-        <div className="flex items-center justify-center space-x-1">
-            <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0"
-                onClick={() => (window.location.href = `/dashboard/doctor-management/${doctor.id}`)}
-            >
-                <Eye className="h-4 w-4" />
-            </Button>
-            <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                onClick={handleDelete}
-            >
-                <Trash2 className="h-4 w-4" />
-            </Button>
-        </div>
+        <>
+            <div className="flex items-center justify-center space-x-1">
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    onClick={() => (window.location.href = `/dashboard/doctor-management/${doctor.id}`)}
+                >
+                    <Eye className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => setDialogOpen(true)}>
+                    <MoreHorizontal className="h-4 w-4" />
+                </Button>
+            </div>
+            <DoctorActionDialog doctor={doctor} open={dialogOpen} onOpenChange={setDialogOpen} />
+        </>
     )
 }
 
@@ -302,16 +295,16 @@ export default function DoctorListPage() {
 
     // Extract arrays safely - ensure they are always arrays
     // Note: clinicsData and servicesData are already arrays after apiClient unwraps the response
-    const clinics = Array.isArray(clinicsData?.data) ? clinicsData.data : []
-    const services = Array.isArray(servicesData?.data) ? servicesData.data : []
+    const clinics = Array.isArray(clinicsData) ? clinicsData : []
+    const services = Array.isArray(servicesData) ? servicesData : []
 
     // Reset page when filters change
     useEffect(() => {
         setCurrentPage(1)
     }, [selectedClinicId, selectedServiceId])
 
-    const doctors = doctorsResponse?.data?.doctors || []
-    const totalPages = Math.ceil((doctorsResponse?.data?.total || 0) / itemsPerPage)
+    const doctors = doctorsResponse?.doctors || []
+    const totalPages = Math.ceil((doctorsResponse?.total || 0) / itemsPerPage)
 
     // Loading state - only for initial data
     const isInitialLoading = isLoading
@@ -386,7 +379,11 @@ export default function DoctorListPage() {
                     {isInitialLoading ? (
                         <SkeletonTable columns={columns} />
                     ) : (
-                        <DataTable data={doctors} columns={columns} containerClassName="min-h-[400px]" />
+                        <DataTable
+                            data={doctors}
+                            columns={columns}
+                            containerClassName="min-h-[400px] [&_tbody_tr]:h-12"
+                        />
                     )}
                 </div>
 
@@ -394,8 +391,8 @@ export default function DoctorListPage() {
                 <div className="px-6 py-4 border-t border-border flex items-center justify-between">
                     <div className="text-sm text-muted-foreground">
                         Hiển thị {(currentPage - 1) * itemsPerPage + 1} đến{' '}
-                        {Math.min(currentPage * itemsPerPage, doctorsResponse?.data?.total || 0)} trong tổng số{' '}
-                        {doctorsResponse?.data?.total || 0} bác sĩ
+                        {Math.min(currentPage * itemsPerPage, doctorsResponse?.total || 0)} trong tổng số{' '}
+                        {doctorsResponse?.total || 0} bác sĩ
                     </div>
                     <Pagination value={currentPage} pageCount={totalPages} onChange={handlePageChange} />
                 </div>

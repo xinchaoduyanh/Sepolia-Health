@@ -4,4 +4,6 @@ export * from './useMounted'
 export * from './usePatients'
 export * from './useDoctors'
 export * from './useReceptionists'
-
+export * from './useArticles'
+export * from './useServices'
+export * from './useClinics'

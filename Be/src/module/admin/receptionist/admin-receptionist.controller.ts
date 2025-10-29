@@ -23,13 +23,16 @@ import { AdminReceptionistService } from './admin-receptionist.service';
 import {
   CreateReceptionistDto,
   UpdateReceptionistDto,
+  UpdateReceptionistStatusDto,
   CreateReceptionistResponseDto,
   ReceptionistListResponseDto,
   ReceptionistDetailResponseDto,
   CreateReceptionistDtoClass,
   UpdateReceptionistDtoClass,
+  UpdateReceptionistStatusDtoClass,
   CreateReceptionistSchema,
   UpdateReceptionistSchema,
+  UpdateReceptionistStatusSchema,
   GetReceptionistsQueryDto,
   GetReceptionistsQuerySchema,
 } from './admin-receptionist.dto';
@@ -116,6 +119,27 @@ export class AdminReceptionistController {
     return this.adminReceptionistService.updateReceptionist(
       Number(id),
       updateReceptionistDto,
+    );
+  }
+
+  @Put(':id/status')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Cập nhật trạng thái receptionist' })
+  @ApiParam({ name: 'id', description: 'ID receptionist' })
+  @ApiBody({ type: UpdateReceptionistStatusDtoClass })
+  @ApiResponse({
+    status: 200,
+    description: 'Cập nhật trạng thái thành công',
+    type: CreateReceptionistResponseDto,
+  })
+  async updateReceptionistStatus(
+    @Param('id') id: string,
+    @Body(new CustomZodValidationPipe(UpdateReceptionistStatusSchema))
+    updateReceptionistStatusDto: UpdateReceptionistStatusDto,
+  ): Promise<CreateReceptionistResponseDto> {
+    return this.adminReceptionistService.updateReceptionistStatus(
+      Number(id),
+      updateReceptionistStatusDto,
     );
   }
 

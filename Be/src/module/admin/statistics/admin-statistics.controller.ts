@@ -18,6 +18,8 @@ import {
   UserStatisticsResponseDto,
   AppointmentStatisticsResponseDto,
   DashboardStatisticsResponseDto,
+  RevenueStatisticsResponseDto,
+  MonthlyAppointmentsResponseDto,
 } from './admin-statistics.dto';
 import { JwtAuthGuard, RolesGuard } from '@/common/guards';
 import { Roles } from '@/common/decorators';
@@ -82,5 +84,34 @@ export class AdminStatisticsController {
   })
   async getDashboardStatistics(): Promise<DashboardStatisticsResponseDto> {
     return this.adminStatisticsService.getDashboardStatistics();
+  }
+
+  @Get('revenue')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Thống kê doanh thu chi tiết' })
+  @ApiQuery({ name: 'startDate', required: false, type: String })
+  @ApiQuery({ name: 'endDate', required: false, type: String })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy thống kê doanh thu thành công',
+    type: RevenueStatisticsResponseDto,
+  })
+  async getRevenueStatistics(
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ): Promise<RevenueStatisticsResponseDto> {
+    return this.adminStatisticsService.getRevenueStatistics(startDate, endDate);
+  }
+
+  @Get('monthly-appointments')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Thống kê số lượng appointment trong tháng gần đây' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy thống kê appointment tháng gần đây thành công',
+    type: MonthlyAppointmentsResponseDto,
+  })
+  async getMonthlyAppointments(): Promise<MonthlyAppointmentsResponseDto> {
+    return this.adminStatisticsService.getMonthlyAppointments();
   }
 }

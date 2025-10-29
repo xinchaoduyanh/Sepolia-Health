@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { z } from 'zod';
-import { Gender, Relationship } from '@prisma/client';
+import { Gender, Relationship, UserStatus } from '@prisma/client';
 
 const genderValues = Object.values(Gender) as [string, ...string[]];
 const relationshipValues = Object.values(Relationship) as [string, ...string[]];
@@ -560,6 +560,21 @@ export class PatientListResponseDto {
     example: 10,
   })
   limit: number;
+}
+
+export const UpdatePatientStatusSchema = z.object({
+  status: z.nativeEnum(UserStatus),
+});
+
+export type UpdatePatientStatusDto = z.infer<typeof UpdatePatientStatusSchema>;
+
+export class UpdatePatientStatusDtoClass {
+  @ApiProperty({
+    description: 'Trạng thái tài khoản',
+    example: 'ACTIVE',
+    enum: UserStatus,
+  })
+  status: UserStatus;
 }
 
 export class PatientDetailResponseDto extends CreatePatientResponseDto {

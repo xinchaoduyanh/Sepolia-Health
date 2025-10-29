@@ -15,7 +15,7 @@ import { PatientActionDialog } from '@/components/PatientActionDialog'
 // Skeleton table component for loading state
 const SkeletonTable = ({ columns }: { columns: any[] }) => {
     return (
-        <div className="relative grid bg-background-secondary rounded-md overflow-hidden border min-h-[400px]">
+        <div className="relative grid bg-background-secondary rounded-md overflow-hidden border min-h-[400px] [&_tbody_tr]:h-12">
             <div className="w-full overflow-x-auto">
                 <table className="group w-full caption-bottom text-sm">
                     <thead className="[&_tr]:border-b">
@@ -43,7 +43,7 @@ const SkeletonTable = ({ columns }: { columns: any[] }) => {
                                 {columns.map((col, colIdx) => (
                                     <td
                                         key={colIdx}
-                                        className="p-4 align-middle [&:has([role=checkbox])]:pr-0"
+                                        className="h-12 p-4 align-middle [&:has([role=checkbox])]:pr-0"
                                         style={{
                                             minWidth: col.size || 180,
                                             maxWidth: col.size || 180,
@@ -134,14 +134,14 @@ const columns: any[] = [
                 return (
                     <div className="flex items-center space-x-3">
                         <Avatar className="h-8 w-8">
-                            <AvatarFallback className="text-xs">
+                            <AvatarFallback className="text-xs bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300">
                                 {selfProfile.fullName
                                     .split(' ')
                                     .map((n: string) => n[0])
                                     .join('')}
                             </AvatarFallback>
                         </Avatar>
-                        <span className="font-medium">{selfProfile.fullName}</span>
+                        <span className="font-medium text-foreground">{selfProfile.fullName}</span>
                     </div>
                 )
             }
@@ -354,7 +354,11 @@ export default function CustomerListPage() {
                     {showSkeleton ? (
                         <SkeletonTable columns={columns} />
                     ) : (
-                        <DataTable data={patients} columns={columns} containerClassName="min-h-[400px]" />
+                        <DataTable
+                            data={patients}
+                            columns={columns}
+                            containerClassName="min-h-[400px] [&_tbody_tr]:h-12"
+                        />
                     )}
                 </div>
 

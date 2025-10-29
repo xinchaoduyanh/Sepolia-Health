@@ -5,6 +5,7 @@ import {
     type DoctorsListParams,
     type CreateDoctorRequest,
     type UpdateDoctorRequest,
+    type UpdateDoctorStatusRequest,
 } from '../lib/api-services/doctors.service'
 import { queryKeys } from '../lib/query-keys'
 
@@ -96,8 +97,7 @@ export function useUpdateDoctor() {
     const queryClient = useQueryClient()
 
     return useMutation({
-        mutationFn: ({ id, data }: { id: number; data: UpdateDoctorRequest }) =>
-            doctorsService.updateDoctor(id, data),
+        mutationFn: ({ id, data }: { id: number; data: UpdateDoctorRequest }) => doctorsService.updateDoctor(id, data),
         onSuccess: (_response, { id }) => {
             queryClient.invalidateQueries({
                 queryKey: queryKeys.admin.doctors.lists(),
@@ -122,7 +122,39 @@ export function useUpdateDoctor() {
 }
 
 /**
- * Hook to delete doctor
+ * Hook to update doctor status
+ */
+export function useUpdateDoctorStatus() {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: ({ id, status }: { id: number; status: 'UNVERIFIED' | 'ACTIVE' | 'DEACTIVE' }) =>
+            doctorsService.updateDoctorStatus(id, { status }),
+        onSuccess: (_response, { id }) => {
+            queryClient.invalidateQueries({
+                queryKey: queryKeys.admin.doctors.lists(),
+            })
+            queryClient.invalidateQueries({
+                queryKey: queryKeys.admin.doctors.detail(id.toString()),
+            })
+
+            toast.success({
+                title: 'Thành công',
+                description: 'Cập nhật trạng thái bác sĩ thành công',
+            })
+        },
+        onError: (error: any) => {
+            const message = error?.response?.data?.message || 'Có lỗi xảy ra khi cập nhật trạng thái bác sĩ'
+            toast.error({
+                title: 'Lỗi',
+                description: message,
+            })
+        },
+    })
+}
+
+/**
+ * Hook to delete doctor (soft delete)
  */
 export function useDeleteDoctor() {
     const queryClient = useQueryClient()
@@ -148,4 +180,3 @@ export function useDeleteDoctor() {
         },
     })
 }
-

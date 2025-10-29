@@ -84,6 +84,10 @@ export interface UpdateDoctorRequest {
     serviceIds?: number[]
 }
 
+export interface UpdateDoctorStatusRequest {
+    status: 'UNVERIFIED' | 'ACTIVE' | 'DEACTIVE'
+}
+
 export type CreateDoctorResponse = Doctor
 
 export class DoctorsService {
@@ -91,8 +95,8 @@ export class DoctorsService {
      * Get doctors list with pagination and filters
      * GET /doctors
      */
-    async getDoctors(params: DoctorsListParams = {}): Promise<DoctorsListResponse> {
-        return apiClient.get<DoctorsListResponse>('/admin/doctors', { params })
+    async getDoctors(params: DoctorsListParams = {}): Promise<DoctorsListData> {
+        return apiClient.get<DoctorsListData>('/admin/doctors', { params })
     }
 
     /**
@@ -120,27 +124,35 @@ export class DoctorsService {
     }
 
     /**
-     * Delete doctor
-     * DELETE /doctors/{id}
+     * Update doctor status
+     * PUT /admin/doctors/{id}/status
      */
-    async deleteDoctor(id: number): Promise<void> {
-        return apiClient.delete<void>(`/admin/doctors/${id}`)
+    async updateDoctorStatus(id: number, statusData: UpdateDoctorStatusRequest): Promise<DoctorDetailResponse> {
+        return apiClient.put<DoctorDetailResponse>(`/admin/doctors/${id}/status`, statusData)
+    }
+
+    /**
+     * Delete doctor (soft delete)
+     * DELETE /admin/doctors/{id}
+     */
+    async deleteDoctor(id: number): Promise<{ message: string }> {
+        return apiClient.delete<{ message: string }>(`/admin/doctors/${id}`)
     }
 
     /**
      * Get list of clinics
      * GET /doctors/clinics/list
      */
-    async getClinics(): Promise<{ data: Clinic[] }> {
-        return apiClient.get<{ data: Clinic[] }>('admin/doctors/clinics/list')
+    async getClinics(): Promise<Clinic[]> {
+        return apiClient.get<Clinic[]>('/admin/doctors/clinics/list')
     }
 
     /**
      * Get list of services
      * GET /doctors/services/list
      */
-    async getServices(): Promise<{ data: Service[] }> {
-        return apiClient.get<{ data: Service[] }>('admin/doctors/services/list')
+    async getServices(): Promise<Service[]> {
+        return apiClient.get<Service[]>('admin/doctors/services/list')
     }
 }
 

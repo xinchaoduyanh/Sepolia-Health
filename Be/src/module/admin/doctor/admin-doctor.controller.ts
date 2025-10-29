@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Put,
+  Patch,
   Delete,
   Body,
   Param,
@@ -23,15 +24,18 @@ import { AdminDoctorService } from './admin-doctor.service';
 import {
   CreateDoctorDto,
   UpdateDoctorDto,
+  UpdateDoctorStatusDto,
   CreateDoctorResponseDto,
   DoctorListResponseDto,
   DoctorDetailResponseDto,
   CreateDoctorScheduleDto,
   CreateDoctorDtoClass,
   UpdateDoctorDtoClass,
+  UpdateDoctorStatusDtoClass,
   CreateDoctorScheduleDtoClass,
   CreateDoctorSchema,
   UpdateDoctorSchema,
+  UpdateDoctorStatusSchema,
   CreateDoctorScheduleSchema,
   GetDoctorsQueryDto,
   GetDoctorsQuerySchema,
@@ -135,9 +139,30 @@ export class AdminDoctorController {
     return this.adminDoctorService.updateDoctor(Number(id), updateDoctorDto);
   }
 
+  @Put(':id/status')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Cập nhật trạng thái bác sĩ' })
+  @ApiParam({ name: 'id', description: 'ID bác sĩ' })
+  @ApiBody({ type: UpdateDoctorStatusDtoClass })
+  @ApiResponse({
+    status: 200,
+    description: 'Cập nhật trạng thái thành công',
+    type: CreateDoctorResponseDto,
+  })
+  async updateDoctorStatus(
+    @Param('id') id: string,
+    @Body(new CustomZodValidationPipe(UpdateDoctorStatusSchema))
+    updateStatusDto: UpdateDoctorStatusDto,
+  ): Promise<CreateDoctorResponseDto> {
+    return this.adminDoctorService.updateDoctorStatus(
+      Number(id),
+      updateStatusDto,
+    );
+  }
+
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Xóa bác sĩ' })
+  @ApiOperation({ summary: 'Xóa bác sĩ (soft delete)' })
   @ApiParam({ name: 'id', description: 'ID bác sĩ' })
   @ApiResponse({
     status: 200,

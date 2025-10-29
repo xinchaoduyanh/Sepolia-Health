@@ -98,6 +98,38 @@ export function useUpdateReceptionist() {
 }
 
 /**
+ * Hook to update receptionist status
+ */
+export function useUpdateReceptionistStatus() {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: ({ id, status }: { id: number; status: 'UNVERIFIED' | 'ACTIVE' | 'DEACTIVE' }) =>
+            receptionistsService.updateReceptionistStatus(id, { status }),
+        onSuccess: (_response, { id }) => {
+            queryClient.invalidateQueries({
+                queryKey: queryKeys.admin.receptionists.lists(),
+            })
+            queryClient.invalidateQueries({
+                queryKey: queryKeys.admin.receptionists.detail(id.toString()),
+            })
+
+            toast.success({
+                title: 'Thành công',
+                description: 'Cập nhật trạng thái lễ tân thành công',
+            })
+        },
+        onError: (error: any) => {
+            const message = error?.response?.data?.message || 'Có lỗi xảy ra khi cập nhật trạng thái lễ tân'
+            toast.error({
+                title: 'Lỗi',
+                description: message,
+            })
+        },
+    })
+}
+
+/**
  * Hook to delete receptionist
  */
 export function useDeleteReceptionist() {
@@ -124,4 +156,3 @@ export function useDeleteReceptionist() {
         },
     })
 }
-

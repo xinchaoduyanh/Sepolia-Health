@@ -124,6 +124,112 @@ export class AppointmentStatisticsResponseDto {
   };
 }
 
+export class RevenueStatisticsResponseDto {
+  @ApiProperty({
+    description: 'Tổng doanh thu',
+    example: 150000000,
+  })
+  totalRevenue: number;
+
+  @ApiProperty({
+    description: 'Doanh thu tháng này',
+    example: 25000000,
+  })
+  monthlyRevenue: number;
+
+  @ApiProperty({
+    description: 'Doanh thu hôm nay',
+    example: 1500000,
+  })
+  todayRevenue: number;
+
+  @ApiProperty({
+    description: 'Doanh thu theo tháng (12 tháng gần nhất)',
+    example: [
+      { month: '2024-01', revenue: 20000000 },
+      { month: '2024-02', revenue: 25000000 },
+    ],
+  })
+  monthlyRevenueStats: Array<{
+    month: string;
+    revenue: number;
+  }>;
+
+  @ApiProperty({
+    description: 'Doanh thu theo dịch vụ',
+    example: [
+      { serviceId: 1, serviceName: 'Khám nội khoa', revenue: 50000000 },
+      { serviceId: 2, serviceName: 'Khám răng hàm mặt', revenue: 30000000 },
+    ],
+  })
+  revenueByService: Array<{
+    serviceId: number;
+    serviceName: string;
+    revenue: number;
+    count: number;
+  }>;
+
+  @ApiProperty({
+    description: 'Doanh thu theo bác sĩ',
+    example: [
+      { doctorId: 1, doctorName: 'Nguyễn Văn A', revenue: 40000000 },
+      { doctorId: 2, doctorName: 'Trần Thị B', revenue: 35000000 },
+    ],
+  })
+  revenueByDoctor: Array<{
+    doctorId: number;
+    doctorName: string;
+    revenue: number;
+    count: number;
+  }>;
+}
+
+export class MonthlyAppointmentsResponseDto {
+  @ApiProperty({
+    description: 'Số lượng appointment trong tháng gần đây',
+    example: 245,
+  })
+  totalAppointments: number;
+
+  @ApiProperty({
+    description: 'Appointment theo ngày trong tháng',
+    example: [
+      { date: '2024-10-01', count: 12 },
+      { date: '2024-10-02', count: 15 },
+    ],
+  })
+  dailyAppointments: Array<{
+    date: string;
+    count: number;
+  }>;
+
+  @ApiProperty({
+    description: 'Appointment theo trạng thái',
+    example: {
+      UPCOMING: 50,
+      COMPLETED: 180,
+      CANCELLED: 15,
+    },
+  })
+  appointmentsByStatus: {
+    UPCOMING: number;
+    COMPLETED: number;
+    CANCELLED: number;
+  };
+
+  @ApiProperty({
+    description: 'Appointment theo dịch vụ',
+    example: [
+      { serviceName: 'Khám nội khoa', count: 100 },
+      { serviceName: 'Khám răng hàm mặt', count: 80 },
+    ],
+  })
+  appointmentsByService: Array<{
+    serviceName: string;
+    count: number;
+  }>;
+}
+
 export class DashboardStatisticsResponseDto {
   @ApiProperty({
     description: 'Thống kê người dùng',

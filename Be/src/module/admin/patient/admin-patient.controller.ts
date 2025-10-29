@@ -23,13 +23,16 @@ import { AdminPatientService } from './admin-patient.service';
 import {
   CreatePatientDto,
   UpdatePatientDto,
+  UpdatePatientStatusDto,
   CreatePatientResponseDto,
   PatientListResponseDto,
   PatientDetailResponseDto,
   CreatePatientDtoClass,
   UpdatePatientDtoClass,
+  UpdatePatientStatusDtoClass,
   CreatePatientSchema,
   UpdatePatientSchema,
+  UpdatePatientStatusSchema,
   GetPatientsQueryDto,
   GetPatientsQuerySchema,
 } from './admin-patient.dto';
@@ -109,6 +112,27 @@ export class AdminPatientController {
     updatePatientDto: UpdatePatientDto,
   ): Promise<CreatePatientResponseDto> {
     return this.adminPatientService.updatePatient(Number(id), updatePatientDto);
+  }
+
+  @Put(':id/status')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Cập nhật trạng thái patient' })
+  @ApiParam({ name: 'id', description: 'ID patient' })
+  @ApiBody({ type: UpdatePatientStatusDtoClass })
+  @ApiResponse({
+    status: 200,
+    description: 'Cập nhật trạng thái thành công',
+    type: CreatePatientResponseDto,
+  })
+  async updatePatientStatus(
+    @Param('id') id: string,
+    @Body(new CustomZodValidationPipe(UpdatePatientStatusSchema))
+    updatePatientStatusDto: UpdatePatientStatusDto,
+  ): Promise<CreatePatientResponseDto> {
+    return this.adminPatientService.updatePatientStatus(
+      Number(id),
+      updatePatientStatusDto,
+    );
   }
 
   @Delete(':id')
