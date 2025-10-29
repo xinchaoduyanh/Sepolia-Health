@@ -3,17 +3,18 @@ import { toast } from '@workspace/ui/components/Sonner'
 import {
     doctorsService,
     type DoctorsListParams,
+    type Clinic,
+    type Service,
     type CreateDoctorRequest,
     type UpdateDoctorRequest,
-    type UpdateDoctorStatusRequest,
 } from '../lib/api-services/doctors.service'
 import { queryKeys } from '../lib/query-keys'
 
 /**
- * Hook to get clinics list
+ * Hook to get clinics list for dropdowns
  */
-export function useClinics() {
-    return useQuery({
+export function useClinicsDropdown() {
+    return useQuery<Clinic[]>({
         queryKey: queryKeys.admin.doctors.clinics(),
         queryFn: () => doctorsService.getClinics(),
         staleTime: 10 * 60 * 1000, // 10 minutes
@@ -22,10 +23,10 @@ export function useClinics() {
 }
 
 /**
- * Hook to get services list
+ * Hook to get services list for dropdowns
  */
-export function useServices() {
-    return useQuery({
+export function useServicesDropdown() {
+    return useQuery<Service[]>({
         queryKey: queryKeys.admin.doctors.services(),
         queryFn: () => doctorsService.getServices(),
         staleTime: 10 * 60 * 1000, // 10 minutes

@@ -3,6 +3,7 @@ import { toast } from '@workspace/ui/components/Sonner'
 import {
     clinicsService,
     type ClinicsListParams,
+    type ClinicsListResponse,
     type CreateClinicRequest,
     type UpdateClinicRequest,
 } from '../lib/api-services/clinics.service'
@@ -12,7 +13,7 @@ import { queryKeys } from '../lib/query-keys'
  * Hook to get clinics list with pagination and filters
  */
 export function useClinics(params: ClinicsListParams = {}, isReady: boolean) {
-    return useQuery({
+    return useQuery<ClinicsListResponse>({
         queryKey: queryKeys.admin.clinics.list(params),
         queryFn: () => clinicsService.getClinics(params),
         enabled: isReady,

@@ -3,6 +3,7 @@ import { toast } from '@workspace/ui/components/Sonner'
 import {
     articlesService,
     type ArticlesListParams,
+    type ArticlesListResponse,
     type CreateArticleRequest,
     type UpdateArticleRequest,
 } from '../lib/api-services/articles.service'
@@ -12,7 +13,7 @@ import { queryKeys } from '../lib/query-keys'
  * Hook to get articles list with pagination and filters
  */
 export function useArticles(params: ArticlesListParams = {}, isReady: boolean) {
-    return useQuery({
+    return useQuery<ArticlesListResponse>({
         queryKey: queryKeys.admin.articles.list(params),
         queryFn: () => articlesService.getArticles(params),
         enabled: isReady,
@@ -124,4 +125,3 @@ export function useDeleteArticle() {
         },
     })
 }
-

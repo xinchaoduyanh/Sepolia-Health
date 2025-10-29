@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@workspace/ui/components/Button'
 import { ArrowLeft, AlertCircle, Plus, Trash2 } from 'lucide-react'
-import { useCreateDoctor, useClinics, useServices } from '@/shared/hooks'
+import { useCreateDoctor, useClinicsDropdown, useServicesDropdown } from '@/shared/hooks'
 import type { CreateDoctorRequest } from '@/shared/lib/api-services/doctors.service'
 import { AvatarUpload } from './AvatarUpload'
 
@@ -31,11 +31,13 @@ interface FieldErrors {
 export function DoctorCreateForm() {
     const router = useRouter()
     const createDoctor = useCreateDoctor()
-    const { data: clinicsData } = useClinics()
-    const { data: servicesData } = useServices()
+    const { data: clinicsData } = useClinicsDropdown()
+    const { data: servicesData } = useServicesDropdown()
 
-    const clinics = clinicsData?.data || []
-    const services = servicesData?.data || []
+    // Extract arrays safely - ensure they are always arrays
+    // Note: clinicsData and servicesData are already arrays after apiClient unwraps the response
+    const clinics = Array.isArray(clinicsData) ? clinicsData : []
+    const services = Array.isArray(servicesData) ? servicesData : []
 
     const [accountInfo, setAccountInfo] = useState({
         email: '',
@@ -59,11 +61,13 @@ export function DoctorCreateForm() {
         address: '',
     })
 
-    const [availabilities, setAvailabilities] = useState<Array<{
-        dayOfWeek: number
-        startTime: string
-        endTime: string
-    }>>([])
+    const [availabilities, setAvailabilities] = useState<
+        Array<{
+            dayOfWeek: number
+            startTime: string
+            endTime: string
+        }>
+    >([])
 
     // Helper functions
     const isAccountValid = accountInfo.email && accountInfo.password && accountInfo.phone
@@ -94,21 +98,16 @@ export function DoctorCreateForm() {
             ...prev,
             serviceIds: prev.serviceIds.includes(serviceId)
                 ? prev.serviceIds.filter(id => id !== serviceId)
-                : [...prev.serviceIds, serviceId]
+                : [...prev.serviceIds, serviceId],
         }))
     }
 
     const addAvailability = () => {
-        setAvailabilities(prev => [
-            ...prev,
-            { dayOfWeek: 1, startTime: '08:00', endTime: '17:00' }
-        ])
+        setAvailabilities(prev => [...prev, { dayOfWeek: 1, startTime: '08:00', endTime: '17:00' }])
     }
 
-    const updateAvailability = (index: number, field: keyof typeof availabilities[0], value: string | number) => {
-        setAvailabilities(prev => prev.map((avail, i) =>
-            i === index ? { ...avail, [field]: value } : avail
-        ))
+    const updateAvailability = (index: number, field: keyof (typeof availabilities)[0], value: string | number) => {
+        setAvailabilities(prev => prev.map((avail, i) => (i === index ? { ...avail, [field]: value } : avail)))
     }
 
     const removeAvailability = (index: number) => {
@@ -129,6 +128,7 @@ export function DoctorCreateForm() {
             password: accountInfo.password,
             phone: accountInfo.phone,
             fullName: `${doctorProfile.firstName} ${doctorProfile.lastName}`.trim(),
+            specialty: '', // Will be populated from services on backend
             experienceYears: parseInt(doctorProfile.experience) || 0,
             description: doctorProfile.description || undefined,
             address: doctorProfile.address || undefined,
@@ -136,11 +136,11 @@ export function DoctorCreateForm() {
             serviceIds: doctorProfile.serviceIds,
             ...(availabilities.length > 0 && {
                 availabilities: availabilities.map(avail => ({
-                    dayOfWeek: avail.dayOfWeek,
+                    dayOfWeek: getDayOfWeekEnum(avail.dayOfWeek),
                     startTime: avail.startTime,
                     endTime: avail.endTime,
-                }))
-            })
+                })),
+            }),
         }
 
         try {
@@ -174,14 +174,21 @@ export function DoctorCreateForm() {
     ]
 
     const dayOfWeekOptions = [
-        { value: 0, label: 'Chủ nhật' },
-        { value: 1, label: 'Thứ 2' },
-        { value: 2, label: 'Thứ 3' },
-        { value: 3, label: 'Thứ 4' },
-        { value: 4, label: 'Thứ 5' },
-        { value: 5, label: 'Thứ 6' },
-        { value: 6, label: 'Thứ 7' },
+        { value: 0, label: 'Chủ nhật', enumValue: 'SUNDAY' },
+        { value: 1, label: 'Thứ 2', enumValue: 'MONDAY' },
+        { value: 2, label: 'Thứ 3', enumValue: 'TUESDAY' },
+        { value: 3, label: 'Thứ 4', enumValue: 'WEDNESDAY' },
+        { value: 4, label: 'Thứ 5', enumValue: 'THURSDAY' },
+        { value: 5, label: 'Thứ 6', enumValue: 'FRIDAY' },
+        { value: 6, label: 'Thứ 7', enumValue: 'SATURDAY' },
     ]
+
+    const getDayOfWeekEnum = (
+        value: number,
+    ): 'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY' | 'SATURDAY' | 'SUNDAY' => {
+        const option = dayOfWeekOptions.find(opt => opt.value === value)
+        return (option?.enumValue || 'MONDAY') as any
+    }
 
     const inputClassName =
         'w-full px-3 py-2 bg-background text-foreground border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-transparent transition-colors'
@@ -205,9 +212,7 @@ export function DoctorCreateForm() {
                 <div className="bg-card rounded-lg shadow-sm border border-border p-6">
                     <div className="mb-4">
                         <h3 className="text-lg font-semibold text-foreground">Thông tin tài khoản</h3>
-                        <p className="text-sm text-muted-foreground mt-1">
-                            Thông tin đăng nhập của bác sĩ
-                        </p>
+                        <p className="text-sm text-muted-foreground mt-1">Thông tin đăng nhập của bác sĩ</p>
                     </div>
                     <div className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -282,9 +287,7 @@ export function DoctorCreateForm() {
                 <div className="bg-card rounded-lg shadow-sm border border-border p-6">
                     <div className="mb-4">
                         <h3 className="text-lg font-semibold text-foreground">Thông tin cá nhân</h3>
-                        <p className="text-sm text-muted-foreground mt-1">
-                            Thông tin cá nhân của bác sĩ
-                        </p>
+                        <p className="text-sm text-muted-foreground mt-1">Thông tin cá nhân của bác sĩ</p>
                     </div>
 
                     {/* Avatar with Name Fields */}
@@ -300,10 +303,7 @@ export function DoctorCreateForm() {
                         {/* Name Fields */}
                         <div className="flex-1 grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <label
-                                    htmlFor="lastName"
-                                    className="block text-sm font-medium text-foreground"
-                                >
+                                <label htmlFor="lastName" className="block text-sm font-medium text-foreground">
                                     Họ bác sĩ *
                                 </label>
                                 <input
@@ -316,10 +316,7 @@ export function DoctorCreateForm() {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label
-                                    htmlFor="gender"
-                                    className="block text-sm font-medium text-foreground"
-                                >
+                                <label htmlFor="gender" className="block text-sm font-medium text-foreground">
                                     Giới tính *
                                 </label>
                                 <select
@@ -339,10 +336,7 @@ export function DoctorCreateForm() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <label
-                                htmlFor="firstName"
-                                className="block text-sm font-medium text-foreground"
-                            >
+                            <label htmlFor="firstName" className="block text-sm font-medium text-foreground">
                                 Tên bác sĩ *
                             </label>
                             <input
@@ -355,10 +349,7 @@ export function DoctorCreateForm() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <label
-                                htmlFor="dateOfBirth"
-                                className="block text-sm font-medium text-foreground"
-                            >
+                            <label htmlFor="dateOfBirth" className="block text-sm font-medium text-foreground">
                                 Ngày sinh
                             </label>
                             <input
@@ -371,10 +362,7 @@ export function DoctorCreateForm() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <label
-                                htmlFor="contactInfo"
-                                className="block text-sm font-medium text-foreground"
-                            >
+                            <label htmlFor="contactInfo" className="block text-sm font-medium text-foreground">
                                 Số điện thoại liên lạc *
                             </label>
                             <input
@@ -388,10 +376,7 @@ export function DoctorCreateForm() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <label
-                                htmlFor="experience"
-                                className="block text-sm font-medium text-foreground"
-                            >
+                            <label htmlFor="experience" className="block text-sm font-medium text-foreground">
                                 Số năm kinh nghiệm *
                             </label>
                             <input
@@ -408,10 +393,7 @@ export function DoctorCreateForm() {
                     </div>
 
                     <div className="space-y-2">
-                        <label
-                            htmlFor="address"
-                            className="block text-sm font-medium text-foreground"
-                        >
+                        <label htmlFor="address" className="block text-sm font-medium text-foreground">
                             Địa chỉ (Tùy chọn)
                         </label>
                         <textarea
@@ -429,17 +411,12 @@ export function DoctorCreateForm() {
                 <div className="bg-card rounded-lg shadow-sm border border-border p-6">
                     <div className="mb-4">
                         <h3 className="text-lg font-semibold text-foreground">Thông tin chuyên môn</h3>
-                        <p className="text-sm text-muted-foreground mt-1">
-                            Thông tin về cơ sở và dịch vụ của bác sĩ
-                        </p>
+                        <p className="text-sm text-muted-foreground mt-1">Thông tin về cơ sở và dịch vụ của bác sĩ</p>
                     </div>
 
                     <div className="space-y-4">
                         <div className="space-y-2">
-                            <label
-                                htmlFor="clinicId"
-                                className="block text-sm font-medium text-foreground"
-                            >
+                            <label htmlFor="clinicId" className="block text-sm font-medium text-foreground">
                                 Cơ sở phòng khám *
                             </label>
                             <select
@@ -459,9 +436,7 @@ export function DoctorCreateForm() {
                         </div>
 
                         <div className="space-y-2">
-                            <label className="block text-sm font-medium text-foreground">
-                                Dịch vụ chuyên khoa *
-                            </label>
+                            <label className="block text-sm font-medium text-foreground">Dịch vụ chuyên khoa *</label>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-40 overflow-y-auto border border-border rounded-md p-3">
                                 {services.map(service => (
                                     <label key={service.id} className="flex items-center space-x-2 cursor-pointer">
@@ -483,10 +458,7 @@ export function DoctorCreateForm() {
                         </div>
 
                         <div className="space-y-2">
-                            <label
-                                htmlFor="description"
-                                className="block text-sm font-medium text-foreground"
-                            >
+                            <label htmlFor="description" className="block text-sm font-medium text-foreground">
                                 Mô tả chuyên môn (Tùy chọn)
                             </label>
                             <textarea
@@ -528,7 +500,9 @@ export function DoctorCreateForm() {
                                         </label>
                                         <select
                                             value={availability.dayOfWeek}
-                                            onChange={e => updateAvailability(index, 'dayOfWeek', parseInt(e.target.value))}
+                                            onChange={e =>
+                                                updateAvailability(index, 'dayOfWeek', parseInt(e.target.value))
+                                            }
                                             className={inputClassName}
                                         >
                                             {dayOfWeekOptions.map(option => (
@@ -539,9 +513,7 @@ export function DoctorCreateForm() {
                                         </select>
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-foreground">
-                                            Giờ bắt đầu
-                                        </label>
+                                        <label className="block text-sm font-medium text-foreground">Giờ bắt đầu</label>
                                         <input
                                             type="time"
                                             value={availability.startTime}

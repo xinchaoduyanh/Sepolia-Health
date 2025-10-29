@@ -3,6 +3,7 @@ import { toast } from '@workspace/ui/components/Sonner'
 import {
     servicesService,
     type ServicesListParams,
+    type ServicesListResponse,
     type CreateServiceRequest,
     type UpdateServiceRequest,
 } from '../lib/api-services/services.service'
@@ -12,7 +13,7 @@ import { queryKeys } from '../lib/query-keys'
  * Hook to get services list with pagination and filters
  */
 export function useServices(params: ServicesListParams = {}, isReady: boolean) {
-    return useQuery({
+    return useQuery<ServicesListResponse>({
         queryKey: queryKeys.admin.services.list(params),
         queryFn: () => servicesService.getServices(params),
         enabled: isReady,

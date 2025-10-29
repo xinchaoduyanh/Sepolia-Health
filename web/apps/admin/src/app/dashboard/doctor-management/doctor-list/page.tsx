@@ -8,7 +8,7 @@ import { Button } from '@workspace/ui/components/Button'
 import { Badge } from '@workspace/ui/components/Badge'
 import { Avatar, AvatarFallback } from '@workspace/ui/components/Avatar'
 import { Eye, Plus, MoreHorizontal } from 'lucide-react'
-import { useDoctors, useClinics, useServices } from '@/shared/hooks'
+import { useDoctors, useClinicsDropdown, useServicesDropdown } from '@/shared/hooks'
 import { DoctorActionDialog } from '@/components/DoctorActionDialog'
 import { BsSelect } from '@workspace/ui/components/Select'
 import { Skeleton } from '@workspace/ui/components/Skeleton'
@@ -290,8 +290,8 @@ export default function DoctorListPage() {
     const { data: doctorsResponse, isLoading } = useDoctors(queryParams, true)
 
     // Fetch clinics and services for filters
-    const { data: clinicsData } = useClinics()
-    const { data: servicesData } = useServices()
+    const { data: clinicsData } = useClinicsDropdown()
+    const { data: servicesData } = useServicesDropdown()
 
     // Extract arrays safely - ensure they are always arrays
     // Note: clinicsData and servicesData are already arrays after apiClient unwraps the response
