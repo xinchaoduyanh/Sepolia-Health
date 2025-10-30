@@ -22,4 +22,14 @@ export const ERROR_MESSAGES = {
   DOCTOR: {
     DOCTOR_ALREADY_EXIST: 'Tài khoản bác sĩ đã tồn tại',
   },
+  PAYMENT: {
+    APPOINTMENT_NOT_FOUND: 'Lịch hẹn không tồn tại',
+    APPOINTMENT_ALREADY_PAID: 'Lịch hẹn đã được thanh toán',
+    PAYMENT_CODE_GENERATION_FAILED: 'Không thể tạo mã thanh toán',
+    PAYMENT_CODE_NOT_FOUND: 'Mã thanh toán không tồn tại',
+    PAYMENT_CODE_ALREADY_USED: 'Mã thanh toán đã được sử dụng',
+    PAYMENT_CODE_NOT_FOUND_IN_CONTENT: 'Không tìm thấy mã thanh toán trong nội dung giao dịch',
+    AMOUNT_MISMATCH: 'Số tiền không khớp',
+    TRANSACTION_NOT_FOUND: 'Giao dịch không tồn tại',
+  },
 };

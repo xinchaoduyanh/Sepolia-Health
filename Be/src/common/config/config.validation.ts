@@ -21,4 +21,8 @@ export const configSchema = z.object({
   AWS_REGION: z.string().nonempty(),
   AWS_S3_BUCKET_NAME: z.string().nonempty(),
   AWS_S3_BUCKET_URL: z.string().nonempty(),
+  //sepay
+  SEPAY_API_KEY: z.string().nonempty(),
+  SEPAY_ACCOUNT_NUMBER: z.string().nonempty(),
+  SEPAY_BANK_CODE: z.string().nonempty(),
 });

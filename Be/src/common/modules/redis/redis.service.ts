@@ -296,4 +296,163 @@ export class RedisService implements OnModuleDestroy {
   async deleteTokens(tokens: string[]): Promise<void> {
     await this.client.del(tokens);
   }
+
+  /**
+   * ==================== PAYMENT CODE METHODS ====================
+   */
+
+  /**
+   * Set payment code with billing data and auto-expiration (15 minutes)
+   * Key format: payment_code:{code}
+   * Value: JSON with billingId, appointmentId, amount, createdAt, expiresAt
+   */
+  async setPaymentCode(
+    code: string,
+    data: {
+      billingId: number;
+      appointmentId: number;
+      amount: number;
+    },
+    expiresInSeconds: number = 900, // 15 minutes default
+  ): Promise<boolean> {
+    const key = `payment_code:${code}`;
+
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + expiresInSeconds * 1000);
+
+    const value = JSON.stringify({
+      billingId: data.billingId,
+      appointmentId: data.appointmentId,
+      amount: data.amount,
+      createdAt: now.toISOString(),
+      expiresAt: expiresAt.toISOString(),
+      isUsed: false,
+    });
+
+    const result = await this.set(key, value, { ex: expiresInSeconds });
+    if (result) {
+      this.logger.log(
+        `Created payment code ${code} for appointment ${data.appointmentId}, expires in ${expiresInSeconds}s`,
+      );
+    }
+
+    return result;
+  }
+
+  /**
+   * Get payment code data
+   */
+  async getPaymentCode(code: string): Promise<{
+    billingId: number;
+    appointmentId: number;
+    amount: number;
+    createdAt: string;
+    expiresAt: string;
+    isUsed: boolean;
+  } | null> {
+    const key = `payment_code:${code}`;
+    const result = await this.get(key);
+
+    if (result.exists && result.value) {
+      return JSON.parse(result.value);
+    }
+
+    return null;
+  }
+
+  /**
+   * Mark payment code as used
+   */
+  async markPaymentCodeAsUsed(code: string): Promise<boolean> {
+    const key = `payment_code:${code}`;
+    const paymentData = await this.getPaymentCode(code);
+
+    if (!paymentData) {
+      return false;
+    }
+
+    // Update isUsed flag
+    paymentData.isUsed = true;
+
+    // Get remaining TTL to preserve expiration
+    const ttl = await this.ttl(key);
+    if (ttl <= 0) {
+      return false; // Already expired
+    }
+
+    const result = await this.set(key, JSON.stringify(paymentData), {
+      ex: ttl,
+    });
+
+    if (result) {
+      this.logger.log(`Marked payment code ${code} as used`);
+    }
+
+    return result;
+  }
+
+  /**
+   * Cancel/Delete payment code
+   */
+  async cancelPaymentCode(code: string): Promise<boolean> {
+    const key = `payment_code:${code}`;
+    const result = await this.del(key);
+
+    if (result > 0) {
+      this.logger.log(`Cancelled payment code ${code}`);
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Check if payment code exists and is valid (not used, not expired)
+   */
+  async isPaymentCodeValid(code: string): Promise<boolean> {
+    const paymentData = await this.getPaymentCode(code);
+
+    if (!paymentData) {
+      return false;
+    }
+
+    if (paymentData.isUsed) {
+      return false;
+    }
+
+    // Check if expired (with grace period of 5 minutes)
+    const now = new Date();
+    const expiresAt = new Date(paymentData.expiresAt);
+    const gracePeriod = 5 * 60 * 1000; // 5 minutes
+
+    if (now.getTime() > expiresAt.getTime() + gracePeriod) {
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * Get payment code by appointment ID (if exists)
+   * Note: This is a scan operation, use sparingly
+   */
+  async getPaymentCodeByAppointmentId(
+    appointmentId: number,
+  ): Promise<string | null> {
+    const pattern = 'payment_code:*';
+    const keys = await this.client.keys(pattern);
+
+    for (const key of keys) {
+      const data = await this.get(key);
+      if (data.exists && data.value) {
+        const paymentData = JSON.parse(data.value);
+        if (paymentData.appointmentId === appointmentId) {
+          // Extract code from key (remove "payment_code:" prefix)
+          return key.replace('payment_code:', '');
+        }
+      }
+    }
+
+    return null;
+  }
 }

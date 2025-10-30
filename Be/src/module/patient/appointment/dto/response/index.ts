@@ -53,6 +53,26 @@ export class ServiceDto {
   duration: number;
 }
 
+export class BillingDto {
+  @ApiProperty()
+  id: number;
+
+  @ApiProperty()
+  amount: number;
+
+  @ApiProperty()
+  status: string;
+
+  @ApiProperty()
+  paymentMethod: string | null;
+
+  @ApiProperty()
+  notes: string | null;
+
+  @ApiProperty()
+  createdAt: Date;
+}
+
 export class AppointmentResponseDto {
   @ApiProperty()
   id: number;
@@ -83,6 +103,9 @@ export class AppointmentResponseDto {
 
   @ApiProperty({ type: ServiceDto })
   service: ServiceDto;
+
+  @ApiProperty({ type: BillingDto, required: false })
+  billing?: BillingDto;
 
   @ApiProperty()
   createdAt: Date;

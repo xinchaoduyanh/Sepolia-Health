@@ -171,19 +171,38 @@ export default function AppointmentsListScreen() {
                     </View>
 
                     {/* Action Buttons */}
-                    <View className="mt-3 flex-row space-x-2">
-                      <TouchableOpacity
-                        className="flex-1 items-center rounded-lg border py-2"
-                        style={{ borderColor: '#0284C7' }}>
-                        <Text className="text-sm font-medium" style={{ color: '#0284C7' }}>
-                          Đổi lịch
-                        </Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        className="flex-1 items-center rounded-lg border py-2"
-                        style={{ borderColor: '#EF4444' }}>
-                        <Text className="text-sm font-medium text-red-500">Hủy lịch</Text>
-                      </TouchableOpacity>
+                    <View className="mt-3 space-y-2">
+                      {/* Payment Button - Show only if billing exists and status is PENDING */}
+                      {appointment.billing && appointment.billing.status === 'PENDING' && (
+                        <TouchableOpacity
+                          onPress={() => router.push(`/payment?id=${appointment.id}` as any)}
+                          className="w-full items-center rounded-lg bg-green-600 py-2"
+                          style={{
+                            shadowColor: '#000',
+                            shadowOffset: { width: 0, height: 1 },
+                            shadowOpacity: 0.2,
+                            shadowRadius: 2,
+                            elevation: 2,
+                          }}>
+                          <Text className="text-sm font-medium text-white">Thanh toán</Text>
+                        </TouchableOpacity>
+                      )}
+
+                      {/* Other Action Buttons */}
+                      <View className="flex-row space-x-2">
+                        <TouchableOpacity
+                          className="flex-1 items-center rounded-lg border py-2"
+                          style={{ borderColor: '#0284C7' }}>
+                          <Text className="text-sm font-medium" style={{ color: '#0284C7' }}>
+                            Đổi lịch
+                          </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          className="flex-1 items-center rounded-lg border py-2"
+                          style={{ borderColor: '#EF4444' }}>
+                          <Text className="text-sm font-medium text-red-500">Hủy lịch</Text>
+                        </TouchableOpacity>
+                      </View>
                     </View>
 
                     <Text className="mt-2 text-xs text-gray-400">

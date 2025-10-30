@@ -23,5 +23,9 @@ export default registerAs('app', () => {
     refreshTokenExpiresInSeconds: Number(
       parsed.TOKEN_REFRESH_EXPIRES_IN_SECONDS,
     ),
+    // sepay
+    sepayApiKey: parsed.SEPAY_API_KEY,
+    sepayAccountNumber: parsed.SEPAY_ACCOUNT_NUMBER,
+    sepayBankCode: parsed.SEPAY_BANK_CODE,
   };
 });

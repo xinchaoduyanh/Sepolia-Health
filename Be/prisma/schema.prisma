@@ -36,6 +36,14 @@ enum PaymentMethod {
   OFFLINE
 }
 
+// Transaction status enum for individual transaction states
+enum TransactionStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
 
 enum Gender {
   MALE
@@ -312,13 +320,17 @@ model DoctorService {
 }
 
 model Billing {
-  id            Int      @id @default(autoincrement())
+  id            Int           @id @default(autoincrement())
   amount        Float
-  status        PaymentStatus
+  status        PaymentStatus // Overall status of the billing
   paymentMethod PaymentMethod?
   notes         String?
-  appointmentId Int      @unique
-  appointment   Appointment @relation(fields: [appointmentId], references: [id])
+  appointmentId Int           @unique
+  appointment   Appointment   @relation(fields: [appointmentId], references: [id])
+
+  // One-to-many relationship: One billing can have multiple transactions
+  transactions  Transaction[]
+
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 }
@@ -358,15 +370,42 @@ model Clinic {
 
 /// Giao dịch thanh toán (SEPAY, tiền mặt, ...)
 model Transaction {
-  id          Int      @id @default(autoincrement())
+  id     Int    @id @default(autoincrement())
   amount Float
-  method String // online, cash, card
-  status String // pending, success, failed
 
+  // Use the new TransactionStatus enum for individual transaction status
+  status TransactionStatus @default(PENDING)
+
+  // Keep userId to represent who performed the transaction
+  // (e.g., patient user, or receptionist for offline payments)
   userId Int
   user   User @relation(fields: [userId], references: [id])
 
+  // --- CRITICAL FIELDS ---
+
+  // 1. (CRITICAL) Many-to-one relationship with Billing
+  billingId Int
+  billing   Billing @relation(fields: [billingId], references: [id])
+
+  // 2. Provider information
+  // (e.g., "SEPAY_QR", "CASH", "VNPAY")
+  provider String
+
+  // 3. (CRITICAL) Provider transaction ID
+  // Used for searching when webhook is called
+  providerTransactionId String? @unique
+
+  // 4. (RECOMMENDED) Message from provider
+  providerMessage String?
+
+  // 5. (MANDATORY) Raw webhook data
+  // Extremely important for debugging when errors occur
+  rawWebhookPayload Json?
+
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([billingId]) // Optimize search for transactions of one billing
 }
 
 /// Bài viết do admin tạo (tin tức, bài sức khỏe, ...)

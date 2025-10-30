@@ -79,6 +79,12 @@ export const MESSAGES = {
     GET_SUCCESS: 'Lấy thông tin đơn thuốc thành công',
   },
 
+  // Payment messages
+  PAYMENT: {
+    QR_SCAN_SUCCESS: 'Tạo QR code thanh toán thành công',
+    PAYMENT_PROCESSED_SUCCESS: 'Thanh toán đã được xử lý thành công',
+  },
+
   // Common messages
   COMMON: {
     CREATE_SUCCESS: 'Tạo mới thành công',
@@ -92,4 +98,5 @@ export const MESSAGES = {
 export type MessageKey = keyof typeof MESSAGES;
 export type AuthMessageKey = keyof typeof MESSAGES.AUTH;
 export type UserMessageKey = keyof typeof MESSAGES.USER;
+export type PaymentMessageKey = keyof typeof MESSAGES.PAYMENT;
 export type CommonMessageKey = keyof typeof MESSAGES.COMMON;

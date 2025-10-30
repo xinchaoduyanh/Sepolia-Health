@@ -77,6 +77,16 @@ export class AppointmentService {
             },
           },
           service: true,
+          billing: {
+            select: {
+              id: true,
+              amount: true,
+              status: true,
+              paymentMethod: true,
+              notes: true,
+              createdAt: true,
+            },
+          },
         },
       }),
       this.prisma.appointment.count({ where }),
@@ -115,6 +125,16 @@ export class AppointmentService {
           },
         },
         service: true,
+        billing: {
+          select: {
+            id: true,
+            amount: true,
+            status: true,
+            paymentMethod: true,
+            notes: true,
+            createdAt: true,
+          },
+        },
       },
     });
 
@@ -189,6 +209,16 @@ export class AppointmentService {
           },
         },
         service: true,
+        billing: {
+          select: {
+            id: true,
+            amount: true,
+            status: true,
+            paymentMethod: true,
+            notes: true,
+            createdAt: true,
+          },
+        },
       },
     });
 
@@ -293,6 +323,16 @@ export class AppointmentService {
             },
           },
           service: true,
+          billing: {
+            select: {
+              id: true,
+              amount: true,
+              status: true,
+              paymentMethod: true,
+              notes: true,
+              createdAt: true,
+            },
+          },
         },
       }),
       this.prisma.appointment.count({ where }),
@@ -652,7 +692,28 @@ export class AppointmentService {
       },
     });
 
-    return this.formatAppointmentResponse(appointment);
+    // Create billing for the appointment
+    const billing = await this.prisma.billing.create({
+      data: {
+        amount: doctorService.service.price,
+        status: 'PENDING',
+        appointmentId: appointment.id,
+      },
+      select: {
+        id: true,
+        amount: true,
+        status: true,
+        paymentMethod: true,
+        notes: true,
+        createdAt: true,
+      },
+    });
+
+    // Return appointment with billing included
+    return this.formatAppointmentResponse({
+      ...appointment,
+      billing,
+    });
   }
 
   /**
@@ -697,6 +758,16 @@ export class AppointmentService {
         price: appointment.service.price,
         duration: appointment.service.duration,
       },
+      billing: appointment.billing
+        ? {
+            id: appointment.billing.id,
+            amount: appointment.billing.amount,
+            status: appointment.billing.status,
+            paymentMethod: appointment.billing.paymentMethod,
+            notes: appointment.billing.notes,
+            createdAt: appointment.billing.createdAt.toISOString(),
+          }
+        : undefined,
       createdAt: appointment.createdAt.toISOString(),
       updatedAt: appointment.updatedAt.toISOString(),
     };

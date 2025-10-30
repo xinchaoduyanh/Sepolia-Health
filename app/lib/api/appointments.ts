@@ -5,9 +5,20 @@ import { Facility, Service, DoctorAvailability } from '@/types/doctor';
 import { CreateAppointmentRequest } from '@/types/appointment';
 
 // Types - Matching Backend DTOs
+export interface Billing {
+  id: number;
+  amount: number;
+  status: 'PENDING' | 'PAID' | 'REFUNDED';
+  paymentMethod: string | null;
+  notes: string | null;
+  createdAt: string;
+}
+
 export interface Appointment {
   id: number;
   date: string; // ISO datetime
+  startTime: string;
+  endTime: string;
   status: 'scheduled' | 'completed' | 'cancelled';
   paymentStatus: 'pending' | 'paid' | 'refunded';
   notes: string | null;
@@ -33,6 +44,7 @@ export interface Appointment {
     price: number;
     duration: number;
   };
+  billing?: Billing;
   createdAt: string;
   updatedAt: string;
 }

@@ -12,6 +12,7 @@ import { CustomZodValidationPipe } from '@/common/pipes';
 import { appConfig } from '@/common/config';
 import { JwtAuthGuard, RolesGuard } from '@/common/guards';
 import { AuthModule } from './auth/auth.module';
+import { PaymentModule } from './payment/payment.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { AuthModule } from './auth/auth.module';
     PatientModule,
     AdminModule,
     ReceptionistModule,
+    PaymentModule,
   ],
   controllers: [AppController],
   providers: [
