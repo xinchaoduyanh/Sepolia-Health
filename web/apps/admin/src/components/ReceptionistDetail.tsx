@@ -21,62 +21,80 @@ import {
     Building,
 } from 'lucide-react'
 
-// Mock data for doctor detail
-const mockDoctorDetail = {
+// Mock data for receptionist detail
+const mockReceptionistDetail = {
     id: '1',
-    fullName: 'BS. Nguyễn Văn A',
-    email: 'nguyenvana@vinmec.com',
+    fullName: 'Nguyễn Thị Lễ Tân',
+    email: 'nguyenthiltan@sepolia.com',
     phone: '0123456789',
-    specialty: ['Da liễu', 'Nhi Khoa'],
+    department: 'Lễ tân',
     site: 'Hà Nội',
     cm: 'CM1',
     status: 'active',
     avatar: null,
-    doctorType: 'vinmec',
-    profileId: 'VIN001',
+    receptionistType: 'internal',
+    profileId: 'REC001',
     uid: 'UID001',
-    gender: 'male',
+    gender: 'female',
     joinDate: '2023-01-15',
     lastActive: '2024-01-15',
-    totalPatients: 1250,
+    totalHandled: 1250,
     totalAppointments: 3200,
     rating: 4.8,
-    experience: '15 năm',
-    education: 'Đại học Y Hà Nội',
-    certifications: ['Chứng chỉ chuyên khoa Da liễu', 'Chứng chỉ Nhi khoa'],
+    experience: '3 năm',
+    education: 'Cao đẳng Quản trị kinh doanh',
+    certifications: ['Chứng chỉ Lễ tân', 'Chứng chỉ Phục vụ khách hàng'],
     languages: ['Tiếng Việt', 'Tiếng Anh'],
-    bio: 'Bác sĩ Nguyễn Văn A có hơn 15 năm kinh nghiệm trong lĩnh vực Da liễu và Nhi khoa. Ông đã tham gia nhiều hội thảo y khoa quốc tế và có nhiều công trình nghiên cứu được đăng trên các tạp chí y khoa uy tín.',
+    bio: 'Lễ tân Nguyễn Thị Lễ Tân có hơn 3 năm kinh nghiệm trong lĩnh vực phục vụ khách hàng và quản lý lịch hẹn. Cô luôn nhiệt tình và chuyên nghiệp trong công việc.',
     schedule: [
-        { day: 'Thứ 2', time: '08:00 - 17:00', location: 'Phòng khám A1' },
-        { day: 'Thứ 3', time: '08:00 - 17:00', location: 'Phòng khám A1' },
-        { day: 'Thứ 4', time: '08:00 - 17:00', location: 'Phòng khám A1' },
-        { day: 'Thứ 5', time: '08:00 - 17:00', location: 'Phòng khám A1' },
-        { day: 'Thứ 6', time: '08:00 - 12:00', location: 'Phòng khám A1' },
+        { day: 'Thứ 2', time: '08:00 - 17:00', location: 'Bàn lễ tân A1' },
+        { day: 'Thứ 3', time: '08:00 - 17:00', location: 'Bàn lễ tân A1' },
+        { day: 'Thứ 4', time: '08:00 - 17:00', location: 'Bàn lễ tân A1' },
+        { day: 'Thứ 5', time: '08:00 - 17:00', location: 'Bàn lễ tân A1' },
+        { day: 'Thứ 6', time: '08:00 - 12:00', location: 'Bàn lễ tân A1' },
     ],
-    recentAppointments: [
-        { id: '1', patient: 'Nguyễn Thị B', date: '2024-01-15', time: '09:00', status: 'completed' },
-        { id: '2', patient: 'Trần Văn C', date: '2024-01-15', time: '10:30', status: 'completed' },
-        { id: '3', patient: 'Lê Thị D', date: '2024-01-16', time: '14:00', status: 'scheduled' },
+    recentActivities: [
+        {
+            id: '1',
+            action: 'Đặt lịch hẹn cho bệnh nhân Nguyễn Thị B',
+            date: '2024-01-15',
+            time: '09:00',
+            status: 'completed',
+        },
+        {
+            id: '2',
+            action: 'Xử lý yêu cầu của bệnh nhân Trần Văn C',
+            date: '2024-01-15',
+            time: '10:30',
+            status: 'completed',
+        },
+        {
+            id: '3',
+            action: 'Đặt lịch hẹn cho bệnh nhân Lê Thị D',
+            date: '2024-01-16',
+            time: '14:00',
+            status: 'scheduled',
+        },
     ],
 }
 
-interface DoctorDetailData {
+interface ReceptionistDetailData {
     id: string
     fullName: string
     email: string
     phone: string
-    specialty: string[]
+    department: string
     site: string
     cm: string
     status: string
     avatar: string | null
-    doctorType: string
+    receptionistType: string
     profileId: string
     uid: string
     gender: string
     joinDate: string
     lastActive: string | undefined
-    totalPatients: number
+    totalHandled: number
     totalAppointments: number
     rating: number
     experience: string
@@ -89,30 +107,30 @@ interface DoctorDetailData {
         time: string
         location: string
     }>
-    recentAppointments: Array<{
+    recentActivities: Array<{
         id: string
-        patient: string
+        action: string
         date: string
         time: string
         status: string
     }>
 }
 
-interface DoctorDetailProps {
-    doctorId: string
+interface ReceptionistDetailProps {
+    receptionistId: string
     onBack: () => void
-    onEdit: (doctorId: string) => void
-    data?: DoctorDetailData
+    onEdit: (receptionistId: string) => void
+    data?: ReceptionistDetailData
 }
 
-export function DoctorDetail({ doctorId: _doctorId, onBack, onEdit, data }: DoctorDetailProps) {
+export function ReceptionistDetail({ receptionistId: _receptionistId, onBack, onEdit, data }: ReceptionistDetailProps) {
     const [activeTab, setActiveTab] = useState('overview')
-    const doctor = data || mockDoctorDetail // Use provided data or fallback to mock
+    const receptionist = data || mockReceptionistDetail // Use provided data or fallback to mock
 
     const tabItems = [
         { id: 'overview', label: 'Tổng quan' },
         { id: 'schedule', label: 'Lịch làm việc' },
-        { id: 'appointments', label: 'Lịch hẹn' },
+        { id: 'activities', label: 'Hoạt động' },
         { id: 'documents', label: 'Tài liệu' },
     ]
 
@@ -122,14 +140,14 @@ export function DoctorDetail({ doctorId: _doctorId, onBack, onEdit, data }: Doct
             <Card className="p-6">
                 <div className="flex items-start space-x-6">
                     <Avatar className="w-24 h-24">
-                        <AvatarImage src={doctor.avatar || undefined} alt={doctor.fullName} />
-                        <AvatarFallback>{doctor.fullName.charAt(0)}</AvatarFallback>
+                        <AvatarImage src={receptionist.avatar || undefined} alt={receptionist.fullName} />
+                        <AvatarFallback>{receptionist.fullName.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
                         <div className="flex items-center justify-between mb-4">
                             <div>
-                                <h3 className="text-2xl font-bold text-foreground">{doctor.fullName}</h3>
-                                <p className="text-slate-600 dark:text-slate-400">{doctor.specialty.join(', ')}</p>
+                                <h3 className="text-2xl font-bold text-foreground">{receptionist.fullName}</h3>
+                                <p className="text-slate-600 dark:text-slate-400">{receptionist.department}</p>
                             </div>
                             <div className="flex space-x-2">
                                 <Button variant="outline" size="sm">
@@ -149,19 +167,19 @@ export function DoctorDetail({ doctorId: _doctorId, onBack, onEdit, data }: Doct
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                             <div className="flex items-center space-x-2">
                                 <Phone className="h-4 w-4 text-slate-500" />
-                                <span className="text-sm">{doctor.phone}</span>
+                                <span className="text-sm">{receptionist.phone}</span>
                             </div>
                             <div className="flex items-center space-x-2">
                                 <Mail className="h-4 w-4 text-slate-500" />
-                                <span className="text-sm">{doctor.email}</span>
+                                <span className="text-sm">{receptionist.email}</span>
                             </div>
                             <div className="flex items-center space-x-2">
                                 <MapPin className="h-4 w-4 text-slate-500" />
-                                <span className="text-sm">{doctor.site}</span>
+                                <span className="text-sm">{receptionist.site}</span>
                             </div>
                             <div className="flex items-center space-x-2">
                                 <Building className="h-4 w-4 text-slate-500" />
-                                <span className="text-sm">{doctor.cm}</span>
+                                <span className="text-sm">{receptionist.cm}</span>
                             </div>
                         </div>
                     </div>
@@ -171,19 +189,19 @@ export function DoctorDetail({ doctorId: _doctorId, onBack, onEdit, data }: Doct
             {/* Stats */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <Card className="p-4">
-                    <div className="text-2xl font-bold text-blue-600">{doctor.totalPatients}</div>
-                    <div className="text-sm text-muted-foreground">Bệnh nhân</div>
+                    <div className="text-2xl font-bold text-blue-600">{receptionist.totalHandled}</div>
+                    <div className="text-sm text-muted-foreground">Đã xử lý</div>
                 </Card>
                 <Card className="p-4">
-                    <div className="text-2xl font-bold text-green-600">{doctor.totalAppointments}</div>
-                    <div className="text-sm text-muted-foreground">Cuộc hẹn</div>
+                    <div className="text-2xl font-bold text-green-600">{receptionist.totalAppointments}</div>
+                    <div className="text-sm text-muted-foreground">Lịch hẹn</div>
                 </Card>
                 <Card className="p-4">
-                    <div className="text-2xl font-bold text-yellow-600">{doctor.rating}</div>
+                    <div className="text-2xl font-bold text-yellow-600">{receptionist.rating}</div>
                     <div className="text-sm text-muted-foreground">Đánh giá</div>
                 </Card>
                 <Card className="p-4">
-                    <div className="text-2xl font-bold text-purple-600">{doctor.experience}</div>
+                    <div className="text-2xl font-bold text-purple-600">{receptionist.experience}</div>
                     <div className="text-sm text-muted-foreground">Kinh nghiệm</div>
                 </Card>
             </div>
@@ -191,7 +209,7 @@ export function DoctorDetail({ doctorId: _doctorId, onBack, onEdit, data }: Doct
             {/* Bio */}
             <Card className="p-6">
                 <h4 className="text-lg font-semibold text-foreground mb-4">Giới thiệu</h4>
-                <p className="text-slate-700 dark:text-slate-300 leading-relaxed">{doctor.bio}</p>
+                <p className="text-slate-700 dark:text-slate-300 leading-relaxed">{receptionist.bio}</p>
             </Card>
 
             {/* Education & Certifications */}
@@ -201,14 +219,14 @@ export function DoctorDetail({ doctorId: _doctorId, onBack, onEdit, data }: Doct
                     <div className="space-y-2">
                         <div className="flex items-center space-x-2">
                             <User className="h-4 w-4 text-slate-500" />
-                            <span className="text-sm">{doctor.education}</span>
+                            <span className="text-sm">{receptionist.education}</span>
                         </div>
                     </div>
                 </Card>
                 <Card className="p-6">
                     <h4 className="text-lg font-semibold text-foreground mb-4">Chứng chỉ</h4>
                     <div className="space-y-2">
-                        {doctor.certifications.map((cert, index) => (
+                        {receptionist.certifications.map((cert, index) => (
                             <div key={index} className="flex items-center space-x-2">
                                 <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                                 <span className="text-sm">{cert}</span>
@@ -225,7 +243,7 @@ export function DoctorDetail({ doctorId: _doctorId, onBack, onEdit, data }: Doct
             <Card className="p-6">
                 <h4 className="text-lg font-semibold text-foreground mb-4">Lịch làm việc</h4>
                 <div className="space-y-3">
-                    {doctor.schedule.map((schedule, index) => (
+                    {receptionist.schedule.map((schedule, index) => (
                         <div
                             key={index}
                             className="flex items-center justify-between p-4 border border-border rounded-lg"
@@ -248,24 +266,24 @@ export function DoctorDetail({ doctorId: _doctorId, onBack, onEdit, data }: Doct
         </div>
     )
 
-    const renderAppointments = () => (
+    const renderActivities = () => (
         <div className="space-y-6">
             <Card className="p-6">
-                <h4 className="text-lg font-semibold text-foreground mb-4">Lịch hẹn gần đây</h4>
+                <h4 className="text-lg font-semibold text-foreground mb-4">Hoạt động gần đây</h4>
                 <div className="space-y-3">
-                    {doctor.recentAppointments.map(appointment => (
+                    {receptionist.recentActivities.map(activity => (
                         <div
-                            key={appointment.id}
+                            key={activity.id}
                             className="flex items-center justify-between p-4 border border-border rounded-lg"
                         >
                             <div>
-                                <div className="font-medium">{appointment.patient}</div>
+                                <div className="font-medium">{activity.action}</div>
                                 <div className="text-sm text-slate-500">
-                                    {appointment.date} - {appointment.time}
+                                    {activity.date} - {activity.time}
                                 </div>
                             </div>
-                            <Badge variant={appointment.status === 'completed' ? 'default' : 'secondary'}>
-                                {appointment.status === 'completed' ? 'Hoàn thành' : 'Đã lên lịch'}
+                            <Badge variant={activity.status === 'completed' ? 'default' : 'secondary'}>
+                                {activity.status === 'completed' ? 'Hoàn thành' : 'Đã lên lịch'}
                             </Badge>
                         </div>
                     ))}
@@ -295,13 +313,13 @@ export function DoctorDetail({ doctorId: _doctorId, onBack, onEdit, data }: Doct
                         <span>Quay lại</span>
                     </Button>
                     <div>
-                        <h2 className="text-2xl font-bold text-foreground">Hồ sơ chi tiết bác sĩ</h2>
+                        <h2 className="text-2xl font-bold text-foreground">Hồ sơ chi tiết lễ tân</h2>
                         <p className="text-sm text-muted-foreground mt-1">
-                            Thông tin chi tiết và lịch sử hoạt động của bác sĩ
+                            Thông tin chi tiết và lịch sử hoạt động của lễ tân
                         </p>
                     </div>
                 </div>
-                <Button onClick={() => onEdit(doctor.id)} className="flex items-center space-x-2">
+                <Button onClick={() => onEdit(receptionist.id)} className="flex items-center space-x-2">
                     <Edit className="h-4 w-4" />
                     <span>Chỉnh sửa</span>
                 </Button>
@@ -309,11 +327,11 @@ export function DoctorDetail({ doctorId: _doctorId, onBack, onEdit, data }: Doct
 
             {/* Status Badge */}
             <div className="flex items-center space-x-4">
-                <Badge variant={doctor.status === 'active' ? 'default' : 'secondary'}>
-                    {doctor.status === 'active' ? 'Hoạt động' : 'Không hoạt động'}
+                <Badge variant={receptionist.status === 'active' ? 'default' : 'secondary'}>
+                    {receptionist.status === 'active' ? 'Hoạt động' : 'Không hoạt động'}
                 </Badge>
-                <Badge variant={doctor.doctorType === 'vinmec' ? 'default' : 'outline'}>
-                    {doctor.doctorType === 'vinmec' ? 'Bác sĩ Vinmec' : 'Bác sĩ ngoài Vinmec'}
+                <Badge variant={receptionist.receptionistType === 'internal' ? 'default' : 'outline'}>
+                    {receptionist.receptionistType === 'internal' ? 'Lễ tân nội bộ' : 'Lễ tân ngoài'}
                 </Badge>
             </div>
 
@@ -328,7 +346,7 @@ export function DoctorDetail({ doctorId: _doctorId, onBack, onEdit, data }: Doct
                 </TabList>
                 <TabPanel id="overview">{renderOverview()}</TabPanel>
                 <TabPanel id="schedule">{renderSchedule()}</TabPanel>
-                <TabPanel id="appointments">{renderAppointments()}</TabPanel>
+                <TabPanel id="activities">{renderActivities()}</TabPanel>
                 <TabPanel id="documents">{renderDocuments()}</TabPanel>
             </Tabs>
         </div>

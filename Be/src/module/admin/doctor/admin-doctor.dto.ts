@@ -283,12 +283,37 @@ export class DoctorDetailResponseDto {
   fullName: string;
 
   @ApiProperty({
-    description: 'Danh sách chuyên khoa',
-    example: ['Tim mạch', 'Nội tổng quát'],
+    description: 'Danh sách dịch vụ chi tiết',
+    example: [
+      { id: 1, name: 'Khám tim mạch', price: 500000, duration: 30 },
+      { id: 2, name: 'Siêu âm tim mạch', price: 800000, duration: 45 },
+    ],
     isArray: true,
-    type: String,
   })
-  services: string[];
+  services: Array<{
+    id: number;
+    name: string;
+    price: number;
+    duration: number;
+    description?: string;
+  }>;
+
+  @ApiProperty({
+    description: 'Thống kê lịch hẹn',
+    example: {
+      total: 150,
+      completed: 120,
+      cancelled: 15,
+      upcoming: 15,
+    },
+  })
+  appointmentStats: {
+    total: number;
+    completed: number;
+    cancelled: number;
+    upcoming: number;
+    onGoing: number;
+  };
 
   @ApiProperty({
     description: 'Số năm kinh nghiệm',
@@ -319,6 +344,13 @@ export class DoctorDetailResponseDto {
     example: 'ACTIVE',
   })
   status: string;
+
+  @ApiProperty({
+    description: 'Thông tin cơ sở',
+    example: { id: 1, name: 'Phòng khám Sepolia' },
+    required: false,
+  })
+  clinic?: { id: number; name: string } | null;
 
   @ApiProperty({
     description: 'Ngày tạo',

@@ -245,13 +245,28 @@ export class AdminDoctorService {
       where: { id, deletedAt: null },
       include: {
         user: true,
+        clinic: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
         services: {
           include: {
             service: {
               select: {
+                id: true,
                 name: true,
+                price: true,
+                duration: true,
+                description: true,
               },
             },
+          },
+        },
+        appointments: {
+          select: {
+            status: true,
           },
         },
       },
@@ -261,15 +276,42 @@ export class AdminDoctorService {
       throw new NotFoundException('Không tìm thấy bác sĩ');
     }
 
+    // Tính toán thống kê appointments
+    const appointmentStats = {
+      total: doctor.appointments.length,
+      completed: doctor.appointments.filter((a) => a.status === 'COMPLETED')
+        .length,
+      cancelled: doctor.appointments.filter((a) => a.status === 'CANCELLED')
+        .length,
+      upcoming: doctor.appointments.filter((a) => a.status === 'UPCOMING')
+        .length,
+      onGoing: doctor.appointments.filter((a) => a.status === 'ON_GOING')
+        .length,
+    };
+
     return {
       id: doctor.id,
       email: doctor.user.email,
       fullName: `${doctor.firstName} ${doctor.lastName}`,
       phone: doctor.user.phone || '',
-      services: doctor.services.map((s) => s.service.name),
+      services: doctor.services.map((s) => ({
+        id: s.service.id,
+        name: s.service.name,
+        price: s.service.price,
+        duration: s.service.duration,
+        description: s.service.description || undefined,
+      })),
+      appointmentStats,
       experienceYears: parseInt(doctor.experience || '0'),
       description: doctor.contactInfo || undefined,
       address: doctor.contactInfo || '',
+      status: doctor.user.status,
+      clinic: doctor.clinic
+        ? {
+            id: doctor.clinic.id,
+            name: doctor.clinic.name,
+          }
+        : null,
       createdAt: doctor.createdAt,
       updatedAt: doctor.updatedAt,
     } as DoctorDetailResponseDto;

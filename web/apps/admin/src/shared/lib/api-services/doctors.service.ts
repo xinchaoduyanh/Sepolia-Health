@@ -6,9 +6,24 @@ export interface Doctor {
     fullName: string
     email: string
     phone: string
-    services: string[] // Array of specialties/services
+    services: Array<{
+        id: number
+        name: string
+        price: number
+        duration: number
+        description?: string
+    }>
+    appointmentStats: {
+        total: number
+        completed: number
+        cancelled: number
+        upcoming: number
+        onGoing: number
+    }
     experienceYears: number // Year started practicing (e.g., 2006)
     status: string
+    description?: string
+    address?: string
     clinic?: { id: number; name: string } | null
     createdAt: string
 }
@@ -58,14 +73,13 @@ export interface CreateDoctorRequest {
     password: string
     fullName: string
     phone: string
-    specialty: string
     experienceYears: number
     description?: string
     address?: string
     clinicId: number
     serviceIds: number[]
     availabilities?: Array<{
-        dayOfWeek: 'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY' | 'SATURDAY' | 'SUNDAY'
+        dayOfWeek: number // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
         startTime: string
         endTime: string
     }>

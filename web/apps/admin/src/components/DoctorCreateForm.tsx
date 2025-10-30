@@ -14,7 +14,7 @@ interface DoctorProfileForm {
     dateOfBirth?: string
     gender: 'MALE' | 'FEMALE' | 'OTHER'
     avatar?: string
-    experience: string
+    experienceYear: number // Năm bắt đầu hành nghề (1950-2025)
     contactInfo: string
     clinicId: number
     serviceIds: number[]
@@ -53,9 +53,9 @@ export function DoctorCreateForm() {
         dateOfBirth: '',
         gender: 'MALE',
         avatar: '',
-        experience: '',
+        experienceYear: 2025, // Default to current year
         contactInfo: '',
-        clinicId: 0,
+        clinicId: -1, // Use -1 to indicate no selection
         serviceIds: [],
         description: '',
         address: '',
@@ -70,16 +70,17 @@ export function DoctorCreateForm() {
     >([])
 
     // Helper functions
-    const isAccountValid = accountInfo.email && accountInfo.password && accountInfo.phone
+    const isAccountValid = accountInfo.email.trim() && accountInfo.password.trim() && accountInfo.phone.trim()
     const isProfileValid =
-        doctorProfile.firstName &&
-        doctorProfile.lastName &&
-        doctorProfile.contactInfo &&
-        doctorProfile.experience &&
+        doctorProfile.firstName.trim() &&
+        doctorProfile.lastName.trim() &&
+        doctorProfile.contactInfo.trim() &&
+        doctorProfile.experienceYear >= 1950 &&
+        doctorProfile.experienceYear <= 2025 &&
         doctorProfile.clinicId > 0 &&
         doctorProfile.serviceIds.length > 0
 
-    const canSubmit = isAccountValid && isProfileValid && !createDoctor.isPending
+    const canSubmit = isAccountValid && isProfileValid
 
     const handleAccountChange = (field: 'email' | 'password' | 'phone', value: string) => {
         setAccountInfo(prev => ({ ...prev, [field]: value }))
@@ -90,7 +91,11 @@ export function DoctorCreateForm() {
     }
 
     const handleProfileChange = (field: keyof DoctorProfileForm, value: string | number | number[]) => {
-        setDoctorProfile(prev => ({ ...prev, [field]: value }))
+        if (field === 'experienceYear') {
+            setDoctorProfile(prev => ({ ...prev, [field]: Number(value) }))
+        } else {
+            setDoctorProfile(prev => ({ ...prev, [field]: value }))
+        }
     }
 
     const handleServiceToggle = (serviceId: number) => {
@@ -103,7 +108,9 @@ export function DoctorCreateForm() {
     }
 
     const addAvailability = () => {
-        setAvailabilities(prev => [...prev, { dayOfWeek: 1, startTime: '08:00', endTime: '17:00' }])
+        // Default to the same day as the last availability, or Monday if none exist
+        const lastDay = availabilities.length > 0 ? (availabilities[availabilities.length - 1]?.dayOfWeek ?? 1) : 1
+        setAvailabilities(prev => [...prev, { dayOfWeek: lastDay, startTime: '08:00', endTime: '17:00' }])
     }
 
     const updateAvailability = (index: number, field: keyof (typeof availabilities)[0], value: string | number) => {
@@ -128,15 +135,14 @@ export function DoctorCreateForm() {
             password: accountInfo.password,
             phone: accountInfo.phone,
             fullName: `${doctorProfile.firstName} ${doctorProfile.lastName}`.trim(),
-            specialty: '', // Will be populated from services on backend
-            experienceYears: parseInt(doctorProfile.experience) || 0,
+            experienceYears: 2025 - doctorProfile.experienceYear,
             description: doctorProfile.description || undefined,
             address: doctorProfile.address || undefined,
             clinicId: doctorProfile.clinicId,
             serviceIds: doctorProfile.serviceIds,
             ...(availabilities.length > 0 && {
                 availabilities: availabilities.map(avail => ({
-                    dayOfWeek: getDayOfWeekEnum(avail.dayOfWeek),
+                    dayOfWeek: avail.dayOfWeek,
                     startTime: avail.startTime,
                     endTime: avail.endTime,
                 })),
@@ -173,6 +179,12 @@ export function DoctorCreateForm() {
         { value: 'OTHER', label: 'Khác' },
     ]
 
+    // Generate years from 1950 to 2025
+    const experienceYearOptions = Array.from({ length: 2025 - 1950 + 1 }, (_, i) => ({
+        value: 2025 - i,
+        label: `${2025 - i}`,
+    }))
+
     const dayOfWeekOptions = [
         { value: 0, label: 'Chủ nhật', enumValue: 'SUNDAY' },
         { value: 1, label: 'Thứ 2', enumValue: 'MONDAY' },
@@ -182,13 +194,6 @@ export function DoctorCreateForm() {
         { value: 5, label: 'Thứ 6', enumValue: 'FRIDAY' },
         { value: 6, label: 'Thứ 7', enumValue: 'SATURDAY' },
     ]
-
-    const getDayOfWeekEnum = (
-        value: number,
-    ): 'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY' | 'SATURDAY' | 'SUNDAY' => {
-        const option = dayOfWeekOptions.find(opt => opt.value === value)
-        return (option?.enumValue || 'MONDAY') as any
-    }
 
     const inputClassName =
         'w-full px-3 py-2 bg-background text-foreground border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-transparent transition-colors'
@@ -376,19 +381,22 @@ export function DoctorCreateForm() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <label htmlFor="experience" className="block text-sm font-medium text-foreground">
-                                Số năm kinh nghiệm *
+                            <label htmlFor="experienceYear" className="block text-sm font-medium text-foreground">
+                                Năm bắt đầu hành nghề *
                             </label>
-                            <input
-                                id="experience"
-                                type="number"
-                                min="0"
-                                value={doctorProfile.experience}
-                                onChange={e => handleProfileChange('experience', e.target.value)}
-                                placeholder="5"
+                            <select
+                                id="experienceYear"
+                                value={doctorProfile.experienceYear}
+                                onChange={e => handleProfileChange('experienceYear', e.target.value)}
                                 className={inputClassName}
                                 required
-                            />
+                            >
+                                {experienceYearOptions.map(option => (
+                                    <option key={option.value} value={option.value}>
+                                        {option.label} ({2025 - option.value} năm kinh nghiệm)
+                                    </option>
+                                ))}
+                            </select>
                         </div>
                     </div>
 
@@ -426,7 +434,7 @@ export function DoctorCreateForm() {
                                 className={inputClassName}
                                 required
                             >
-                                <option value={0}>Chọn cơ sở phòng khám</option>
+                                <option value={-1}>Chọn cơ sở phòng khám</option>
                                 {clinics.map(clinic => (
                                     <option key={clinic.id} value={clinic.id}>
                                         {clinic.name}
