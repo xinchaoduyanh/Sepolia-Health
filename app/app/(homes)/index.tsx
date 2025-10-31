@@ -3,6 +3,7 @@
 import { View, Text, TouchableOpacity, ScrollView, StatusBar, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
 import { useAuth } from '@/lib/hooks/useAuth';
 import Svg, { Path } from 'react-native-svg';
 
@@ -344,7 +345,9 @@ export default function HomeScreen() {
             }}>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
               <View style={{ width: '22%', alignItems: 'center' }}>
-                <TouchableOpacity style={{ alignItems: 'center' }}>
+                <TouchableOpacity
+                  style={{ alignItems: 'center' }}
+                  onPress={() => router.push('/(homes)/(appointment)/create')}>
                   <View
                     style={{
                       height: 56,

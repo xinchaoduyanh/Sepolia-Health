@@ -73,7 +73,7 @@ export interface UpdateAppointmentRequest {
   startTime?: string;
   endTime?: string;
   status?: 'UPCOMING' | 'ON_GOING' | 'COMPLETED' | 'CANCELLED';
-  paymentStatus?: 'PENDING' | 'PAID' | 'REFUNDED';
+  paymentStatus?: 'pending' | 'paid' | 'refunded';
   notes?: string;
 }
 

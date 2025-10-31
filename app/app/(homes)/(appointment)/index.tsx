@@ -54,6 +54,12 @@ export default function AppointmentsListScreen() {
     });
   };
 
+  const formatTimeRange = (startTime: string, endTime: string) => {
+    const start = formatTime(startTime);
+    const end = formatTime(endTime);
+    return `${start} - ${end}`;
+  };
+
   const getStatusInfo = (
     status: AppointmentStatus,
     paymentStatus: PaymentStatus,
@@ -165,7 +171,7 @@ export default function AppointmentsListScreen() {
               Lịch hẹn của tôi
             </Text>
             <TouchableOpacity
-              onPress={() => router.push('/(homes)/(appointment)/service-selection')}
+              onPress={() => router.push('/(homes)/(appointment)/create')}
               style={{
                 flexDirection: 'row',
                 alignItems: 'center',
@@ -209,7 +215,7 @@ export default function AppointmentsListScreen() {
                 Hãy đặt lịch khám để bắt đầu chăm sóc sức khỏe
               </Text>
               <TouchableOpacity
-                onPress={() => router.push('/create')}
+                onPress={() => router.push('/(homes)/(appointment)/create')}
                 className="mt-6 flex-row items-center rounded-lg px-6 py-3"
                 style={{ backgroundColor: '#0284C7' }}>
                 <Ionicons name="add-circle-outline" size={20} color="white" />
@@ -219,7 +225,7 @@ export default function AppointmentsListScreen() {
           ) : (
             appointments.map((appointment) => {
               const { day, month, year } = formatDate(appointment.date);
-              const time = formatTime(appointment.startTime);
+              const timeRange = formatTimeRange(appointment.startTime, appointment.endTime);
               const statusInfo = getStatusInfo(
                 appointment.status as AppointmentStatus,
                 appointment.paymentStatus as PaymentStatus,
@@ -272,7 +278,7 @@ export default function AppointmentsListScreen() {
                       <View className="mb-2">
                         <View className="self-start rounded-full bg-blue-50 px-3 py-1">
                           <Text className="text-xs font-medium text-blue-600">
-                            {appointment.patientProfile?.relationship || 'Bản thân'}
+                            {(appointment as any).patientProfile?.relationship || 'Bản thân'}
                           </Text>
                         </View>
                       </View>
@@ -289,7 +295,7 @@ export default function AppointmentsListScreen() {
 
                       <View className="mt-2 flex-row items-center">
                         <Ionicons name="time-outline" size={16} color="#6B7280" />
-                        <Text className="ml-1 text-sm text-gray-600">{time}</Text>
+                        <Text className="ml-1 text-sm text-gray-600">{timeRange}</Text>
                       </View>
 
                       <View className="mt-2">

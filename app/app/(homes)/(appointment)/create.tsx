@@ -296,9 +296,9 @@ export default function AppointmentScreen() {
       <StatusBar barStyle="dark-content" backgroundColor="#E0F2FE" />
 
       {/* Header */}
-      <View className="flex-row items-center justify-end px-4 py-3">
+      <View className="flex-row items-center px-4 py-3">
         <TouchableOpacity onPress={handleBackToAppointments}>
-          <Ionicons name="calendar-outline" size={24} color="#0284C7" />
+          <Ionicons name="arrow-back" size={24} color="#0284C7" />
         </TouchableOpacity>
       </View>
 

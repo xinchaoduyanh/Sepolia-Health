@@ -217,8 +217,8 @@ const ProfileScreen = () => {
               <TouchableOpacity
                 style={{
                   position: 'absolute',
-                  bottom: 8,
-                  right: -8,
+                  bottom: 38,
+                  right: 8,
                   height: 32,
                   width: 32,
                   borderRadius: 16,
@@ -249,10 +249,10 @@ const ProfileScreen = () => {
                     ? `${user.firstName} ${user.lastName}`
                     : 'Người dùng'}
               </Text>
-              <Text style={{ fontSize: 14, color: 'rgba(255,255,255,0.9)', lineHeight: 20 }}>
+              {/* <Text style={{ fontSize: 14, color: 'rgba(255,255,255,0.9)', lineHeight: 20 }}>
                 {primaryProfile?.phone || user?.phone || 'Chưa cập nhật'} •{' '}
                 {user?.email || 'Chưa cập nhật'}
-              </Text>
+              </Text> */}
             </View>
           </View>
         </View>
@@ -260,7 +260,7 @@ const ProfileScreen = () => {
         {/* Main Content Area */}
         <View style={{ paddingHorizontal: 24, marginTop: -150, marginBottom: 24 }}>
           {/* Thông tin chung Section */}
-          <View className="mb-6">
+          <View className="mb-6 mt-20">
             <Text className="mb-4 text-lg font-bold text-slate-900">Thông tin chung </Text>
             <View className="overflow-hidden rounded-xl bg-white shadow-sm">
               <TouchableOpacity

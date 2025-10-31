@@ -6,6 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path } from 'react-native-svg';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { PatientProfile } from '@/types/auth';
+
 export default function AccountScreen() {
   const { user, logout } = useAuth();
   // Lấy patientProfiles từ user data
@@ -142,408 +143,163 @@ export default function AccountScreen() {
                     ? `${user.firstName} ${user.lastName}`
                     : 'Người dùng'}
               </Text>
-              <Text style={{ fontSize: 14, color: 'rgba(255,255,255,0.9)', lineHeight: 20 }}>
+              {/* <Text style={{ fontSize: 14, color: 'rgba(255,255,255,0.9)', lineHeight: 20 }}>
                 {primaryProfile?.phone || user?.phone || 'Chưa cập nhật'} •{' '}
                 {user?.email || 'Chưa cập nhật'}
-              </Text>
+              </Text> */}
             </View>
           </View>
         </View>
 
         {/* Main Content Area */}
-        <View style={{ paddingHorizontal: 24, marginTop: -150, marginBottom: 24 }}>
+        <View style={{ paddingHorizontal: 24, marginTop: -80, marginBottom: 24 }}>
           {/* Quản lý yêu cầu và ưu đãi */}
-          <View style={{ marginBottom: 24 }}>
-            <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#0F172A', marginBottom: 16 }}>
-              Quản lý yêu cầu và ưu đãi
-            </Text>
-            <View
-              style={{
-                backgroundColor: '#FFFFFF',
-                borderRadius: 16,
-                overflow: 'hidden',
-                shadowColor: '#0284C7',
-                shadowOpacity: 0.1,
-                shadowRadius: 8,
-                elevation: 3,
-              }}>
-              <TouchableOpacity
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  padding: 16,
-                  borderBottomWidth: 1,
-                  borderBottomColor: '#E0F2FE',
-                }}>
-                <View
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 8,
-                    backgroundColor: '#E0F2FE',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 16,
-                  }}>
+          <View className="mb-6">
+            <Text className="mb-4 text-lg font-bold text-slate-900">Quản lý yêu cầu và ưu đãi</Text>
+            <View className="overflow-hidden rounded-2xl bg-white shadow-lg shadow-sky-600/10">
+              <TouchableOpacity className="flex-row items-center border-b border-sky-50 p-4">
+                <View className="mr-4 h-10 w-10 items-center justify-center rounded-lg bg-sky-50">
                   <Ionicons name="cube-outline" size={20} color="#0284C7" />
                 </View>
-                <Text style={{ flex: 1, fontSize: 16, fontWeight: '500', color: '#0F172A' }}>
+                <Text className="flex-1 text-base font-medium text-slate-900">
                   Yêu cầu giao thuốc
                 </Text>
                 <Ionicons name="chevron-forward" size={18} color="#06B6D4" />
               </TouchableOpacity>
 
-              <TouchableOpacity
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  padding: 16,
-                  borderBottomWidth: 1,
-                  borderBottomColor: '#E0F2FE',
-                }}>
-                <View
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 8,
-                    backgroundColor: '#A7F3D0',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 16,
-                  }}>
+              <TouchableOpacity className="flex-row items-center border-b border-sky-50 p-4">
+                <View className="mr-4 h-10 w-10 items-center justify-center rounded-lg bg-green-100">
                   <Ionicons name="chatbubbles-outline" size={20} color="#10B981" />
                 </View>
-                <Text style={{ flex: 1, fontSize: 16, fontWeight: '500', color: '#0F172A' }}>
+                <Text className="flex-1 text-base font-medium text-slate-900">
                   Yêu cầu hỗ trợ CSKH
                 </Text>
                 <Ionicons name="chevron-forward" size={18} color="#06B6D4" />
               </TouchableOpacity>
 
-              <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', padding: 16 }}>
-                <View
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 8,
-                    backgroundColor: '#E0F2FE',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 16,
-                  }}>
+              <TouchableOpacity className="flex-row items-center p-4">
+                <View className="mr-4 h-10 w-10 items-center justify-center rounded-lg bg-sky-50">
                   <Ionicons name="ticket-outline" size={20} color="#0284C7" />
                 </View>
-                <Text style={{ flex: 1, fontSize: 16, fontWeight: '500', color: '#0F172A' }}>
-                  Ưu đãi của tôi
-                </Text>
+                <Text className="flex-1 text-base font-medium text-slate-900">Ưu đãi của tôi</Text>
                 <Ionicons name="chevron-forward" size={18} color="#06B6D4" />
               </TouchableOpacity>
             </View>
           </View>
 
           {/* Cài đặt */}
-          <View style={{ marginBottom: 24 }}>
-            <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#0F172A', marginBottom: 16 }}>
-              Cài đặt
-            </Text>
-            <View
-              style={{
-                backgroundColor: '#FFFFFF',
-                borderRadius: 16,
-                overflow: 'hidden',
-                shadowColor: '#0284C7',
-                shadowOpacity: 0.1,
-                shadowRadius: 8,
-                elevation: 3,
-              }}>
-              <TouchableOpacity
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  padding: 16,
-                  borderBottomWidth: 1,
-                  borderBottomColor: '#E0F2FE',
-                }}>
-                <View
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 8,
-                    backgroundColor: '#A7F3D0',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 16,
-                  }}>
+          <View className="mb-6">
+            <Text className="mb-4 text-lg font-bold text-slate-900">Cài đặt</Text>
+            <View className="overflow-hidden rounded-2xl bg-white shadow-lg shadow-sky-600/10">
+              <TouchableOpacity className="flex-row items-center border-b border-sky-50 p-4">
+                <View className="mr-4 h-10 w-10 items-center justify-center rounded-lg bg-green-100">
                   <Ionicons name="lock-closed-outline" size={20} color="#10B981" />
                 </View>
-                <Text style={{ flex: 1, fontSize: 16, fontWeight: '500', color: '#0F172A' }}>
-                  Đổi mật khẩu
-                </Text>
+                <Text className="flex-1 text-base font-medium text-slate-900">Đổi mật khẩu</Text>
                 <Ionicons name="chevron-forward" size={18} color="#06B6D4" />
               </TouchableOpacity>
 
-              <TouchableOpacity
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  padding: 16,
-                  borderBottomWidth: 1,
-                  borderBottomColor: '#E0F2FE',
-                }}>
-                <View
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 8,
-                    backgroundColor: '#E0F2FE',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 16,
-                  }}>
+              <TouchableOpacity className="flex-row items-center border-b border-sky-50 p-4">
+                <View className="mr-4 h-10 w-10 items-center justify-center rounded-lg bg-sky-50">
                   <Ionicons name="globe-outline" size={20} color="#0284C7" />
                 </View>
-                <Text style={{ flex: 1, fontSize: 16, fontWeight: '500', color: '#0F172A' }}>
-                  Ngôn ngữ
-                </Text>
-                <Text style={{ fontSize: 14, color: '#475569', marginRight: 8 }}>Tiếng Việt</Text>
+                <Text className="flex-1 text-base font-medium text-slate-900">Ngôn ngữ</Text>
+                <Text className="mr-2 text-sm text-slate-500">Tiếng Việt</Text>
                 <Ionicons name="chevron-forward" size={18} color="#06B6D4" />
               </TouchableOpacity>
 
-              <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', padding: 16 }}>
-                <View
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 8,
-                    backgroundColor: '#E0F2FE',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 16,
-                  }}>
+              <TouchableOpacity className="flex-row items-center p-4">
+                <View className="mr-4 h-10 w-10 items-center justify-center rounded-lg bg-sky-50">
                   <Ionicons name="shield-outline" size={20} color="#0284C7" />
                 </View>
-                <Text style={{ flex: 1, fontSize: 16, fontWeight: '500', color: '#0F172A' }}>
-                  Bảo mật
-                </Text>
-                <Text style={{ fontSize: 14, color: '#475569', marginRight: 8 }}>
-                  Chưa thiết lập
-                </Text>
+                <Text className="flex-1 text-base font-medium text-slate-900">Bảo mật</Text>
+                <Text className="mr-2 text-sm text-slate-500">Chưa thiết lập</Text>
                 <Ionicons name="chevron-forward" size={18} color="#06B6D4" />
               </TouchableOpacity>
             </View>
           </View>
 
           {/* Điều khoản & quy định */}
-          <View style={{ marginBottom: 24 }}>
-            <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#0F172A', marginBottom: 16 }}>
-              Điều khoản & quy định
-            </Text>
-            <View
-              style={{
-                backgroundColor: '#FFFFFF',
-                borderRadius: 16,
-                overflow: 'hidden',
-                shadowColor: '#0284C7',
-                shadowOpacity: 0.1,
-                shadowRadius: 8,
-                elevation: 3,
-              }}>
-              <TouchableOpacity
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  padding: 16,
-                  borderBottomWidth: 1,
-                  borderBottomColor: '#E0F2FE',
-                }}>
-                <View
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 8,
-                    backgroundColor: '#E0F2FE',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 16,
-                  }}>
+          <View className="mb-6">
+            <Text className="mb-4 text-lg font-bold text-slate-900">Điều khoản & quy định</Text>
+            <View className="overflow-hidden rounded-2xl bg-white shadow-lg shadow-sky-600/10">
+              <TouchableOpacity className="flex-row items-center border-b border-sky-50 p-4">
+                <View className="mr-4 h-10 w-10 items-center justify-center rounded-lg bg-sky-50">
                   <Ionicons name="document-text-outline" size={20} color="#0284C7" />
                 </View>
-                <Text style={{ flex: 1, fontSize: 16, fontWeight: '500', color: '#0F172A' }}>
+                <Text className="flex-1 text-base font-medium text-slate-900">
                   Quy định sử dụng
                 </Text>
                 <Ionicons name="chevron-forward" size={18} color="#06B6D4" />
               </TouchableOpacity>
 
-              <TouchableOpacity
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  padding: 16,
-                  borderBottomWidth: 1,
-                  borderBottomColor: '#E0F2FE',
-                }}>
-                <View
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 8,
-                    backgroundColor: '#A7F3D0',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 16,
-                  }}>
+              <TouchableOpacity className="flex-row items-center border-b border-sky-50 p-4">
+                <View className="mr-4 h-10 w-10 items-center justify-center rounded-lg bg-green-100">
                   <Ionicons name="warning-outline" size={20} color="#10B981" />
                 </View>
-                <Text style={{ flex: 1, fontSize: 16, fontWeight: '500', color: '#0F172A' }}>
+                <Text className="flex-1 text-base font-medium text-slate-900">
                   Chính sách giải quyết khiếu nại, tranh chấp
                 </Text>
                 <Ionicons name="chevron-forward" size={18} color="#06B6D4" />
               </TouchableOpacity>
 
-              <TouchableOpacity
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  padding: 16,
-                  borderBottomWidth: 1,
-                  borderBottomColor: '#E0F2FE',
-                }}>
-                <View
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 8,
-                    backgroundColor: '#E0F2FE',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 16,
-                  }}>
+              <TouchableOpacity className="flex-row items-center border-b border-sky-50 p-4">
+                <View className="mr-4 h-10 w-10 items-center justify-center rounded-lg bg-sky-50">
                   <Ionicons name="shield-checkmark-outline" size={20} color="#0284C7" />
                 </View>
-                <Text style={{ flex: 1, fontSize: 16, fontWeight: '500', color: '#0F172A' }}>
+                <Text className="flex-1 text-base font-medium text-slate-900">
                   Chính sách bảo vệ dữ liệu cá nhân của Sepolia
                 </Text>
                 <Ionicons name="chevron-forward" size={18} color="#06B6D4" />
               </TouchableOpacity>
 
-              <TouchableOpacity
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  padding: 16,
-                  borderBottomWidth: 1,
-                  borderBottomColor: '#E0F2FE',
-                }}>
-                <View
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 8,
-                    backgroundColor: '#E0F2FE',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 16,
-                  }}>
+              <TouchableOpacity className="flex-row items-center border-b border-sky-50 p-4">
+                <View className="mr-4 h-10 w-10 items-center justify-center rounded-lg bg-sky-50">
                   <Ionicons name="help-circle-outline" size={20} color="#0284C7" />
                 </View>
-                <Text style={{ flex: 1, fontSize: 16, fontWeight: '500', color: '#0F172A' }}>
+                <Text className="flex-1 text-base font-medium text-slate-900">
                   Hỏi đáp về ứng dụng
                 </Text>
                 <Ionicons name="chevron-forward" size={18} color="#06B6D4" />
               </TouchableOpacity>
 
-              <TouchableOpacity
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  padding: 16,
-                  borderBottomWidth: 1,
-                  borderBottomColor: '#E0F2FE',
-                }}>
-                <View
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 8,
-                    backgroundColor: '#A7F3D0',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 16,
-                  }}>
+              <TouchableOpacity className="flex-row items-center border-b border-sky-50 p-4">
+                <View className="mr-4 h-10 w-10 items-center justify-center rounded-lg bg-green-100">
                   <Ionicons name="share-outline" size={20} color="#10B981" />
                 </View>
-                <Text style={{ flex: 1, fontSize: 16, fontWeight: '500', color: '#0F172A' }}>
+                <Text className="flex-1 text-base font-medium text-slate-900">
                   Chia sẻ ứng dụng
                 </Text>
                 <Ionicons name="chevron-forward" size={18} color="#06B6D4" />
               </TouchableOpacity>
 
-              <TouchableOpacity
-                onPress={handleLogout}
-                style={{ flexDirection: 'row', alignItems: 'center', padding: 16 }}>
-                <View
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 8,
-                    backgroundColor: '#FEE2E2',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 16,
-                  }}>
+              <TouchableOpacity onPress={handleLogout} className="flex-row items-center p-4">
+                <View className="mr-4 h-10 w-10 items-center justify-center rounded-lg bg-red-100">
                   <Ionicons name="log-out-outline" size={20} color="#EF4444" />
                 </View>
-                <Text style={{ flex: 1, fontSize: 16, fontWeight: '500', color: '#0F172A' }}>
-                  Đăng xuất{' '}
-                </Text>
+                <Text className="flex-1 text-base font-medium text-slate-900">Đăng xuất</Text>
                 <Ionicons name="chevron-forward" size={18} color="#06B6D4" />
               </TouchableOpacity>
             </View>
           </View>
 
           {/* Thông tin công ty */}
-          <View style={{ alignItems: 'center', paddingVertical: 20 }}>
-            <Text
-              style={{
-                fontSize: 12,
-                color: '#475569',
-                textAlign: 'center',
-                lineHeight: 18,
-                marginBottom: 8,
-              }}>
+          <View className="items-center py-5">
+            <Text className="mb-2 text-center text-xs leading-5 text-slate-500">
               CÔNG TY CỔ PHẦN Y TẾ SEPOLIA HEALTH{'\n'}
               Lai Xá, Kim Chung, Hoài Đức, Hà Nội, Việt Nam{'\n'}
               Điện thoại: 0243.975.0028{'\n'}
               Email: info@sepoliahealth.com
             </Text>
 
-            <View
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                backgroundColor: '#E0F2FE',
-                paddingHorizontal: 12,
-                paddingVertical: 6,
-                borderRadius: 8,
-                marginBottom: 8,
-              }}>
-              <View
-                style={{
-                  width: 16,
-                  height: 16,
-                  borderRadius: 8,
-                  backgroundColor: '#0284C7',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginRight: 8,
-                }}>
+            <View className="mb-2 flex-row items-center rounded-lg bg-sky-50 px-3 py-1.5">
+              <View className="mr-2 h-4 w-4 items-center justify-center rounded-full bg-sky-600">
                 <Ionicons name="checkmark" size={10} color="white" />
               </View>
-              <Text style={{ fontSize: 10, color: '#0284C7', fontWeight: '500' }}>
-                ĐÃ THÔNG BÁO BỘ CÔNG THƯƠNG
-              </Text>
+              <Text className="text-xs font-medium text-sky-600">ĐÃ THÔNG BÁO BỘ CÔNG THƯƠNG</Text>
             </View>
 
-            <Text style={{ fontSize: 12, color: '#475569' }}>Sepolia Health v1.0.0</Text>
+            <Text className="text-xs text-slate-500">Sepolia Health v1.0.0</Text>
           </View>
         </View>
       </ScrollView>

@@ -6,14 +6,7 @@ export default function PaymentLayout() {
       <Stack.Screen
         name="index"
         options={{
-          title: 'Thanh toán',
-          headerStyle: {
-            backgroundColor: '#0284C7',
-          },
-          headerTintColor: '#fff',
-          headerTitleStyle: {
-            fontWeight: 'bold',
-          },
+          headerShown: false,
         }}
       />
     </Stack>
