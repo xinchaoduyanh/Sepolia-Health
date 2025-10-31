@@ -65,6 +65,11 @@ export default function AppointmentsListScreen() {
     paymentStatus: PaymentStatus,
     appointmentId: number
   ) => {
+    // If already paid, don't check pending payment status
+    if (paymentStatus.toUpperCase() === 'PAID') {
+      return { text: 'Đã thanh toán', color: '#10B981', bgColor: '#D1FAE5' };
+    }
+
     // Check if this appointment has a pending payment
     if (isPendingPaymentForAppointment(appointmentId)) {
       return {
@@ -76,9 +81,6 @@ export default function AppointmentsListScreen() {
 
     switch (status) {
       case 'UPCOMING':
-        if (paymentStatus.toUpperCase() === 'PAID') {
-          return { text: 'Đã thanh toán', color: '#10B981', bgColor: '#D1FAE5' };
-        }
         return { text: 'Chưa thanh toán', color: '#F59E0B', bgColor: '#FEF3C7' };
       case 'ON_GOING':
         return { text: 'Đang diễn ra', color: '#3B82F6', bgColor: '#DBEAFE' };

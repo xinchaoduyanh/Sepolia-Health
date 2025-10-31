@@ -269,9 +269,9 @@ export default function AppointmentScreen() {
       setCreatedAppointmentId(result.id);
 
       // Hiển thị toast notification
-      Alert.alert('✅ Đặt lịch thành công', `Đã tạo lịch hẹn #${result.id} thành công!`, [
-        { text: 'OK' },
-      ]);
+      // Alert.alert('✅ Đặt lịch thành công', `Đã tạo lịch hẹn #${result.id} thành công!`, [
+      //   { text: 'OK' },
+      // ]);
 
       // Hiển thị success modal
       setShowSuccessModal(true);

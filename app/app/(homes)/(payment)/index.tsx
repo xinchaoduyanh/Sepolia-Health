@@ -9,11 +9,11 @@ import {
   ActivityIndicator,
   Modal,
   Image,
-  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useAppointment, useUpdateAppointment } from '@/lib/api/appointments';
+import { useAppointment } from '@/lib/api/appointments';
+import { useQueryClient } from '@tanstack/react-query';
 import { useCreateQrScan, useCancelPayment, checkPaymentStatus } from '@/lib/api/payment';
 import type { QrScanResponse } from '@/lib/api/payment';
 import { usePayment } from '@/contexts/PaymentContext';
@@ -24,11 +24,11 @@ const POLLING_INTERVAL = 3000; // 3 seconds
 export default function PaymentScreen() {
   const { id } = useLocalSearchParams();
   const appointmentId = parseInt(id as string);
+  const queryClient = useQueryClient();
 
   const { data: appointment, isLoading } = useAppointment(appointmentId);
   const createQrScanMutation = useCreateQrScan();
   const cancelPaymentMutation = useCancelPayment();
-  const updateAppointmentMutation = useUpdateAppointment();
 
   const {
     pendingPayment,
@@ -43,15 +43,10 @@ export default function PaymentScreen() {
   const [isPolling, setIsPolling] = useState(false);
   const [paymentCompleted, setPaymentCompleted] = useState(false);
   const [isQrModalVisible, setIsQrModalVisible] = useState(false);
-  const [isSuccessModalVisible, setIsSuccessModalVisible] = useState(false);
 
   const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  // Animation values for success modal
-  const successScaleAnim = useRef(new Animated.Value(0)).current;
-  const successOpacityAnim = useRef(new Animated.Value(0)).current;
-  const checkmarkAnim = useRef(new Animated.Value(0)).current;
+  const countdownStartedRef = useRef(false);
 
   // Define stopPolling first
   const stopPolling = useCallback(() => {
@@ -66,37 +61,6 @@ export default function PaymentScreen() {
     }
   }, []);
 
-  // Success animation function
-  const startSuccessAnimation = useCallback(() => {
-    setIsSuccessModalVisible(true);
-
-    // Reset animations
-    successScaleAnim.setValue(0);
-    successOpacityAnim.setValue(0);
-    checkmarkAnim.setValue(0);
-
-    // Start animations
-    Animated.parallel([
-      Animated.spring(successScaleAnim, {
-        toValue: 1,
-        tension: 50,
-        friction: 3,
-        useNativeDriver: true,
-      }),
-      Animated.timing(successOpacityAnim, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.timing(checkmarkAnim, {
-        toValue: 1,
-        duration: 800,
-        delay: 300,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, [successScaleAnim, successOpacityAnim, checkmarkAnim]);
-
   // Define startPolling
   const startPolling = useCallback(async () => {
     setIsPolling(true);
@@ -105,44 +69,110 @@ export default function PaymentScreen() {
       try {
         const status = await checkPaymentStatus(appointmentId);
         if (status.isPaid) {
-          setPaymentCompleted(true);
+          console.log('Payment success detected, starting cleanup...');
+
+          // Stop polling first
           stopPolling();
-          await clearPendingPayment();
+          console.log('Polling stopped');
 
-          // Update appointment status to paid
-          try {
-            await updateAppointmentMutation.mutateAsync({
-              id: appointmentId,
-              data: { paymentStatus: 'paid' },
-            });
-          } catch (updateError) {
-            console.error('Failed to update appointment status:', updateError);
-          }
+          // Clear pending payment synchronously
+          console.log('Clearing pending payment...');
+          clearPendingPayment();
+          console.log('Pending payment cleared synchronously');
 
-          // Show success animation
+          // Set completed state
+          setPaymentCompleted(true);
+          console.log('Payment completed set to true');
+
+          // Đóng QR modal trước
           setIsQrModalVisible(false);
-          startSuccessAnimation();
+          console.log('QR modal closed');
+
+          // Đơn giản hóa - chỉ hiển thị Alert và navigate
+          setTimeout(() => {
+            console.log('Showing success alert');
+
+            // Update cache cho single appointment
+            queryClient.setQueryData(['appointment', appointmentId], (oldData: any) => {
+              if (!oldData) return oldData;
+              return {
+                ...oldData,
+                paymentStatus: 'PAID', // Update root level paymentStatus
+                billing: {
+                  ...oldData.billing,
+                  status: 'PAID', // Update nested billing status
+                },
+              };
+            });
+
+            // Update cache cho appointment list (nếu có)
+            queryClient.setQueryData(['appointments', 'my'], (oldData: any) => {
+              if (!oldData?.data) return oldData;
+              const updatedAppointments = oldData.data.map((apt: any) => {
+                if (apt.id === appointmentId) {
+                  return {
+                    ...apt,
+                    paymentStatus: 'PAID', // Update root level paymentStatus
+                    billing: {
+                      ...apt.billing,
+                      status: 'PAID', // Update nested billing status
+                    },
+                  };
+                }
+                return apt;
+              });
+              return {
+                ...oldData,
+                data: updatedAppointments,
+              };
+            });
+
+            console.log('Cache updated with PAID status for both single and list views');
+
+            // Hiển thị Alert đơn giản thay vì modal phức tạp
+            Alert.alert(
+              '🎉 Thanh toán thành công!',
+              `Đã thanh toán appointment #${appointmentId} thành công.`,
+              [
+                {
+                  text: 'OK',
+                  onPress: () => {
+                    console.log('Navigating back to appointments');
+                    router.replace('/(homes)/(appointment)');
+                  },
+                },
+              ]
+            );
+          }, 300);
         }
       } catch (error) {
         console.error('Polling error:', error);
       }
     }, POLLING_INTERVAL);
-  }, [
-    appointmentId,
-    clearPendingPayment,
-    stopPolling,
-    updateAppointmentMutation,
-    startSuccessAnimation,
-  ]);
+  }, [appointmentId, clearPendingPayment, stopPolling, queryClient]);
 
   // Load pending payment when screen mounts
   useEffect(() => {
     if (pendingPayment && isPendingPaymentForAppointment(appointmentId)) {
       setQrData(pendingPayment.qrData);
       setPaymentCompleted(false);
-      setIsQrModalVisible(true);
+
+      // Calculate remaining time from createdAt
+      const createdAt = new Date(pendingPayment.createdAt);
+      const now = new Date();
+      const elapsedSeconds = Math.floor((now.getTime() - createdAt.getTime()) / 1000);
+      const remaining = Math.max(0, COUNTDOWN_DURATION - elapsedSeconds);
+
+      if (remaining > 0) {
+        setCountdown(remaining);
+        setIsQrModalVisible(true);
+      } else {
+        // Payment expired, clear it
+        clearPendingPayment();
+        Alert.alert('⏰ Thanh toán đã hết hạn', 'Mã QR đã hết hạn. Vui lòng tạo mã mới.');
+      }
     }
-  }, [pendingPayment, appointmentId, isPendingPaymentForAppointment]);
+  }, [pendingPayment, appointmentId, isPendingPaymentForAppointment, clearPendingPayment]);
 
   // Clear all intervals on unmount
   useEffect(() => {
@@ -158,12 +188,19 @@ export default function PaymentScreen() {
 
   // Start countdown when QR is generated
   useEffect(() => {
-    if (qrData && !paymentCompleted) {
-      setCountdown(COUNTDOWN_DURATION);
+    if (qrData && !paymentCompleted && !countdownStartedRef.current) {
+      countdownStartedRef.current = true;
+
+      // Clear any existing interval first
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current);
+        countdownIntervalRef.current = null;
+      }
 
       countdownIntervalRef.current = setInterval(() => {
         setCountdown((prev) => {
           if (prev <= 1) {
+            countdownStartedRef.current = false;
             stopPolling();
             clearPendingPayment();
             setIsQrModalVisible(false);
@@ -176,8 +213,10 @@ export default function PaymentScreen() {
       }, 1000);
 
       return () => {
+        countdownStartedRef.current = false;
         if (countdownIntervalRef.current) {
           clearInterval(countdownIntervalRef.current);
+          countdownIntervalRef.current = null;
         }
       };
     }
@@ -225,6 +264,7 @@ export default function PaymentScreen() {
       console.log('Description: DADZ' + result.paymentCode);
       setQrData(result);
       setPaymentCompleted(false);
+      countdownStartedRef.current = false; // Reset for new QR
       setIsQrModalVisible(true);
     } catch (error: any) {
       Alert.alert(
@@ -250,6 +290,7 @@ export default function PaymentScreen() {
             await clearPendingPayment();
             setQrData(null);
             setCountdown(COUNTDOWN_DURATION);
+            countdownStartedRef.current = false;
             setIsQrModalVisible(false);
             Alert.alert('✅ Thành công', 'Đã hủy thanh toán thành công.');
           } catch (error: any) {
@@ -267,6 +308,16 @@ export default function PaymentScreen() {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Simple Countdown Component
+  const CountdownDisplay = ({ countdown }: { countdown: number }) => {
+    return (
+      <View className="items-center">
+        <Text className="text-sm text-gray-500">Thời gian còn lại</Text>
+        <Text className="text-4xl font-bold text-orange-600">{formatTime(countdown)}</Text>
+      </View>
+    );
   };
 
   return (
@@ -360,11 +411,38 @@ export default function PaymentScreen() {
                 )}
               </View>
 
+              {/* View QR Button - when QR exists but modal is not visible */}
+              {qrData && !isQrModalVisible && appointment?.billing?.status === 'PENDING' && (
+                <TouchableOpacity
+                  className="mt-6 w-full items-center rounded-lg bg-green-600 py-4"
+                  onPress={() => setIsQrModalVisible(true)}
+                  style={{
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.2,
+                    shadowRadius: 4,
+                    elevation: 3,
+                  }}>
+                  <View className="flex-row items-center">
+                    <Ionicons name="qr-code" size={24} color="white" />
+                    <Text className="ml-2 text-lg font-bold text-white">Xem QR thanh toán</Text>
+                  </View>
+                </TouchableOpacity>
+              )}
+
               {/* Create/Resume QR Button */}
               {!qrData && appointment?.billing?.status === 'PENDING' && (
                 <TouchableOpacity
                   className="mt-6 w-full items-center rounded-lg bg-sky-600 py-4"
-                  onPress={handleCreateQR}
+                  onPress={() => {
+                    // If there's pending payment for this appointment, just show the modal
+                    if (hasPendingPayment && isPendingPaymentForAppointment(appointmentId)) {
+                      setIsQrModalVisible(true);
+                    } else {
+                      // Otherwise create new QR
+                      handleCreateQR();
+                    }
+                  }}
                   disabled={createQrScanMutation.isPending}
                   style={{
                     shadowColor: '#000',
@@ -424,10 +502,7 @@ export default function PaymentScreen() {
               <View className="space-y-4">
                 {/* Countdown Timer */}
                 <View className="items-center rounded-xl bg-white p-4">
-                  <Text className="text-sm text-gray-500">Thời gian còn lại</Text>
-                  <Text className="text-4xl font-bold text-orange-600">
-                    {formatTime(countdown)}
-                  </Text>
+                  <CountdownDisplay countdown={countdown} />
                 </View>
 
                 {/* QR Code */}
@@ -490,140 +565,6 @@ export default function PaymentScreen() {
             )}
           </View>
         </SafeAreaView>
-      </Modal>
-
-      {/* Success Modal */}
-      <Modal
-        visible={isSuccessModalVisible}
-        animationType="fade"
-        transparent={true}
-        onRequestClose={() => setIsSuccessModalVisible(false)}>
-        <View className="flex-1 items-center justify-center bg-black/50">
-          <Animated.View
-            style={{
-              transform: [{ scale: successScaleAnim }],
-              opacity: successOpacityAnim,
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 10 },
-              shadowOpacity: 0.3,
-              shadowRadius: 20,
-              elevation: 15,
-            }}
-            className="mx-6 rounded-3xl bg-white p-8 shadow-2xl">
-            {/* Success Icon with Animation */}
-            <View className="mb-6 items-center">
-              <Animated.View
-                style={{
-                  transform: [
-                    {
-                      scale: checkmarkAnim.interpolate({
-                        inputRange: [0, 0.5, 1],
-                        outputRange: [0, 1.2, 1],
-                      }),
-                    },
-                  ],
-                }}
-                className="rounded-full bg-green-500 p-4">
-                <Ionicons name="checkmark" size={48} color="white" />
-              </Animated.View>
-
-              {/* Confetti-like elements */}
-              <View className="absolute bottom-0 left-0 right-0 top-0 overflow-hidden">
-                {[...Array(6)].map((_, i) => (
-                  <Animated.View
-                    key={i}
-                    style={{
-                      position: 'absolute',
-                      left: `${20 + i * 10}%`,
-                      top: '20%',
-                      transform: [
-                        {
-                          translateY: checkmarkAnim.interpolate({
-                            inputRange: [0, 1],
-                            outputRange: [-20, -60],
-                          }),
-                        },
-                        {
-                          rotate: `${i * 60}deg`,
-                        },
-                      ],
-                      opacity: checkmarkAnim,
-                    }}>
-                    <View
-                      className={`h-2 w-2 rounded-full ${['bg-yellow-400', 'bg-pink-400', 'bg-blue-400', 'bg-green-400', 'bg-purple-400', 'bg-orange-400'][i]}`}
-                    />
-                  </Animated.View>
-                ))}
-              </View>
-            </View>
-
-            {/* Success Message */}
-            <View className="mb-6 items-center">
-              <Text className="mb-2 text-2xl font-bold text-gray-900">
-                🎉 Thanh toán thành công!
-              </Text>
-              <Text className="text-center leading-6 text-gray-600">
-                Đã thanh toán appointment #{appointmentId} thành công.{'\n'}
-                Lịch hẹn của bạn đã được xác nhận và sẵn sàng.
-              </Text>
-            </View>
-
-            {/* Payment Details */}
-            {appointment && (
-              <View className="mb-6 rounded-xl bg-green-50 p-4">
-                <Text className="mb-3 text-sm font-semibold text-green-800">
-                  Chi tiết thanh toán
-                </Text>
-                <View className="space-y-2">
-                  <Text className="text-sm text-green-700">
-                    💼 Dịch vụ: {appointment.service.name}
-                  </Text>
-                  <Text className="text-sm text-green-700">
-                    👨‍⚕️ Bác sĩ: BS. {appointment.doctor.user.firstName}{' '}
-                    {appointment.doctor.user.lastName}
-                  </Text>
-                  <Text className="text-sm text-green-700">
-                    📅 Ngày: {new Date(appointment.date).toLocaleDateString('vi-VN')}
-                  </Text>
-                  <Text className="text-sm text-green-700">
-                    ⏰ Thời gian: {appointment.startTime} - {appointment.endTime}
-                  </Text>
-                  <Text className="text-sm text-green-700">
-                    🏥 Phòng khám: {appointment.clinic?.name || 'Chưa xác định'}
-                  </Text>
-                  <Text className="text-sm text-green-700">
-                    📱 Phương thức: Chuyển khoản ngân hàng
-                  </Text>
-                  <Text className="text-sm text-green-700">
-                    🕒 Thời gian thanh toán: {new Date().toLocaleString('vi-VN')}
-                  </Text>
-                  <Text className="text-sm font-semibold text-green-700">
-                    💰 Số tiền: {appointment.billing?.amount.toLocaleString('vi-VN')} VND
-                  </Text>
-                </View>
-              </View>
-            )}
-
-            {/* Action Button */}
-            <View className="items-center">
-              <TouchableOpacity
-                onPress={() => {
-                  setIsSuccessModalVisible(false);
-                  router.replace('/(homes)/(appointment)');
-                }}
-                className="items-center rounded-xl bg-green-500 px-20 py-3"
-                style={{
-                  shadowColor: '#10B981',
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.3,
-                  shadowRadius: 8,
-                  elevation: 8,
-                }}>
-                <Text className="text-lg font-bold text-white">Tiếp tục</Text>
-              </TouchableOpacity>
-            </View>
-          </Animated.View>
-        </View>
       </Modal>
     </View>
   );
