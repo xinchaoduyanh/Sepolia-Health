@@ -52,6 +52,10 @@ export default function ServiceSelectionScreen() {
     router.push('/(homes)/(appointment)/' as any);
   };
 
+  const handleBackToAppointments = () => {
+    router.push('/(homes)/(appointment)/' as any);
+  };
+
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
@@ -113,7 +117,9 @@ export default function ServiceSelectionScreen() {
             <Ionicons name="arrow-back" size={24} color="#2563EB" />
           </TouchableOpacity>
           <Text className="text-xl font-bold text-slate-900">Chọn dịch vụ</Text>
-          <View style={{ width: 24 }} />
+          <TouchableOpacity onPress={handleBackToAppointments}>
+            <Ionicons name="calendar-outline" size={24} color="#2563EB" />
+          </TouchableOpacity>
         </View>
       </View>
 

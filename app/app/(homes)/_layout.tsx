@@ -122,6 +122,14 @@ export default function TabLayout() {
           ),
         }}
       />
+
+      {/* Hidden payment tab - không hiển thị trong footer */}
+      <Tabs.Screen
+        name="(payment)"
+        options={{
+          href: null,
+        }}
+      />
     </Tabs>
   );
 }

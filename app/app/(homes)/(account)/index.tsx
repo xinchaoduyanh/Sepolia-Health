@@ -3,8 +3,8 @@
 import { View, Text, TouchableOpacity, Alert, ScrollView, StatusBar, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Path } from 'react-native-svg';
 import { useAuth } from '@/lib/hooks/useAuth';
-import { Svg, Defs, Stop, Path, LinearGradient as SvgLinearGradient } from 'react-native-svg';
 import { PatientProfile } from '@/types/auth';
 export default function AccountScreen() {
   const { user, logout } = useAuth();
@@ -34,120 +34,124 @@ export default function AccountScreen() {
     <View style={{ flex: 1, backgroundColor: '#E0F2FE' }}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
-      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
-        {/* Header gradient với hiệu ứng sóng */}
-        <View style={{ flex: 1 }}>
-          {/* Header Gradient */}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+        alwaysBounceVertical={false}
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: 100 }}
+        scrollEventThrottle={16}
+        contentInsetAdjustmentBehavior="never"
+        automaticallyAdjustContentInsets={false}>
+        {/* Background Gradient - now scrollable and extends to top */}
+        <View style={{ height: 380, position: 'relative', marginTop: -60 }}>
           <LinearGradient
-            colors={['#00BFA6', '#0288D1']}
+            colors={['#0284C7', '#06B6D4', '#10B981']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
+            style={{ flex: 1 }}
+          />
+          {/* Curved bottom edge using SVG */}
+          <Svg
+            height="70"
+            width="200%"
+            viewBox="0 0 1440 120"
+            style={{ position: 'absolute', bottom: -1, left: 0, right: 0 }}>
+            <Path d="M0,0 Q720,120 1440,0 L1440,120 L0,120 Z" fill="#E0F2FE" />
+          </Svg>
+
+          {/* Decorative circles */}
+          <View
             style={{
               position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
+              top: -60,
+              right: -40,
               height: 180,
-              borderBottomLeftRadius: 24,
-              borderBottomRightRadius: 24,
+              width: 180,
+              borderRadius: 90,
+              backgroundColor: 'rgba(255,255,255,0.12)',
+            }}
+          />
+          <View
+            style={{
+              position: 'absolute',
+              top: 120,
+              left: -50,
+              height: 150,
+              width: 150,
+              borderRadius: 75,
+              backgroundColor: 'rgba(255,255,255,0.08)',
             }}
           />
 
-          {/* Scrollable content */}
-          <ScrollView
-            contentContainerStyle={{ paddingBottom: 40 }}
-            showsVerticalScrollIndicator={false}>
-            {/* Greeting & Avatar Section */}
-            <View style={{ paddingHorizontal: 20, marginTop: 60 }}>
+          {/* Header + Avatar positioned within gradient */}
+          <View
+            style={{
+              position: 'absolute',
+              top: 120,
+              left: 24,
+              right: 24,
+              alignItems: 'center',
+            }}>
+            {/* Header Title */}
+            <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#FFFFFF', marginBottom: 20 }}>
+              Tài khoản của tôi
+            </Text>
+
+            {/* Avatar Section */}
+            <View style={{ alignItems: 'center' }}>
               <View
                 style={{
-                  flexDirection: 'row',
+                  height: 80,
+                  width: 80,
+                  borderRadius: 40,
                   alignItems: 'center',
-                  justifyContent: 'space-between',
+                  justifyContent: 'center',
+                  backgroundColor: 'rgba(255,255,255,0.25)',
+                  borderWidth: 3,
+                  borderColor: 'rgba(255,255,255,0.4)',
+                  shadowColor: '#000000',
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.2,
+                  shadowRadius: 8,
+                  elevation: 4,
+                  marginBottom: 12,
                 }}>
-                {/* Left text */}
-                <View>
-                  <Text style={{ fontSize: 18, color: '#fff', opacity: 0.9 }}>Xin chào,</Text>
-                  <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#fff' }}>
+                {primaryProfile?.avatar ? (
+                  <Image
+                    source={{ uri: primaryProfile.avatar }}
+                    style={{
+                      height: 74,
+                      width: 74,
+                      borderRadius: 37,
+                    }}
+                  />
+                ) : (
+                  <Text style={{ fontSize: 32, fontWeight: 'bold', color: '#FFFFFF' }}>
                     {primaryProfile
-                      ? `${primaryProfile.firstName} ${primaryProfile.lastName}`
-                      : user
-                        ? `${user.firstName} ${user.lastName}`
-                        : 'Người dùng'}{' '}
-                    👋
+                      ? primaryProfile.firstName.charAt(0).toUpperCase()
+                      : user?.firstName?.charAt(0).toUpperCase() || 'U'}
                   </Text>
-                </View>
-
-                {/* Avatar Wrapper */}
-                <View style={{ position: 'relative', width: 70, height: 70 }}>
-                  {/* SVG background (ví dụ blob hoặc wave) */}
-                  <Svg
-                    width="100%"
-                    height="100%"
-                    viewBox="0 0 120 120"
-                    style={{ position: 'absolute', top: 0, left: 0 }}>
-                    <Defs>
-                      <SvgLinearGradient id="avatarBg" x1="0" y1="0" x2="1" y2="1">
-                        <Stop offset="0%" stopColor="#A7FFEB" />
-                        <Stop offset="100%" stopColor="#64B5F6" />
-                      </SvgLinearGradient>
-                    </Defs>
-                    <Path
-                      d="M60 0 C90 0, 120 30, 120 60 C120 90, 90 120, 60 120 C30 120, 0 90, 0 60 C0 30, 30 0, 60 0 Z"
-                      fill="url(#avatarBg)"
-                    />
-                  </Svg>
-
-                  {/* Avatar image */}
-                  {primaryProfile?.avatar ? (
-                    <Image
-                      source={{ uri: primaryProfile.avatar }}
-                      style={{
-                        width: 60,
-                        height: 60,
-                        borderRadius: 30,
-                        borderWidth: 2,
-                        borderColor: '#fff',
-                        position: 'absolute',
-                        top: 5,
-                        left: 5,
-                      }}
-                    />
-                  ) : (
-                    <View
-                      style={{
-                        width: 60,
-                        height: 60,
-                        borderRadius: 30,
-                        borderWidth: 2,
-                        borderColor: '#fff',
-                        position: 'absolute',
-                        top: 5,
-                        left: 5,
-                        backgroundColor: 'rgba(255,255,255,0.3)',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}>
-                      <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#FFFFFF' }}>
-                        {primaryProfile
-                          ? primaryProfile.firstName.charAt(0).toUpperCase()
-                          : user?.firstName?.charAt(0).toUpperCase() || 'U'}
-                      </Text>
-                    </View>
-                  )}
-                </View>
+                )}
               </View>
-            </View>
 
-            {/* Content Section */}
-            <View style={{ paddingHorizontal: 20, marginTop: 30 }}>
-              {/* Ví dụ: Mẹo sức khỏe */}
-              <View style={{ gap: 16 }}></View>
+              <Text style={{ fontSize: 20, fontWeight: '700', color: '#FFFFFF', marginBottom: 6 }}>
+                {primaryProfile
+                  ? `${primaryProfile.firstName} ${primaryProfile.lastName}`
+                  : user
+                    ? `${user.firstName} ${user.lastName}`
+                    : 'Người dùng'}
+              </Text>
+              <Text style={{ fontSize: 14, color: 'rgba(255,255,255,0.9)', lineHeight: 20 }}>
+                {primaryProfile?.phone || user?.phone || 'Chưa cập nhật'} •{' '}
+                {user?.email || 'Chưa cập nhật'}
+              </Text>
             </View>
-          </ScrollView>
+          </View>
         </View>
 
-        <View style={{ padding: 24 }}>
+        {/* Main Content Area */}
+        <View style={{ paddingHorizontal: 24, marginTop: -150, marginBottom: 24 }}>
           {/* Quản lý yêu cầu và ưu đãi */}
           <View style={{ marginBottom: 24 }}>
             <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#0F172A', marginBottom: 16 }}>
@@ -155,7 +159,7 @@ export default function AccountScreen() {
             </Text>
             <View
               style={{
-                backgroundColor: '#F0FDFA',
+                backgroundColor: '#FFFFFF',
                 borderRadius: 16,
                 overflow: 'hidden',
                 shadowColor: '#0284C7',
@@ -243,7 +247,7 @@ export default function AccountScreen() {
             </Text>
             <View
               style={{
-                backgroundColor: '#F0FDFA',
+                backgroundColor: '#FFFFFF',
                 borderRadius: 16,
                 overflow: 'hidden',
                 shadowColor: '#0284C7',
@@ -335,7 +339,7 @@ export default function AccountScreen() {
             </Text>
             <View
               style={{
-                backgroundColor: '#F0FDFA',
+                backgroundColor: '#FFFFFF',
                 borderRadius: 16,
                 overflow: 'hidden',
                 shadowColor: '#0284C7',

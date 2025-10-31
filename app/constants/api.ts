@@ -58,6 +58,14 @@ export const API_ENDPOINTS = {
     BASE: '/patient/health-records',
     UPLOAD: '/patient/health-records/upload',
   },
+
+  // Payment
+  PAYMENT: {
+    CREATE_QR_SCAN: '/payment/create-qr-scan',
+    CHECK_STATUS: '/payment/check-payment-status',
+    CANCEL: '/payment/cancel-payment-code',
+    WEBHOOK: '/payment/sepay-webhook',
+  },
 } as const;
 
 // Request/Response Types

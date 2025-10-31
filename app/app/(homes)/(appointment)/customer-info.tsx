@@ -25,11 +25,15 @@ export default function CustomerInfoScreen() {
 
   const handleContinue = () => {
     // Navigate to appointment booking screen
-    router.push('./appointment-booking' as any);
+    router.push('/(homes)/(appointment)/create');
   };
 
   const handleBack = () => {
-    router.push('./index' as any);
+    router.push('/(homes)/(appointment)/time-selection');
+  };
+
+  const handleBackToAppointments = () => {
+    router.push('/(homes)/(appointment)/' as any);
   };
 
   return (
@@ -39,10 +43,12 @@ export default function CustomerInfoScreen() {
       {/* Header */}
       <View className="flex-row items-center justify-between px-4 py-3">
         <TouchableOpacity onPress={handleBack}>
-          <Ionicons name="close" size={24} color="#000" />
+          <Ionicons name="arrow-back" size={24} color="#000" />
         </TouchableOpacity>
         <Text className="text-lg font-bold text-black">Thông tin khách hàng</Text>
-        <View style={{ width: 24 }} />
+        <TouchableOpacity onPress={handleBackToAppointments}>
+          <Ionicons name="calendar-outline" size={24} color="#000" />
+        </TouchableOpacity>
       </View>
 
       <ScrollView className="flex-1 px-4" showsVerticalScrollIndicator={false}>

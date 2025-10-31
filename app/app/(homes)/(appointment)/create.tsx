@@ -8,6 +8,7 @@ import {
   StatusBar,
   Modal,
   Image,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -33,6 +34,7 @@ export default function AppointmentScreen() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimeSlots, setShowTimeSlots] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [createdAppointmentId, setCreatedAppointmentId] = useState<number | null>(null);
   const [selectedCustomDate, setSelectedCustomDate] = useState<Date | null>(null);
   const [selectedDateForAPI, setSelectedDateForAPI] = useState<string | null>(null);
   const {
@@ -49,6 +51,10 @@ export default function AppointmentScreen() {
   const patientProfiles = user?.patientProfiles || [];
   const primaryProfile = patientProfiles.find((profile) => profile.relationship === 'SELF');
   const otherProfiles = patientProfiles.filter((profile) => profile.relationship !== 'SELF');
+
+  const handleBackToAppointments = () => {
+    router.push('/(homes)/(appointment)/' as any);
+  };
 
   // Auto-fill user info when component mounts (default to "Bản thân")
   useEffect(() => {
@@ -234,7 +240,7 @@ export default function AppointmentScreen() {
 
       const appointmentData: any = {
         doctorServiceId: selectedDoctorServiceId || 0,
-        date: selectedDate || formatDateForAPI(new Date()),
+        date: selectedDateForAPI || formatDateForAPI(new Date()),
         startTime: selectedTimeSlot,
         notes: patientDescription || '',
         patientName: fullName || '',
@@ -259,6 +265,14 @@ export default function AppointmentScreen() {
 
       console.log('✅ Appointment created successfully:', result);
 
+      // Lưu appointment ID để sử dụng trong modal
+      setCreatedAppointmentId(result.id);
+
+      // Hiển thị toast notification
+      Alert.alert('✅ Đặt lịch thành công', `Đã tạo lịch hẹn #${result.id} thành công!`, [
+        { text: 'OK' },
+      ]);
+
       // Hiển thị success modal
       setShowSuccessModal(true);
     } catch (error: any) {
@@ -280,6 +294,13 @@ export default function AppointmentScreen() {
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: '#E0F2FE' }}>
       <StatusBar barStyle="dark-content" backgroundColor="#E0F2FE" />
+
+      {/* Header */}
+      <View className="flex-row items-center justify-end px-4 py-3">
+        <TouchableOpacity onPress={handleBackToAppointments}>
+          <Ionicons name="calendar-outline" size={24} color="#0284C7" />
+        </TouchableOpacity>
+      </View>
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* Main Content */}
@@ -905,12 +926,21 @@ export default function AppointmentScreen() {
                 <TouchableOpacity
                   onPress={() => {
                     setShowSuccessModal(false);
-                    // Navigate to appointments list
-                    router.push('/(homes)/(appointment)/appointments-list' as any);
+                    // Navigate to appointment detail
+                    if (createdAppointmentId) {
+                      router.push(
+                        `/(homes)/(appointment)/appointment-detail?id=${createdAppointmentId}` as any
+                      );
+                    } else {
+                      // Fallback to appointments list
+                      router.push('/(homes)/(appointment)/' as any);
+                    }
+                    // Reset created appointment ID
+                    setCreatedAppointmentId(null);
                   }}
                   className="w-full items-center rounded-xl py-3"
                   style={{ backgroundColor: '#0284C7' }}>
-                  <Text className="text-base font-semibold text-white">Xem lịch hẹn</Text>
+                  <Text className="text-base font-semibold text-white">Xem chi tiết lịch hẹn</Text>
                 </TouchableOpacity>
               </View>
             </View>

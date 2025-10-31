@@ -4,7 +4,7 @@ export interface Appointment {
   date: string; // ISO date
   startTime: string;
   endTime: string;
-  status: 'REQUESTED' | 'CONFIRMED' | 'CHECKED_IN' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW';
+  status: 'UPCOMING' | 'ON_GOING' | 'COMPLETED' | 'CANCELLED';
   paymentStatus: 'PENDING' | 'PAID' | 'REFUNDED';
   notes?: string;
   patientProfileId?: number;
@@ -13,6 +13,7 @@ export interface Appointment {
     firstName: string;
     lastName: string;
     phone: string;
+    relationship: string;
   };
   patientName: string;
   patientDob: string;
@@ -24,6 +25,11 @@ export interface Appointment {
     firstName: string;
     lastName: string;
     specialty: string;
+    user: {
+      id: number;
+      firstName: string;
+      lastName: string;
+    };
   };
   serviceId: number;
   service: {
@@ -32,11 +38,10 @@ export interface Appointment {
     price: number;
     duration: number;
   };
-  clinicId: number;
-  clinic: {
+  clinicId?: number;
+  clinic?: {
     id: number;
     name: string;
-    address: string;
   };
   billing?: {
     id: number;
@@ -67,7 +72,7 @@ export interface UpdateAppointmentRequest {
   date?: string; // ISO date
   startTime?: string;
   endTime?: string;
-  status?: 'REQUESTED' | 'CONFIRMED' | 'CHECKED_IN' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW';
+  status?: 'UPCOMING' | 'ON_GOING' | 'COMPLETED' | 'CANCELLED';
   paymentStatus?: 'PENDING' | 'PAID' | 'REFUNDED';
   notes?: string;
 }
@@ -75,7 +80,7 @@ export interface UpdateAppointmentRequest {
 export interface AppointmentFilters {
   page?: number;
   limit?: number;
-  status?: 'REQUESTED' | 'CONFIRMED' | 'CHECKED_IN' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW';
+  status?: 'UPCOMING' | 'ON_GOING' | 'COMPLETED' | 'CANCELLED';
   paymentStatus?: 'PENDING' | 'PAID' | 'REFUNDED';
   doctorId?: number;
   patientProfileId?: number;

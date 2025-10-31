@@ -67,6 +67,7 @@ export class AppointmentService {
               firstName: true,
               lastName: true,
               phone: true,
+              relationship: true,
             },
           },
           doctor: {
@@ -77,6 +78,12 @@ export class AppointmentService {
             },
           },
           service: true,
+          clinic: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
           billing: {
             select: {
               id: true,
@@ -323,6 +330,12 @@ export class AppointmentService {
             },
           },
           service: true,
+          clinic: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
           billing: {
             select: {
               id: true,
@@ -733,16 +746,14 @@ export class AppointmentService {
             id: appointment.patientProfile.id,
             firstName: appointment.patientProfile.firstName,
             lastName: appointment.patientProfile.lastName,
-            email: '', // Patient profile doesn't have email
             phone: appointment.patientProfile.phone,
+            email: appointment.patientProfile.email,
           }
-        : {
-            id: 0,
-            firstName: appointment.patientName,
-            lastName: '',
-            email: '',
-            phone: appointment.patientPhone,
-          },
+        : undefined,
+      patientName: appointment.patientName,
+      patientDob: appointment.patientDob.toISOString(),
+      patientPhone: appointment.patientPhone,
+      patientGender: appointment.patientGender,
       doctor: {
         id: appointment.doctor.id,
         specialty: appointment.doctor.specialty,
@@ -758,6 +769,12 @@ export class AppointmentService {
         price: appointment.service.price,
         duration: appointment.service.duration,
       },
+      clinic: appointment.clinic
+        ? {
+            id: appointment.clinic.id,
+            name: appointment.clinic.name,
+          }
+        : undefined,
       billing: appointment.billing
         ? {
             id: appointment.billing.id,

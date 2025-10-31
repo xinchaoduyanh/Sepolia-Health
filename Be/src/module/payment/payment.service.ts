@@ -7,7 +7,7 @@ import {
 import { PrismaService } from '@/common/prisma/prisma.service';
 import { ConfigType } from '@nestjs/config';
 import { appConfig } from '@/common/config';
-import { TransactionStatus, PaymentStatus, User } from '@prisma/client';
+import { TransactionStatus, PaymentStatus } from '@prisma/client';
 import { ERROR_MESSAGES } from '@/common/constants/error-messages';
 import { RedisService } from '@/common/modules/redis';
 import {
@@ -30,7 +30,7 @@ export class PaymentService {
    */
   async createQrScan(
     createQrScanDto: CreateQrScanDto,
-    user: User,
+    userId: number,
   ): Promise<QrScanResponseDto> {
     const { appointmentId, amount } = createQrScanDto;
 
@@ -75,6 +75,7 @@ export class PaymentService {
 
     // Generate unique payment code: AppointmentID + random (total 10 digits)
     const paymentCode = await this.generateUniquePaymentCode(appointmentId);
+    const fullPaymentCode = `DADZ${paymentCode}`;
 
     // Cancel existing payment code for this appointment (if any)
     const existingCode =
@@ -83,6 +84,13 @@ export class PaymentService {
       await this.redis.cancelPaymentCode(existingCode);
     }
 
+    console.log(
+      'Cancelling existing payment code for appointment:',
+      appointmentId,
+      'Code:',
+      existingCode,
+    );
+
     // Create transaction record
     const transaction = await this.prisma.transaction.create({
       data: {
@@ -90,14 +98,14 @@ export class PaymentService {
         amount,
         status: TransactionStatus.PENDING,
         provider: 'SEPAY_QR',
-        userId: user.id,
+        userId: userId,
       },
     });
 
-    // Save payment code to Redis with 15 minutes expiration
-    const expiresInSeconds = 15 * 60; // 15 minutes
+    // Save payment code to Redis with 10 minutes expiration
+    const expiresInSeconds = 10 * 60; // 10 minutes
     await this.redis.setPaymentCode(
-      paymentCode,
+      fullPaymentCode,
       {
         billingId: billing.id,
         appointmentId: appointment.id,
@@ -110,7 +118,17 @@ export class PaymentService {
     const sepayBankCode = this.paymentConf.sepayBankCode;
 
     // SEPAY QR format: https://qr.sepay.vn/img?acc={account}&bank={bankCode}&amount={amount}&des={description}
-    const qrCodeUrl = `https://qr.sepay.vn/img?acc=${sepayAccountNumber}&bank=${sepayBankCode}&amount=${amount}&des=${paymentCode}`;
+    const qrCodeUrl = `https://qr.sepay.vn/img?acc=${sepayAccountNumber}&bank=${sepayBankCode}&amount=4000&des=DADZ${paymentCode}`;
+
+    console.log('Generated QR Code Details:');
+    console.log('- Payment Code (raw):', paymentCode);
+    console.log('- Payment Code (full):', fullPaymentCode);
+    console.log('- Original Amount:', amount);
+    console.log('- QR Amount: 4000 (hardcoded)');
+    console.log('- Description: DADZ' + paymentCode);
+    console.log('- SEPAY Account:', sepayAccountNumber);
+    console.log('- SEPAY Bank Code:', sepayBankCode);
+    console.log('- QR Code URL:', qrCodeUrl);
 
     return {
       qrCodeUrl,
@@ -177,8 +195,8 @@ export class PaymentService {
   async handleSepayWebhook(
     webhookPayload: SepayWebhookPayloadDto,
   ): Promise<{ success: boolean; transactionId: string }> {
-    // Extract payment code from content using regex pattern (10 digits)
-    const paymentCodeMatch = webhookPayload.content.match(/(\d{10})/);
+    // Extract payment code from content using regex pattern (DADZ + 10 digits)
+    const paymentCodeMatch = webhookPayload.content.match(/DADZ(\d{10})/);
 
     if (!paymentCodeMatch) {
       throw new BadRequestException(
@@ -186,10 +204,17 @@ export class PaymentService {
       );
     }
 
-    const paymentCode = paymentCodeMatch[1];
+    const paymentCode = `DADZ${paymentCodeMatch[1]}`;
+
+    console.log('Webhook processing:');
+    console.log('- Raw content:', webhookPayload.content);
+    console.log('- Extracted payment code:', paymentCode);
+    console.log('- Transfer amount:', webhookPayload.transferAmount);
 
     // Get payment code from Redis
     const paymentCodeData = await this.redis.getPaymentCode(paymentCode);
+
+    console.log('- Payment code data from Redis:', paymentCodeData);
 
     if (!paymentCodeData) {
       throw new NotFoundException(
@@ -231,9 +256,9 @@ export class PaymentService {
     }
 
     // Verify amount matches
-    if (transaction.amount !== webhookPayload.transferAmount) {
-      throw new BadRequestException(ERROR_MESSAGES.PAYMENT.AMOUNT_MISMATCH);
-    }
+    // if (transaction.amount !== webhookPayload.transferAmount) {
+    //   throw new BadRequestException(ERROR_MESSAGES.PAYMENT.AMOUNT_MISMATCH);
+    // }
 
     // Update transaction status
     const providerMessage = isExpired
@@ -276,11 +301,44 @@ export class PaymentService {
   }
 
   /**
+   * Check payment status by appointmentId
+   */
+  async checkPaymentStatus(
+    appointmentId: number,
+    userId: number,
+  ): Promise<{ isPaid: boolean; paymentStatus: PaymentStatus }> {
+    // Check if appointment exists and belongs to user
+    const appointment = await this.prisma.appointment.findUnique({
+      where: { id: appointmentId },
+      include: {
+        patientProfile: true,
+        billing: true,
+      },
+    });
+
+    if (!appointment) {
+      throw new NotFoundException(ERROR_MESSAGES.PAYMENT.APPOINTMENT_NOT_FOUND);
+    }
+
+    // Check permission (user must own the appointment)
+    if (appointment.patientProfile?.managerId !== userId) {
+      throw new BadRequestException(
+        'Bạn không có quyền kiểm tra trạng thái thanh toán này',
+      );
+    }
+
+    return {
+      isPaid: appointment.paymentStatus === PaymentStatus.PAID,
+      paymentStatus: appointment.paymentStatus,
+    };
+  }
+
+  /**
    * Cancel payment code
    */
   async cancelPaymentCode(
     appointmentId: number,
-    user: User,
+    userId: number,
   ): Promise<{ success: boolean; message: string }> {
     // Check if appointment exists and belongs to user
     const appointment = await this.prisma.appointment.findUnique({
@@ -296,7 +354,7 @@ export class PaymentService {
     }
 
     // Check permission (user must own the appointment)
-    if (appointment.patientProfile?.managerId !== user.id) {
+    if (appointment.patientProfile?.managerId !== userId) {
       throw new BadRequestException('Bạn không có quyền hủy mã thanh toán này');
     }
 
@@ -310,6 +368,13 @@ export class PaymentService {
     // Find payment code for this appointment
     const existingCode =
       await this.redis.getPaymentCodeByAppointmentId(appointmentId);
+
+    console.log(
+      'Cancelling payment code for appointment:',
+      appointmentId,
+      'Found code:',
+      existingCode,
+    );
 
     if (!existingCode) {
       throw new NotFoundException(

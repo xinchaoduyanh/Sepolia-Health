@@ -1,14 +1,25 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StatusBar } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import React from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  StatusBar,
+  ActivityIndicator,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Path } from 'react-native-svg';
 import { router } from 'expo-router';
 import { useMyAppointments } from '@/lib/api/appointments';
+import { usePayment } from '@/contexts/PaymentContext';
+
+type AppointmentStatus = 'UPCOMING' | 'ON_GOING' | 'COMPLETED' | 'CANCELLED';
+type PaymentStatus = 'pending' | 'paid' | 'refunded' | 'PENDING' | 'PAID' | 'REFUNDED';
 
 export default function AppointmentsListScreen() {
-  // const [selectedTab, setSelectedTab] = useState<'confirmed' | 'requests'>('confirmed');
-
   const { data: appointmentsData, isLoading } = useMyAppointments();
+  const { hasPendingPayment, isPendingPaymentForAppointment } = usePayment();
 
   const appointments = appointmentsData?.data || [];
 
@@ -20,8 +31,22 @@ export default function AppointmentsListScreen() {
     return { day, month, year };
   };
 
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
+  const formatTime = (timeString: string) => {
+    // Check if it's a time string like "14:30" or full date string
+    if (timeString.includes(':')) {
+      // If it contains only time like "14:30", return as is
+      const timeParts = timeString.split(':');
+      if (timeParts.length >= 2 && !timeString.includes('T') && !timeString.includes('-')) {
+        return timeString;
+      }
+    }
+
+    // Otherwise, try to parse as date and format
+    const date = new Date(timeString);
+    if (isNaN(date.getTime())) {
+      return timeString; // Return original if parsing fails
+    }
+
     return date.toLocaleTimeString('vi-VN', {
       hour: '2-digit',
       minute: '2-digit',
@@ -29,103 +54,147 @@ export default function AppointmentsListScreen() {
     });
   };
 
-  const getStatusText = (status: string, paymentStatus: string) => {
-    if (status === 'scheduled') {
-      if (paymentStatus === 'paid') return 'Đã thanh toán';
-      if (paymentStatus === 'pending') return 'Thanh toán tại viện';
+  const getStatusInfo = (
+    status: AppointmentStatus,
+    paymentStatus: PaymentStatus,
+    appointmentId: number
+  ) => {
+    // Check if this appointment has a pending payment
+    if (isPendingPaymentForAppointment(appointmentId)) {
+      return {
+        text: 'Đang thanh toán',
+        color: '#10B981',
+        bgColor: '#D1FAE5',
+      };
     }
-    return 'Chờ xác nhận';
+
+    switch (status) {
+      case 'UPCOMING':
+        if (paymentStatus.toUpperCase() === 'PAID') {
+          return { text: 'Đã thanh toán', color: '#10B981', bgColor: '#D1FAE5' };
+        }
+        return { text: 'Chưa thanh toán', color: '#F59E0B', bgColor: '#FEF3C7' };
+      case 'ON_GOING':
+        return { text: 'Đang diễn ra', color: '#3B82F6', bgColor: '#DBEAFE' };
+      case 'COMPLETED':
+        return { text: 'Hoàn thành', color: '#6B7280', bgColor: '#F3F4F6' };
+      case 'CANCELLED':
+        return { text: 'Đã hủy', color: '#EF4444', bgColor: '#FEE2E2' };
+      default:
+        return { text: 'Chờ xác nhận', color: '#6B7280', bgColor: '#F3F4F6' };
+    }
   };
 
-  const getStatusColor = (status: string, paymentStatus: string) => {
-    if (status === 'scheduled' && paymentStatus === 'paid') return '#10B981';
-    if (status === 'scheduled' && paymentStatus === 'pending') return '#F59E0B';
-    return '#6B7280';
+  const getCardBorderColor = (status: AppointmentStatus, paymentStatus: PaymentStatus) => {
+    const normalizedPaymentStatus = paymentStatus.toUpperCase();
+
+    if (status === 'UPCOMING' && normalizedPaymentStatus === 'PENDING') return '#F59E0B';
+    if (status === 'UPCOMING' && normalizedPaymentStatus === 'PAID') return '#10B981';
+    if (status === 'ON_GOING') return '#3B82F6';
+    if (status === 'COMPLETED') return '#6B7280';
+    if (status === 'CANCELLED') return '#EF4444';
+    return '#E5E7EB';
   };
 
   return (
-    <SafeAreaView className="flex-1" style={{ backgroundColor: '#F9FAFB' }}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
+    <View style={{ flex: 1, backgroundColor: '#E0F2FE' }}>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
-      {/* Header */}
-      <View className="px-5 py-4" style={{ backgroundColor: '#0284C7' }}>
-        <View className="flex-row items-center justify-between">
-          <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={24} color="white" />
-          </TouchableOpacity>
-          <Text className="text-xl font-bold text-white">Lịch hẹn</Text>
-          <TouchableOpacity
-            onPress={() => router.push('/create')}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+        alwaysBounceVertical={false}
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: 100 }}
+        scrollEventThrottle={16}
+        contentInsetAdjustmentBehavior="never"
+        automaticallyAdjustContentInsets={false}>
+        {/* Background Gradient - now scrollable and extends to top */}
+        <View style={{ height: 320, position: 'relative', marginTop: -60 }}>
+          <LinearGradient
+            colors={['#0284C7', '#06B6D4', '#10B981']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{ flex: 1 }}
+          />
+          {/* Curved bottom edge using SVG */}
+          <Svg
+            height="70"
+            width="200%"
+            viewBox="0 0 1440 120"
+            style={{ position: 'absolute', bottom: -1, left: 0, right: 0 }}>
+            <Path d="M0,0 Q720,120 1440,0 L1440,120 L0,120 Z" fill="#E0F2FE" />
+          </Svg>
+
+          {/* Decorative circles */}
+          <View
             style={{
-              // position: 'absolute',
-              right: 10,
-              backgroundColor: '#ffffffff', // xanh dương
-              padding: 6,
-              borderRadius: 20,
-              elevation: 3,
+              position: 'absolute',
+              top: -60,
+              right: -40,
+              height: 180,
+              width: 180,
+              borderRadius: 90,
+              backgroundColor: 'rgba(255,255,255,0.12)',
+            }}
+          />
+          <View
+            style={{
+              position: 'absolute',
+              top: 120,
+              left: -50,
+              height: 150,
+              width: 150,
+              borderRadius: 75,
+              backgroundColor: 'rgba(255,255,255,0.08)',
+            }}
+          />
+
+          {/* Header positioned within gradient */}
+          <View
+            style={{
+              position: 'absolute',
+              top: 120,
+              left: 24,
+              right: 24,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
             }}>
-            <Ionicons name="add" size={24} color="black" />
-          </TouchableOpacity>
+            <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#FFFFFF' }}>
+              Lịch hẹn của tôi
+            </Text>
+            <TouchableOpacity
+              onPress={() => router.push('/(homes)/(appointment)/service-selection')}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: 'rgba(255,255,255,0.25)',
+                borderRadius: 999,
+                paddingHorizontal: 16,
+                paddingVertical: 10,
+                borderWidth: 1,
+                borderColor: 'rgba(255,255,255,0.3)',
+              }}>
+              <Ionicons name="add-circle" size={18} color="#FFFFFF" />
+              <Text style={{ marginLeft: 6, fontSize: 14, fontWeight: '600', color: '#FFFFFF' }}>
+                Đặt lịch ngay
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
 
-      {/* Tab Selector
-      <View className="mx-5 mt-4 flex-row rounded-xl bg-white p-1">
-        <TouchableOpacity
-          onPress={() => setSelectedTab('confirmed')}
-          className={`flex-1 items-center rounded-lg py-3 ${
-            selectedTab === 'confirmed' ? 'bg-[#0284C7]' : 'bg-transparent'
-          }`}>
-          <Text
-            className={`text-base font-semibold ${
-              selectedTab === 'confirmed' ? 'text-white' : 'text-gray-600'
-            }`}>
-            Xác nhận
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => setSelectedTab('requests')}
-          className={`flex-1 items-center rounded-lg py-3 ${
-            selectedTab === 'requests' ? 'bg-[#0284C7]' : 'bg-transparent'
-          }`}>
-          <Text
-            className={`text-base font-semibold ${
-              selectedTab === 'requests' ? 'text-white' : 'text-gray-600'
-            }`}>
-            Yêu cầu
-          </Text>
-        </TouchableOpacity>
-      </View> */}
-
-      {/* Appointments List */}
-      <ScrollView className="flex-1 px-5 py-4" showsVerticalScrollIndicator={false}>
-        {isLoading ? (
-          <View className="items-center py-8">
-            <Text className="text-gray-500">Đang tải...</Text>
-          </View>
-        ) : appointments.length === 0 ? (
-          <View className="items-center py-8">
-            <Ionicons name="calendar-outline" size={64} color="#9CA3AF" />
-            <Text className="mt-4 text-lg font-medium text-gray-500">Chưa có lịch hẹn nào</Text>
-            <Text className="mt-2 text-center text-gray-400">Hãy đặt lịch khám để bắt đầu</Text>
-          </View>
-        ) : (
-          appointments.map((appointment) => {
-            console.log('Appointment:', appointment);
-            const { day, month, year } = formatDate(appointment.date);
-            const time = formatTime(appointment.date);
-            const statusText = getStatusText(appointment.status, appointment.paymentStatus);
-            const statusColor = getStatusColor(appointment.status, appointment.paymentStatus);
-
-            return (
-              <TouchableOpacity
-                key={appointment.id}
-                onPress={() =>
-                  router.push(
-                    `/(homes)/(appointment)/appointment-detail?id=${appointment.id}` as any
-                  )
-                }
-                className="mb-4 rounded-xl bg-white p-4"
+        <View style={{ paddingHorizontal: 24, marginTop: -100, marginBottom: 24 }}>
+          {/* Appointments List */}
+          {isLoading ? (
+            <View className="items-center py-20">
+              <ActivityIndicator size="large" color="#0284C7" />
+              <Text className="mt-4 text-base text-gray-600">Đang tải lịch hẹn...</Text>
+            </View>
+          ) : appointments.length === 0 ? (
+            <View className="items-center py-20">
+              <View
+                className="items-center justify-center rounded-full bg-white p-6"
                 style={{
                   shadowColor: '#000',
                   shadowOffset: { width: 0, height: 2 },
@@ -133,88 +202,189 @@ export default function AppointmentsListScreen() {
                   shadowRadius: 4,
                   elevation: 3,
                 }}>
-                <View className="flex-row">
-                  {/* Date Block */}
-                  <View
-                    className="mr-4 items-center justify-center rounded-lg px-3 py-2"
-                    style={{ backgroundColor: '#F0FDFA' }}>
-                    <Text className="text-sm font-medium text-gray-600">
-                      {month}/{year}
-                    </Text>
-                    <Text className="text-2xl font-bold" style={{ color: '#0284C7' }}>
-                      {day}
-                    </Text>
-                  </View>
-
-                  {/* Appointment Details */}
-                  <View className="flex-1">
-                    <Text className="text-lg font-bold text-gray-900">
-                      {appointment.service.name}
-                    </Text>
-                    <Text className="mt-1 text-sm text-gray-600">
-                      BS. {appointment.doctor.user.firstName} {appointment.doctor.user.lastName}
-                    </Text>
-                    {/* <Text className="mt-1 text-sm text-gray-600">
-                      {appointment.doctor.clinic?.name || 'Bệnh viện'}
-                    </Text> */}
-                    <View className="mt-2 flex-row items-center justify-between">
-                      <Text className="text-sm font-medium" style={{ color: statusColor }}>
-                        {time} {statusText}
-                      </Text>
-                      <View
-                        className="rounded-full px-3 py-1"
-                        style={{ backgroundColor: '#F0FDFA' }}>
-                        <Text className="text-xs font-medium" style={{ color: '#0284C7' }}>
-                          Bản thân
-                        </Text>
-                      </View>
-                    </View>
-
-                    {/* Action Buttons */}
-                    <View className="mt-3 space-y-2">
-                      {/* Payment Button - Show only if billing exists and status is PENDING */}
-                      {appointment.billing && appointment.billing.status === 'PENDING' && (
-                        <TouchableOpacity
-                          onPress={() => router.push(`/payment?id=${appointment.id}` as any)}
-                          className="w-full items-center rounded-lg bg-green-600 py-2"
-                          style={{
-                            shadowColor: '#000',
-                            shadowOffset: { width: 0, height: 1 },
-                            shadowOpacity: 0.2,
-                            shadowRadius: 2,
-                            elevation: 2,
-                          }}>
-                          <Text className="text-sm font-medium text-white">Thanh toán</Text>
-                        </TouchableOpacity>
-                      )}
-
-                      {/* Other Action Buttons */}
-                      <View className="flex-row space-x-2">
-                        <TouchableOpacity
-                          className="flex-1 items-center rounded-lg border py-2"
-                          style={{ borderColor: '#0284C7' }}>
-                          <Text className="text-sm font-medium" style={{ color: '#0284C7' }}>
-                            Đổi lịch
-                          </Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          className="flex-1 items-center rounded-lg border py-2"
-                          style={{ borderColor: '#EF4444' }}>
-                          <Text className="text-sm font-medium text-red-500">Hủy lịch</Text>
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-
-                    <Text className="mt-2 text-xs text-gray-400">
-                      (Quý khách chỉ được đổi/hủy lịch 1 lần)
-                    </Text>
-                  </View>
-                </View>
+                <Ionicons name="calendar-outline" size={64} color="#0284C7" />
+              </View>
+              <Text className="mt-6 text-xl font-bold text-gray-900">Chưa có lịch hẹn nào</Text>
+              <Text className="mt-2 text-center text-base text-gray-500">
+                Hãy đặt lịch khám để bắt đầu chăm sóc sức khỏe
+              </Text>
+              <TouchableOpacity
+                onPress={() => router.push('/create')}
+                className="mt-6 flex-row items-center rounded-lg px-6 py-3"
+                style={{ backgroundColor: '#0284C7' }}>
+                <Ionicons name="add-circle-outline" size={20} color="white" />
+                <Text className="ml-2 text-base font-semibold text-white">Đặt lịch ngay</Text>
               </TouchableOpacity>
-            );
-          })
-        )}
+            </View>
+          ) : (
+            appointments.map((appointment) => {
+              const { day, month, year } = formatDate(appointment.date);
+              const time = formatTime(appointment.startTime);
+              const statusInfo = getStatusInfo(
+                appointment.status as AppointmentStatus,
+                appointment.paymentStatus as PaymentStatus,
+                appointment.id
+              );
+              const borderColor = getCardBorderColor(
+                appointment.status as AppointmentStatus,
+                appointment.paymentStatus as PaymentStatus
+              );
+              const isPaymentPending = isPendingPaymentForAppointment(appointment.id);
+              const canCreatePayment = !hasPendingPayment || isPaymentPending;
+              const isUpcoming = (appointment.status as AppointmentStatus) === 'UPCOMING';
+              const hasUnpaidBilling =
+                appointment.billing && appointment.billing.status.toUpperCase() === 'PENDING';
+
+              return (
+                <TouchableOpacity
+                  key={appointment.id}
+                  onPress={() =>
+                    router.push(
+                      `/(homes)/(appointment)/appointment-detail?id=${appointment.id}` as any
+                    )
+                  }
+                  className="mb-4 rounded-xl bg-white p-4"
+                  style={{
+                    borderLeftWidth: 4,
+                    borderLeftColor: borderColor,
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.1,
+                    shadowRadius: 4,
+                    elevation: 3,
+                  }}>
+                  <View className="flex-row">
+                    {/* Date Block */}
+                    <View
+                      className="mr-4 items-center justify-center rounded-lg px-3 py-2"
+                      style={{ backgroundColor: '#F0FDFA' }}>
+                      <Text className="text-sm font-medium text-gray-600">
+                        {month}/{year}
+                      </Text>
+                      <Text className="text-2xl font-bold" style={{ color: '#0284C7' }}>
+                        {day.toString().padStart(2, '0')}
+                      </Text>
+                    </View>
+
+                    {/* Appointment Details */}
+                    <View className="flex-1">
+                      {/* Patient Info Badge - Move to top */}
+                      <View className="mb-2">
+                        <View className="self-start rounded-full bg-blue-50 px-3 py-1">
+                          <Text className="text-xs font-medium text-blue-600">
+                            {appointment.patientProfile?.relationship || 'Bản thân'}
+                          </Text>
+                        </View>
+                      </View>
+
+                      <Text className="text-lg font-bold text-gray-900">
+                        {appointment.service.name}
+                      </Text>
+                      <Text className="mt-1 text-sm text-gray-600">
+                        BS. {appointment.doctor.user.firstName} {appointment.doctor.user.lastName}
+                      </Text>
+                      <Text className="mt-1 text-sm text-gray-500">
+                        {appointment.clinic?.name || 'Bệnh viện'}
+                      </Text>
+
+                      <View className="mt-2 flex-row items-center">
+                        <Ionicons name="time-outline" size={16} color="#6B7280" />
+                        <Text className="ml-1 text-sm text-gray-600">{time}</Text>
+                      </View>
+
+                      <View className="mt-2">
+                        <View
+                          className="self-start rounded-full px-3 py-1"
+                          style={{ backgroundColor: statusInfo.bgColor }}>
+                          <Text
+                            className="text-xs font-semibold"
+                            style={{ color: statusInfo.color }}>
+                            {statusInfo.text}
+                          </Text>
+                        </View>
+                      </View>
+
+                      {/* Action Buttons - Only for UPCOMING appointments */}
+                      {isUpcoming && (
+                        <View className="mt-3">
+                          {/* Payment Button */}
+                          {hasUnpaidBilling && (
+                            <TouchableOpacity
+                              onPress={() => {
+                                if (canCreatePayment) {
+                                  router.push(`/(homes)/(payment)?id=${appointment.id}` as any);
+                                }
+                              }}
+                              disabled={!canCreatePayment}
+                              className={`w-full items-center rounded-lg py-3 ${
+                                isPaymentPending
+                                  ? 'bg-green-500'
+                                  : canCreatePayment
+                                    ? 'bg-green-600'
+                                    : 'bg-gray-400'
+                              }`}
+                              style={{
+                                shadowColor: '#000',
+                                shadowOffset: { width: 0, height: 2 },
+                                shadowOpacity: 0.2,
+                                shadowRadius: 3,
+                                elevation: 3,
+                              }}>
+                              <View className="flex-row items-center">
+                                {isPaymentPending ? (
+                                  <>
+                                    <Ionicons name="qr-code" size={18} color="white" />
+                                    <Text className="ml-2 text-sm font-bold text-white">
+                                      Xem QR thanh toán
+                                    </Text>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Ionicons name="card" size={18} color="white" />
+                                    <Text className="ml-2 text-sm font-bold text-white">
+                                      Thanh toán
+                                    </Text>
+                                  </>
+                                )}
+                              </View>
+                            </TouchableOpacity>
+                          )}
+
+                          {!canCreatePayment && !isPaymentPending && hasUnpaidBilling && (
+                            <Text className="mt-2 text-center text-xs text-red-500">
+                              Vui lòng hoàn tất giao dịch đang chờ trước
+                            </Text>
+                          )}
+
+                          {/* Other Action Buttons */}
+                          <View className="mt-3 flex-row space-x-2">
+                            <TouchableOpacity
+                              className="flex-1 items-center rounded-lg border py-2"
+                              style={{ borderColor: '#0284C7' }}>
+                              <Text className="text-sm font-medium" style={{ color: '#0284C7' }}>
+                                Đổi lịch
+                              </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                              className="flex-1 items-center rounded-lg border py-2"
+                              style={{ borderColor: '#EF4444' }}>
+                              <Text className="text-sm font-medium text-red-500">Hủy lịch</Text>
+                            </TouchableOpacity>
+                          </View>
+
+                          <Text className="mt-2 text-xs text-gray-400">
+                            (Quý khách chỉ được đổi/hủy lịch 1 lần)
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              );
+            })
+          )}
+        </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }

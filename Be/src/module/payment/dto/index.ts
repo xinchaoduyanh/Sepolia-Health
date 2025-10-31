@@ -56,6 +56,20 @@ const CancelPaymentCodeResponseSchema = z.object({
   message: z.string(),
 });
 
+// Check Payment Status DTO
+const CheckPaymentStatusSchema = z.object({
+  appointmentId: z
+    .number()
+    .int()
+    .positive('Appointment ID phải là số nguyên dương'),
+});
+
+// Check Payment Status Response DTO
+const CheckPaymentStatusResponseSchema = z.object({
+  isPaid: z.boolean(),
+  paymentStatus: z.enum(['PENDING', 'PAID', 'REFUNDED']),
+});
+
 export class CreateQrScanDto extends createZodDto(CreateQrScanSchema) {}
 export class QrScanResponseDto extends createZodDto(QrScanResponseSchema) {}
 export class SepayWebhookPayloadDto extends createZodDto(
@@ -69,4 +83,10 @@ export class CancelPaymentCodeDto extends createZodDto(
 ) {}
 export class CancelPaymentCodeResponseDto extends createZodDto(
   CancelPaymentCodeResponseSchema,
+) {}
+export class CheckPaymentStatusDto extends createZodDto(
+  CheckPaymentStatusSchema,
+) {}
+export class CheckPaymentStatusResponseDto extends createZodDto(
+  CheckPaymentStatusResponseSchema,
 ) {}

@@ -22,8 +22,9 @@ import {
   SepayWebhookResponseDto,
   CancelPaymentCodeDto,
   CancelPaymentCodeResponseDto,
+  CheckPaymentStatusDto,
+  CheckPaymentStatusResponseDto,
 } from './dto';
-import { User } from '@prisma/client';
 
 @ApiTags('Payment')
 @Controller('payment')
@@ -48,9 +49,9 @@ export class PaymentController {
   })
   async createQrScan(
     @Body() createQrScanDto: CreateQrScanDto,
-    @CurrentUser() user: User,
+    @CurrentUser('userId') userId: number,
   ): Promise<QrScanResponseDto> {
-    return this.paymentService.createQrScan(createQrScanDto, user);
+    return this.paymentService.createQrScan(createQrScanDto, userId);
   }
 
   @Post('sepay-webhook')
@@ -72,6 +73,32 @@ export class PaymentController {
     return this.paymentService.handleSepayWebhook(webhookPayload);
   }
 
+  @Post('check-payment-status')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Kiểm tra trạng thái thanh toán' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    type: CheckPaymentStatusResponseDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Dữ liệu không hợp lệ',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Không tìm thấy appointment',
+  })
+  async checkPaymentStatus(
+    @Body() checkPaymentStatusDto: CheckPaymentStatusDto,
+    @CurrentUser('userId') userId: number,
+  ): Promise<CheckPaymentStatusResponseDto> {
+    return this.paymentService.checkPaymentStatus(
+      checkPaymentStatusDto.appointmentId,
+      userId,
+    );
+  }
+
   @Post('cancel-payment-code')
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
@@ -90,11 +117,11 @@ export class PaymentController {
   })
   async cancelPaymentCode(
     @Body() cancelPaymentCodeDto: CancelPaymentCodeDto,
-    @CurrentUser() user: User,
+    @CurrentUser('userId') userId: number,
   ): Promise<CancelPaymentCodeResponseDto> {
     return this.paymentService.cancelPaymentCode(
       cancelPaymentCodeDto.appointmentId,
-      user,
+      userId,
     );
   }
 }

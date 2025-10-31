@@ -53,6 +53,14 @@ export class ServiceDto {
   duration: number;
 }
 
+export class ClinicDto {
+  @ApiProperty()
+  id: number;
+
+  @ApiProperty()
+  name: string;
+}
+
 export class BillingDto {
   @ApiProperty()
   id: number;
@@ -95,14 +103,29 @@ export class AppointmentResponseDto {
   @ApiProperty()
   notes: string | null;
 
-  @ApiProperty({ type: PatientDto })
-  patient: PatientDto;
+  @ApiProperty({ type: PatientDto, required: false })
+  patient?: PatientDto;
+
+  @ApiProperty({ required: false })
+  patientName?: string;
+
+  @ApiProperty({ required: false })
+  patientDob?: string;
+
+  @ApiProperty({ required: false })
+  patientPhone?: string;
+
+  @ApiProperty({ required: false })
+  patientGender?: string;
 
   @ApiProperty({ type: DoctorDto })
   doctor: DoctorDto;
 
   @ApiProperty({ type: ServiceDto })
   service: ServiceDto;
+
+  @ApiProperty({ type: ClinicDto, required: false })
+  clinic?: ClinicDto;
 
   @ApiProperty({ type: BillingDto, required: false })
   billing?: BillingDto;

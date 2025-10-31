@@ -2,6 +2,8 @@
 
 import { View, Text, TouchableOpacity, ScrollView, StatusBar, Image, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Path } from 'react-native-svg';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { router } from 'expo-router';
 import { PatientProfile, Relationship } from '@/types/auth';
@@ -107,76 +109,162 @@ const ProfileScreen = () => {
   // }, []);
 
   return (
-    <View className="flex-1" style={{ backgroundColor: '#E0F2FE' }}>
+    <View style={{ flex: 1, backgroundColor: '#E0F2FE' }}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
-      {/* ScrollView chứa toàn bộ nội dung */}
-      <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
-        {/* Background Image Section */}
-        <View className="relative h-60">
-          <Image
-            source={require('../../../assets/1.png')}
-            className="h-full w-full"
-            resizeMode="cover"
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+        alwaysBounceVertical={false}
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: 100 }}
+        scrollEventThrottle={16}
+        contentInsetAdjustmentBehavior="never"
+        automaticallyAdjustContentInsets={false}>
+        {/* Background Gradient - now scrollable and extends to top */}
+        <View style={{ height: 380, position: 'relative', marginTop: -60 }}>
+          <LinearGradient
+            colors={['#0284C7', '#06B6D4', '#10B981']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{ flex: 1 }}
           />
-          {/* Overlay để làm tối background một chút */}
-          <View className="absolute inset-0 bg-black/20" />
-        </View>
+          {/* Curved bottom edge using SVG */}
+          <Svg
+            height="70"
+            width="200%"
+            viewBox="0 0 1440 120"
+            style={{ position: 'absolute', bottom: -1, left: 0, right: 0 }}>
+            <Path d="M0,0 Q720,120 1440,0 L1440,120 L0,120 Z" fill="#E0F2FE" />
+          </Svg>
 
-        {/* Avatar & Tên được kéo lên trên với 3 layers */}
-        <View className="z-20 -mt-20 items-center px-6">
-          <View className="relative items-center">
-            {/* Layer 2: Hình tròn xanh nhạt dày bao quanh avatar */}
-            <View
-              className="h-32 w-32 items-center justify-center rounded-full"
-              style={{ backgroundColor: '#E0F2FE' }}>
-              {/* Layer 3: Avatar bên trong */}
-              <View className="h-28 w-28 rounded-full bg-white p-1">
+          {/* Decorative circles */}
+          <View
+            style={{
+              position: 'absolute',
+              top: -60,
+              right: -40,
+              height: 180,
+              width: 180,
+              borderRadius: 90,
+              backgroundColor: 'rgba(255,255,255,0.12)',
+            }}
+          />
+          <View
+            style={{
+              position: 'absolute',
+              top: 120,
+              left: -50,
+              height: 150,
+              width: 150,
+              borderRadius: 75,
+              backgroundColor: 'rgba(255,255,255,0.08)',
+            }}
+          />
+
+          {/* Header + Avatar positioned within gradient */}
+          <View
+            style={{
+              position: 'absolute',
+              top: 120,
+              left: 24,
+              right: 24,
+              alignItems: 'center',
+            }}>
+            {/* Header Title */}
+            <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#FFFFFF', marginBottom: 20 }}>
+              Hồ sơ của tôi
+            </Text>
+
+            {/* Avatar Section */}
+            <View style={{ alignItems: 'center' }}>
+              <View
+                style={{
+                  height: 80,
+                  width: 80,
+                  borderRadius: 40,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: 'rgba(255,255,255,0.25)',
+                  borderWidth: 3,
+                  borderColor: 'rgba(255,255,255,0.4)',
+                  shadowColor: '#000000',
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.2,
+                  shadowRadius: 8,
+                  elevation: 4,
+                  marginBottom: 12,
+                }}>
                 {primaryProfile?.avatar ? (
                   <Image
                     source={{ uri: primaryProfile.avatar }}
-                    className="h-full w-full rounded-full"
+                    style={{
+                      height: 74,
+                      width: 74,
+                      borderRadius: 37,
+                    }}
                   />
                 ) : (
-                  <View className="h-full w-full items-center justify-center rounded-full bg-slate-100">
-                    <Text className="text-3xl font-bold text-slate-600">
-                      {primaryProfile ? primaryProfile.firstName.charAt(0).toUpperCase() : 'U'}
-                    </Text>
-                  </View>
+                  <Text style={{ fontSize: 32, fontWeight: 'bold', color: '#FFFFFF' }}>
+                    {primaryProfile
+                      ? primaryProfile.firstName.charAt(0).toUpperCase()
+                      : user?.firstName?.charAt(0).toUpperCase() || 'U'}
+                  </Text>
                 )}
               </View>
+
+              {/* Camera button */}
+              <TouchableOpacity
+                style={{
+                  position: 'absolute',
+                  bottom: 8,
+                  right: -8,
+                  height: 32,
+                  width: 32,
+                  borderRadius: 16,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: '#FFFFFF',
+                  borderWidth: 2,
+                  borderColor: 'rgba(255,255,255,0.8)',
+                  shadowColor: '#000000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.2,
+                  shadowRadius: 4,
+                  elevation: 3,
+                }}
+                onPress={() => handleUploadAvatar(primaryProfile?.id)}
+                disabled={isUploading}>
+                {isUploading ? (
+                  <Ionicons name="hourglass-outline" size={16} color="#0284C7" />
+                ) : (
+                  <Ionicons name="camera-outline" size={16} color="#0284C7" />
+                )}
+              </TouchableOpacity>
+
+              <Text style={{ fontSize: 20, fontWeight: '700', color: '#FFFFFF', marginBottom: 6 }}>
+                {primaryProfile
+                  ? `${primaryProfile.firstName} ${primaryProfile.lastName}`
+                  : user
+                    ? `${user.firstName} ${user.lastName}`
+                    : 'Người dùng'}
+              </Text>
+              <Text style={{ fontSize: 14, color: 'rgba(255,255,255,0.9)', lineHeight: 20 }}>
+                {primaryProfile?.phone || user?.phone || 'Chưa cập nhật'} •{' '}
+                {user?.email || 'Chưa cập nhật'}
+              </Text>
             </View>
-
-            {/* Camera button ở layer 3 */}
-            <TouchableOpacity
-              className="absolute bottom-1 right-1 h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-slate-100"
-              onPress={() => handleUploadAvatar(primaryProfile?.id)}
-              disabled={isUploading}>
-              {isUploading ? (
-                <Ionicons name="hourglass-outline" size={20} color="#334155" />
-              ) : (
-                <Ionicons name="camera-outline" size={20} color="#334155" />
-              )}
-            </TouchableOpacity>
           </View>
-
-          <Text className="mt-3 text-2xl font-bold" style={{ color: '#1E40AF' }}>
-            {primaryProfile
-              ? `${primaryProfile.firstName} ${primaryProfile.lastName}`
-              : user
-                ? `${user.firstName} ${user.lastName}`
-                : 'Vũ Duy Anh'}
-          </Text>
         </View>
 
         {/* Main Content Area */}
-        <View className="z-10 mt-6 px-6 pb-8">
+        <View style={{ paddingHorizontal: 24, marginTop: -150, marginBottom: 24 }}>
           {/* Thông tin chung Section */}
           <View className="mb-6">
             <Text className="mb-4 text-lg font-bold text-slate-900">Thông tin chung </Text>
-            <View className="overflow-hidden rounded-xl bg-teal-50">
+            <View className="overflow-hidden rounded-xl bg-white shadow-sm">
               <TouchableOpacity
-                className="flex-row items-center border-b border-cyan-100 p-4"
+                className="flex-row items-center border-b border-gray-100 p-4"
                 onPress={() => {
                   if (primaryProfile) {
                     router.push({
@@ -196,7 +284,7 @@ const ProfileScreen = () => {
                 <Ionicons name="chevron-forward" size={20} color="#06B6D4" />
               </TouchableOpacity>
               <TouchableOpacity
-                className="flex-row items-center border-b border-cyan-100 p-4"
+                className="flex-row items-center border-b border-gray-100 p-4"
                 onPress={() => router.push('/(profile)/additional-info' as any)}>
                 <View className="mr-4 h-10 w-10 items-center justify-center rounded-full bg-cyan-100">
                   <Ionicons name="add-circle-outline" size={20} color="#0284C7" />
@@ -238,7 +326,7 @@ const ProfileScreen = () => {
                 {otherProfiles.map((profile: PatientProfile) => (
                   <View
                     key={profile.id}
-                    className="flex-row items-center rounded-xl border border-cyan-100 bg-teal-50 p-4">
+                    className="flex-row items-center rounded-xl border border-cyan-100 bg-white p-4 shadow-sm">
                     <TouchableOpacity
                       className="mr-4 h-12 w-12 items-center justify-center rounded-full bg-cyan-100"
                       onPress={() => handleUploadAvatar(profile.id)}
@@ -279,8 +367,8 @@ const ProfileScreen = () => {
               </View>
             ) : (
               /* Hiển thị illustration khi chưa có PatientProfile */
-              <View className="items-center rounded-2xl border border-cyan-100 bg-teal-50 p-6">
-                <View className="mb-5 h-32 w-32 items-center justify-center rounded-full bg-white/50">
+              <View className="items-center rounded-2xl border border-cyan-100 bg-white p-6 shadow-sm">
+                <View className="mb-5 h-32 w-32 items-center justify-center rounded-full bg-gray-50">
                   <Image
                     source={require('../../../assets/profile-bg1.png')}
                     className="h-24 w-24"

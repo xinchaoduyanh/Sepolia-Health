@@ -22,13 +22,17 @@ export interface Appointment {
   status: 'scheduled' | 'completed' | 'cancelled';
   paymentStatus: 'pending' | 'paid' | 'refunded';
   notes: string | null;
-  patient: {
+  patient?: {
     id: number;
     firstName: string;
     lastName: string;
     email: string;
     phone: string | null;
   };
+  patientName?: string;
+  patientDob?: string;
+  patientPhone?: string;
+  patientGender?: string;
   doctor: {
     id: number;
     specialty: string;
@@ -43,6 +47,10 @@ export interface Appointment {
     name: string;
     price: number;
     duration: number;
+  };
+  clinic?: {
+    id: number;
+    name: string;
   };
   billing?: Billing;
   createdAt: string;

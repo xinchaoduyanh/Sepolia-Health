@@ -76,7 +76,9 @@ export default function DoctorSelectionScreen() {
   };
 
   const doctors =
-    doctorServicesData?.data?.length > 0 ? mapDoctorData(doctorServicesData.data) : fallbackDoctors;
+    doctorServicesData?.data && doctorServicesData.data.length > 0
+      ? mapDoctorData(doctorServicesData.data)
+      : fallbackDoctors;
 
   const filteredDoctors = doctors.filter(
     (doctor: any) =>
@@ -97,15 +99,19 @@ export default function DoctorSelectionScreen() {
         setContextDoctor(`${doctor.firstName || ''} ${doctor.lastName || ''}`);
         // Lưu doctorServiceId (id từ API response)
         setSelectedDoctorServiceId(doctor.id);
-        // Set ngày mặc định là hôm nay
+        // Set ngày mặc định là hôm nay (ISO date format)
         const today = new Date().toISOString().split('T')[0];
         setSelectedDate(today);
-        router.push('/(homes)/(appointment)/' as any);
+        router.push('/(homes)/(appointment)/create');
       }
     }
   };
 
   const handleBack = () => {
+    router.push('/(homes)/(appointment)/service-selection');
+  };
+
+  const handleBackToAppointments = () => {
     router.push('/(homes)/(appointment)/' as any);
   };
 
@@ -157,7 +163,7 @@ export default function DoctorSelectionScreen() {
             Vui lòng kiểm tra kết nối mạng và thử lại
           </Text>
           <TouchableOpacity
-            onPress={() => router.push('/(homes)/(appointment)/' as any)}
+            onPress={() => router.push('/(homes)/(appointment)/service-selection')}
             className="mt-6 rounded-xl bg-blue-600 px-6 py-3">
             <Text className="text-base font-semibold text-white">Quay lại</Text>
           </TouchableOpacity>
@@ -177,7 +183,9 @@ export default function DoctorSelectionScreen() {
             <Ionicons name="arrow-back" size={24} color="#2563EB" />
           </TouchableOpacity>
           <Text className="text-xl font-bold text-slate-900">Chọn bác sĩ</Text>
-          <View style={{ width: 24 }} />
+          <TouchableOpacity onPress={handleBackToAppointments}>
+            <Ionicons name="calendar-outline" size={24} color="#2563EB" />
+          </TouchableOpacity>
         </View>
       </View>
 
