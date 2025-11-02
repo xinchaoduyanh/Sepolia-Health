@@ -4,7 +4,7 @@ import { API_URL } from '@env';
 export const API_CONFIG = {
   // Development URLs
   BASE_URL: __DEV__
-    ? (API_URL ?? 'http://localhost:8000/api') // Local development
+    ? API_URL || 'http://localhost:8000/api' // Local development
     : 'https://your-production-api.com/api', // Production URL
 
   TIMEOUT: 10000, // 10 seconds
