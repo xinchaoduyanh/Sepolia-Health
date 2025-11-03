@@ -271,7 +271,9 @@ export class AuthService {
     const tokens = await this.redisService.findAllTokens(userId);
 
     // Xóa tất cả tokens của user khỏi Redis
-    await this.redisService.deleteTokens(tokens);
+    if (tokens?.length) {
+      await this.redisService.deleteTokens(tokens);
+    }
   }
 
   async forgotPassword(body: ForgotPasswordDto): Promise<SuccessResponseDto> {
@@ -311,11 +313,10 @@ export class AuthService {
     if (!user) {
       throw new BadRequestException(ERROR_MESSAGES.AUTH.USER_NOT_FOUND);
     }
-
-    await this.authRepository.updateUser(user.id, { password: newPassword });
-    // udpate redis
-    await this.logout(user.id);
-
+    await Promise.all([
+      this.logout(user.id),
+      this.authRepository.updateUser(user.id, { password: newPassword }),
+    ]);
     // todo send mail
 
     return new SuccessResponseDto();

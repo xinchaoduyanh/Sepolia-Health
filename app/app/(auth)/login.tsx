@@ -9,7 +9,6 @@ import {
   Platform,
   ScrollView,
   StatusBar,
-  Alert,
   Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -140,11 +139,17 @@ export default function LoginScreen() {
                   }}
                   secureTextEntry={!showPassword}
                 />
-                <TouchableOpacity onPress={() => setShowPassword(!showPassword)} className="p-1">
-                  <Ionicons
-                    name={showPassword ? 'eye-outline' : 'eye-off-outline'}
-                    size={20}
-                    color="#6B7280"
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                  className="p-1"
+                  activeOpacity={1}>
+                  <Image
+                    source={
+                      showPassword
+                        ? require('../../assets/pepe_open_eye.png')
+                        : require('../../assets/pepe_cover_eye.png')
+                    }
+                    style={{ width: 30, height: 30 }}
                   />
                 </TouchableOpacity>
               </View>
@@ -173,7 +178,9 @@ export default function LoginScreen() {
             )}
 
             {/* Forgot Password */}
-            <TouchableOpacity className="mb-8 self-center">
+            <TouchableOpacity
+              className="mb-8 self-center"
+              onPress={() => router.push('/forgot-password')}>
               <Text className="text-sm font-semibold text-blue-500">Quên mật khẩu?</Text>
             </TouchableOpacity>
 

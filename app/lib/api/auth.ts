@@ -73,6 +73,11 @@ export const authApi = {
     const response = await apiClient.post<LoginResponse>(API_ENDPOINTS.AUTH.REFRESH, data);
     return response.data;
   },
+
+  forgotPassword: async (email: string) => {
+    const response = await apiClient.post(API_ENDPOINTS.AUTH.FORGOT_PASSWORD, { email });
+    return response.data;
+  },
 };
 
 // React Query Hooks

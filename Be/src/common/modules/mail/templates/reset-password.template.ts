@@ -47,13 +47,14 @@ export const getResetPasswordEmailTemplate = (data: ResetPasswordEmailData) => {
           }
           .button {
             display: inline-block;
-            background-color: #e74c3c;
+            background-color: #ffffffff;
             color: white;
             padding: 12px 30px;
             text-decoration: none;
             border-radius: 5px;
             font-weight: bold;
             margin: 20px 0;
+            border: 1px solid #0284C7;
           }
           .warning {
             background-color: #fdf2f2;
@@ -85,8 +86,11 @@ export const getResetPasswordEmailTemplate = (data: ResetPasswordEmailData) => {
             <p>Bạn đã yêu cầu đặt lại mật khẩu cho tài khoản của mình tại Sepolia Clinic.</p>
             
             <p>Nhấp vào nút bên dưới để đặt lại mật khẩu:</p>
-            <a href="${data.resetLink}" class="button">Đặt lại mật khẩu</a>
-            
+
+            <div class"button-container" style="text-align: center; align-items: center; justify-content: center;">
+              <a href="${data.resetLink}" class="button">Đặt lại mật khẩu</a>
+            </div>
+
             <div class="warning">
               <strong>⚠️ Lưu ý quan trọng:</strong>
               <ul>

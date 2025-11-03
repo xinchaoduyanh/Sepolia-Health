@@ -45,6 +45,12 @@ export interface LogoutResponse {
     message: string
 }
 
+export interface ForgotPasswordRequest {
+    email: string
+    otp: string
+    newPassword: string
+}
+
 export class AuthService {
     /**
      * Admin login - gọi thẳng tới backend API
@@ -96,6 +102,10 @@ export class AuthService {
             console.error('Logout API call failed:', error)
             return { message: 'Logged out locally' }
         }
+    }
+
+    async resetPassword(data: ForgotPasswordRequest): Promise<any> {
+        return apiClient.post('/auth/reset-password', data)
     }
 }
 

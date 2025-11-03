@@ -59,11 +59,11 @@ export default function AppointmentDetailScreen() {
         <ScrollView className="flex-1 px-6 py-5" showsVerticalScrollIndicator={false}>
           {/* Section Component */}
           {[
-            {
-              title: 'Dịch vụ',
-              icon: 'medical',
-              rows: [{ label: 'Hình thức', value: 'Khám chuyên khoa tại bệnh viện' }],
-            },
+            // {
+            //   title: 'Dịch vụ',
+            //   icon: 'medical',
+            //   rows: [{ label: 'Hình thức', value: 'Khám chuyên khoa tại bệnh viện' }],
+            // },
             {
               title: 'Khách hàng',
               icon: 'person',
@@ -76,7 +76,7 @@ export default function AppointmentDetailScreen() {
               ],
             },
             {
-              title: 'Bác sĩ',
+              title: 'Bác sĩ ',
               icon: 'briefcase',
               rows: [
                 {
@@ -126,7 +126,7 @@ export default function AppointmentDetailScreen() {
           ))}
 
           {/* Action Buttons */}
-          <View className="mb-6 flex-row space-x-4">
+          <View className="mb-6 flex-row gap-4">
             <TouchableOpacity
               className="flex-1 items-center rounded-xl border-2 bg-white py-3 shadow-sm"
               style={{ borderColor: '#0284C7' }}>

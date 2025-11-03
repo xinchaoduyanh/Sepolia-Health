@@ -1,6 +1,8 @@
+'use client'
+
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useRouter } from 'next/navigation'
-import React from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import React, { useState } from 'react'
 import { authService, type AdminLoginRequest } from '../lib/api-services'
 import { queryKeys } from '../lib/query-keys'
 import { useAuthStore } from '../stores/auth.store'
@@ -396,4 +398,48 @@ export function useCheckAuth() {
     }, [authStore])
 
     return { checkAuth }
+}
+
+export function useResetPassword() {
+    const [password, setPassword] = useState('')
+    const [confirm, setConfirm] = useState('')
+    const [showPassword, setShowPassword] = useState(false)
+    const [showConfirm, setShowConfirm] = useState(false)
+    const [error, setError] = useState<string | null>(null)
+
+    const params = useSearchParams()
+    const email = params.get('email') || ''
+    const otp = params.get('otp') || ''
+
+    const mutation = useMutation({
+        mutationFn: async () => {
+            return authService.resetPassword({ email, otp, newPassword: password })
+        },
+    })
+
+    const handleResetPassword = async () => {
+        if (password.length < 6) {
+            setError('Mật khẩu cần ít nhất 8 ký tự.')
+            return
+        }
+        if (password !== confirm) {
+            setError('Mật khẩu xác nhận không khớp.')
+            return
+        }
+        await mutation.mutateAsync()
+    }
+    return {
+        password,
+        setPassword,
+        confirm,
+        setConfirm,
+        showPassword,
+        setShowPassword,
+        showConfirm,
+        setShowConfirm,
+        handleResetPassword,
+        error: mutation.error?.message || error,
+        loading: mutation.isPending,
+        success: mutation.isSuccess,
+    }
 }

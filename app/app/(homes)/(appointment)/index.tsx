@@ -222,9 +222,7 @@ export default function AppointmentsListScreen() {
                 <TouchableOpacity
                   key={appointment.id}
                   onPress={() =>
-                    router.push(
-                      `/(homes)/(appointment)/appointment-detail?id=${appointment.id}` as any
-                    )
+                    router.push(`/(homes)/(appointment)/appointment-detail?id=${appointment.id}`)
                   }
                   className="mb-4 rounded-xl bg-white p-4"
                   style={{
@@ -340,7 +338,7 @@ export default function AppointmentsListScreen() {
                           )}
 
                           {/* Other Action Buttons */}
-                          <View className="mt-3 flex-row space-x-2">
+                          <View className="mt-3 flex-row gap-3">
                             <TouchableOpacity
                               className="flex-1 items-center rounded-lg border py-2"
                               style={{ borderColor: '#0284C7' }}>

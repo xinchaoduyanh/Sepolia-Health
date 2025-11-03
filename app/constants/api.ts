@@ -21,6 +21,7 @@ export const API_ENDPOINTS = {
     COMPLETE_REGISTER: '/auth/complete-register',
     REFRESH: '/auth/refresh-token',
     LOGOUT: '/auth/logout',
+    FORGOT_PASSWORD: '/auth/forgot-password',
     PROFILE: '/patient/user/profile', // User profile endpoint
   },
 

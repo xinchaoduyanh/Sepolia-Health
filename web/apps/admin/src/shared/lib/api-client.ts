@@ -193,6 +193,11 @@ export class ApiClient {
     }
 
     async post<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+        console.log('🚀 Posting to API:', {
+            url,
+            data,
+            config,
+        })
         const response = await this.client.post(url, data, config)
         return this.unwrapResponse<T>(response.data)
     }
