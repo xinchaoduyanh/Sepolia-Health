@@ -43,17 +43,17 @@ export default function ServiceSelectionScreen() {
           name: service.name,
           price: service.price,
         });
-        router.push('./doctor-selection' as any);
+        router.push('./doctor-selection');
       }
     }
   };
 
   const handleBack = () => {
-    router.push('/(homes)/(appointment)/' as any);
+    router.push('/(homes)/(appointment)');
   };
 
   const handleBackToAppointments = () => {
-    router.push('/(homes)/(appointment)/' as any);
+    router.push('/(homes)/(appointment)');
   };
 
   const formatPrice = (price: number) => {
@@ -97,7 +97,7 @@ export default function ServiceSelectionScreen() {
             Vui lòng kiểm tra kết nối mạng và thử lại
           </Text>
           <TouchableOpacity
-            onPress={() => router.push('/(homes)/(appointment)/' as any)}
+            onPress={() => router.push('/(homes)/(appointment)')}
             className="mt-6 rounded-xl bg-blue-600 px-6 py-3">
             <Text className="text-base font-semibold text-white">Quay lại</Text>
           </TouchableOpacity>

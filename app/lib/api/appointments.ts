@@ -22,11 +22,10 @@ export interface Appointment {
   status: 'scheduled' | 'completed' | 'cancelled';
   paymentStatus: 'pending' | 'paid' | 'refunded';
   notes: string | null;
-  patient?: {
+  patientProfile?: {
     id: number;
     firstName: string;
     lastName: string;
-    email: string;
     phone: string | null;
   };
   patientName?: string;
@@ -35,12 +34,8 @@ export interface Appointment {
   patientGender?: string;
   doctor: {
     id: number;
-    specialty: string;
-    user: {
-      id: number;
-      firstName: string;
-      lastName: string;
-    };
+    firstName: string;
+    lastName: string;
   };
   service: {
     id: number;

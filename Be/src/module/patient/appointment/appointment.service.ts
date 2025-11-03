@@ -142,6 +142,12 @@ export class AppointmentService {
             createdAt: true,
           },
         },
+        clinic: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     });
 
@@ -149,7 +155,7 @@ export class AppointmentService {
       throw new NotFoundException(MESSAGES.APPOINTMENT.APPOINTMENT_NOT_FOUND);
     }
 
-    return this.formatAppointmentResponse(appointment);
+    return appointment;
   }
 
   /**
@@ -756,12 +762,8 @@ export class AppointmentService {
       patientGender: appointment.patientGender,
       doctor: {
         id: appointment.doctor.id,
-        specialty: appointment.doctor.specialty,
-        user: {
-          id: appointment.doctor.id,
-          firstName: appointment.doctor.firstName,
-          lastName: appointment.doctor.lastName,
-        },
+        firstName: appointment.doctor.firstName,
+        lastName: appointment.doctor.lastName,
       },
       service: {
         id: appointment.service.id,

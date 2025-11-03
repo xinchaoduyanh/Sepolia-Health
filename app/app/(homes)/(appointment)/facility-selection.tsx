@@ -39,13 +39,13 @@ export default function FacilitySelectionScreen() {
       const facility = facilities.find((f: Facility) => f.id === selectedFacility);
       if (facility) {
         setContextFacility({ id: facility.id, name: facility.name });
-        router.push('./service-selection' as any);
+        router.push('./service-selection');
       }
     }
   };
 
   const handleBack = () => {
-    router.push('/(homes)/(appointment)/' as any);
+    router.push('/(homes)/(appointment)');
   };
 
   if (isLoading) {
@@ -73,7 +73,7 @@ export default function FacilitySelectionScreen() {
             Vui lòng kiểm tra kết nối mạng và thử lại
           </Text>
           <TouchableOpacity
-            onPress={() => router.push('/(homes)/(appointment)/' as any)}
+            onPress={() => router.push('/(homes)/(appointment)')}
             className="mt-6 rounded-xl bg-blue-600 px-6 py-3">
             <Text className="text-base font-semibold text-white">Quay lại</Text>
           </TouchableOpacity>

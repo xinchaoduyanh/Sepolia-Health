@@ -12,7 +12,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { Doctor } from '@/types';
 import { useAppointment } from '@/contexts/AppointmentContext';
 import { useDoctorServices } from '@/lib/api/appointments';
 
@@ -112,7 +111,7 @@ export default function DoctorSelectionScreen() {
   };
 
   const handleBackToAppointments = () => {
-    router.push('/(homes)/(appointment)/' as any);
+    router.push('/(homes)/(appointment)');
   };
 
   const renderStars = (rating: number | undefined) => {

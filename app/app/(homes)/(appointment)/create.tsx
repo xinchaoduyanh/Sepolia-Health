@@ -8,7 +8,6 @@ import {
   StatusBar,
   Modal,
   Image,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -64,8 +63,6 @@ export default function AppointmentScreen() {
       setDateOfBirth(new Date(primaryProfile.dateOfBirth));
       setPhoneNumber(primaryProfile.phone);
       setGender(primaryProfile.gender === 'OTHER' ? null : primaryProfile.gender);
-      // Không set customerRole ở đây vì đã được set trong handleCustomerSelect
-      // setCustomerRole('Bản thân'); // Đã được set trong handleCustomerSelect
     }
   }, [user, selectedCustomer, primaryProfile]);
 

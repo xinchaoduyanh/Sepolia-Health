@@ -70,7 +70,7 @@ const specialties: Specialty[] = [
 ];
 
 export default function SpecialtySelectionScreen() {
-  const [selectedSpecialty, setSelectedSpecialty] = useState<string | null>(null);
+  const [selectedSpecialty, setSelectedSpecialty] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const { setSelectedSpecialty: setContextSpecialty } = useAppointment();
 
@@ -78,7 +78,7 @@ export default function SpecialtySelectionScreen() {
     specialty.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleSpecialtySelect = (specialtyId: string) => {
+  const handleSpecialtySelect = (specialtyId: number) => {
     setSelectedSpecialty(specialtyId);
   };
 
@@ -87,13 +87,13 @@ export default function SpecialtySelectionScreen() {
       const specialty = specialties.find((s) => s.id === selectedSpecialty);
       if (specialty) {
         setContextSpecialty(specialty.name);
-        router.push('/appointment' as any);
+        router.push('/(homes)/(appointment)');
       }
     }
   };
 
   const handleBack = () => {
-    router.push('/appointment');
+    router.push('/(homes)/(appointment)');
   };
 
   return (

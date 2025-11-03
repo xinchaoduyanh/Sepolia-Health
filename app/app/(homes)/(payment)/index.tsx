@@ -376,8 +376,7 @@ export default function PaymentScreen() {
                 <View className="mb-4">
                   <Text className="text-gray-600">Dịch vụ: {appointment.service.name}</Text>
                   <Text className="text-gray-600">
-                    Bác sĩ: BS. {appointment.doctor.user.firstName}{' '}
-                    {appointment.doctor.user.lastName}
+                    Bác sĩ: BS. {appointment.doctor.firstName} {appointment.doctor.lastName}
                   </Text>
                   <Text className="text-gray-600">
                     Ngày: {new Date(appointment.date).toLocaleDateString('vi-VN')}
@@ -457,9 +456,7 @@ export default function PaymentScreen() {
                     <View className="flex-row items-center">
                       <Ionicons name="qr-code" size={24} color="white" />
                       <Text className="ml-2 text-lg font-bold text-white">
-                        {hasPendingPayment && isPendingPaymentForAppointment(appointmentId)
-                          ? 'Tiếp tục thanh toán'
-                          : 'Tạo mã QR thanh toán'}
+                        Tạo mã QR thanh toán
                       </Text>
                     </View>
                   )}

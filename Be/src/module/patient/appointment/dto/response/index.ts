@@ -17,7 +17,7 @@ export class PatientDto {
   phone: string | null;
 }
 
-export class UserDto {
+export class DoctorDto {
   @ApiProperty()
   id: number;
 
@@ -26,17 +26,6 @@ export class UserDto {
 
   @ApiProperty()
   lastName: string;
-}
-
-export class DoctorDto {
-  @ApiProperty()
-  id: number;
-
-  @ApiProperty()
-  specialty: string;
-
-  @ApiProperty({ type: UserDto })
-  user: UserDto;
 }
 
 export class ServiceDto {
@@ -72,10 +61,10 @@ export class BillingDto {
   status: string;
 
   @ApiProperty()
-  paymentMethod: string | null;
+  paymentMethod?: string | null;
 
   @ApiProperty()
-  notes: string | null;
+  notes?: string | null;
 
   @ApiProperty()
   createdAt: Date;
@@ -86,7 +75,7 @@ export class AppointmentResponseDto {
   id: number;
 
   @ApiProperty()
-  date: string;
+  date: Date;
 
   @ApiProperty()
   startTime: string;
@@ -101,21 +90,21 @@ export class AppointmentResponseDto {
   paymentStatus: string;
 
   @ApiProperty()
-  notes: string | null;
+  notes?: string | null;
 
-  @ApiProperty({ type: PatientDto, required: false })
+  @ApiProperty({ type: PatientDto })
   patient?: PatientDto;
 
-  @ApiProperty({ required: false })
+  @ApiProperty()
   patientName?: string;
 
-  @ApiProperty({ required: false })
-  patientDob?: string;
+  @ApiProperty()
+  patientDob?: Date;
 
-  @ApiProperty({ required: false })
+  @ApiProperty()
   patientPhone?: string;
 
-  @ApiProperty({ required: false })
+  @ApiProperty()
   patientGender?: string;
 
   @ApiProperty({ type: DoctorDto })
@@ -124,11 +113,11 @@ export class AppointmentResponseDto {
   @ApiProperty({ type: ServiceDto })
   service: ServiceDto;
 
-  @ApiProperty({ type: ClinicDto, required: false })
+  @ApiProperty({ type: ClinicDto })
   clinic?: ClinicDto;
 
-  @ApiProperty({ type: BillingDto, required: false })
-  billing?: BillingDto;
+  @ApiProperty({ type: BillingDto })
+  billing?: BillingDto | null;
 
   @ApiProperty()
   createdAt: Date;

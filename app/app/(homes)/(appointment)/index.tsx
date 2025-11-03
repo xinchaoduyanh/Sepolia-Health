@@ -31,33 +31,8 @@ export default function AppointmentsListScreen() {
     return { day, month, year };
   };
 
-  const formatTime = (timeString: string) => {
-    // Check if it's a time string like "14:30" or full date string
-    if (timeString.includes(':')) {
-      // If it contains only time like "14:30", return as is
-      const timeParts = timeString.split(':');
-      if (timeParts.length >= 2 && !timeString.includes('T') && !timeString.includes('-')) {
-        return timeString;
-      }
-    }
-
-    // Otherwise, try to parse as date and format
-    const date = new Date(timeString);
-    if (isNaN(date.getTime())) {
-      return timeString; // Return original if parsing fails
-    }
-
-    return date.toLocaleTimeString('vi-VN', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    });
-  };
-
   const formatTimeRange = (startTime: string, endTime: string) => {
-    const start = formatTime(startTime);
-    const end = formatTime(endTime);
-    return `${start} - ${end}`;
+    return `${startTime} - ${endTime}`;
   };
 
   const getStatusInfo = (
@@ -289,7 +264,7 @@ export default function AppointmentsListScreen() {
                         {appointment.service.name}
                       </Text>
                       <Text className="mt-1 text-sm text-gray-600">
-                        BS. {appointment.doctor.user.firstName} {appointment.doctor.user.lastName}
+                        BS. {appointment.doctor.firstName} {appointment.doctor.lastName}
                       </Text>
                       <Text className="mt-1 text-sm text-gray-500">
                         {appointment.clinic?.name || 'Bệnh viện'}

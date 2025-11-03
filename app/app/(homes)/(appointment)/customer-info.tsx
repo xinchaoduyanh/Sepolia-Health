@@ -7,7 +7,7 @@ import DatePicker from '@/components/DatePicker';
 import { Gender, CustomerType } from '@/types';
 
 export default function CustomerInfoScreen() {
-  const [selectedCustomer, setSelectedCustomer] = useState<CustomerType>('me');
+  const [selectedCustomer, setSelectedCustomer] = useState<CustomerType>('self');
   const [fullName, setFullName] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('0988659126');
@@ -29,11 +29,11 @@ export default function CustomerInfoScreen() {
   };
 
   const handleBack = () => {
-    router.push('/(homes)/(appointment)/time-selection');
+    router.push('/(homes)/(appointment)');
   };
 
   const handleBackToAppointments = () => {
-    router.push('/(homes)/(appointment)/' as any);
+    router.push('/(homes)/(appointment)');
   };
 
   return (
@@ -62,29 +62,29 @@ export default function CustomerInfoScreen() {
           <View className="flex-row space-x-6">
             <View className="items-center">
               <TouchableOpacity
-                onPress={() => handleCustomerSelect('me')}
+                onPress={() => handleCustomerSelect('self')}
                 className={`h-16 w-16 items-center justify-center rounded-full border-2 ${
-                  selectedCustomer === 'me' ? 'border-teal-500' : 'border-blue-300'
+                  selectedCustomer === 'self' ? 'border-teal-500' : 'border-blue-300'
                 }`}>
                 <Ionicons
                   name="person"
                   size={32}
-                  color={selectedCustomer === 'me' ? '#14B8A6' : '#93C5FD'}
+                  color={selectedCustomer === 'self' ? '#14B8A6' : '#93C5FD'}
                 />
               </TouchableOpacity>
               <TouchableOpacity
-                onPress={() => handleCustomerSelect('me')}
+                onPress={() => handleCustomerSelect('self')}
                 className={`mt-2 rounded-full px-4 py-2 ${
-                  selectedCustomer === 'me' ? 'bg-teal-500' : 'bg-gray-200'
+                  selectedCustomer === 'self' ? 'bg-teal-500' : 'bg-gray-200'
                 }`}>
                 <View className="flex-row items-center">
                   <Text
                     className={`font-medium ${
-                      selectedCustomer === 'me' ? 'text-white' : 'text-gray-600'
+                      selectedCustomer === 'self' ? 'text-white' : 'text-gray-600'
                     }`}>
                     Tôi
                   </Text>
-                  {selectedCustomer === 'me' && (
+                  {selectedCustomer === 'self' && (
                     <Ionicons name="checkmark" size={16} color="white" style={{ marginLeft: 4 }} />
                   )}
                 </View>
@@ -93,14 +93,14 @@ export default function CustomerInfoScreen() {
 
             <View className="items-center">
               <TouchableOpacity
-                onPress={() => handleCustomerSelect('add')}
+                onPress={() => handleCustomerSelect('other')}
                 className={`h-16 w-16 items-center justify-center rounded-full border-2 ${
-                  selectedCustomer === 'add' ? 'border-teal-500' : 'border-blue-300'
+                  selectedCustomer === 'other' ? 'border-teal-500' : 'border-blue-300'
                 }`}>
                 <Ionicons
                   name="add"
                   size={32}
-                  color={selectedCustomer === 'add' ? '#14B8A6' : '#93C5FD'}
+                  color={selectedCustomer === 'other' ? '#14B8A6' : '#93C5FD'}
                 />
               </TouchableOpacity>
               <Text className="mt-2 text-sm text-gray-600">Thêm</Text>
