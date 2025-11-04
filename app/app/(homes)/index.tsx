@@ -441,7 +441,7 @@ export default function HomeScreen() {
                     <Ionicons name="chatbubbles-outline" size={26} color="#0284C7" />
                   </View>
                   <Text style={{ fontSize: 12, color: '#0F172A', textAlign: 'center' }}>
-                    Tư vấn
+                    Tin nhắn
                   </Text>
                 </TouchableOpacity>
               </View>
