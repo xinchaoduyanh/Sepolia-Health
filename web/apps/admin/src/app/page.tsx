@@ -2,14 +2,25 @@
 
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useAuthStore } from '@/shared/stores/auth.store'
 
 export default function HomePage() {
     const router = useRouter()
+    const { isAuthenticated, hasHydrated } = useAuthStore()
 
     useEffect(() => {
-        // Simply redirect to dashboard - let ProtectedRoute handle auth
-        router.push('/dashboard/overview')
-    }, [router])
+        // Wait for rehydration to complete
+        if (!hasHydrated) {
+            return
+        }
+
+        // Redirect based on authentication status
+        if (isAuthenticated) {
+            router.replace('/dashboard')
+        } else {
+            router.replace('/login')
+        }
+    }, [router, isAuthenticated, hasHydrated])
 
     // Show loading while redirecting
     return (

@@ -56,7 +56,7 @@ export function useAdminLogin() {
             console.log('🔐 Extracted tokens:', { accessToken: !!accessToken, refreshToken: !!refreshToken })
             console.log('🔐 Extracted admin:', admin)
 
-            // IMPORTANT: Check role BEFORE saving to store
+            // Validate token format
             if (accessToken) {
                 const decoded = decodeJWT(accessToken)
 
@@ -64,12 +64,7 @@ export function useAdminLogin() {
                     throw new Error('INVALID_TOKEN')
                 }
 
-                if (decoded.role !== 'ADMIN') {
-                    console.log('❌ Access denied: Role is not ADMIN:', decoded.role)
-                    throw new Error('ACCESS_DENIED')
-                }
-
-                console.log('✅ Token validated with ADMIN role')
+                console.log('✅ Token validated with role:', decoded.role)
             }
 
             // Set admin data and tokens in Zustand store

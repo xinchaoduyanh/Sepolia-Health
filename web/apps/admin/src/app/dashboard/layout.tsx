@@ -1,6 +1,8 @@
 'use client'
 
-import { DashboardLayout } from '@/layouts/DashboardLayout'
+import { AdminDashboardLayout } from '@/layouts/AdminDashboardLayout'
+import { DoctorDashboardLayout } from '@/layouts/DoctorDashboardLayout'
+import { ReceptionistDashboardLayout } from '@/layouts/ReceptionistDashboardLayout'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { useAuth } from '@/shared/hooks/useAuth'
 import { useCheckAuth } from '@/shared/hooks/useAuth'
@@ -12,7 +14,7 @@ interface LayoutProps {
 
 export default function Layout({ children }: LayoutProps) {
     const [defaultOpen, setDefaultOpen] = useState(true)
-    const { isAuthenticated } = useAuth()
+    const { isAuthenticated, user } = useAuth()
     const { checkAuth } = useCheckAuth()
     const authChecked = useRef(false)
     const isCheckingAuth = useRef(false)
@@ -38,9 +40,26 @@ export default function Layout({ children }: LayoutProps) {
         }
     }, [checkAuth, isAuthenticated])
 
+    // Determine which layout to use based on user role
+    const renderLayout = () => {
+        const layoutProps = { children, defaultOpen }
+
+        switch (user?.role) {
+            case 'ADMIN':
+                return <AdminDashboardLayout {...layoutProps} />
+            case 'DOCTOR':
+                return <DoctorDashboardLayout {...layoutProps} />
+            case 'RECEPTIONIST':
+                return <ReceptionistDashboardLayout {...layoutProps} />
+            default:
+                // Fallback to Admin layout if role is not recognized
+                return <AdminDashboardLayout {...layoutProps} />
+        }
+    }
+
     return (
-        <ProtectedRoute requiredRole="ADMIN">
-            <DashboardLayout defaultOpen={defaultOpen}>{children}</DashboardLayout>
+        <ProtectedRoute>
+            {renderLayout()}
         </ProtectedRoute>
     )
 }
