@@ -13,6 +13,7 @@ import { appConfig } from '@/common/config';
 import { JwtAuthGuard, RolesGuard } from '@/common/guards';
 import { AuthModule } from './auth/auth.module';
 import { PaymentModule } from './payment/payment.module';
+import { ChatModule } from '@/module/chat/chat.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { PaymentModule } from './payment/payment.module';
     AdminModule,
     ReceptionistModule,
     PaymentModule,
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [

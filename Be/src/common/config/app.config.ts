@@ -27,5 +27,8 @@ export default registerAs('app', () => {
     sepayApiKey: parsed.SEPAY_API_KEY,
     sepayAccountNumber: parsed.SEPAY_ACCOUNT_NUMBER,
     sepayBankCode: parsed.SEPAY_BANK_CODE,
+    // stream chat
+    streamChatApiKey: parsed.STREAM_CHAT_API_KEY,
+    streamChatSecret: parsed.STREAM_CHAT_SECRET,
   };
 });

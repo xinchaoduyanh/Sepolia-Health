@@ -25,4 +25,7 @@ export const configSchema = z.object({
   SEPAY_API_KEY: z.string().nonempty(),
   SEPAY_ACCOUNT_NUMBER: z.string().nonempty(),
   SEPAY_BANK_CODE: z.string().nonempty(),
+  //stream chat
+  STREAM_CHAT_API_KEY: z.string().nonempty(),
+  STREAM_CHAT_SECRET: z.string().nonempty(),
 });
