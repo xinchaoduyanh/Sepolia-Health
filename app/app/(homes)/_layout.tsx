@@ -131,13 +131,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="channels"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="consultation"
+        name="(chat)"
         options={{
           href: null,
         }}

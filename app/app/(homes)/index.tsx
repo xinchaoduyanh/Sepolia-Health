@@ -427,7 +427,9 @@ export default function HomeScreen() {
               </View>
 
               <View style={{ width: '22%', alignItems: 'center' }}>
-                <TouchableOpacity style={{ alignItems: 'center' }}>
+                <TouchableOpacity
+                  style={{ alignItems: 'center' }}
+                  onPress={() => router.push('/consultation' as any)}>
                   <View
                     style={{
                       height: 56,

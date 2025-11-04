@@ -103,7 +103,7 @@ export default function ChannelsScreen() {
   const handleChannelPress = (channel: ChatChannel) => {
     // Navigate to consultation chat with channel info
     router.push({
-      pathname: '/consultation',
+      pathname: '/consultation' as any,
       params: {
         channelId: channel.id,
         channelTitle: channel.name,

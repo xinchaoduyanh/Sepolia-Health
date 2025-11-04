@@ -669,7 +669,7 @@ export default function ConsultationChat() {
         <View
           style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <TouchableOpacity
-            onPress={() => router.push('/(homes)/(chat)/channels')}
+            onPress={() => router.back()}
             style={{
               width: 40,
               height: 40,

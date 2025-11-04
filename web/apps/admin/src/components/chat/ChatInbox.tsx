@@ -243,7 +243,7 @@ export function ChatInbox({ onSelectChannel, selectedChannelId }: ChatInboxProps
             </div>
 
             {/* Conversations List */}
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-hidden">
                 <div className="space-y-1 p-2">
                     {filteredChannels.length === 0 ? (
                         <div className="text-center py-8">
