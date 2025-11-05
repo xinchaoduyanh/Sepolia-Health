@@ -4,7 +4,7 @@ import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, Pressable } 
 import React from 'react';
 import { useChatContext } from '@/contexts/ChatContext';
 import { Channel } from 'stream-chat';
-import { Stack, useRouter } from 'expo-router';
+import { Stack, useRouter, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -74,28 +74,30 @@ const ChannelsScreen = () => {
   const [channels, setChannels] = React.useState<Channel[]>([]);
   const router = useRouter();
 
-  React.useEffect(() => {
-    if (!isChatReady || !chatClient) {
-      console.log('Chat not ready or no client:', { isChatReady, hasClient: !!chatClient });
-      return;
-    }
-
-    const fetchChannels = async () => {
-      try {
-        console.log('Fetching user channels for user:', chatClient.userID);
-        const userChannels = await chatClient.queryChannels({
-          members: { $in: [chatClient.userID!] },
-        });
-        console.log('Found channels:', userChannels.length);
-        userChannels.forEach((ch) => console.log('Channel:', ch.id, ch.cid, ch.data?.name));
-        setChannels(userChannels);
-      } catch (error) {
-        console.error('Error fetching channels:', error);
+  useFocusEffect(
+    React.useCallback(() => {
+      if (!isChatReady || !chatClient) {
+        console.log('Chat not ready or no client:', { isChatReady, hasClient: !!chatClient });
+        return;
       }
-    };
 
-    fetchChannels();
-  }, [isChatReady, chatClient]);
+      const fetchChannels = async () => {
+        try {
+          console.log('Fetching user channels for user:', chatClient.userID);
+          const userChannels = await chatClient.queryChannels({
+            members: { $in: [chatClient.userID!] },
+          });
+          console.log('Found channels:', userChannels.length);
+          userChannels.forEach((ch) => console.log('Channel:', ch.id, ch.cid, ch.data?.name));
+          setChannels(userChannels);
+        } catch (error) {
+          console.error('Error fetching channels:', error);
+        }
+      };
+
+      fetchChannels();
+    }, [isChatReady, chatClient])
+  );
 
   if (!isChatReady) {
     return (

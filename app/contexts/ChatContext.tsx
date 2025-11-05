@@ -1,8 +1,7 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { Channel, StreamChat } from 'stream-chat';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { ChatAPI } from '@/lib/api/chat';
-import { EXPO_PUBLIC_STREAM_API_KEY } from '@env';
 import { Chat, OverlayProvider } from 'stream-chat-expo';
 
 interface ChatContextType {
@@ -23,10 +22,10 @@ const ChatProvider = ({ children }: { children: ReactNode }) => {
   // Auto-init chat when user is available (for push notifications)
   useEffect(() => {
     const initChat = async () => {
-      if (!user || chatClient || !EXPO_PUBLIC_STREAM_API_KEY) return;
+      if (!user || chatClient || !process.env.EXPO_PUBLIC_STREAM_API_KEY) return;
 
       try {
-        const client = StreamChat.getInstance(EXPO_PUBLIC_STREAM_API_KEY);
+        const client = StreamChat.getInstance(process.env.EXPO_PUBLIC_STREAM_API_KEY);
         const token = await ChatAPI.getToken();
 
         await client.connectUser(

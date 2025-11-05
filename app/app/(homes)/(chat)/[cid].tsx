@@ -12,11 +12,13 @@ const ChannelScreen = () => {
   const { chatClient, isChatReady } = useChatContext();
   const [channel, setChannel] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!isChatReady || !chatClient || !cid) return;
 
     let timeoutId: ReturnType<typeof setTimeout>;
+    let isMounted = true;
 
     const fetchChannel = async () => {
       try {
@@ -32,8 +34,26 @@ const ChannelScreen = () => {
         if (channels.length > 0) {
           const channel = channels[0];
           console.log('Channel found:', channel.id, channel.cid, channel.data);
-          setChannel(channel);
-          return;
+
+          // Ensure channel is ready before setting
+          try {
+            await channel.watch();
+            console.log('Channel watched successfully, cid:', channel.cid);
+            if (isMounted) {
+              setChannel(channel);
+              setLoading(false);
+              if (timeoutId) clearTimeout(timeoutId);
+            }
+            return;
+          } catch (watchErr) {
+            console.error('Failed to watch channel:', watchErr);
+            if (isMounted) {
+              setError('Lỗi khi kết nối cuộc trò chuyện');
+              setLoading(false);
+              if (timeoutId) clearTimeout(timeoutId);
+            }
+            return;
+          }
         }
 
         console.error('No channel found with cid:', cid);
@@ -43,31 +63,55 @@ const ChannelScreen = () => {
         if (channelType && channelId) {
           console.log('Fallback: creating channel object directly');
           const channel = chatClient.channel(channelType, channelId);
-          await channel.watch();
-          console.log('Fallback channel created and watched:', channel.id, channel.cid);
-          setChannel(channel);
-          return;
+          try {
+            await channel.watch();
+            console.log('Fallback channel created and watched:', channel.id, channel.cid);
+            if (isMounted) {
+              setChannel(channel);
+              setLoading(false);
+              if (timeoutId) clearTimeout(timeoutId);
+            }
+            return;
+          } catch (fallbackErr) {
+            console.error('Fallback channel creation failed:', fallbackErr);
+            if (isMounted) {
+              setError('Lỗi khi tạo cuộc trò chuyện');
+              setLoading(false);
+              if (timeoutId) clearTimeout(timeoutId);
+            }
+            return;
+          }
         }
 
         // If all methods fail, set error
-        setError('Không thể tìm thấy cuộc trò chuyện');
+        if (isMounted) {
+          setError('Không thể tìm thấy cuộc trò chuyện');
+          setLoading(false);
+          if (timeoutId) clearTimeout(timeoutId);
+        }
       } catch (err) {
         console.error('Failed to fetch channel:', err);
-        setError('Lỗi khi tải cuộc trò chuyện');
+        if (isMounted) {
+          setError('Lỗi khi tải cuộc trò chuyện');
+          setLoading(false);
+          if (timeoutId) clearTimeout(timeoutId);
+        }
       }
     };
 
     // Set timeout to avoid infinite loading
     timeoutId = setTimeout(() => {
-      if (!channel) {
+      if (isMounted && loading) {
         console.error('Channel loading timeout');
         setError('Quá thời gian tải cuộc trò chuyện');
+        setLoading(false);
       }
-    }, 10000); // 10 seconds timeout
+    }, 15000); // 15 seconds timeout
 
     fetchChannel();
 
     return () => {
+      isMounted = false;
       if (timeoutId) clearTimeout(timeoutId);
     };
   }, [cid, isChatReady, chatClient]);
@@ -109,7 +153,7 @@ const ChannelScreen = () => {
     );
   }
 
-  if (!channel) {
+  if (loading) {
     return (
       <SafeAreaView className="flex-1 bg-gray-100">
         <Stack.Screen options={{ title: 'Đang tải...' }} />
