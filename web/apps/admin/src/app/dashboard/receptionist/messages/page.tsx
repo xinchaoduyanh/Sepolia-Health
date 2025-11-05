@@ -1,12 +1,44 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ChatInbox } from '@/components/chat/ChatInbox'
 import { ChatWindow } from '@/components/chat/ChatWindow'
+import { ChatProvider, useChat } from '@/contexts/ChatContext'
+import { chatService } from '@/shared/lib/api-services'
 import { MessageSquare } from 'lucide-react'
 
-export default function ReceptionistMessagesPage() {
+const STREAM_CHAT_API_KEY = process.env.NEXT_PUBLIC_STREAM_CHAT_API_KEY || 'your-api-key-here'
+
+function MessagesContent() {
+    const { connectUser, isConnected } = useChat()
     const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null)
+    const [authLoading, setAuthLoading] = useState(true)
+
+    useEffect(() => {
+        const initializeChat = async () => {
+            try {
+                // Get current user info (you might get this from your auth context)
+                const userId = 'receptionist_1' // This should come from your auth system
+                const token = await chatService.getToken()
+
+                await connectUser(userId, token)
+            } catch (error) {
+                console.error('Failed to initialize chat:', error)
+            } finally {
+                setAuthLoading(false)
+            }
+        }
+
+        initializeChat()
+    }, [connectUser])
+
+    if (authLoading) {
+        return (
+            <div className="h-screen flex items-center justify-center bg-background dark:bg-gray-900">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            </div>
+        )
+    }
 
     return (
         <div className="h-screen flex flex-col bg-background dark:bg-gray-900">
@@ -43,5 +75,13 @@ export default function ReceptionistMessagesPage() {
                 </div>
             </div>
         </div>
+    )
+}
+
+export default function ReceptionistMessagesPage() {
+    return (
+        <ChatProvider apiKey={STREAM_CHAT_API_KEY}>
+            <MessagesContent />
+        </ChatProvider>
     )
 }
