@@ -3,9 +3,7 @@ import { API_URL } from '@env';
 // API Configuration Constants
 export const API_CONFIG = {
   // Development URLs
-  BASE_URL: __DEV__
-    ? API_URL || 'http://localhost:8000/api' // Local development
-    : 'https://your-production-api.com/api', // Production URL
+  BASE_URL: API_URL || 'http://localhost:8000/api',
 
   TIMEOUT: 10000, // 10 seconds
   RETRY_ATTEMPTS: 3,

@@ -4,7 +4,8 @@ export default function ChatLayout() {
   return (
     <Stack
       screenOptions={{
-        headerShown: false,
+        headerShown: true,
+        tabBarStyle: { display: 'none' }, // Ẩn tab bar khi vào chat
       }}
     />
   );

@@ -2,7 +2,6 @@ module.exports = function (api) {
   api.cache(true);
   let plugins = [];
 
-  plugins.push('react-native-reanimated/plugin');
   plugins.push([
     'module:react-native-dotenv',
     { moduleName: '@env', path: '.env', allowUndefined: true },
@@ -26,6 +25,8 @@ module.exports = function (api) {
       },
     },
   ]);
+  // react-native-reanimated/plugin MUST be listed last
+  plugins.push('react-native-reanimated/plugin');
 
   return {
     presets: [['babel-preset-expo', { jsxImportSource: 'nativewind' }], 'nativewind/babel'],

@@ -34,7 +34,7 @@ export class ChatController {
     @Body() dto: StartChatDto,
     @Request() req,
   ): Promise<ChatChannelResponseDto> {
-    const patientUserId = req.user.id;
+    const patientUserId = req.user.userId;
     const result = await this.chatService.createChatChannel(
       patientUserId,
       dto.clinicId,
@@ -54,7 +54,7 @@ export class ChatController {
     type: [ChatChannelDto],
   })
   async getChannels(@Request() req): Promise<ChatChannelDto[]> {
-    const userId = req.user.id;
+    const userId = req.user.userId;
     return this.chatService.getUserChannels(userId);
   }
 
@@ -65,9 +65,13 @@ export class ChatController {
     description: 'Token generated successfully',
     type: StreamTokenResponseDto,
   })
-  getToken(@Request() req): string {
-    const userId = req.user.id;
-    return this.chatService.generateStreamToken(userId);
+  getToken(@Request() req) {
+    const userId = req.user.userId;
+    const token = this.chatService.generateStreamToken(userId);
+    return {
+      token,
+      userId: userId.toString(),
+    };
   }
 
   @Get('clinics')

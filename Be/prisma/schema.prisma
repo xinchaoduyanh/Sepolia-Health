@@ -90,7 +90,6 @@ model User {
   transactions        Transaction[]
 
   // Quan hệ với chat system
-  receptionistMappings ClinicReceptionistMapping[] @relation("ReceptionistMappings")
 
   status      UserStatus @default(UNVERIFIED)
   createdAt   DateTime @default(now())
@@ -212,18 +211,7 @@ model PatientProfile {
 // ----------------- CHAT MODELS -----------------
 
 /// Mapping giữa Clinic và Receptionists cho chat system
-model ClinicReceptionistMapping {
-  id                Int @id @default(autoincrement())
-  clinicId          Int
-  clinic            Clinic @relation("ClinicReceptionistMappings", fields: [clinicId], references: [id])
-  receptionistUserId Int
-  receptionist      User @relation("ReceptionistMappings", fields: [receptionistUserId], references: [id])
-
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  @@unique([clinicId, receptionistUserId])
-}
+m
 
 // ----------------- SCHEDULING MODELS -----------------
 
@@ -388,7 +376,6 @@ model Clinic {
   doctors      DoctorProfile[] @relation("ClinicDoctors")
   appointments Appointment[]   @relation("ClinicAppointments")
   receptionists ReceptionistProfile[] @relation("ClinicReceptionists")
-  receptionistMappings ClinicReceptionistMapping[] @relation("ClinicReceptionistMappings")
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 }

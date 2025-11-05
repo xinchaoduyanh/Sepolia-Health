@@ -9,15 +9,8 @@ import { formatDistanceToNow } from 'date-fns'
 import { vi } from 'date-fns/locale'
 import { MessageCircle, Clock, Search } from 'lucide-react'
 import { cn } from '@workspace/ui/lib/utils'
-
-interface ChatChannel {
-    channelId: string
-    name: string
-    lastMessage?: any
-    unreadCount: number
-    lastMessageAt?: string
-    members: string[]
-}
+import { chatService, type ChatChannel } from '@/shared/lib/api-services'
+import { useChat } from '@/contexts/ChatContext'
 
 interface ChatInboxProps {
     onSelectChannel: (channelId: string) => void
@@ -25,154 +18,31 @@ interface ChatInboxProps {
 }
 
 export function ChatInbox({ onSelectChannel, selectedChannelId }: ChatInboxProps) {
+    const { client, isConnected } = useChat()
     const [channels, setChannels] = useState<ChatChannel[]>([])
     const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState('')
     const [isSearching, setIsSearching] = useState(false)
 
-    // Mock data - sẽ thay thế bằng API call thực tế
     useEffect(() => {
-        // Simulate API call
-        const mockChannels: ChatChannel[] = [
-            {
-                channelId: 'patient_123_VS_clinic_1',
-                name: 'Chat với Nguyễn Văn A',
-                lastMessage: {
-                    text: 'Cảm ơn bác sĩ đã tư vấn rất kỹ lưỡng',
-                    created_at: new Date(Date.now() - 1000 * 60 * 30), // 30 minutes ago
-                },
-                unreadCount: 2,
-                lastMessageAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-                members: ['123', '456', '789'],
-            },
-            {
-                channelId: 'patient_124_VS_clinic_1',
-                name: 'Chat với Trần Thị B',
-                lastMessage: {
-                    text: 'Tôi muốn đặt lịch khám vào tuần sau được không?',
-                    created_at: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
-                },
-                unreadCount: 0,
-                lastMessageAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
-                members: ['124', '456', '789'],
-            },
-            {
-                channelId: 'patient_125_VS_clinic_1',
-                name: 'Chat với Lê Văn C',
-                lastMessage: {
-                    text: 'Thuốc này có tác dụng phụ gì không bác sĩ?',
-                    created_at: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1 day ago
-                },
-                unreadCount: 1,
-                lastMessageAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
-                members: ['125', '456', '789'],
-            },
-            {
-                channelId: 'patient_126_VS_clinic_1',
-                name: 'Chat với Phạm Thị D',
-                lastMessage: {
-                    text: 'Em bé nhà mình bị ho, có cần đưa đi khám không?',
-                    created_at: new Date(Date.now() - 1000 * 60 * 60 * 6), // 6 hours ago
-                },
-                unreadCount: 3,
-                lastMessageAt: new Date(Date.now() - 1000 * 60 * 60 * 6).toISOString(),
-                members: ['126', '456', '789'],
-            },
-            {
-                channelId: 'patient_127_VS_clinic_1',
-                name: 'Chat với Hoàng Văn E',
-                lastMessage: {
-                    text: 'Kết quả xét nghiệm của tôi đã có chưa?',
-                    created_at: new Date(Date.now() - 1000 * 60 * 60 * 12), // 12 hours ago
-                },
-                unreadCount: 0,
-                lastMessageAt: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString(),
-                members: ['127', '456', '789'],
-            },
-            {
-                channelId: 'patient_128_VS_clinic_1',
-                name: 'Chat với Đỗ Thị F',
-                lastMessage: {
-                    text: 'Tôi cần tái khám định kỳ, lịch nào còn trống?',
-                    created_at: new Date(Date.now() - 1000 * 60 * 60 * 18), // 18 hours ago
-                },
-                unreadCount: 1,
-                lastMessageAt: new Date(Date.now() - 1000 * 60 * 60 * 18).toISOString(),
-                members: ['128', '456', '789'],
-            },
-            {
-                channelId: 'patient_129_VS_clinic_1',
-                name: 'Chat với Nguyễn Văn G',
-                lastMessage: {
-                    text: 'Thuốc giảm đau này uống bao nhiêu viên một lần?',
-                    created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2), // 2 days ago
-                },
-                unreadCount: 0,
-                lastMessageAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(),
-                members: ['129', '456', '789'],
-            },
-            {
-                channelId: 'patient_130_VS_clinic_1',
-                name: 'Chat với Trần Thị H',
-                lastMessage: {
-                    text: 'Bảo hiểm y tế của tôi có được áp dụng không?',
-                    created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3), // 3 days ago
-                },
-                unreadCount: 2,
-                lastMessageAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString(),
-                members: ['130', '456', '789'],
-            },
-            {
-                channelId: 'patient_131_VS_clinic_1',
-                name: 'Chat với Lê Văn I',
-                lastMessage: {
-                    text: 'Tôi bị đau bụng, có phải đi cấp cứu không?',
-                    created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 4), // 4 days ago
-                },
-                unreadCount: 0,
-                lastMessageAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 4).toISOString(),
-                members: ['131', '456', '789'],
-            },
-            {
-                channelId: 'patient_132_VS_clinic_1',
-                name: 'Chat với Phạm Thị J',
-                lastMessage: {
-                    text: 'Kết quả siêu âm có bình thường không bác sĩ?',
-                    created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5), // 5 days ago
-                },
-                unreadCount: 1,
-                lastMessageAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5).toISOString(),
-                members: ['132', '456', '789'],
-            },
-            {
-                channelId: 'patient_133_VS_clinic_1',
-                name: 'Chat với Hoàng Văn K',
-                lastMessage: {
-                    text: 'Tôi cần tư vấn về chế độ ăn uống sau phẫu thuật',
-                    created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 6), // 6 days ago
-                },
-                unreadCount: 0,
-                lastMessageAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 6).toISOString(),
-                members: ['133', '456', '789'],
-            },
-            {
-                channelId: 'patient_134_VS_clinic_1',
-                name: 'Chat với Đỗ Thị L',
-                lastMessage: {
-                    text: 'Vaccine COVID-19 có tác dụng phụ gì không?',
-                    created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7), // 1 week ago
-                },
-                unreadCount: 3,
-                lastMessageAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7).toISOString(),
-                members: ['134', '456', '789'],
-            },
-        ]
+        const loadChannels = async () => {
+            if (!isConnected) return
 
-        setTimeout(() => {
-            setChannels(mockChannels)
-            setLoading(false)
-        }, 1000)
-    }, [])
+            try {
+                setLoading(true)
+                const channelData = await chatService.getChannels()
+                setChannels(channelData)
+            } catch (error) {
+                console.error('Failed to load channels:', error)
+                // Fallback to empty array on error
+                setChannels([])
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        loadChannels()
+    }, [isConnected])
 
     const formatLastMessageTime = (timestamp?: string) => {
         if (!timestamp) return ''
@@ -194,13 +64,6 @@ export function ChatInbox({ onSelectChannel, selectedChannelId }: ChatInboxProps
           )
         : channels
 
-    const handleSearchToggle = () => {
-        setIsSearching(!isSearching)
-        if (!isSearching) {
-            setSearchQuery('')
-        }
-    }
-
     const getInitials = (name: string) => {
         return name
             .split(' ')
@@ -208,6 +71,13 @@ export function ChatInbox({ onSelectChannel, selectedChannelId }: ChatInboxProps
             .join('')
             .toUpperCase()
             .slice(0, 2)
+    }
+
+    const handleSearchToggle = () => {
+        setIsSearching(!isSearching)
+        if (!isSearching) {
+            setSearchQuery('')
+        }
     }
 
     if (loading) {
