@@ -44,7 +44,6 @@ enum TransactionStatus {
   REFUNDED
 }
 
-
 enum Gender {
   MALE
   FEMALE
@@ -209,9 +208,6 @@ model PatientProfile {
 }
 
 // ----------------- CHAT MODELS -----------------
-
-/// Mapping giữa Clinic và Receptionists cho chat system
-m
 
 // ----------------- SCHEDULING MODELS -----------------
 
