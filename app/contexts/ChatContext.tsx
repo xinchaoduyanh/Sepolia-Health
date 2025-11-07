@@ -58,10 +58,10 @@ const ChatProvider = ({ children }: { children: ReactNode }) => {
   }, [user, chatClient]);
 
   const initChat = async () => {
-    if (!user || chatClient || !EXPO_PUBLIC_STREAM_API_KEY) return;
+    if (!user || chatClient || !process.env.EXPO_PUBLIC_STREAM_API_KEY) return;
 
     try {
-      const client = StreamChat.getInstance(EXPO_PUBLIC_STREAM_API_KEY);
+      const client = StreamChat.getInstance(process.env.EXPO_PUBLIC_STREAM_API_KEY);
       const token = await ChatAPI.getToken();
 
       await client.connectUser(

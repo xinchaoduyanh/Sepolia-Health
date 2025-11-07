@@ -101,7 +101,13 @@ export default function PersonalInfoScreen() {
                   Thông tin cơ bản
                 </Text>
               </View>
-              <TouchableOpacity>
+              <TouchableOpacity
+                onPress={() =>
+                  router.push({
+                    pathname: '/edit-profile',
+                    params: { profile: JSON.stringify(profileData) },
+                  })
+                }>
                 <Text
                   style={{
                     fontSize: 14,
