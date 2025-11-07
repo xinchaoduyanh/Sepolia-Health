@@ -58,9 +58,16 @@ export class ChatService {
       throw new Error('Chat client not initialized');
     }
 
-    const userChannels = await this.client.queryChannels({
-      members: { $in: [this.client.userID!] },
-    });
+    const userChannels = await this.client.queryChannels(
+      {
+        members: { $in: [this.client.userID!] },
+      },
+      { last_message_at: -1 }, // Sort by last message
+      {
+        state: true, // Load channel state including members
+        limit: 20,
+      }
+    );
 
     return userChannels;
   }

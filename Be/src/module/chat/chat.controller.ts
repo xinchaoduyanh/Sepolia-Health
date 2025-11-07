@@ -74,6 +74,17 @@ export class ChatController {
     };
   }
 
+  @Post('test-receptionist-message')
+  @ApiOperation({ summary: 'Test: Gửi message từ receptionist để test avatar' })
+  @ApiResponse({
+    status: 200,
+    description: 'Test message sent successfully',
+  })
+  async sendTestReceptionistMessage(@Body() body: { channelId: string }) {
+    await this.chatService.sendTestReceptionistMessage(body.channelId);
+    return { success: true, message: 'Test receptionist message sent' };
+  }
+
   @Get('clinics')
   @ApiOperation({ summary: 'Lấy danh sách clinics có thể chat' })
   @ApiResponse({

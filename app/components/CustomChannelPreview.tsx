@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { format, isToday, isYesterday } from 'date-fns';
 import { vi } from 'date-fns/locale';
@@ -22,12 +22,40 @@ const formatLastMessageTime = (date: Date) => {
   }
 };
 
+const getReceptionistAvatar = async (channel: Channel): Promise<string | null> => {
+  try {
+    // Query members để lấy data mới nhất
+    const membersResponse = await channel.queryMembers({});
+
+    if (membersResponse.members && membersResponse.members.length > 0) {
+      // Extract patient ID from channel ID: patient_{patientId}_VS_clinic_{clinicId}
+      const channelIdParts = channel.id?.split('_VS_');
+      const patientPart = channelIdParts?.[0]?.replace('patient_', '');
+      const patientId = patientPart || channel.data?.created_by_id;
+
+      const receptionists = membersResponse.members.filter(
+        (member) => member.user_id !== patientId
+      );
+
+      if (receptionists.length > 0) {
+        return (receptionists[0]?.user?.image as string) || null;
+      }
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+};
+
 export const CustomChannelPreview = ({
   channel,
   onPress,
   isActive = false,
   disabled = false,
 }: CustomChannelPreviewProps) => {
+  const [receptionistAvatar, setReceptionistAvatar] = React.useState<string | null>(null);
+
   // Safely get last message and time
   const lastMessage =
     channel.state?.messages?.length > 0
@@ -48,6 +76,15 @@ export const CustomChannelPreview = ({
   // Get unread count
   const unreadCount = channel.state?.unreadCount ?? 0;
   const hasUnread = unreadCount > 0;
+
+  // Load receptionist avatar when component mounts and is receptionist channel
+  React.useEffect(() => {
+    if (isReceptionist && channel) {
+      getReceptionistAvatar(channel).then(setReceptionistAvatar);
+    } else {
+      setReceptionistAvatar(null);
+    }
+  }, [channel, isReceptionist]);
 
   return (
     <TouchableOpacity
@@ -87,7 +124,17 @@ export const CustomChannelPreview = ({
             shadowRadius: 4,
             elevation: 2,
           }}>
-          {isReceptionist ? (
+          {receptionistAvatar ? (
+            <Image
+              source={{ uri: receptionistAvatar }}
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: 24,
+              }}
+              resizeMode="cover"
+            />
+          ) : isReceptionist ? (
             <Ionicons name="person" size={26} color="#2563EB" />
           ) : (
             <Ionicons name="business" size={26} color="#0EA5E9" />
