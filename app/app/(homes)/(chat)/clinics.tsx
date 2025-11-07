@@ -9,11 +9,11 @@ import {
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { ChatAPI, Clinic } from '@/lib/api/chat';
-import { Stack, useRouter } from 'expo-router';
+import { Stack, useRouter, useNavigation } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useChatContext } from '@/contexts/ChatContext';
-import { useState } from 'react';
+import React, { useState } from 'react';
 
 const ClinicItem = ({
   item,
@@ -71,10 +71,25 @@ const ClinicItem = ({
   );
 };
 
-const ClinicsScreen = () => {
+export default function ClinicsScreen() {
   const router = useRouter();
+  const navigation = useNavigation();
   const { createChannel } = useChatContext();
   const [creatingChannelId, setCreatingChannelId] = useState<number | null>(null);
+
+  // Hide tab bar when entering clinics
+  React.useEffect(() => {
+    const parentNavigator = navigation.getParent();
+    if (parentNavigator) {
+      parentNavigator.setOptions({
+        tabBarStyle: { display: 'none' },
+      });
+    }
+
+    return () => {
+      // Cleanup handled by channels screen
+    };
+  }, [navigation]);
 
   const {
     data: clinics,
@@ -291,4 +306,3 @@ const ClinicsScreen = () => {
   );
 };
 
-export default ClinicsScreen;

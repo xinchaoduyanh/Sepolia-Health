@@ -5,23 +5,29 @@ import { ChatInbox } from '@/components/chat/ChatInbox'
 import { ChatWindow } from '@/components/chat/ChatWindow'
 import { ChatProvider, useChat } from '@/contexts/ChatContext'
 import { chatService } from '@/shared/lib/api-services'
+import { useAuth } from '@/shared/hooks/useAuth'
+import { getUserProfile } from '@/shared/lib/user-profile'
 import { MessageSquare } from 'lucide-react'
 
 const STREAM_CHAT_API_KEY = process.env.NEXT_PUBLIC_STREAM_CHAT_API_KEY || 'your-api-key-here'
 
 function MessagesContent() {
     const { connectUser, isConnected } = useChat()
+    const { user } = useAuth()
     const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null)
     const [authLoading, setAuthLoading] = useState(true)
 
     useEffect(() => {
         const initializeChat = async () => {
+            if (!user) return
+
             try {
-                // Get current user info (you might get this from your auth context)
-                const userId = 'receptionist_1' // This should come from your auth system
+                const userId = user.id.toString()
+                const userProfile = getUserProfile(user)
+
                 const token = await chatService.getToken()
 
-                await connectUser(userId, token)
+                await connectUser(userId, token, userProfile.name, userProfile.image)
             } catch (error) {
                 console.error('Failed to initialize chat:', error)
             } finally {
@@ -30,7 +36,7 @@ function MessagesContent() {
         }
 
         initializeChat()
-    }, [connectUser])
+    }, [connectUser, user])
 
     if (authLoading) {
         return (
