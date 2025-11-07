@@ -181,7 +181,7 @@ export const CustomChannelPreview = ({
         {/* Last message */}
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           {/* Message sender indicator for my messages */}
-          {lastMessage?.user?.id && (
+          {!!lastMessage?.user?.id && (
             <Ionicons name="checkmark-done" size={14} color="#10B981" style={{ marginRight: 4 }} />
           )}
           <Text

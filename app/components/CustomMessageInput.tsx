@@ -8,8 +8,11 @@ import {
   Platform,
   Animated,
   Keyboard,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 
 interface CustomMessageInputProps {
   channel: any;
@@ -24,6 +27,7 @@ export const CustomMessageInput = ({
 }: CustomMessageInputProps) => {
   const [messageText, setMessageText] = useState('');
   const [isFocused, setIsFocused] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const inputHeight = useRef(new Animated.Value(40)).current;
 
   const sendMessage = async () => {
@@ -56,6 +60,143 @@ export const CustomMessageInput = ({
       useNativeDriver: false,
       friction: 8,
     }).start();
+  };
+
+  const handleAttachment = async () => {
+    // Show options for image or video
+    Alert.alert(
+      'Đính kèm file',
+      'Chọn loại file bạn muốn gửi',
+      [
+        {
+          text: 'Ảnh',
+          onPress: () => pickImage(),
+        },
+        {
+          text: 'Video',
+          onPress: () => pickVideo(),
+        },
+        {
+          text: 'Hủy',
+          style: 'cancel',
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
+  const pickImage = async () => {
+    try {
+      // Request permission
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Lỗi', 'Cần quyền truy cập thư viện ảnh để gửi ảnh');
+        return;
+      }
+
+      // Pick image
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        quality: 0.8,
+        allowsMultipleSelection: false,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        await uploadAndSendFile(result.assets[0]);
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      Alert.alert('Lỗi', 'Không thể chọn ảnh');
+    }
+  };
+
+  const pickVideo = async () => {
+    try {
+      // Request permission
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Lỗi', 'Cần quyền truy cập thư viện để gửi video');
+        return;
+      }
+
+      // Pick video
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['videos'],
+        allowsEditing: true,
+        quality: 0.8,
+        videoMaxDuration: 60, // 60 seconds max
+        allowsMultipleSelection: false,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const video = result.assets[0];
+
+        // Check video size (max 50MB for better performance)
+        if (video.fileSize && video.fileSize > 50 * 1024 * 1024) {
+          Alert.alert('Lỗi', 'Video quá lớn. Vui lòng chọn video nhỏ hơn 50MB');
+          return;
+        }
+
+        await uploadAndSendFile(video);
+      }
+    } catch (error) {
+      console.error('Error picking video:', error);
+      Alert.alert('Lỗi', 'Không thể chọn video');
+    }
+  };
+
+  const uploadAndSendFile = async (asset: any) => {
+    if (!channel) return;
+
+    setIsUploading(true);
+    try {
+      const isVideo = asset.type === 'video' || asset.mimeType?.includes('video');
+
+      console.log('Asset details:', JSON.stringify(asset, null, 2));
+
+      // Ensure URI is a string
+      const fileUri = String(asset.uri);
+      const fileName =
+        asset.fileName || `${isVideo ? 'video' : 'image'}_${Date.now()}.${isVideo ? 'mp4' : 'jpg'}`;
+      const fileType = asset.mimeType || (isVideo ? 'video/mp4' : 'image/jpeg');
+
+      console.log('Uploading file:', { uri: fileUri, name: fileName, type: fileType });
+
+      // Prepare message data with file attachment
+      // Use localUri for local files that need to be uploaded
+      const messageData: any = {
+        text: messageText.trim() || '',
+        attachments: [
+          {
+            type: isVideo ? 'video' : 'image',
+            localUri: fileUri, // Local file URI for upload
+            file_size: asset.fileSize,
+            mime_type: fileType,
+            fallback: fileName,
+          },
+        ],
+      };
+
+      if (replyingTo) {
+        messageData.parent_id = replyingTo.id;
+        messageData.show_in_channel = true;
+      }
+
+      // Send message - Stream will upload the file from local URI
+      await channel.sendMessage(messageData);
+
+      console.log('Message sent successfully with attachment');
+
+      setMessageText('');
+      onCancelReply?.();
+    } catch (error: any) {
+      console.error('Error uploading file:', error);
+      console.error('Error stack:', error?.stack);
+      Alert.alert('Lỗi', `Không thể gửi file: ${error?.message || 'Vui lòng thử lại'}`);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   return (
@@ -131,6 +272,8 @@ export const CustomMessageInput = ({
         }}>
         {/* Attachment button */}
         <TouchableOpacity
+          onPress={handleAttachment}
+          disabled={isUploading}
           style={{
             width: 40,
             height: 40,
@@ -138,9 +281,17 @@ export const CustomMessageInput = ({
             justifyContent: 'center',
             marginRight: 8,
             borderRadius: 20,
-            backgroundColor: isFocused ? '#EFF6FF' : '#F1F5F9',
+            backgroundColor: isUploading ? '#E2E8F0' : isFocused ? '#EFF6FF' : '#F1F5F9',
           }}>
-          <Ionicons name="add-circle-outline" size={24} color={isFocused ? '#2563EB' : '#64748B'} />
+          {isUploading ? (
+            <ActivityIndicator size="small" color="#2563EB" />
+          ) : (
+            <Ionicons
+              name="add-circle-outline"
+              size={24}
+              color={isFocused ? '#2563EB' : '#64748B'}
+            />
+          )}
         </TouchableOpacity>
 
         {/* Message input container */}

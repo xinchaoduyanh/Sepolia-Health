@@ -37,6 +37,12 @@ export const CustomDateSeparator = (props: DateHeaderProps) => {
     }
   };
 
+  // Don't show "Hôm nay" separator if no messages yet or for better UX
+  // Only show date separators for previous days
+  if (isToday(date)) {
+    return null;
+  }
+
   return (
     <View
       style={{

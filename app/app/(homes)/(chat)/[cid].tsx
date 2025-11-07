@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, ActivityIndicator, Text, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, Stack, useRouter, useNavigation } from 'expo-router';
-import { Channel, MessageList } from 'stream-chat-expo';
+import { Channel, MessageList, MessageInput } from 'stream-chat-expo';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useChatContext } from '@/contexts/ChatContext';
 import { Ionicons } from '@expo/vector-icons';
@@ -250,8 +250,10 @@ export default function ChannelScreen() {
     <SafeAreaView className="flex-1 bg-slate-50">
       <Stack.Screen
         options={{
+          headerShown: true,
           title: channel.data?.name || 'Tư vấn y tế',
-          headerBackTitle: 'Tin nhắn',
+          headerBackTitle: 'Quay lại',
+          headerBackVisible: true,
           headerStyle: {
             backgroundColor: '#2563EB',
           },
@@ -259,12 +261,6 @@ export default function ChannelScreen() {
           headerTitleStyle: {
             fontWeight: 'bold',
           },
-          // headerRight: () => (
-          //   // <View className="mr-4 flex-row items-center">
-          //   //   <View className="mr-2 h-2 w-2 rounded-full bg-green-400" />
-          //   //   <Text className="text-sm text-white">Đang hoạt động</Text>
-          //   // </View>
-          // ),
         }}
       />
 
@@ -286,12 +282,8 @@ export default function ChannelScreen() {
             />
           </View>
 
-          {/* Custom Message Input */}
-          <CustomMessageInput
-            channel={channel}
-            replyingTo={replyingTo}
-            onCancelReply={() => setReplyingTo(null)}
-          />
+          {/* Message Input - Use default for now with image/file support */}
+          <MessageInput />
         </Channel>
       </ReplyContext.Provider>
     </SafeAreaView>
