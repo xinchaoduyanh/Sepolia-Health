@@ -1,7 +1,6 @@
-
 // API Configuration Constants
 export const API_CONFIG = {
-  BASE_URL: process.env.API_URL || 'http://10.2.48.179:8000/api',
+  BASE_URL: process.env.EXPO_PUBLIC_API_URL || 'http://10.2.48.179:8000/api',
 
   TIMEOUT: 10000, // 10 seconds
   RETRY_ATTEMPTS: 3,
