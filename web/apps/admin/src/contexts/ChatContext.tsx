@@ -8,7 +8,7 @@ import 'stream-chat-react/dist/css/v2/index.css'
 interface ChatContextType {
     client: StreamChat | null
     isConnected: boolean
-    connectUser: (userId: string, token: string) => Promise<void>
+    connectUser: (userId: string, token: string, name?: string, image?: string) => Promise<void>
     disconnectUser: () => Promise<void>
 }
 
@@ -23,13 +23,13 @@ export function ChatProvider({ children, apiKey }: ChatProviderProps) {
     const [client] = useState(() => StreamChat.getInstance(apiKey))
     const [isConnected, setIsConnected] = useState(false)
 
-    const connectUser = async (userId: string, token: string) => {
+    const connectUser = async (userId: string, token: string, name?: string, image?: string) => {
         try {
             await client.connectUser(
                 {
                     id: userId,
-                    name: `User ${userId}`,
-                    image: `https://getstream.io/random_png/?id=${userId}&name=User+${userId}`,
+                    name: name || `User ${userId}`,
+                    image: image || `https://getstream.io/random_png/?id=${userId}&name=${name || 'User'}`,
                 },
                 token,
             )

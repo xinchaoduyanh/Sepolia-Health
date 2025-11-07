@@ -20,6 +20,24 @@ export class ChatService {
       this.streamChatConf.streamChatSecret,
     );
     this.logger.log('Stream Chat client initialized');
+    this.ensureSystemUserExists();
+  }
+
+  /**
+   * Ensure system user exists for sending system messages
+   */
+  private async ensureSystemUserExists() {
+    try {
+      await this.streamClient.upsertUser({
+        id: 'system',
+        name: 'Sepolia Health',
+        role: 'user',
+        image: 'https://via.placeholder.com/100x100/0284C7/FFFFFF?text=SH',
+      });
+      this.logger.log('System user ensured to exist');
+    } catch (error) {
+      this.logger.warn('Failed to ensure system user exists:', error);
+    }
   }
 
   /**
@@ -42,15 +60,24 @@ export class ChatService {
           userId: true,
           firstName: true,
           lastName: true,
+          avatar: true,
+          clinic: {
+            select: {
+              name: true,
+            },
+          },
         },
       });
 
       this.logger.log(
         `Found ${receptionists.length} receptionists for clinic ${clinicId}`,
       );
+      this.logger.log(
+        `Receptionist user IDs: ${receptionists.map((r) => r.userId).join(', ')}`,
+      );
       receptionists.forEach((r) => {
         this.logger.log(
-          `Receptionist: User ${r.userId} - ${r.firstName} ${r.lastName}`,
+          `Receptionist: User ${r.userId} - ${r.firstName} ${r.lastName} - Clinic: ${r.clinic?.name}`,
         );
       });
 
@@ -80,7 +107,37 @@ export class ChatService {
         }
         this.logger.log(`Clinic found: ${clinic.name}`);
 
-        // 5. Tạo channel trên Stream Chat
+        // 5. Ensure patient user exists in Stream Chat
+        try {
+          // Get patient info
+          const patient = await this.prisma.patientProfile.findFirst({
+            where: {
+              managerId: patientUserId,
+              relationship: 'SELF',
+            },
+            select: {
+              firstName: true,
+              lastName: true,
+              avatar: true,
+            },
+          });
+
+          if (patient) {
+            await this.streamClient.upsertUser({
+              id: patientUserId.toString(),
+              name: `${patient.firstName} ${patient.lastName}`,
+              role: 'user',
+              image: patient.avatar || undefined,
+            });
+            this.logger.log(
+              `Patient user ${patientUserId} upserted to Stream Chat`,
+            );
+          }
+        } catch (error) {
+          this.logger.warn(`Failed to upsert patient ${patientUserId}:`, error);
+        }
+
+        // 6. Tạo channel trên Stream Chat
         this.logger.log(`Creating Stream Chat channel: ${channelId}`);
         const channel = this.streamClient.channel('messaging', channelId, {
           created_by_id: patientUserId.toString(),
@@ -89,11 +146,33 @@ export class ChatService {
         await channel.create();
         this.logger.log(`Stream Chat channel created successfully`);
 
+        // Update channel with clinic name
+        await channel.update({ name: clinic.name } as any);
+        this.logger.log(`Channel name updated to: ${clinic.name}`);
+
+        // Verify patient member exists
+        try {
+          const user = await this.streamClient.queryUsers({
+            id: patientUserId.toString(),
+          });
+          if (!user.users || user.users.length === 0) {
+            throw new Error(
+              `Patient user ${patientUserId} does not exist in Stream Chat`,
+            );
+          }
+          this.logger.log(
+            `Verified patient user ${patientUserId} exists in Stream Chat`,
+          );
+        } catch (error) {
+          this.logger.error(`Patient user verification failed:`, error);
+          throw new Error(`Cannot add non-existent patient user to channel`);
+        }
+
         // 6. Gửi tin nhắn chào mừng từ hệ thống
         this.logger.log(`Sending welcome message`);
         await channel.sendMessage({
           text: `Chào bạn! Hiện tại cơ sở ${clinic.name} chưa có lễ tân trực tuyến. Vui lòng chờ hoặc liên hệ hotline để được hỗ trợ.`,
-          user_id: 'system_admin',
+          user_id: 'system', // Send as system user
         });
         this.logger.log(`Welcome message sent`);
 
@@ -133,22 +212,130 @@ export class ChatService {
 
       // 5. Tạo channel trên Stream Chat
       this.logger.log(`Creating Stream Chat channel: ${channelId}`);
+      // Use clinic name from receptionist profile, fallback to clinic name
+      const channelDisplayName =
+        receptionists.length > 0
+          ? receptionists[0].clinic?.name || clinic.name
+          : clinic.name;
+
       const channel = this.streamClient.channel('messaging', channelId, {
         created_by_id: patientUserId.toString(),
       });
 
+      // Ensure patient user exists in Stream Chat
+      try {
+        // Get patient info
+        const patient = await this.prisma.patientProfile.findFirst({
+          where: {
+            managerId: patientUserId,
+            relationship: 'SELF',
+          },
+          select: {
+            firstName: true,
+            lastName: true,
+            avatar: true,
+          },
+        });
+
+        this.logger.log(
+          `Patient lookup result for user ${patientUserId}:`,
+          patient ? 'Found' : 'Not found',
+        );
+
+        if (patient) {
+          this.logger.log(
+            `Upserting patient user: ${patient.firstName} ${patient.lastName}`,
+          );
+          await this.streamClient.upsertUser({
+            id: patientUserId.toString(),
+            name: `${patient.firstName} ${patient.lastName}`,
+            role: 'user',
+            image: patient.avatar || undefined,
+          });
+          this.logger.log(
+            `Patient user ${patientUserId} upserted to Stream Chat successfully`,
+          );
+        } else {
+          // Fallback: create user with default name if no patient profile found
+          this.logger.warn(
+            `No patient profile found for user ${patientUserId}, creating with default name`,
+          );
+          await this.streamClient.upsertUser({
+            id: patientUserId.toString(),
+            name: `Patient ${patientUserId}`,
+            role: 'user',
+            image: undefined, // No avatar for fallback
+          });
+          this.logger.log(
+            `Patient user ${patientUserId} upserted with default name`,
+          );
+        }
+      } catch (error) {
+        this.logger.error(`Failed to upsert patient ${patientUserId}:`, error);
+        // Don't throw here, continue with channel creation
+      }
+
+      // Ensure all receptionist users exist in Stream Chat before adding to channel
+      for (const receptionist of receptionists) {
+        try {
+          this.logger.log(
+            `Upserting receptionist user: ${receptionist.userId} - ${receptionist.firstName} ${receptionist.lastName}`,
+          );
+          await this.streamClient.upsertUser({
+            id: receptionist.userId.toString(),
+            name: `${receptionist.firstName} ${receptionist.lastName}`,
+            role: 'user',
+            image: receptionist.avatar || undefined,
+          });
+          this.logger.log(
+            `Receptionist user ${receptionist.userId} upserted to Stream Chat successfully`,
+          );
+        } catch (error) {
+          this.logger.error(
+            `Failed to upsert receptionist ${receptionist.userId}:`,
+            error,
+          );
+          // Throw error to stop channel creation if receptionist upsert fails
+          throw new Error(
+            `Failed to create receptionist user ${receptionist.userId} in Stream Chat`,
+          );
+        }
+      }
+
       await channel.create();
       this.logger.log(`Stream Chat channel created successfully`);
 
-      // Ensure patient is added as member
-      await channel.addMembers([patientUserId.toString()]);
-      this.logger.log(`Patient ${patientUserId} added to channel`);
+      // Update channel with display name
+      if (channelDisplayName) {
+        await channel.update({ name: channelDisplayName } as any);
+        this.logger.log(`Channel name updated to: ${channelDisplayName}`);
+      }
+
+      // Verify all members exist before adding to channel
+      for (const memberId of members) {
+        try {
+          const user = await this.streamClient.queryUsers({ id: memberId });
+          if (!user.users || user.users.length === 0) {
+            throw new Error(`User ${memberId} does not exist in Stream Chat`);
+          }
+          this.logger.log(`Verified user ${memberId} exists in Stream Chat`);
+        } catch (error) {
+          this.logger.error(`User ${memberId} verification failed:`, error);
+          throw new Error(
+            `Cannot add non-existent user ${memberId} to channel`,
+          );
+        }
+      }
+
+      // Add all members (patient + receptionists) to channel
+      await channel.addMembers(members);
+      this.logger.log(`All members added to channel: ${members.join(', ')}`);
 
       // 6. Gửi tin nhắn chào mừng từ hệ thống
       this.logger.log(`Sending welcome message`);
       await channel.sendMessage({
         text: `Chào bạn! Lễ tân của ${clinic.name} sẽ trả lời bạn trong giây lát.`,
-        user_id: 'system_admin',
+        user_id: 'system', // Send as system user
       });
       this.logger.log(`Welcome message sent`);
 

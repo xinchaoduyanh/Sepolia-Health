@@ -1,4 +1,5 @@
 import { apiClient } from '@/lib/api-client';
+import { StreamChat, Channel } from 'stream-chat';
 
 export interface ChatChannel {
   channelId: string;
@@ -42,5 +43,33 @@ export class ChatAPI {
   static async startChat(clinicId: number): Promise<ChatChannelResponse> {
     const response = await apiClient.post('/chat/start', { clinicId });
     return response.data;
+  }
+}
+
+export class ChatService {
+  private static client: StreamChat | null = null;
+
+  static setClient(client: StreamChat) {
+    this.client = client;
+  }
+
+  static async fetchUserChannels(): Promise<Channel[]> {
+    if (!this.client) {
+      throw new Error('Chat client not initialized');
+    }
+
+    const userChannels = await this.client.queryChannels({
+      members: { $in: [this.client.userID!] },
+    });
+
+    return userChannels;
+  }
+
+  static isClientReady(): boolean {
+    return this.client !== null && this.client.userID !== null;
+  }
+
+  static getClient(): StreamChat | null {
+    return this.client;
   }
 }
