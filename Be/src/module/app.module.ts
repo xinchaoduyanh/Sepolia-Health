@@ -14,6 +14,8 @@ import { JwtAuthGuard, RolesGuard } from '@/common/guards';
 import { AuthModule } from './auth/auth.module';
 import { PaymentModule } from './payment/payment.module';
 import { ChatModule } from '@/module/chat/chat.module';
+import { BullModule } from '@nestjs/bullmq';
+import IORedis from 'ioredis';
 
 @Module({
   imports: [
@@ -22,9 +24,16 @@ import { ChatModule } from '@/module/chat/chat.module';
       envFilePath: '.env',
       load: [appConfig],
     }),
+    CommonModule,
+    BullModule.forRootAsync({
+      imports: [CommonModule],
+      useFactory: (redisClient: IORedis) => ({
+        connection: redisClient,
+      }),
+      inject: ['REDIS_CLIENT'],
+    }),
     PrismaModule,
     AuthModule,
-    CommonModule,
     PatientModule,
     AdminModule,
     ReceptionistModule,
