@@ -364,7 +364,8 @@ export function AdminDashboardLayout({ children, defaultOpen = true }: AdminDash
                         </div>
                     </div>
                 </header>
-                <div className="p-6">{children}</div>
+                {/* Conditionally add padding and positioning - no padding for messages page, relative for absolute positioning */}
+                <div className={currentPathname?.includes('/messages') ? 'relative flex-1' : 'p-6'}>{children}</div>
             </SidebarInset>
         </SidebarProvider>
     )

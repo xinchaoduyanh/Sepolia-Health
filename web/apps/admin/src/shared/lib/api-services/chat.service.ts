@@ -25,23 +25,27 @@ export interface ChatChannelResponse {
 
 export class ChatService {
     static async getChannels(): Promise<ChatChannel[]> {
-        const response = await apiClient.get('/chat/channels')
-        return response.data
+        // apiClient.get already unwraps the response
+        const response = await apiClient.get<ChatChannel[]>('/chat/channels')
+        return response
     }
 
     static async getToken(): Promise<string> {
-        const response = await apiClient.get('/chat/token')
-        return response.data.token
+        // apiClient.get already unwraps the response, so response is { token, userId }
+        const response = await apiClient.get<{ token: string; userId: string }>('/chat/token')
+        return response.token
     }
 
     static async getClinics(): Promise<Clinic[]> {
-        const response = await apiClient.get('/chat/clinics')
-        return response.data
+        // apiClient.get already unwraps the response
+        const response = await apiClient.get<Clinic[]>('/chat/clinics')
+        return response
     }
 
     static async startChat(clinicId: number): Promise<ChatChannelResponse> {
-        const response = await apiClient.post('/chat/start', { clinicId })
-        return response.data
+        // apiClient.post already unwraps the response
+        const response = await apiClient.post<ChatChannelResponse>('/chat/start', { clinicId })
+        return response
     }
 }
 

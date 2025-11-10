@@ -1,0 +1,618 @@
+/* Stream Chat Custom Styles with Dark Mode Support */
+
+/* ===== Base Stream Chat Overrides ===== */
+.str-chat {
+    height: 100%;
+    font-family: inherit;
+}
+
+.str-chat__channel {
+    height: 100%;
+    background-color: transparent;
+}
+
+.str-chat__window,
+.str-chat__main-panel,
+.str-chat__message-list,
+.str-chat__virtual-list,
+.str-chat__list,
+.str-chat__thread-list {
+    background-color: transparent !important;
+}
+
+.dark .str-chat__window,
+.dark .str-chat__main-panel,
+.dark .str-chat__message-list,
+.dark .str-chat__virtual-list,
+.dark .str-chat__list,
+.dark .str-chat__thread-list {
+    background-color: transparent !important;
+}
+
+/* ===== Message List ===== */
+.str-chat__list {
+    background-color: transparent;
+    padding: 1rem;
+}
+
+/* Dark mode for message list background */
+.dark .str-chat__list {
+    background-color: transparent;
+}
+
+.str-chat__list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.str-chat__list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.str-chat__list::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+
+.dark .str-chat__list::-webkit-scrollbar-thumb {
+    background: #475569;
+}
+
+.str-chat__list::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+.dark .str-chat__list::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
+}
+
+/* ===== Messages ===== */
+.str-chat__message-simple {
+    margin-bottom: 0.5rem;
+    background: transparent !important;
+}
+
+/* Remove white container background */
+.str-chat__message-simple-content,
+.str-chat__message-simple__inner,
+.str-chat__message-simple__text,
+.str-chat__message-simple-bubble,
+.str-chat__message-simple-inner {
+    background: transparent !important;
+}
+
+/* Remove white background from message wrapper/container */
+.str-chat__message-simple-wrapper {
+    background: transparent !important;
+}
+
+.str-chat__message-simple__wrapper {
+    background: transparent !important;
+}
+
+/* Message from current user (right side) */
+.str-chat__message-simple--me .str-chat__message-simple-text-inner {
+    background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+    color: white;
+    border-radius: 1rem;
+    border-bottom-right-radius: 0.25rem;
+    padding: 0.75rem 1rem;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
+}
+
+.dark .str-chat__message-simple--me .str-chat__message-simple-text-inner {
+    background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
+    box-shadow: 0 10px 20px -8px rgba(37, 99, 235, 0.5);
+}
+
+/* Message from others (left side) */
+.str-chat__message-simple:not(.str-chat__message-simple--me) .str-chat__message-simple-text-inner {
+    background: #e2e8f0;
+    color: #1f2937;
+    border: 1px solid #cbd5e1;
+    border-radius: 1rem;
+    border-bottom-left-radius: 0.25rem;
+    padding: 0.75rem 1rem;
+    box-shadow: 0 6px 16px -12px rgba(15, 23, 42, 0.4);
+}
+
+.dark .str-chat__message-simple:not(.str-chat__message-simple--me) .str-chat__message-simple-text-inner {
+    background: linear-gradient(135deg, rgba(51, 65, 85, 0.92) 0%, rgba(30, 41, 59, 0.95) 100%);
+    color: #f8fafc;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    box-shadow: 0 14px 32px -20px rgba(15, 23, 42, 0.8);
+}
+
+/* Make message text smaller and apply dark theme */
+.str-chat__message-text {
+    font-size: 0.75rem !important;
+    line-height: 1.2 !important;
+    color: #6b7280 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    opacity: 0.7 !important;
+}
+
+.dark .str-chat__message-text {
+    color: #9ca3af !important;
+    opacity: 0.6 !important;
+}
+
+/* Message metadata */
+.str-chat__message-simple-name {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #6b7280;
+    margin-bottom: 0.125rem;
+}
+
+.dark .str-chat__message-simple-name {
+    color: #9ca3af;
+}
+
+.str-chat__message-simple-timestamp {
+    font-size: 0.6875rem;
+    color: #9ca3af;
+    margin-bottom: 0.25rem;
+}
+
+.dark .str-chat__message-simple-timestamp {
+    color: #6b7280;
+}
+
+/* ===== Message Input ===== */
+.str-chat__input-flat {
+    background: #f9fafb !important;
+    border-top: 1px solid #e2e8f0 !important;
+    padding: 1rem;
+}
+
+.dark .str-chat__input-flat {
+    background: rgba(15, 23, 42, 0.92) !important;
+    border-top-color: rgba(30, 41, 59, 0.95) !important;
+}
+
+.str-chat__input-flat-wrapper {
+    background: #ffffff !important;
+    border: 1px solid #dce2ec !important;
+    border-radius: 0.75rem;
+    padding: 0.5rem 1rem;
+    transition:
+        background-color 0.2s ease,
+        border-color 0.2s ease;
+}
+
+.dark .str-chat__input-flat-wrapper {
+    background: rgba(30, 41, 59, 0.92) !important;
+    border-color: rgba(71, 85, 105, 0.55) !important;
+}
+
+.str-chat__input-flat textarea,
+.str-chat__input-flat .str-chat__input {
+    background: transparent !important;
+    color: #1f2937 !important;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+}
+
+.dark .str-chat__input-flat textarea,
+.dark .str-chat__input-flat .str-chat__input {
+    color: #e2e8f0 !important;
+}
+
+.str-chat__input-flat textarea::placeholder,
+.str-chat__input-flat .str-chat__input::placeholder {
+    color: #9ca3af !important;
+}
+
+.dark .str-chat__input-flat textarea::placeholder,
+.dark .str-chat__input-flat .str-chat__input::placeholder {
+    color: rgba(148, 163, 184, 0.75) !important;
+}
+
+.str-chat__input-flat .str-chat__fileupload-wrapper svg,
+.str-chat__input-flat .str-chat__send-button svg {
+    fill: #1f2937;
+}
+
+.dark .str-chat__input-flat .str-chat__fileupload-wrapper svg,
+.dark .str-chat__input-flat .str-chat__send-button svg {
+    fill: #e2e8f0;
+}
+
+/* Additional Message Input Elements */
+.str-chat__input-flat .str-chat__input:focus {
+    outline: none;
+    box-shadow: none;
+}
+
+.dark .str-chat__input-flat .str-chat__input:focus {
+    outline: none;
+    box-shadow: none;
+}
+
+/* Additional Message Input Selectors */
+.str-chat__message-input,
+.str-chat__message-input__input,
+.str-chat__message-input__textarea {
+    background: transparent !important;
+    color: #1f2937 !important;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+}
+
+.dark .str-chat__message-input,
+.dark .str-chat__message-input__input,
+.dark .str-chat__message-input__textarea {
+    color: #e2e8f0 !important;
+}
+
+.str-chat__message-input::placeholder,
+.str-chat__message-input__input::placeholder,
+.str-chat__message-input__textarea::placeholder {
+    color: #9ca3af !important;
+}
+
+.dark .str-chat__message-input::placeholder,
+.dark .str-chat__message-input__input::placeholder,
+.dark .str-chat__message-input__textarea::placeholder {
+    color: rgba(148, 163, 184, 0.75) !important;
+}
+
+/* General input styling for all Stream Chat inputs in dark mode */
+.dark .str-chat input,
+.dark .str-chat textarea {
+    background: transparent !important;
+    color: #e2e8f0 !important;
+    border-color: rgba(71, 85, 105, 0.55) !important;
+}
+
+.dark .str-chat input::placeholder,
+.dark .str-chat textarea::placeholder {
+    color: rgba(148, 163, 184, 0.75) !important;
+}
+
+/* Message input container styling */
+.str-chat__message-input__container {
+    background: transparent !important;
+}
+
+.dark .str-chat__message-input__container {
+    background: rgba(30, 41, 59, 0.92) !important;
+    border-color: rgba(71, 85, 105, 0.55) !important;
+}
+
+/* Force dark theme on all input-related elements */
+.dark .str-chat .str-chat__input-flat,
+.dark .str-chat .str-chat__input-flat-wrapper,
+.dark .str-chat .str-chat__message-input,
+.dark .str-chat .str-chat__message-input__container {
+    background: rgba(30, 41, 59, 0.92) !important;
+    border-color: rgba(71, 85, 105, 0.55) !important;
+}
+
+/* High specificity dark mode for message input */
+.dark .str-chat__input-flat textarea,
+.dark .str-chat__input-flat .str-chat__input,
+.dark .str-chat__message-input textarea,
+.dark .str-chat__message-input input {
+    background: transparent !important;
+    color: #e2e8f0 !important;
+    border-color: rgba(71, 85, 105, 0.55) !important;
+}
+
+.dark .str-chat__input-flat textarea::placeholder,
+.dark .str-chat__input-flat .str-chat__input::placeholder,
+.dark .str-chat__message-input textarea::placeholder,
+.dark .str-chat__message-input input::placeholder {
+    color: rgba(148, 163, 184, 0.75) !important;
+}
+
+/* Send button dark mode */
+.dark .str-chat__send-button {
+    background: #2563eb;
+}
+
+.dark .str-chat__send-button:hover {
+    background: #1d4ed8;
+}
+
+/* File upload icons dark mode */
+.dark .str-chat__fileupload-wrapper svg {
+    fill: #9ca3af;
+}
+
+.dark .str-chat__fileupload-wrapper:hover svg {
+    fill: #f3f4f6;
+}
+
+/* Send button */
+.str-chat__send-button {
+    background: #2563eb;
+    border-radius: 0.5rem;
+    padding: 0.5rem 1rem;
+    transition: all 0.2s;
+}
+
+.str-chat__send-button:hover {
+    background: #1d4ed8;
+    transform: scale(1.05);
+}
+
+.str-chat__send-button svg {
+    fill: white;
+}
+
+/* ===== Avatars ===== */
+.str-chat__avatar {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.dark .str-chat__avatar {
+    border-color: #374151;
+}
+
+.str-chat__avatar-image {
+    border-radius: 50%;
+}
+
+.str-chat__avatar-fallback {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+/* ===== Date Separator ===== */
+.str-chat__date-separator {
+    margin: 1.5rem 0;
+    text-align: center;
+}
+
+.str-chat__date-separator-date {
+    background: #e5e7eb;
+    color: #6b7280;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.375rem 0.75rem;
+    border-radius: 1rem;
+    display: inline-block;
+}
+
+.dark .str-chat__date-separator-date {
+    background: #374151;
+    color: #9ca3af;
+}
+
+/* ===== Typing Indicator ===== */
+.str-chat__typing-indicator {
+    padding: 0.5rem 1rem;
+    color: #6b7280;
+    font-size: 0.875rem;
+    font-style: italic;
+}
+
+.dark .str-chat__typing-indicator {
+    color: #9ca3af;
+}
+
+.str-chat__typing-indicator__dots {
+    display: inline-flex;
+    gap: 0.25rem;
+}
+
+.str-chat__typing-indicator__dot {
+    width: 0.375rem;
+    height: 0.375rem;
+    background: #9ca3af;
+    border-radius: 50%;
+    animation: typing 1.4s infinite;
+}
+
+.dark .str-chat__typing-indicator__dot {
+    background: #6b7280;
+}
+
+.str-chat__typing-indicator__dot:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.str-chat__typing-indicator__dot:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes typing {
+    0%,
+    60%,
+    100% {
+        transform: translateY(0);
+        opacity: 0.6;
+    }
+    30% {
+        transform: translateY(-0.5rem);
+        opacity: 1;
+    }
+}
+
+/* ===== Thread Panel ===== */
+.str-chat__thread {
+    background: white;
+    border-left: 1px solid #e5e7eb;
+}
+
+.dark .str-chat__thread {
+    background: #1f2937;
+    border-left-color: #374151;
+}
+
+.str-chat__thread-header {
+    background: white;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 1rem;
+}
+
+.dark .str-chat__thread-header {
+    background: #1f2937;
+    border-bottom-color: #374151;
+}
+
+/* ===== Reactions ===== */
+.str-chat__reaction-list {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 1rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.dark .str-chat__reaction-list {
+    background: #374151;
+    border-color: #4b5563;
+}
+
+.str-chat__reaction-list--reverse {
+    flex-direction: row-reverse;
+}
+
+/* ===== Attachments ===== */
+.str-chat__attachment {
+    border-radius: 0.75rem;
+    overflow: hidden;
+    max-width: 20rem;
+}
+
+.str-chat__attachment--image img {
+    border-radius: 0.75rem;
+}
+
+.str-chat__attachment--file {
+    background: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+}
+
+.dark .str-chat__attachment--file {
+    background: #374151;
+    border-color: #4b5563;
+}
+
+/* ===== Loading States ===== */
+.str-chat__loading-indicator {
+    color: #6b7280;
+}
+
+.dark .str-chat__loading-indicator {
+    color: #9ca3af;
+}
+
+.str-chat__loading-indicator-spinner {
+    border-color: #e5e7eb;
+    border-top-color: #3b82f6;
+}
+
+.dark .str-chat__loading-indicator-spinner {
+    border-color: #4b5563;
+    border-top-color: #60a5fa;
+}
+
+/* ===== Empty States ===== */
+.str-chat__empty-channel {
+    color: #6b7280;
+    text-align: center;
+    padding: 2rem;
+}
+
+.dark .str-chat__empty-channel {
+    color: #9ca3af;
+}
+
+/* ===== Modal & Overlays ===== */
+.str-chat__modal {
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.dark .str-chat__modal {
+    background: rgba(0, 0, 0, 0.7);
+}
+
+.str-chat__modal__inner {
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.dark .str-chat__modal__inner {
+    background: #1f2937;
+    border: 1px solid #374151;
+}
+
+/* ===== Mentions & Links ===== */
+.str-chat__message-mention {
+    background: #dbeafe;
+    color: #1e40af;
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+    font-weight: 500;
+}
+
+.dark .str-chat__message-mention {
+    background: #1e3a8a;
+    color: #93c5fd;
+}
+
+.str-chat__message-url {
+    color: #2563eb;
+    text-decoration: underline;
+}
+
+.dark .str-chat__message-url {
+    color: #60a5fa;
+}
+
+/* ===== Responsive Adjustments ===== */
+@media (max-width: 768px) {
+    .str-chat__list {
+        padding: 0.75rem;
+    }
+
+    .str-chat__message-simple-text-inner {
+        padding: 0.625rem 0.875rem;
+    }
+
+    .str-chat__input-flat {
+        padding: 0.75rem;
+    }
+}
+
+/* ===== Custom Animations ===== */
+.str-chat__message-simple {
+    animation: fadeInUp 0.3s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(1rem);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ===== Accessibility ===== */
+.str-chat button:focus,
+.str-chat input:focus,
+.str-chat textarea:focus {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+}
+
+.dark .str-chat button:focus,
+.dark .str-chat input:focus,
+.dark .str-chat textarea:focus {
+    outline-color: #60a5fa;
+}
