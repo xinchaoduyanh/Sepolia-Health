@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { format, isToday, isYesterday } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import { useAuth } from '@/lib/hooks/useAuth';
 import type { Channel } from 'stream-chat';
 
 interface CustomChannelPreviewProps {
@@ -54,6 +55,7 @@ export const CustomChannelPreview = ({
   isActive = false,
   disabled = false,
 }: CustomChannelPreviewProps) => {
+  const { user } = useAuth();
   const [receptionistAvatar, setReceptionistAvatar] = React.useState<string | null>(null);
 
   // Safely get last message and time
@@ -62,7 +64,31 @@ export const CustomChannelPreview = ({
       ? channel.state.messages[channel.state.messages.length - 1]
       : null;
 
-  const lastMessageText = lastMessage?.text || 'Chưa có tin nhắn';
+  // Handle last message text with attachment support
+  let lastMessageText = 'Chưa có tin nhắn';
+  if (lastMessage) {
+    if (lastMessage.attachments?.length) {
+      // Handle attachments
+      const attachment = lastMessage.attachments[0];
+      const attachmentType = attachment?.type;
+
+      if (attachmentType === 'image') {
+        lastMessageText = 'Đã gửi ảnh';
+      } else if (attachmentType === 'video') {
+        lastMessageText = 'Đã gửi video';
+      } else {
+        lastMessageText = 'Đã gửi tệp đính kèm';
+      }
+    } else {
+      lastMessageText = lastMessage.text || 'Chưa có tin nhắn';
+    }
+
+    // Add "Bạn:" prefix if message is from current user
+    if (lastMessage.user?.id === user?.id) {
+      lastMessageText = `Bạn: ${lastMessageText}`;
+    }
+  }
+
   const lastMessageTime = lastMessage?.created_at
     ? formatLastMessageTime(new Date(lastMessage.created_at))
     : '';
@@ -185,6 +211,9 @@ export const CustomChannelPreview = ({
                 fontSize: 11,
                 fontWeight: '700',
                 color: '#FFFFFF',
+                textShadowColor: 'rgba(0, 0, 0, 0.3)',
+                textShadowOffset: { width: 0, height: 1 },
+                textShadowRadius: 2,
               }}>
               {unreadCount > 99 ? '99+' : unreadCount.toString()}
             </Text>

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -30,6 +30,28 @@ export const CustomMessageInput = ({
   const [isUploading, setIsUploading] = useState(false);
   const inputHeight = useRef(new Animated.Value(40)).current;
 
+  // Handle typing indicator
+  useEffect(() => {
+    if (channel && isFocused) {
+      if (messageText.trim()) {
+        // Send typing start when there's text
+        channel.keystroke();
+      } else {
+        // Send typing stop when text is cleared
+        channel.stopTyping();
+      }
+    }
+  }, [messageText, channel, isFocused]);
+
+  // Stop typing when component unmounts or loses focus
+  useEffect(() => {
+    return () => {
+      if (channel) {
+        channel.stopTyping();
+      }
+    };
+  }, [channel]);
+
   const sendMessage = async () => {
     if (!messageText.trim() || !channel) return;
 
@@ -48,6 +70,8 @@ export const CustomMessageInput = ({
       setMessageText('');
       onCancelReply?.();
       Keyboard.dismiss();
+      // Stop typing after sending message
+      channel.stopTyping();
     } catch (error) {
       console.error('Error sending message:', error);
     }
@@ -318,7 +342,13 @@ export const CustomMessageInput = ({
             value={messageText}
             onChangeText={setMessageText}
             onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
+            onBlur={() => {
+              setIsFocused(false);
+              // Stop typing when input loses focus
+              if (channel) {
+                channel.stopTyping();
+              }
+            }}
             onContentSizeChange={handleContentSizeChange}
             placeholder="Nhập tin nhắn..."
             placeholderTextColor="#94A3B8"

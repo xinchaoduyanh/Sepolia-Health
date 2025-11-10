@@ -19,7 +19,7 @@ interface ChatInboxProps {
 }
 
 export function ChatInbox({ onSelectChannel, selectedChannelId }: ChatInboxProps) {
-    const { getUserChannels, isConnected } = useChat()
+    const { getUserChannels, isConnected, client } = useChat()
     const { user } = useAuth()
     const [channels, setChannels] = useState<Channel[]>([])
     const [loading, setLoading] = useState(true)
@@ -45,6 +45,30 @@ export function ChatInbox({ onSelectChannel, selectedChannelId }: ChatInboxProps
         loadChannels()
     }, [loadChannels])
 
+    // Setup realtime updates when chat client is ready
+    useEffect(() => {
+        if (!client || !isConnected) {
+            return
+        }
+
+        const handleChannelEvent = (event: any) => {
+            console.log('Channel event received:', event.type, event.channel?.id)
+
+            // Refresh channels when there's a new message or update
+            if (event.type === 'message.new' || event.type === 'message.updated' || event.type === 'message.deleted') {
+                loadChannels()
+            }
+        }
+
+        // Listen to all channel events
+        client.on(handleChannelEvent)
+
+        // Cleanup
+        return () => {
+            client.off(handleChannelEvent)
+        }
+    }, [client, isConnected, loadChannels])
+
     const formatLastMessageTime = (timestamp?: string | Date) => {
         if (!timestamp) return ''
         try {
@@ -69,7 +93,24 @@ export function ChatInbox({ onSelectChannel, selectedChannelId }: ChatInboxProps
         const messages = channel.state.messages
         if (messages && messages.length > 0) {
             const lastMessage = messages[messages.length - 1]
-            const messageText = lastMessage?.text || 'Đã gửi tệp đính kèm'
+            let messageText = 'Đã gửi tệp đính kèm'
+
+            // Handle attachments
+            if (lastMessage?.attachments?.length) {
+                const attachment = lastMessage.attachments[0]
+                const attachmentType = attachment?.type
+
+                if (attachmentType === 'image') {
+                    messageText = 'Đã gửi ảnh'
+                } else if (attachmentType === 'video') {
+                    messageText = 'Đã gửi video'
+                } else {
+                    messageText =
+                        attachment?.title || attachment?.fallback || (attachment as any)?.name || 'Đã gửi tệp đính kèm'
+                }
+            } else {
+                messageText = lastMessage?.text || 'Đã gửi tệp đính kèm'
+            }
 
             // Nếu tin nhắn cuối là của chính mình thì thêm prefix "Bạn:"
             if (lastMessage?.user?.id === String(user?.id)) {
@@ -209,7 +250,7 @@ export function ChatInbox({ onSelectChannel, selectedChannelId }: ChatInboxProps
                                             {unreadCount > 0 && (
                                                 <Badge
                                                     variant="destructive"
-                                                    className="ml-2 h-5 min-w-5 px-1.5 rounded-full flex items-center justify-center text-xs font-bold"
+                                                    className="ml-2 h-5 min-w-5 px-1.5 rounded-full flex items-center justify-center text-xs font-bold bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700 text-white border-0 shadow-sm"
                                                 >
                                                     {unreadCount > 99 ? '99+' : unreadCount}
                                                 </Badge>

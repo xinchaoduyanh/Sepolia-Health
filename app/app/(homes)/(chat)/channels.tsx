@@ -38,7 +38,7 @@ const ChannelItem = ({ channel }: { channel: Channel }) => {
 };
 
 export default function ChannelsScreen() {
-  const { isChatReady } = useChatContext();
+  const { isChatReady, chatClient } = useChatContext();
   const [channels, setChannels] = React.useState<any[]>([]);
   const router = useRouter();
   const navigation = useNavigation();
@@ -68,15 +68,52 @@ export default function ChannelsScreen() {
         return;
       }
 
-      ChatService.fetchUserChannels()
-        .then((userChannels) => {
+      const loadChannels = async () => {
+        try {
+          const userChannels = await ChatService.fetchUserChannels();
           setChannels(userChannels);
-        })
-        .catch((error) => {
+        } catch (error) {
           console.error('Error fetching channels:', error);
-        });
+        }
+      };
+
+      loadChannels();
     }, [isChatReady])
   );
+
+  // Setup realtime updates when chat client is ready
+  React.useEffect(() => {
+    if (!chatClient || !isChatReady) {
+      return;
+    }
+
+    const handleChannelEvent = (event: any) => {
+      console.log('Channel event received:', event.type, event.channel?.id);
+
+      // Refresh channels when there's a new message or update
+      if (
+        event.type === 'message.new' ||
+        event.type === 'message.updated' ||
+        event.type === 'message.deleted'
+      ) {
+        ChatService.fetchUserChannels()
+          .then((userChannels) => {
+            setChannels(userChannels);
+          })
+          .catch((error) => {
+            console.error('Error refreshing channels:', error);
+          });
+      }
+    };
+
+    // Listen to all channel events
+    chatClient.on(handleChannelEvent);
+
+    // Cleanup
+    return () => {
+      chatClient.off(handleChannelEvent);
+    };
+  }, [chatClient, isChatReady]);
 
   if (!isChatReady) {
     return (
