@@ -212,8 +212,8 @@ export default function PersonalInfoScreen() {
               </View>
             </View>
 
-            <View style={{ marginTop: 16 }}>
-              <Text
+            {/*<View style={{ marginTop: 16 }}>
+               <Text
                 style={{
                   fontSize: 12,
                   color: '#475569',
@@ -224,8 +224,8 @@ export default function PersonalInfoScreen() {
                 lòng liên hệ hotline{' '}
                 <Text style={{ color: '#0284C7', fontWeight: '500' }}>1900 1234</Text> hoặc truy cập
                 website Vinmec.
-              </Text>
-              <Text
+              </Text> 
+               <Text
                 style={{
                   fontSize: 12,
                   color: '#475569',
@@ -235,8 +235,7 @@ export default function PersonalInfoScreen() {
               </Text>
             </View>
           </View>
-
-          {/* Thông tin bổ sung */}
+          Thông tin bổ sung
           <View style={{ marginBottom: 24 }}>
             <View
               style={{
@@ -278,10 +277,9 @@ export default function PersonalInfoScreen() {
                 </Text>
               </TouchableOpacity>
             </View>
-          </View>
-
-          {/* Thông tin bảo hiểm */}
-          <View style={{ marginBottom: 24 }}>
+          </View> */}
+            {/* Thông tin bảo hiểm */}
+            {/* <View style={{ marginBottom: 24 }}>
             <View
               style={{
                 flexDirection: 'row',
@@ -354,10 +352,9 @@ export default function PersonalInfoScreen() {
                 </Text>
               </View>
             </View>
-          </View>
-
-          {/* Thông tin công ty */}
-          <View style={{ marginBottom: 24 }}>
+          </View> */}
+            {/* Thông tin công ty */}
+            {/* <View style={{ marginBottom: 24 }}>
             <View
               style={{
                 flexDirection: 'row',
@@ -397,7 +394,7 @@ export default function PersonalInfoScreen() {
                   Thêm
                 </Text>
               </TouchableOpacity>
-            </View>
+            </View>*/}
           </View>
         </View>
       </ScrollView>

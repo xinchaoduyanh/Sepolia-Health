@@ -1,40 +1,14 @@
-import { Inject, Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
-import { createClient, RedisClientType } from 'redis';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { RedisSetOptions, RedisGetResult, RedisKeyValue } from './redis.types';
-import { appConfig } from '../../config';
-import { ConfigType } from '@nestjs/config';
+import IORedis from 'ioredis';
 
 @Injectable()
-export class RedisService implements OnModuleDestroy {
+export class RedisService {
   private readonly logger = new Logger(RedisService.name);
-  private readonly client: RedisClientType;
+  @Inject('REDIS_CLIENT')
+  private readonly client: IORedis;
 
-  constructor(
-    @Inject(appConfig.KEY)
-    private readonly redisConf: ConfigType<typeof appConfig>,
-  ) {
-    this.client = createClient({
-      url: this.redisConf.redisUrl,
-    });
-
-    this.client.on('error', (err) => {
-      this.logger.error('Redis Client Error:', err);
-    });
-
-    this.client.on('connect', () => {
-      this.logger.log('Redis Client Connected');
-    });
-
-    this.client.on('disconnect', () => {
-      this.logger.log('Redis Client Disconnected');
-    });
-
-    void this.client.connect();
-  }
-
-  async onModuleDestroy() {
-    await this.client.quit();
-  }
+  constructor() {}
 
   /**
    * Set a key-value pair
@@ -44,10 +18,16 @@ export class RedisService implements OnModuleDestroy {
     value: string,
     options?: RedisSetOptions,
   ): Promise<boolean> {
-    const result = await this.client.set(key, value, {
-      EX: options?.ex,
-      NX: options?.nx,
-    });
+    let result;
+    if (options?.ex && options?.nx) {
+      result = await this.client.set(key, value, 'EX', options.ex, 'NX');
+    } else if (options?.nx) {
+      result = await this.client.set(key, value, 'NX');
+    } else if (options?.ex) {
+      result = await this.client.set(key, value, 'EX', options.ex);
+    } else {
+      result = await this.client.set(key, value);
+    }
     return result === 'OK';
   }
 
@@ -65,7 +45,7 @@ export class RedisService implements OnModuleDestroy {
   /**
    * Delete key(s)
    */
-  async del(key: string | string[]): Promise<number> {
+  async del(key: string): Promise<number> {
     return await this.client.del(key);
   }
 
@@ -101,7 +81,7 @@ export class RedisService implements OnModuleDestroy {
       pairs.push(key, value);
     });
 
-    const result = await this.client.mSet(pairs);
+    const result = await this.client.mset(pairs);
     return result === 'OK';
   }
 
@@ -109,7 +89,7 @@ export class RedisService implements OnModuleDestroy {
    * Get multiple values by keys
    */
   async mget(keys: string[]): Promise<(string | null)[]> {
-    return await this.client.mGet(keys);
+    return await this.client.mget(keys);
   }
 
   /**
