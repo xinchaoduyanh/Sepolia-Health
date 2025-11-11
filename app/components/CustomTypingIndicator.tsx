@@ -1,76 +1,111 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, Animated } from 'react-native';
-import { useTypingContext } from 'stream-chat-expo';
+import { useTypingContext, useChatContext } from 'stream-chat-expo';
 
 export const CustomTypingIndicator = () => {
   const { typing } = useTypingContext();
+  const { client } = useChatContext();
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
+  // Debug: Log typing state
   useEffect(() => {
     if (Object.keys(typing).length > 0) {
+      console.log('👀 Typing context:', {
+        typingCount: Object.keys(typing).length,
+        typingUsers: Object.keys(typing),
+        currentUser: client?.userID,
+        fullTyping: typing,
+      });
+    }
+  }, [typing, client]);
+
+  // Filter out current user from typing users
+  const otherUsersTyping = Object.entries(typing).filter(([userId]) => userId !== client?.userID);
+
+  console.log('👥 Other users typing:', otherUsersTyping.length);
+
+  useEffect(() => {
+    if (otherUsersTyping.length > 0) {
+      console.log('✅ Showing typing indicator');
       Animated.timing(fadeAnim, {
         toValue: 1,
         duration: 200,
         useNativeDriver: true,
       }).start();
     } else {
+      console.log('❌ Hiding typing indicator');
       Animated.timing(fadeAnim, {
         toValue: 0,
         duration: 200,
         useNativeDriver: true,
       }).start();
     }
-  }, [typing, fadeAnim]);
+  }, [otherUsersTyping.length, fadeAnim]);
 
-  if (Object.keys(typing).length === 0) {
+  if (otherUsersTyping.length === 0) {
+    console.log('🚫 No other users typing, returning null');
     return null;
   }
 
-  const typingUsers = Object.values(typing)
-    .map((user: any) => user.user?.name || 'Someone')
+  const typingUsers = otherUsersTyping
+    .map(([_, data]: any) => data.user?.name || 'Someone')
     .join(', ');
 
+  console.log('🎨 RENDERING typing indicator for:', typingUsers);
+
   return (
-    <Animated.View
+    <View
       style={{
-        opacity: fadeAnim,
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: 16,
-        paddingVertical: 8,
+        paddingVertical: 12,
+        marginTop: 8, // Tách với message bên trên
+        backgroundColor: '#F8FAFC',
+      }}
+      onLayout={(e) => {
+        console.log('📐 Typing indicator layout:', e.nativeEvent.layout);
       }}>
-      <View
+      <Animated.View
         style={{
-          backgroundColor: '#FFFFFF',
-          borderRadius: 20,
-          borderWidth: 1,
-          borderColor: '#E2E8F0',
-          paddingHorizontal: 16,
-          paddingVertical: 10,
+          opacity: fadeAnim,
           flexDirection: 'row',
           alignItems: 'center',
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 1 },
-          shadowOpacity: 0.05,
-          shadowRadius: 2,
-          elevation: 1,
         }}>
-        {/* Animated dots */}
-        <View style={{ flexDirection: 'row', marginRight: 8 }}>
-          <AnimatedDot delay={0} />
-          <AnimatedDot delay={150} />
-          <AnimatedDot delay={300} />
-        </View>
-        <Text
+        <View
           style={{
-            fontSize: 13,
-            color: '#64748B',
-            fontStyle: 'italic',
+            backgroundColor: '#FFFFFF',
+            borderRadius: 24,
+            borderWidth: 1.5,
+            borderColor: '#DBEAFE',
+            paddingHorizontal: 20,
+            paddingVertical: 14,
+            flexDirection: 'row',
+            alignItems: 'center',
+            shadowColor: '#2563EB',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.1,
+            shadowRadius: 4,
+            elevation: 2,
           }}>
-          {typingUsers} đang nhập...
-        </Text>
-      </View>
-    </Animated.View>
+          {/* Animated dots - larger */}
+          <View style={{ flexDirection: 'row', marginRight: 12 }}>
+            <AnimatedDot delay={0} />
+            <AnimatedDot delay={150} />
+            <AnimatedDot delay={300} />
+          </View>
+          <Text
+            style={{
+              fontSize: 15,
+              color: '#2563EB',
+              fontWeight: '500',
+              fontStyle: 'italic',
+            }}>
+            {typingUsers} đang nhắn gì đó...
+          </Text>
+        </View>
+      </Animated.View>
+    </View>
   );
 };
 
@@ -102,11 +137,11 @@ const AnimatedDot = ({ delay }: { delay: number }) => {
   return (
     <Animated.View
       style={{
-        width: 6,
-        height: 6,
-        borderRadius: 3,
-        backgroundColor: '#64748B',
-        marginHorizontal: 2,
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: '#2563EB',
+        marginHorizontal: 3,
         transform: [{ scale: scaleAnim }],
       }}
     />

@@ -1,22 +1,24 @@
 import React, { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Modal,
-  Dimensions,
-  SafeAreaView,
-} from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Modal, SafeAreaView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { StreamCall, CallContent, useCallStateHooks } from '@stream-io/video-react-native-sdk';
 import { useVideoContext } from '@/contexts/VideoContext';
 
-const { width, height } = Dimensions.get('window');
-
 export const CallOverlay = () => {
-  const { currentCall, isInCall, callType, endCall, toggleMic, toggleCamera, isMicOn, isCameraOn } =
-    useVideoContext();
+  const {
+    currentCall,
+    isInCall,
+    callType,
+    isRinging,
+    incomingCall,
+    acceptCall,
+    rejectCall,
+    endCall,
+    toggleMic,
+    toggleCamera,
+    isMicOn,
+    isCameraOn,
+  } = useVideoContext();
   const [callDuration, setCallDuration] = useState(0);
 
   // Update call duration every second
@@ -39,6 +41,110 @@ export const CallOverlay = () => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Show incoming call UI
+  if (incomingCall) {
+    return (
+      <Modal visible={true} animationType="slide" presentationStyle="fullScreen">
+        <SafeAreaView style={styles.container}>
+          <View style={styles.incomingCallContainer}>
+            <View style={styles.incomingCallContent}>
+              {/* Caller Avatar */}
+              <View style={styles.incomingAvatarContainer}>
+                {incomingCall.callerImage ? (
+                  <View style={styles.avatarCircle}>
+                    <Text style={styles.avatarText}>
+                      {incomingCall.callerName.charAt(0).toUpperCase()}
+                    </Text>
+                  </View>
+                ) : (
+                  <Ionicons name="person-circle" size={120} color="#2563EB" />
+                )}
+              </View>
+
+              {/* Caller Name */}
+              <Text style={styles.incomingCallerName}>{incomingCall.callerName}</Text>
+
+              {/* Call Type */}
+              <View
+                style={[
+                  styles.incomingCallTypeBadge,
+                  { backgroundColor: incomingCall.callType === 'video' ? '#059669' : '#2563EB' },
+                ]}>
+                <Ionicons
+                  name={incomingCall.callType === 'video' ? 'videocam' : 'call'}
+                  size={16}
+                  color="white"
+                />
+                <Text style={styles.incomingCallTypeText}>
+                  {incomingCall.callType === 'video' ? 'Video Call' : 'Audio Call'}
+                </Text>
+              </View>
+
+              <Text style={styles.incomingStatusText}>Incoming call...</Text>
+            </View>
+
+            {/* Action Buttons */}
+            <View style={styles.incomingActionsContainer}>
+              {/* Reject Button */}
+              <TouchableOpacity onPress={rejectCall} style={styles.rejectButtonContainer}>
+                <View style={styles.rejectButtonCircle}>
+                  <Ionicons name="close" size={32} color="white" />
+                </View>
+                <Text style={styles.actionButtonText}>Decline</Text>
+              </TouchableOpacity>
+
+              {/* Accept Button */}
+              <TouchableOpacity
+                onPress={() => acceptCall(incomingCall.callId)}
+                style={styles.acceptButtonContainer}>
+                <View style={styles.acceptButtonCircle}>
+                  <Ionicons name="call" size={32} color="white" />
+                </View>
+                <Text style={styles.actionButtonText}>Accept</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </SafeAreaView>
+      </Modal>
+    );
+  }
+
+  // Show ringing UI (caller waiting)
+  if (currentCall && isRinging && !isInCall) {
+    return (
+      <Modal visible={true} animationType="slide" presentationStyle="fullScreen">
+        <SafeAreaView style={styles.container}>
+          <View style={styles.ringingContainer}>
+            <View style={styles.ringingContent}>
+              <View style={styles.avatarContainer}>
+                <Ionicons name="person-circle" size={120} color="#2563EB" />
+              </View>
+              <Text style={styles.participantName}>Calling...</Text>
+              <Text style={styles.statusText}>Waiting for answer</Text>
+
+              {/* Animated ringing indicator */}
+              <View style={styles.ringingIndicator}>
+                <Ionicons
+                  name={callType === 'video' ? 'videocam' : 'call'}
+                  size={24}
+                  color="#2563EB"
+                />
+              </View>
+            </View>
+
+            {/* Cancel Button */}
+            <View style={styles.bottomOverlay}>
+              <TouchableOpacity onPress={endCall} style={styles.endCallButton}>
+                <Ionicons name="call" size={32} color="white" />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </SafeAreaView>
+      </Modal>
+    );
+  }
+
+  // Show call UI when connected
   if (!currentCall || !isInCall) {
     return null;
   }
@@ -239,5 +345,105 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: 16,
     color: '#94A3B8',
+  },
+  // Incoming call styles
+  incomingCallContainer: {
+    flex: 1,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  incomingCallContent: {
+    alignItems: 'center',
+    gap: 20,
+  },
+  incomingAvatarContainer: {
+    marginBottom: 20,
+  },
+  avatarCircle: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: '#2563EB',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarText: {
+    fontSize: 48,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  incomingCallerName: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  incomingCallTypeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 8,
+  },
+  incomingCallTypeText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  incomingStatusText: {
+    fontSize: 18,
+    color: '#94A3B8',
+    marginTop: 10,
+  },
+  incomingActionsContainer: {
+    flexDirection: 'row',
+    gap: 50,
+    paddingHorizontal: 40,
+  },
+  rejectButtonContainer: {
+    alignItems: 'center',
+    gap: 10,
+  },
+  rejectButtonCircle: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: '#EF4444',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  acceptButtonContainer: {
+    alignItems: 'center',
+    gap: 10,
+  },
+  acceptButtonCircle: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: '#10B981',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  actionButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  // Ringing styles
+  ringingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  ringingContent: {
+    alignItems: 'center',
+    gap: 20,
+  },
+  ringingIndicator: {
+    marginTop: 30,
+    padding: 20,
+    borderRadius: 50,
+    backgroundColor: 'rgba(37, 99, 235, 0.2)',
   },
 });

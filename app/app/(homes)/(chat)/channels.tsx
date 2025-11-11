@@ -9,7 +9,7 @@ import {
 import React from 'react';
 import { useChatContext } from '@/contexts/ChatContext';
 import { Channel } from 'stream-chat';
-import { useRouter, useFocusEffect, useNavigation } from 'expo-router';
+import { useRouter, useNavigation } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -40,8 +40,10 @@ const ChannelItem = ({ channel }: { channel: Channel }) => {
 export default function ChannelsScreen() {
   const { isChatReady, chatClient } = useChatContext();
   const [channels, setChannels] = React.useState<any[]>([]);
+  const [isLoading, setIsLoading] = React.useState(false);
   const router = useRouter();
   const navigation = useNavigation();
+  const channelsLoadedRef = React.useRef(false);
 
   // Hide tab bar when entering chat
   React.useEffect(() => {
@@ -62,24 +64,29 @@ export default function ChannelsScreen() {
     });
   }, [navigation]);
 
-  useFocusEffect(
-    React.useCallback(() => {
-      if (!isChatReady) {
-        return;
+  // Load channels only once when chat is ready
+  React.useEffect(() => {
+    if (!isChatReady || channelsLoadedRef.current) {
+      return;
+    }
+
+    const loadChannels = async () => {
+      setIsLoading(true);
+      try {
+        console.log('📥 Loading channels...');
+        const userChannels = await ChatService.fetchUserChannels();
+        setChannels(userChannels);
+        channelsLoadedRef.current = true;
+        console.log('✅ Channels loaded:', userChannels.length);
+      } catch (error) {
+        console.error('❌ Error loading channels:', error);
+      } finally {
+        setIsLoading(false);
       }
+    };
 
-      const loadChannels = async () => {
-        try {
-          const userChannels = await ChatService.fetchUserChannels();
-          setChannels(userChannels);
-        } catch (error) {
-          console.error('Error fetching channels:', error);
-        }
-      };
-
-      loadChannels();
-    }, [isChatReady])
-  );
+    loadChannels();
+  }, [isChatReady]);
 
   // Setup realtime updates when chat client is ready
   React.useEffect(() => {
@@ -90,19 +97,29 @@ export default function ChannelsScreen() {
     const handleChannelEvent = (event: any) => {
       console.log('Channel event received:', event.type, event.channel?.id);
 
-      // Refresh channels when there's a new message or update
+      // Only update the specific channel that changed, not refetch all channels
+      // Stream SDK already handles updating channel state automatically
       if (
         event.type === 'message.new' ||
         event.type === 'message.updated' ||
         event.type === 'message.deleted'
       ) {
-        ChatService.fetchUserChannels()
-          .then((userChannels) => {
-            setChannels(userChannels);
-          })
-          .catch((error) => {
-            console.error('Error refreshing channels:', error);
+        // Find and update the specific channel in the list
+        const updatedChannel = event.channel;
+        if (updatedChannel) {
+          setChannels((prevChannels) => {
+            const channelIndex = prevChannels.findIndex((ch) => ch.cid === updatedChannel.cid);
+            if (channelIndex >= 0) {
+              // Update existing channel and move to top
+              const updated = [...prevChannels];
+              updated.splice(channelIndex, 1);
+              return [updatedChannel, ...updated];
+            } else {
+              // New channel, add to top
+              return [updatedChannel, ...prevChannels];
+            }
           });
+        }
       }
     };
 
@@ -123,11 +140,9 @@ export default function ChannelsScreen() {
             <Ionicons name="chatbubbles" size={48} color="#2563EB" />
           </View>
           <Text className="mb-2 text-center text-xl font-semibold text-slate-900">
-            Đang kết nối chat
+            Đang kết nối...
           </Text>
-          <Text className="mb-6 text-center text-sm text-slate-600">
-            Đang thiết lập kết nối để tải tin nhắn...
-          </Text>
+          <Text className="mb-6 text-center text-sm text-slate-600">Đang khởi tạo chat client</Text>
           <ActivityIndicator size="large" color="#2563EB" />
         </View>
       </SafeAreaView>
@@ -228,7 +243,12 @@ export default function ChannelsScreen() {
           <View className="mt-4">
             <Text className="mb-4 text-lg font-semibold text-slate-900">Cuộc trò chuyện</Text>
 
-            {channels.length === 0 ? (
+            {isLoading ? (
+              <View className="items-center justify-center rounded-xl bg-white px-8 py-12 shadow-sm">
+                <ActivityIndicator size="large" color="#2563EB" />
+                <Text className="mt-4 text-center text-sm text-slate-600">Đang tải...</Text>
+              </View>
+            ) : channels.length === 0 ? (
               <View className="items-center justify-center rounded-xl bg-white px-8 py-12 shadow-sm">
                 <View className="mb-6 items-center justify-center rounded-full bg-slate-100 p-8">
                   <Ionicons name="chatbubbles" size={48} color="#94A3B8" />

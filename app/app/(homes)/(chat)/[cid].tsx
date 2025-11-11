@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, ActivityIndicator, Text, TouchableOpacity, Alert } from 'react-native';
+import { View, ActivityIndicator, Text, TouchableOpacity, Alert, Image } from 'react-native';
 import { useLocalSearchParams, Stack, useRouter, useNavigation } from 'expo-router';
 import { Channel, MessageList, MessageInput } from 'stream-chat-expo';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -10,6 +10,7 @@ import { CustomDateSeparator } from '@/components/CustomDateSeparator';
 import { CustomTypingIndicator } from '@/components/CustomTypingIndicator';
 import { CustomMessageInput } from '@/components/CustomMessageInput';
 import Constants from 'expo-constants';
+import { useAuth } from '@/lib/hooks/useAuth';
 
 // Lazy import useVideoContext
 const isExpoGo = Constants.appOwnership === 'expo';
@@ -43,11 +44,13 @@ export default function ChannelScreen() {
   const { cid } = useLocalSearchParams<{ cid: string }>();
   const { chatClient, isChatReady, initChat } = useChatContext();
   const { startAudioCall, startVideoCall, isVideoReady } = useVideoContext();
+  const { user } = useAuth();
   const [channel, setChannel] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [replyingTo, setReplyingTo] = useState<any>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [otherUserAvatar, setOtherUserAvatar] = useState<string | null>(null);
 
   // Hide tab bar when entering individual chat
   React.useEffect(() => {
@@ -110,6 +113,39 @@ export default function ChannelScreen() {
           try {
             await channel.watch();
             console.log('Channel watched successfully, cid:', channel.cid);
+
+            // Get other user's avatar
+            try {
+              const members = await channel.queryMembers({});
+              console.log(
+                'Channel members:',
+                members.members.map((m) => ({
+                  user_id: m.user_id,
+                  name: m.user?.name,
+                  image: m.user?.image,
+                }))
+              );
+              console.log('Current user ID:', user?.id, 'type:', typeof user?.id);
+
+              if (members.members && members.members.length > 0) {
+                // Convert user ID to string for comparison
+                const currentUserId = String(user?.id);
+                const otherMember = members.members.find((m) => m.user_id !== currentUserId);
+                console.log(
+                  'Other member found:',
+                  otherMember?.user?.name,
+                  'image:',
+                  otherMember?.user?.image
+                );
+
+                if (otherMember?.user?.image) {
+                  setOtherUserAvatar(otherMember.user.image as string);
+                }
+              }
+            } catch (err) {
+              console.error('Failed to get channel members:', err);
+            }
+
             if (isMounted) {
               setChannel(channel);
               setLoading(false);
@@ -137,6 +173,39 @@ export default function ChannelScreen() {
           try {
             await channel.watch();
             console.log('Fallback channel created and watched:', channel.id, channel.cid);
+
+            // Get other user's avatar
+            try {
+              const members = await channel.queryMembers({});
+              console.log(
+                'Fallback - Channel members:',
+                members.members.map((m) => ({
+                  user_id: m.user_id,
+                  name: m.user?.name,
+                  image: m.user?.image,
+                }))
+              );
+              console.log('Fallback - Current user ID:', user?.id, 'type:', typeof user?.id);
+
+              if (members.members && members.members.length > 0) {
+                // Convert user ID to string for comparison
+                const currentUserId = String(user?.id);
+                const otherMember = members.members.find((m) => m.user_id !== currentUserId);
+                console.log(
+                  'Fallback - Other member found:',
+                  otherMember?.user?.name,
+                  'image:',
+                  otherMember?.user?.image
+                );
+
+                if (otherMember?.user?.image) {
+                  setOtherUserAvatar(otherMember.user.image as string);
+                }
+              }
+            } catch (err) {
+              console.error('Failed to get channel members:', err);
+            }
+
             if (isMounted) {
               setChannel(channel);
               setLoading(false);
@@ -302,7 +371,6 @@ export default function ChannelScreen() {
       <Stack.Screen
         options={{
           headerShown: true,
-          title: channel.data?.name || 'Tư vấn y tế',
           headerBackTitle: 'Quay lại',
           headerBackVisible: true,
           headerStyle: {
@@ -312,6 +380,46 @@ export default function ChannelScreen() {
           headerTitleStyle: {
             fontWeight: 'bold',
           },
+          headerTitle: () => (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              {/* Avatar */}
+              <View
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 18,
+                  backgroundColor: '#DBEAFE',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderWidth: 2,
+                  borderColor: '#FFFFFF',
+                }}>
+                {otherUserAvatar ? (
+                  <Image
+                    source={{ uri: otherUserAvatar }}
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: 16,
+                    }}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <Ionicons name="person" size={20} color="#2563EB" />
+                )}
+              </View>
+              {/* User Name */}
+              <Text
+                style={{
+                  fontSize: 17,
+                  fontWeight: 'bold',
+                  color: '#FFFFFF',
+                }}
+                numberOfLines={1}>
+                {channel.data?.name || 'Tư vấn y tế'}
+              </Text>
+            </View>
+          ),
           headerRight: () => (
             <View style={{ flexDirection: 'row', marginRight: 8, gap: 12 }}>
               {/* Audio Call Button */}
@@ -341,11 +449,7 @@ export default function ChannelScreen() {
       />
 
       <ReplyContext.Provider value={{ replyingTo, setReplyingTo }}>
-        <Channel
-          channel={channel}
-          MessageSimple={CustomMessage}
-          DateHeader={CustomDateSeparator}
-          TypingIndicator={CustomTypingIndicator}>
+        <Channel channel={channel} MessageSimple={CustomMessage} DateHeader={CustomDateSeparator}>
           {/* Message List Container */}
           <View className="flex-1">
             <MessageList
@@ -358,8 +462,11 @@ export default function ChannelScreen() {
             />
           </View>
 
-          {/* Message Input - Use default for now with image/file support */}
-          <MessageInput />
+          {/* Typing Indicator - render manually outside MessageList */}
+          <CustomTypingIndicator />
+
+          {/* Custom Message Input with proper typing indicator */}
+          <CustomMessageInput />
         </Channel>
       </ReplyContext.Provider>
     </SafeAreaView>

@@ -13,41 +13,76 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import { useChannelContext } from 'stream-chat-expo';
 
 interface CustomMessageInputProps {
-  channel: any;
   replyingTo?: any;
   onCancelReply?: () => void;
 }
 
-export const CustomMessageInput = ({
-  channel,
-  replyingTo,
-  onCancelReply,
-}: CustomMessageInputProps) => {
+export const CustomMessageInput = ({ replyingTo, onCancelReply }: CustomMessageInputProps) => {
+  // Get channel from Stream Chat context
+  const { channel } = useChannelContext();
   const [messageText, setMessageText] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const inputHeight = useRef(new Animated.Value(40)).current;
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isTypingRef = useRef(false);
 
-  // Handle typing indicator
-  useEffect(() => {
-    if (channel && isFocused) {
-      if (messageText.trim()) {
-        // Send typing start when there's text
+  // Handle text change and typing indicator
+  const handleTextChange = (text: string) => {
+    setMessageText(text);
+
+    if (!channel || !isFocused) return;
+
+    if (text.trim()) {
+      // Start typing indicator immediately if not already typing
+      if (!isTypingRef.current) {
+        console.log('🔵 Starting typing indicator (IMMEDIATE)');
         channel.keystroke();
+        isTypingRef.current = true;
       } else {
-        // Send typing stop when text is cleared
+        // Continue typing - send keystroke to keep alive
+        channel.keystroke();
+      }
+
+      // Clear existing timeout
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+
+      // Set new timeout to stop typing after 3 seconds of inactivity
+      typingTimeoutRef.current = setTimeout(() => {
+        console.log('⏸️ Auto-stopping typing indicator (3s timeout)');
+        if (channel) {
+          channel.stopTyping();
+        }
+        isTypingRef.current = false;
+      }, 3000);
+    } else {
+      // Stop typing when text is cleared
+      if (isTypingRef.current) {
+        console.log('⏹️ Stopping typing indicator (text cleared)');
         channel.stopTyping();
+        isTypingRef.current = false;
+      }
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
       }
     }
-  }, [messageText, channel, isFocused]);
+  };
 
   // Stop typing when component unmounts or loses focus
   useEffect(() => {
     return () => {
-      if (channel) {
+      if (channel && isTypingRef.current) {
+        console.log('🔴 Cleanup: stopping typing indicator');
         channel.stopTyping();
+        isTypingRef.current = false;
+      }
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
       }
     };
   }, [channel]);
@@ -66,12 +101,20 @@ export const CustomMessageInput = ({
         messageData.show_in_channel = true;
       }
 
+      // Stop typing and clear state before sending
+      if (isTypingRef.current) {
+        console.log('✉️ Sending message, stopping typing indicator');
+        channel.stopTyping();
+        isTypingRef.current = false;
+      }
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+
       await channel.sendMessage(messageData);
       setMessageText('');
       onCancelReply?.();
       Keyboard.dismiss();
-      // Stop typing after sending message
-      channel.stopTyping();
     } catch (error) {
       console.error('Error sending message:', error);
     }
@@ -187,17 +230,30 @@ export const CustomMessageInput = ({
 
       console.log('Uploading file:', { uri: fileUri, name: fileName, type: fileType });
 
-      // Prepare message data with file attachment
-      // Use localUri for local files that need to be uploaded
+      // Upload the file first using Stream's upload API
+      // For React Native, we need to pass the file URI string
+      let uploadResponse;
+      if (isVideo) {
+        console.log('Uploading video...');
+        uploadResponse = await channel.sendFile(fileUri, fileName, fileType);
+      } else {
+        console.log('Uploading image...');
+        uploadResponse = await channel.sendImage(fileUri, fileName, fileType);
+      }
+
+      console.log('Upload response:', uploadResponse);
+
+      // Now send message with the uploaded file URL
       const messageData: any = {
         text: messageText.trim() || '',
         attachments: [
           {
             type: isVideo ? 'video' : 'image',
-            localUri: fileUri, // Local file URI for upload
+            asset_url: uploadResponse.file, // URL from upload
+            thumb_url: uploadResponse.thumb_url, // Thumbnail for videos
             file_size: asset.fileSize,
             mime_type: fileType,
-            fallback: fileName,
+            title: fileName,
           },
         ],
       };
@@ -207,7 +263,7 @@ export const CustomMessageInput = ({
         messageData.show_in_channel = true;
       }
 
-      // Send message - Stream will upload the file from local URI
+      // Send message with uploaded attachment
       await channel.sendMessage(messageData);
 
       console.log('Message sent successfully with attachment');
@@ -217,6 +273,7 @@ export const CustomMessageInput = ({
     } catch (error: any) {
       console.error('Error uploading file:', error);
       console.error('Error stack:', error?.stack);
+      console.error('Error details:', JSON.stringify(error, null, 2));
       Alert.alert('Lỗi', `Không thể gửi file: ${error?.message || 'Vui lòng thử lại'}`);
     } finally {
       setIsUploading(false);
@@ -340,13 +397,21 @@ export const CustomMessageInput = ({
           }}>
           <TextInput
             value={messageText}
-            onChangeText={setMessageText}
-            onFocus={() => setIsFocused(true)}
+            onChangeText={handleTextChange}
+            onFocus={() => {
+              console.log('📝 Input focused');
+              setIsFocused(true);
+            }}
             onBlur={() => {
+              console.log('🔍 Input blurred');
               setIsFocused(false);
               // Stop typing when input loses focus
-              if (channel) {
+              if (channel && isTypingRef.current) {
                 channel.stopTyping();
+                isTypingRef.current = false;
+              }
+              if (typingTimeoutRef.current) {
+                clearTimeout(typingTimeoutRef.current);
               }
             }}
             onContentSizeChange={handleContentSizeChange}

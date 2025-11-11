@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Pressable } from 'react-native';
+import { View, Text, TouchableOpacity, Pressable, Image } from 'react-native';
 import { useMessageContext, MessageSimple } from 'stream-chat-expo';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
@@ -32,6 +32,10 @@ export const CustomMessage = () => {
     setShowActions(true);
   };
 
+  // Get user info early for use in all render paths
+  const userName = message.user?.name || 'Unknown';
+  const userImage = message.user?.image;
+
   // Handle attachments
   if (message.attachments?.length) {
     const attachment = message.attachments[0];
@@ -43,9 +47,12 @@ export const CustomMessage = () => {
     }
 
     // For other attachments, show custom text
-    const displayText =
-      attachment.title || attachment.fallback || attachment.name || 'Đã gửi tệp đính kèm';
+    const displayText: string = (attachment.title ||
+      attachment.fallback ||
+      attachment.name ||
+      'Đã gửi tệp đính kèm') as string;
     const customMessage = { ...message, text: displayText };
+    const messageTime = message.created_at ? formatMessageTime(new Date(message.created_at)) : '';
 
     return (
       <Pressable
@@ -54,7 +61,7 @@ export const CustomMessage = () => {
         style={{
           flexDirection: 'row',
           justifyContent: isMyMessage ? 'flex-end' : 'flex-start',
-          paddingHorizontal: 12,
+          paddingHorizontal: isMyMessage ? 4 : 12,
           paddingVertical: 4,
           alignItems: 'flex-end',
         }}>
@@ -73,9 +80,15 @@ export const CustomMessage = () => {
               borderColor: '#FFFFFF',
             }}>
             {userImage ? (
-              <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#0EA5E9' }}>
-                <Ionicons name="person" size={20} color="#FFFFFF" />
-              </View>
+              <Image
+                source={{ uri: userImage as string }}
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 16,
+                }}
+                resizeMode="cover"
+              />
             ) : (
               <Ionicons name="person" size={20} color="#0284C7" />
             )}
@@ -120,14 +133,16 @@ export const CustomMessage = () => {
               borderWidth: isMyMessage ? 0 : 1,
               borderColor: '#E2E8F0',
             }}>
-            <Text
-              style={{
-                fontSize: 15,
-                lineHeight: 20,
-                color: isMyMessage ? '#FFFFFF' : '#1F2937',
-              }}>
-              {customMessage.text}
-            </Text>
+            {displayText && (
+              <Text
+                style={{
+                  fontSize: 15,
+                  lineHeight: 20,
+                  color: isMyMessage ? '#FFFFFF' : '#1F2937',
+                }}>
+                {displayText}
+              </Text>
+            )}
           </View>
 
           {/* Timestamp and Status */}
@@ -158,9 +173,6 @@ export const CustomMessage = () => {
             )}
           </View>
         </View>
-
-        {/* Avatar space for my messages (right side) - invisible spacer */}
-        {isMyMessage && <View style={{ width: 32, marginLeft: 8 }} />}
 
         {/* Action Menu (appears on long press) */}
         {showActions && (
@@ -213,8 +225,6 @@ export const CustomMessage = () => {
   }
 
   const messageTime = message.created_at ? formatMessageTime(new Date(message.created_at)) : '';
-  const userName = message.user?.name || 'Unknown';
-  const userImage = message.user?.image;
 
   return (
     <Pressable
@@ -223,7 +233,7 @@ export const CustomMessage = () => {
       style={{
         flexDirection: 'row',
         justifyContent: isMyMessage ? 'flex-end' : 'flex-start',
-        paddingHorizontal: 12,
+        paddingHorizontal: isMyMessage ? 4 : 12,
         paddingVertical: 4,
         alignItems: 'flex-end',
       }}>
@@ -242,9 +252,15 @@ export const CustomMessage = () => {
             borderColor: '#FFFFFF',
           }}>
           {userImage ? (
-            <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#0EA5E9' }}>
-              <Ionicons name="person" size={20} color="#FFFFFF" />
-            </View>
+            <Image
+              source={{ uri: userImage as string }}
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 16,
+              }}
+              resizeMode="cover"
+            />
           ) : (
             <Ionicons name="person" size={20} color="#0284C7" />
           )}
@@ -327,9 +343,6 @@ export const CustomMessage = () => {
           )}
         </View>
       </View>
-
-      {/* Avatar space for my messages (right side) - invisible spacer */}
-      {isMyMessage && <View style={{ width: 32, marginLeft: 8 }} />}
 
       {/* Action Menu (appears on long press) */}
       {showActions && (

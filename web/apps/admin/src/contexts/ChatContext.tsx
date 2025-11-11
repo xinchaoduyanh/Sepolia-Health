@@ -36,17 +36,18 @@ export function ChatProvider({ children, apiKey }: ChatProviderProps) {
         try {
             // Check if already connected with the same user
             if (client.userID === userId && isConnected) {
-                console.log('Already connected to Stream Chat with this user')
+                console.log('✅ Already connected to Stream Chat with this user')
                 setIsReady(true)
                 return
             }
 
             // Disconnect if connected with different user
             if (client.userID && client.userID !== userId) {
-                console.log('Disconnecting previous user before connecting new user')
+                console.log('🔄 Disconnecting previous user before connecting new user')
                 await client.disconnectUser()
             }
 
+            console.log('🔌 Connecting user to Stream Chat...')
             await client.connectUser(
                 {
                     id: userId,
@@ -57,9 +58,9 @@ export function ChatProvider({ children, apiKey }: ChatProviderProps) {
             )
             setIsConnected(true)
             setIsReady(true)
-            console.log('Connected to Stream Chat successfully')
+            console.log('✅ Connected to Stream Chat successfully')
         } catch (error) {
-            console.error('Failed to connect to Stream Chat:', error)
+            console.error('❌ Failed to connect to Stream Chat:', error)
             setIsReady(false)
             throw error
         }

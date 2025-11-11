@@ -1,15 +1,18 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import {
-  StreamVideoClient,
-  StreamCall,
-  Call,
-  CallingState,
-} from '@stream-io/video-react-native-sdk';
+import { StreamVideoClient, Call } from '@stream-io/video-react-native-sdk';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { VideoAPI } from '@/lib/api/video';
 import { useChatContext } from './ChatContext';
 import { getUserProfile } from '@/lib/utils';
 import Toast from 'react-native-toast-message';
+
+interface IncomingCall {
+  callId: string;
+  callType: 'audio' | 'video';
+  channelId: string;
+  callerName: string;
+  callerImage?: string;
+}
 
 interface VideoContextType {
   // Client state
@@ -21,10 +24,14 @@ interface VideoContextType {
   isInCall: boolean;
   callType?: 'audio' | 'video';
   callStartTime?: number;
+  isRinging: boolean; // Is waiting for other person to join
+  incomingCall?: IncomingCall; // Incoming call notification
 
   // Actions
   startAudioCall: (channelId: string) => Promise<void>;
   startVideoCall: (channelId: string) => Promise<void>;
+  acceptCall: (callId: string) => Promise<void>;
+  rejectCall: () => void;
   endCall: () => Promise<void>;
 
   // Call controls
@@ -48,6 +55,8 @@ export const VideoProvider = ({ children }: { children: ReactNode }) => {
   const [callStartTime, setCallStartTime] = useState<number>();
   const [isMicOn, setIsMicOn] = useState(true);
   const [isCameraOn, setIsCameraOn] = useState(true);
+  const [isRinging, setIsRinging] = useState(false);
+  const [incomingCall, setIncomingCall] = useState<IncomingCall>();
 
   // Initialize Video Client when user is logged in
   useEffect(() => {
@@ -91,6 +100,7 @@ export const VideoProvider = ({ children }: { children: ReactNode }) => {
         // Note: Don't disconnect on unmount during navigation
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   // Cleanup when user logs out
@@ -102,11 +112,66 @@ export const VideoProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [user, videoClient]);
 
+  // Listen for incoming call messages from chat
+  useEffect(() => {
+    if (!chatClient || !isChatReady) return;
+
+    const handleMessageEvent = (event: any) => {
+      // Only handle call_notification messages
+      if (event.type === 'message.new' && event.message?.type === 'call_notification') {
+        const callData = event.message.call_data;
+        console.log('Incoming call notification:', callData);
+
+        // Don't show notification if this is our own call
+        if (callData.callerId === user?.id.toString()) {
+          console.log('Ignoring own call notification');
+          return;
+        }
+
+        setIncomingCall({
+          callId: callData.callId,
+          callType: callData.callType,
+          channelId: callData.channelId,
+          callerName: callData.callerName || 'Unknown',
+          callerImage: callData.callerImage,
+        });
+      }
+    };
+
+    chatClient.on('message.new', handleMessageEvent);
+
+    return () => {
+      chatClient.off('message.new', handleMessageEvent);
+    };
+  }, [chatClient, isChatReady, user]);
+
+  // Listen to call state changes (when participants join)
+  useEffect(() => {
+    if (!currentCall || !isRinging) return;
+
+    const subscription = currentCall.state.participants$.subscribe((participants) => {
+      console.log('Participants changed:', participants.length);
+      // If someone else joined (more than 1 participant), stop ringing
+      if (participants.length > 1) {
+        console.log('Other participant joined, stopping ringing');
+        setIsRinging(false);
+        if (!isInCall) {
+          setIsInCall(true);
+          setCallStartTime(Date.now());
+        }
+      }
+    });
+
+    return () => {
+      subscription?.unsubscribe();
+    };
+  }, [currentCall, isRinging, isInCall]);
+
   /**
    * Start audio call
    */
   const startAudioCall = async (channelId: string) => {
-    if (!videoClient || !isChatReady || !chatClient) {
+    if (!videoClient || !isChatReady || !chatClient || !user) {
       Toast.show({
         type: 'error',
         text1: 'Không thể thực hiện cuộc gọi',
@@ -130,6 +195,7 @@ export const VideoProvider = ({ children }: { children: ReactNode }) => {
             audio: {
               mic_default_on: true,
               speaker_default_on: true,
+              default_device: 'speaker',
             },
             video: {
               camera_default_on: false,
@@ -142,13 +208,30 @@ export const VideoProvider = ({ children }: { children: ReactNode }) => {
         },
       });
 
+      // Send call notification message to channel
+      const userProfile = getUserProfile(user);
+      const channel = chatClient.channel('messaging', channelId);
+      await channel.sendMessage({
+        text: `📞 Incoming audio call...`,
+        type: 'call_notification',
+        call_data: {
+          callId,
+          callType: 'audio',
+          channelId,
+          callerId: user.id.toString(),
+          callerName: userProfile.name,
+          callerImage: userProfile.image,
+        },
+        silent: true, // Don't send push notification yet
+      });
+
       setCurrentCall(call);
-      setIsInCall(true);
+      setIsInCall(false); // Not in call yet, just ringing
+      setIsRinging(true); // Start ringing state
       setCallType('audio');
-      setCallStartTime(Date.now());
       setIsCameraOn(false);
 
-      console.log('Audio call started:', callId);
+      console.log('Audio call started and notification sent:', callId);
     } catch (error) {
       console.error('Failed to start audio call:', error);
       Toast.show({
@@ -163,7 +246,7 @@ export const VideoProvider = ({ children }: { children: ReactNode }) => {
    * Start video call
    */
   const startVideoCall = async (channelId: string) => {
-    if (!videoClient || !isChatReady || !chatClient) {
+    if (!videoClient || !isChatReady || !chatClient || !user) {
       Toast.show({
         type: 'error',
         text1: 'Không thể thực hiện cuộc gọi',
@@ -187,6 +270,7 @@ export const VideoProvider = ({ children }: { children: ReactNode }) => {
             audio: {
               mic_default_on: true,
               speaker_default_on: true,
+              default_device: 'speaker',
             },
             video: {
               camera_default_on: true,
@@ -199,13 +283,30 @@ export const VideoProvider = ({ children }: { children: ReactNode }) => {
         },
       });
 
+      // Send call notification message to channel
+      const userProfile = getUserProfile(user);
+      const channel = chatClient.channel('messaging', channelId);
+      await channel.sendMessage({
+        text: `📹 Incoming video call...`,
+        type: 'call_notification',
+        call_data: {
+          callId,
+          callType: 'video',
+          channelId,
+          callerId: user.id.toString(),
+          callerName: userProfile.name,
+          callerImage: userProfile.image,
+        },
+        silent: true, // Don't send push notification yet
+      });
+
       setCurrentCall(call);
-      setIsInCall(true);
+      setIsInCall(false); // Not in call yet, just ringing
+      setIsRinging(true); // Start ringing state
       setCallType('video');
-      setCallStartTime(Date.now());
       setIsCameraOn(true);
 
-      console.log('Video call started:', callId);
+      console.log('Video call started and notification sent:', callId);
     } catch (error) {
       console.error('Failed to start video call:', error);
       Toast.show({
@@ -214,6 +315,55 @@ export const VideoProvider = ({ children }: { children: ReactNode }) => {
         text2: 'Vui lòng thử lại',
       });
     }
+  };
+
+  /**
+   * Accept incoming call
+   */
+  const acceptCall = async (callId: string) => {
+    if (!videoClient || !incomingCall) {
+      console.error('Cannot accept call: no video client or incoming call');
+      return;
+    }
+
+    try {
+      console.log('Accepting call:', callId);
+
+      // Join the existing call
+      const call = videoClient.call('default', callId);
+      await call.join();
+
+      // Update state
+      setCurrentCall(call);
+      setIsInCall(true);
+      setCallType(incomingCall.callType);
+      setCallStartTime(Date.now());
+      setIsCameraOn(incomingCall.callType === 'video');
+      setIncomingCall(undefined); // Clear incoming call notification
+
+      console.log('Call accepted successfully');
+    } catch (error) {
+      console.error('Failed to accept call:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Không thể kết nối',
+        text2: 'Vui lòng thử lại',
+      });
+      setIncomingCall(undefined);
+    }
+  };
+
+  /**
+   * Reject incoming call
+   */
+  const rejectCall = () => {
+    console.log('Rejecting call');
+    setIncomingCall(undefined);
+
+    Toast.show({
+      type: 'info',
+      text1: 'Đã từ chối cuộc gọi',
+    });
   };
 
   /**
@@ -252,6 +402,7 @@ export const VideoProvider = ({ children }: { children: ReactNode }) => {
       // Reset state
       setCurrentCall(undefined);
       setIsInCall(false);
+      setIsRinging(false);
       setCallType(undefined);
       setCallStartTime(undefined);
       setIsMicOn(true);
@@ -295,8 +446,12 @@ export const VideoProvider = ({ children }: { children: ReactNode }) => {
         isInCall,
         callType,
         callStartTime,
+        isRinging,
+        incomingCall,
         startAudioCall,
         startVideoCall,
+        acceptCall,
+        rejectCall,
         endCall,
         toggleMic,
         toggleCamera,
@@ -318,8 +473,12 @@ export const useVideoContext = () => {
       isInCall: false,
       callType: undefined,
       callStartTime: undefined,
+      isRinging: false,
+      incomingCall: undefined,
       startAudioCall: async () => {},
       startVideoCall: async () => {},
+      acceptCall: async () => {},
+      rejectCall: () => {},
       endCall: async () => {},
       toggleMic: () => {},
       toggleCamera: () => {},

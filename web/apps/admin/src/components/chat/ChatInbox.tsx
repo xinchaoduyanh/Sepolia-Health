@@ -33,19 +33,24 @@ export function ChatInbox({ onSelectChannel, selectedChannelId }: ChatInboxProps
 
         try {
             setLoading(true)
+            console.log('📥 Loading channels...')
             const channelData = await getUserChannels()
             setChannels(channelData)
+            console.log('✅ Channels loaded:', channelData.length)
         } catch (error) {
-            console.error('Failed to load channels:', error)
+            console.error('❌ Failed to load channels:', error)
             setChannels([])
         } finally {
             setLoading(false)
         }
     }, [isConnected, getUserChannels])
 
+    // Load channels only once when connected
     useEffect(() => {
+        if (!isConnected) return
         loadChannels()
-    }, [loadChannels])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isConnected]) // Only depend on isConnected, not loadChannels to avoid re-fetching
 
     // Setup realtime updates when chat client is ready
     useEffect(() => {
@@ -54,11 +59,26 @@ export function ChatInbox({ onSelectChannel, selectedChannelId }: ChatInboxProps
         }
 
         const handleChannelEvent = (event: any) => {
-            console.log('Channel event received:', event.type, event.channel?.id)
+            console.log('📨 Channel event:', event.type, event.channel?.id)
 
-            // Refresh channels when there's a new message or update
+            // Only update the specific channel that changed, not refetch all channels
+            // Stream SDK already handles updating channel state automatically
             if (event.type === 'message.new' || event.type === 'message.updated' || event.type === 'message.deleted') {
-                loadChannels()
+                const updatedChannel = event.channel
+                if (updatedChannel) {
+                    setChannels(prevChannels => {
+                        const channelIndex = prevChannels.findIndex(ch => ch.id === updatedChannel.id)
+                        if (channelIndex >= 0) {
+                            // Update existing channel and move to top
+                            const updated = [...prevChannels]
+                            updated.splice(channelIndex, 1)
+                            return [updatedChannel, ...updated]
+                        } else {
+                            // New channel, add to top
+                            return [updatedChannel, ...prevChannels]
+                        }
+                    })
+                }
             }
         }
 
@@ -69,7 +89,7 @@ export function ChatInbox({ onSelectChannel, selectedChannelId }: ChatInboxProps
         return () => {
             client.off(handleChannelEvent)
         }
-    }, [client, isConnected, loadChannels])
+    }, [client, isConnected])
 
     const formatLastMessageTime = (timestamp?: string | Date) => {
         if (!timestamp) return ''

@@ -203,109 +203,71 @@ const ChatProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [chatClient]);
 
-  // Auto-init chat when user is available (for push notifications)
+  // Initialize chat client once when user is available
   useEffect(() => {
+    // Skip if already initialized or no user
+    if (chatClient || !user || !process.env.EXPO_PUBLIC_STREAM_API_KEY) {
+      return;
+    }
+
+    let isMounted = true;
+
     const initChat = async () => {
-      console.log('ChatContext initChat called', {
-        hasUser: !!user,
-        hasClient: !!chatClient,
-        isReady: isChatReady,
-        hasApiKey: !!process.env.EXPO_PUBLIC_STREAM_API_KEY,
-      });
-
-      if (!user || chatClient || !process.env.EXPO_PUBLIC_STREAM_API_KEY) {
-        console.log('ChatContext initChat skipped', {
-          noUser: !user,
-          hasClient: !!chatClient,
-          noApiKey: !process.env.EXPO_PUBLIC_STREAM_API_KEY,
-        });
-        return;
-      }
-
       try {
-        console.log('Creating StreamChat client...');
-        const client = StreamChat.getInstance(process.env.EXPO_PUBLIC_STREAM_API_KEY);
-        console.log('StreamChat client created, getting token...');
-        const token = await ChatAPI.getToken();
-        console.log('Token received, connecting user...');
+        console.log('🔄 Initializing StreamChat client...');
+        const apiKey = process.env.EXPO_PUBLIC_STREAM_API_KEY;
+        if (!apiKey) {
+          throw new Error('Stream API key not found');
+        }
+        const client = StreamChat.getInstance(apiKey);
 
         const userProfile = getUserProfile(user);
-        console.log('User profile:', userProfile);
+        console.log('👤 Connecting user:', userProfile.name);
 
+        // Use tokenProvider for automatic token refresh
         await client.connectUser(
           {
             id: user.id.toString(),
             name: userProfile.name,
             image: userProfile.image,
           },
-          token
+          async () => {
+            console.log('🔑 Fetching token...');
+            return await ChatAPI.getToken();
+          }
         );
 
-        console.log('User connected successfully, setting states...');
-        setChatClient(client);
-        ChatService.setClient(client); // Set client in service
-        setIsChatReady(true);
-        console.log('Chat initialization completed successfully');
+        if (isMounted) {
+          setChatClient(client);
+          ChatService.setClient(client);
+          setIsChatReady(true);
+          console.log('✅ Chat initialized successfully');
+        }
       } catch (error) {
-        console.error('Failed to initialize chat:', error);
-        // Reset state on error to allow retry
-        setChatClient(undefined);
-        setIsChatReady(false);
-        // Don't throw error here to avoid breaking the app
+        console.error('❌ Failed to initialize chat:', error);
+        if (isMounted) {
+          setChatClient(undefined);
+          setIsChatReady(false);
+        }
       }
     };
 
     initChat();
 
-    // IMPORTANT: Only cleanup on component unmount, not when user/chatClient changes
-    // This prevents chat disconnect during navigation between screens
     return () => {
-      // Cleanup will only run when ChatProvider unmounts completely
+      isMounted = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty dependency array - only run once on mount
+  }, [user, chatClient]);
 
-  // Handle user changes (login/logout) without disconnecting chat during navigation
+  // Handle user logout
   useEffect(() => {
     if (!user && chatClient) {
-      // User logged out - disconnect chat
-      console.log('User logged out, disconnecting chat...');
+      console.log('👋 User logged out, disconnecting chat...');
       chatClient.disconnectUser();
       setChatClient(undefined);
       setIsChatReady(false);
-    } else if (user && !chatClient && !isChatReady) {
-      // User logged in but no chat - init chat
-      console.log('User logged in, initializing chat...');
-      const initChatForNewUser = async () => {
-        try {
-          const streamApiKey = process.env.EXPO_PUBLIC_STREAM_API_KEY as string;
-          console.log('streamApiKey', streamApiKey);
-          const client = StreamChat.getInstance(streamApiKey);
-          const token = await ChatAPI.getToken();
-          const userProfile = getUserProfile(user);
-
-          await client.connectUser(
-            {
-              id: user.id.toString(),
-              name: userProfile.name,
-              image: userProfile.image,
-            },
-            token
-          );
-
-          setChatClient(client);
-          ChatService.setClient(client); // Set client in service
-          setIsChatReady(true);
-          console.log('Chat initialized for new user');
-        } catch (error) {
-          console.error('Failed to initialize chat for new user:', error);
-          setChatClient(undefined);
-          setIsChatReady(false);
-        }
-      };
-      initChatForNewUser();
     }
-  }, [user, chatClient, isChatReady]);
+  }, [user, chatClient]);
 
   // Cleanup only on component unmount
   useEffect(() => {
