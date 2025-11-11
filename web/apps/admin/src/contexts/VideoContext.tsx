@@ -70,9 +70,16 @@ export function VideoProvider({ children, apiKey }: VideoProviderProps) {
                 const participants = currentCall.state.participants || {}
                 const participantCount = Object.keys(participants).length
 
+                console.log('🔍 Checking participants:', {
+                    count: participantCount,
+                    participants: Object.keys(participants),
+                    isRinging,
+                    isInCall,
+                })
+
                 // If we're ringing and someone else joins, start the call
                 if (participantCount >= 2) {
-                    console.log('Call accepted, participant joined')
+                    console.log('✅ Call accepted, participant joined - transitioning to active call')
                     setIsRinging(false)
                     setIsInCall(true)
                     setCallStartTime(Date.now())
@@ -86,13 +93,43 @@ export function VideoProvider({ children, apiKey }: VideoProviderProps) {
         // Check immediately
         checkParticipants()
 
-        // Subscribe to call state changes
-        const unsubscribe = currentCall.on('call.updated', () => {
-            checkParticipants()
-        })
+        // Subscribe to multiple events for better reliability
+        const unsubscribes: (() => void)[] = []
+
+        // Listen for general call updates
+        unsubscribes.push(
+            currentCall.on('call.updated', () => {
+                console.log('📞 call.updated event')
+                checkParticipants()
+            }),
+        )
+
+        // Listen for participant joined events
+        unsubscribes.push(
+            currentCall.on('call.session_participant_joined', event => {
+                console.log('👤 call.session_participant_joined event:', event)
+                checkParticipants()
+            }),
+        )
+
+        // Listen for call accepted event
+        unsubscribes.push(
+            currentCall.on('call.accepted', event => {
+                console.log('✅ call.accepted event:', event)
+                checkParticipants()
+            }),
+        )
+
+        // Also watch the participants state directly
+        const interval = setInterval(() => {
+            if (isRinging) {
+                checkParticipants()
+            }
+        }, 500)
 
         return () => {
-            unsubscribe()
+            unsubscribes.forEach(unsub => unsub())
+            clearInterval(interval)
         }
     }, [currentCall, isRinging])
 
