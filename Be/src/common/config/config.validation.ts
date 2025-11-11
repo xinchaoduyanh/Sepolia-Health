@@ -28,4 +28,7 @@ export const configSchema = z.object({
   //stream chat
   STREAM_CHAT_API_KEY: z.string().nonempty(),
   STREAM_CHAT_SECRET: z.string().nonempty(),
+  //stream video
+  STREAM_VIDEO_API_KEY: z.string().nonempty(),
+  STREAM_VIDEO_SECRET: z.string().nonempty(),
 });

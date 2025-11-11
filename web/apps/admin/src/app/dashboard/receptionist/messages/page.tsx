@@ -3,16 +3,20 @@
 import { useState, useEffect } from 'react'
 import { ChatInbox } from '@/components/chat/ChatInbox'
 import { ChatWindow } from '@/components/chat/ChatWindow'
+import { CallModal } from '@/components/video/CallModal'
 import { ChatProvider, useChat } from '@/contexts/ChatContext'
-import { chatService } from '@/shared/lib/api-services'
+import { VideoProvider, useVideo } from '@/contexts/VideoContext'
+import { chatService, videoService } from '@/shared/lib/api-services'
 import { useAuth } from '@/shared/hooks/useAuth'
 import { getUserProfile } from '@/shared/lib/user-profile'
 import { MessageSquare, AlertCircle } from 'lucide-react'
 
 const STREAM_CHAT_API_KEY = process.env.NEXT_PUBLIC_STREAM_CHAT_API_KEY || ''
+const STREAM_VIDEO_API_KEY = process.env.NEXT_PUBLIC_STREAM_VIDEO_API_KEY || ''
 
 function MessagesContent() {
     const { connectUser, isConnected } = useChat()
+    const { connectUser: connectVideoUser } = useVideo()
     const { user } = useAuth()
     const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null)
     const [authLoading, setAuthLoading] = useState(true)
@@ -36,6 +40,21 @@ function MessagesContent() {
                 console.log('Connecting user to Stream Chat...')
                 await connectUser(userId, token, userProfile.name, userProfile.image)
                 console.log('Successfully connected to Stream Chat')
+
+                // Also initialize video if API key is available
+                if (STREAM_VIDEO_API_KEY) {
+                    try {
+                        console.log('Getting video token...')
+                        const videoTokenResponse = await videoService.getVideoToken()
+
+                        console.log('Connecting user to Stream Video...')
+                        await connectVideoUser(userId, videoTokenResponse.token, userProfile.name, userProfile.image)
+                        console.log('Successfully connected to Stream Video')
+                    } catch (videoError) {
+                        console.error('Failed to initialize video:', videoError)
+                        // Don't block chat if video fails
+                    }
+                }
             } catch (error) {
                 console.error('Failed to initialize chat:', error)
                 setError('Không thể kết nối đến hệ thống chat. Vui lòng thử lại sau.')
@@ -45,7 +64,7 @@ function MessagesContent() {
         }
 
         initializeChat()
-    }, [connectUser, user])
+    }, [connectUser, connectVideoUser, user])
 
     if (authLoading) {
         return (
@@ -77,33 +96,38 @@ function MessagesContent() {
     }
 
     return (
-        <div className="absolute inset-0 flex overflow-hidden bg-background dark:bg-gray-900">
-            {/* Chat Inbox - Bên trái với fixed width */}
-            <div className="flex-shrink-0 w-80 border-r border-gray-200 dark:border-gray-700 bg-background dark:bg-gray-800 h-full overflow-hidden">
-                <ChatInbox onSelectChannel={setSelectedChannelId} selectedChannelId={selectedChannelId} />
+        <>
+            <div className="absolute inset-0 flex overflow-hidden bg-background dark:bg-gray-900">
+                {/* Chat Inbox - Bên trái với fixed width */}
+                <div className="flex-shrink-0 w-80 border-r border-gray-200 dark:border-gray-700 bg-background dark:bg-gray-800 h-full overflow-hidden">
+                    <ChatInbox onSelectChannel={setSelectedChannelId} selectedChannelId={selectedChannelId} />
+                </div>
+
+                {/* Chat Window - Bên phải chiếm phần còn lại */}
+                <div className="flex-1 h-full overflow-hidden">
+                    {selectedChannelId ? (
+                        <ChatWindow channelId={selectedChannelId} onClose={() => setSelectedChannelId(null)} />
+                    ) : (
+                        <div className="h-full flex items-center justify-center bg-background dark:bg-gray-900">
+                            <div className="text-center p-8">
+                                <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-blue-50 dark:bg-blue-900/20 mb-4">
+                                    <MessageSquare className="h-10 w-10 text-blue-600 dark:text-blue-400" />
+                                </div>
+                                <h3 className="text-xl font-semibold text-foreground dark:text-gray-100 mb-2">
+                                    Chọn cuộc trò chuyện
+                                </h3>
+                                <p className="text-sm text-muted-foreground max-w-sm">
+                                    Chọn một cuộc trò chuyện từ danh sách bên trái để bắt đầu nhắn tin với bệnh nhân
+                                </p>
+                            </div>
+                        </div>
+                    )}
+                </div>
             </div>
 
-            {/* Chat Window - Bên phải chiếm phần còn lại */}
-            <div className="flex-1 h-full overflow-hidden">
-                {selectedChannelId ? (
-                    <ChatWindow channelId={selectedChannelId} onClose={() => setSelectedChannelId(null)} />
-                ) : (
-                    <div className="h-full flex items-center justify-center bg-background dark:bg-gray-900">
-                        <div className="text-center p-8">
-                            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-blue-50 dark:bg-blue-900/20 mb-4">
-                                <MessageSquare className="h-10 w-10 text-blue-600 dark:text-blue-400" />
-                            </div>
-                            <h3 className="text-xl font-semibold text-foreground dark:text-gray-100 mb-2">
-                                Chọn cuộc trò chuyện
-                            </h3>
-                            <p className="text-sm text-muted-foreground max-w-sm">
-                                Chọn một cuộc trò chuyện từ danh sách bên trái để bắt đầu nhắn tin với bệnh nhân
-                            </p>
-                        </div>
-                    </div>
-                )}
-            </div>
-        </div>
+            {/* Global Call Modal */}
+            <CallModal />
+        </>
     )
 }
 
@@ -128,7 +152,9 @@ export default function ReceptionistMessagesPage() {
 
     return (
         <ChatProvider apiKey={STREAM_CHAT_API_KEY}>
-            <MessagesContent />
+            <VideoProvider apiKey={STREAM_VIDEO_API_KEY || STREAM_CHAT_API_KEY}>
+                <MessagesContent />
+            </VideoProvider>
         </ChatProvider>
     )
 }

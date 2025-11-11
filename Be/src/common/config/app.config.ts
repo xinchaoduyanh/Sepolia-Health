@@ -30,5 +30,8 @@ export default registerAs('app', () => {
     // stream chat
     streamChatApiKey: parsed.STREAM_CHAT_API_KEY,
     streamChatSecret: parsed.STREAM_CHAT_SECRET,
+    // stream video
+    streamVideoApiKey: parsed.STREAM_VIDEO_API_KEY,
+    streamVideoSecret: parsed.STREAM_VIDEO_SECRET,
   };
 });

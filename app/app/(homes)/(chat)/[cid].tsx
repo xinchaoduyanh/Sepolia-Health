@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, ActivityIndicator, Text, TouchableOpacity } from 'react-native';
+import { View, ActivityIndicator, Text, TouchableOpacity, Alert } from 'react-native';
 import { useLocalSearchParams, Stack, useRouter, useNavigation } from 'expo-router';
 import { Channel, MessageList, MessageInput } from 'stream-chat-expo';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -9,6 +9,24 @@ import { CustomMessage } from '@/components/CustomMessage';
 import { CustomDateSeparator } from '@/components/CustomDateSeparator';
 import { CustomTypingIndicator } from '@/components/CustomTypingIndicator';
 import { CustomMessageInput } from '@/components/CustomMessageInput';
+import Constants from 'expo-constants';
+
+// Lazy import useVideoContext
+const isExpoGo = Constants.appOwnership === 'expo';
+let useVideoContext: any = () => ({
+  startAudioCall: async () => {},
+  startVideoCall: async () => {},
+  isVideoReady: false,
+});
+
+if (!isExpoGo) {
+  try {
+    const videoModule = require('@/contexts/VideoContext');
+    useVideoContext = videoModule.useVideoContext;
+  } catch (error) {
+    console.warn('VideoContext not available in Expo Go');
+  }
+}
 
 // Context for sharing reply state between MessageList and MessageInput
 const ReplyContext = React.createContext<{
@@ -24,6 +42,7 @@ export default function ChannelScreen() {
   const navigation = useNavigation();
   const { cid } = useLocalSearchParams<{ cid: string }>();
   const { chatClient, isChatReady, initChat } = useChatContext();
+  const { startAudioCall, startVideoCall, isVideoReady } = useVideoContext();
   const [channel, setChannel] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -246,6 +265,38 @@ export default function ChannelScreen() {
     );
   }
 
+  const handleAudioCall = () => {
+    if (isExpoGo) {
+      Alert.alert(
+        'Tính năng không khả dụng',
+        'Video call chỉ hoạt động khi build ứng dụng. Vui lòng sử dụng bản production.'
+      );
+      return;
+    }
+    if (!isVideoReady) {
+      Alert.alert('Thông báo', 'Dịch vụ gọi điện chưa sẵn sàng. Vui lòng thử lại sau.');
+      return;
+    }
+    if (!channel?.id) return;
+    startAudioCall(channel.id);
+  };
+
+  const handleVideoCall = () => {
+    if (isExpoGo) {
+      Alert.alert(
+        'Tính năng không khả dụng',
+        'Video call chỉ hoạt động khi build ứng dụng. Vui lòng sử dụng bản production.'
+      );
+      return;
+    }
+    if (!isVideoReady) {
+      Alert.alert('Thông báo', 'Dịch vụ video call chưa sẵn sàng. Vui lòng thử lại sau.');
+      return;
+    }
+    if (!channel?.id) return;
+    startVideoCall(channel.id);
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-slate-50">
       <Stack.Screen
@@ -261,6 +312,31 @@ export default function ChannelScreen() {
           headerTitleStyle: {
             fontWeight: 'bold',
           },
+          headerRight: () => (
+            <View style={{ flexDirection: 'row', marginRight: 8, gap: 12 }}>
+              {/* Audio Call Button */}
+              <TouchableOpacity
+                onPress={handleAudioCall}
+                style={{
+                  padding: 8,
+                  borderRadius: 20,
+                  backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                }}>
+                <Ionicons name="call" size={22} color="white" />
+              </TouchableOpacity>
+
+              {/* Video Call Button */}
+              <TouchableOpacity
+                onPress={handleVideoCall}
+                style={{
+                  padding: 8,
+                  borderRadius: 20,
+                  backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                }}>
+                <Ionicons name="videocam" size={22} color="white" />
+              </TouchableOpacity>
+            </View>
+          ),
         }}
       />
 

@@ -14,6 +14,10 @@ import {
   ChatChannelDto,
   StreamTokenResponseDto,
   ClinicDto,
+  SearchUserDto,
+  UserSearchResultDto,
+  StartDirectChatDto,
+  DirectChatChannelResponseDto,
 } from './chat.dto';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 
@@ -84,5 +88,60 @@ export class ChatController {
   })
   async getClinics(): Promise<ClinicDto[]> {
     return await this.chatService.getAvailableClinics();
+  }
+
+  @Get('video-token')
+  @ApiOperation({ summary: 'Lấy Stream Video token cho user' })
+  @ApiResponse({
+    status: 200,
+    description: 'Video token generated successfully',
+  })
+  getVideoToken(@Request() req) {
+    const userId = req.user.userId;
+    const token = this.chatService.generateVideoToken(userId);
+    const apiKey = this.chatService.getVideoApiKey();
+    return {
+      token,
+      apiKey,
+      userId: userId.toString(),
+    };
+  }
+
+  @Post('search-user')
+  @ApiOperation({ summary: 'Tìm kiếm user theo email' })
+  @ApiResponse({
+    status: 200,
+    description: 'User found successfully',
+    type: UserSearchResultDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'User not found',
+  })
+  async searchUser(@Body() dto: SearchUserDto): Promise<UserSearchResultDto> {
+    return this.chatService.searchUserByEmail(dto.email);
+  }
+
+  @Post('start-direct')
+  @ApiOperation({ summary: 'Bắt đầu cuộc chat trực tiếp với user theo email' })
+  @ApiResponse({
+    status: 201,
+    description: 'Direct channel created successfully',
+    type: DirectChatChannelResponseDto,
+  })
+  async startDirectChat(
+    @Body() dto: StartDirectChatDto,
+    @Request() req,
+  ): Promise<DirectChatChannelResponseDto> {
+    const currentUserId = req.user.userId;
+    const result = await this.chatService.createDirectChatChannel(
+      currentUserId,
+      dto.email,
+    );
+    const token = this.chatService.generateStreamToken(currentUserId);
+    return {
+      ...result,
+      streamToken: token,
+    };
   }
 }

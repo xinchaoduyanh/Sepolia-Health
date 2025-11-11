@@ -7,11 +7,12 @@ import { Button } from '@workspace/ui/components/Button'
 import { Input } from '@workspace/ui/components/Textfield'
 import { formatDistanceToNow } from 'date-fns'
 import { vi } from 'date-fns/locale'
-import { MessageCircle, Clock, Search, RefreshCw } from 'lucide-react'
+import { MessageCircle, Clock, Search, RefreshCw, UserPlus } from 'lucide-react'
 import { cn } from '@workspace/ui/lib/utils'
 import { useChat } from '@/contexts/ChatContext'
 import { useAuth } from '@/shared/hooks/useAuth'
 import type { Channel } from 'stream-chat'
+import { UserSearchModal } from './UserSearchModal'
 
 interface ChatInboxProps {
     onSelectChannel: (channelId: string) => void
@@ -25,6 +26,7 @@ export function ChatInbox({ onSelectChannel, selectedChannelId }: ChatInboxProps
     const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState('')
     const [isSearching, setIsSearching] = useState(false)
+    const [isUserSearchModalOpen, setIsUserSearchModalOpen] = useState(false)
 
     const loadChannels = useCallback(async () => {
         if (!isConnected) return
@@ -151,6 +153,13 @@ export function ChatInbox({ onSelectChannel, selectedChannelId }: ChatInboxProps
         }
     }
 
+    const handleUserSelected = async (channelId: string) => {
+        // Reload channels to get the new one
+        await loadChannels()
+        // Select the new channel
+        onSelectChannel(channelId)
+    }
+
     if (loading) {
         return (
             <div className="h-full flex items-center justify-center p-8 bg-background dark:bg-gray-800">
@@ -169,6 +178,9 @@ export function ChatInbox({ onSelectChannel, selectedChannelId }: ChatInboxProps
                 <div className="flex items-center justify-between mb-2">
                     <h2 className="text-lg font-semibold text-foreground dark:text-gray-100">Cuộc trò chuyện</h2>
                     <div className="flex items-center gap-2">
+                        <Button variant="ghost" size="sm" onClick={() => setIsUserSearchModalOpen(true)}>
+                            <UserPlus className="h-4 w-4" />
+                        </Button>
                         <Button variant="ghost" size="sm" onClick={loadChannels} isDisabled={loading}>
                             <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
                         </Button>
@@ -270,6 +282,13 @@ export function ChatInbox({ onSelectChannel, selectedChannelId }: ChatInboxProps
                     )}
                 </div>
             </div>
+
+            {/* User Search Modal */}
+            <UserSearchModal
+                open={isUserSearchModalOpen}
+                onOpenChange={setIsUserSearchModalOpen}
+                onUserSelected={handleUserSelected}
+            />
         </div>
     )
 }

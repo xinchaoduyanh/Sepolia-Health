@@ -25,6 +25,7 @@ export { servicesService } from './services.service'
 export { clinicsService } from './clinics.service'
 export { uploadService } from './upload.service'
 export { chatService, type ChatChannel, type Clinic, type ChatChannelResponse } from './chat.service'
+export { videoService, type VideoTokenResponse } from './video.service'
 
 // Re-export API client
 export { apiClient } from '../api-client'

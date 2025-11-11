@@ -23,6 +23,21 @@ export interface ChatChannelResponse {
     streamToken: string
 }
 
+export interface UserSearchResult {
+    id: number
+    email: string
+    name: string
+    avatar?: string
+    role: string
+}
+
+export interface DirectChatChannelResponse {
+    channelId: string
+    targetUserName: string
+    members: number
+    streamToken: string
+}
+
 export class ChatService {
     static async getChannels(): Promise<ChatChannel[]> {
         // apiClient.get already unwraps the response
@@ -45,6 +60,18 @@ export class ChatService {
     static async startChat(clinicId: number): Promise<ChatChannelResponse> {
         // apiClient.post already unwraps the response
         const response = await apiClient.post<ChatChannelResponse>('/chat/start', { clinicId })
+        return response
+    }
+
+    static async searchUser(email: string): Promise<UserSearchResult> {
+        // apiClient.post already unwraps the response
+        const response = await apiClient.post<UserSearchResult>('/chat/search-user', { email })
+        return response
+    }
+
+    static async startDirectChat(email: string): Promise<DirectChatChannelResponse> {
+        // apiClient.post already unwraps the response
+        const response = await apiClient.post<DirectChatChannelResponse>('/chat/start-direct', { email })
         return response
     }
 }

@@ -5,9 +5,11 @@ import { Avatar, AvatarFallback, AvatarImage } from '@workspace/ui/components/Av
 import { Button } from '@workspace/ui/components/Button'
 import { X, Phone, Video, MoreVertical, Users } from 'lucide-react'
 import { useChat } from '@/contexts/ChatContext'
+import { useVideo } from '@/contexts/VideoContext'
 import { useAuth } from '@/shared/hooks/useAuth'
 import { Channel, MessageList, MessageInput, Window, Thread } from 'stream-chat-react'
 import type { Channel as StreamChannel } from 'stream-chat'
+import { toast } from '@workspace/ui/components/Sonner'
 
 interface ChatWindowProps {
     channelId: string
@@ -15,12 +17,43 @@ interface ChatWindowProps {
 }
 
 export function ChatWindow({ channelId, onClose }: ChatWindowProps) {
-    const { getChannel, isConnected } = useChat()
+    const { getChannel, isConnected, client: chatClient } = useChat()
+    const { startAudioCall, startVideoCall, isConnected: isVideoConnected } = useVideo()
     const { user } = useAuth()
     const [channel, setChannel] = useState<StreamChannel | null>(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [showChannelInfo, setShowChannelInfo] = useState(false)
+
+    const handleAudioCall = async () => {
+        if (!isVideoConnected) {
+            toast.error('Dịch vụ gọi điện chưa sẵn sàng')
+            return
+        }
+        if (!channelId) return
+
+        try {
+            await startAudioCall(channelId)
+        } catch (error) {
+            console.error('Failed to start audio call:', error)
+            toast.error('Không thể bắt đầu cuộc gọi')
+        }
+    }
+
+    const handleVideoCall = async () => {
+        if (!isVideoConnected) {
+            toast.error('Dịch vụ video call chưa sẵn sàng')
+            return
+        }
+        if (!channelId) return
+
+        try {
+            await startVideoCall(channelId)
+        } catch (error) {
+            console.error('Failed to start video call:', error)
+            toast.error('Không thể bắt đầu video call')
+        }
+    }
 
     useEffect(() => {
         const loadChannel = async () => {
@@ -133,16 +166,20 @@ export function ChatWindow({ channelId, onClose }: ChatWindowProps) {
                                 <Button
                                     variant="ghost"
                                     size="sm"
+                                    onClick={handleAudioCall}
                                     className="hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"
                                     aria-label="Gọi điện"
+                                    title="Gọi điện thoại"
                                 >
                                     <Phone className="h-4 w-4" />
                                 </Button>
                                 <Button
                                     variant="ghost"
                                     size="sm"
+                                    onClick={handleVideoCall}
                                     className="hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"
                                     aria-label="Video call"
+                                    title="Gọi video"
                                 >
                                     <Video className="h-4 w-4" />
                                 </Button>

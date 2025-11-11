@@ -1,10 +1,10 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { StreamChat } from 'stream-chat';
 import { PrismaService } from '@/common/prisma/prisma.service';
 import { appConfig } from '@/common/config';
-import { ChatChannelDto, ClinicDto } from './chat.dto';
-
+import { ChatChannelDto, ClinicDto, UserSearchResultDto } from './chat.dto';
+import crypto from 'crypto';
 @Injectable()
 export class ChatService {
   private streamClient: StreamChat;
@@ -18,6 +18,7 @@ export class ChatService {
       this.streamChatConf.streamChatApiKey,
       this.streamChatConf.streamChatSecret,
     );
+
     void this.ensureSystemUserExists();
   }
 
@@ -178,6 +179,47 @@ export class ChatService {
   }
 
   /**
+   * Tạo Stream Video token cho user
+   * Note: Stream Video sử dụng cùng cơ chế token với Stream Chat
+   */
+  generateVideoToken(userId: number): string {
+    // Stream Video có thể dùng chung token generation với Chat
+    // hoặc tạo riêng nếu cần các claims khác nhau
+
+    const header = {
+      alg: 'HS256',
+      typ: 'JWT',
+    };
+
+    const payload = {
+      user_id: userId.toString(),
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + 3600 * 24, // 24 hours
+    };
+
+    const base64Header = Buffer.from(JSON.stringify(header)).toString(
+      'base64url',
+    );
+    const base64Payload = Buffer.from(JSON.stringify(payload)).toString(
+      'base64url',
+    );
+
+    const signature = crypto
+      .createHmac('sha256', this.streamChatConf.streamVideoSecret)
+      .update(`${base64Header}.${base64Payload}`)
+      .digest('base64url');
+
+    return `${base64Header}.${base64Payload}.${signature}`;
+  }
+
+  /**
+   * Lấy Stream Video API Key (cho frontend)
+   */
+  getVideoApiKey(): string {
+    return this.streamChatConf.streamVideoApiKey;
+  }
+
+  /**
    * Lấy danh sách clinics active để patient chọn
    */
   async getAvailableClinics(): Promise<ClinicDto[]> {
@@ -197,5 +239,216 @@ export class ChatService {
       ...clinic,
       phone: clinic.phone ?? undefined,
     }));
+  }
+
+  /**
+   * Tìm kiếm user theo email
+   */
+  async searchUserByEmail(email: string): Promise<UserSearchResultDto> {
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      include: {
+        doctorProfile: true,
+        receptionistProfile: true,
+        adminProfile: true,
+        patientProfiles: {
+          where: { relationship: 'SELF' },
+          take: 1,
+        },
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException(`Không tìm thấy user với email: ${email}`);
+    }
+
+    // Lấy tên và avatar dựa trên role
+    let name = `User ${user.id}`;
+    let avatar: string | undefined = undefined;
+
+    if (user.doctorProfile) {
+      name = `${user.doctorProfile.firstName} ${user.doctorProfile.lastName}`;
+      avatar = user.doctorProfile.avatar || undefined;
+    } else if (user.receptionistProfile) {
+      name = `${user.receptionistProfile.firstName} ${user.receptionistProfile.lastName}`;
+      avatar = user.receptionistProfile.avatar || undefined;
+    } else if (user.adminProfile) {
+      name = `${user.adminProfile.firstName} ${user.adminProfile.lastName}`;
+      avatar = user.adminProfile.avatar || undefined;
+    } else if (user.patientProfiles.length > 0) {
+      const patientProfile = user.patientProfiles[0];
+      name = `${patientProfile.firstName} ${patientProfile.lastName}`;
+      avatar = patientProfile.avatar || undefined;
+    }
+
+    return {
+      id: user.id,
+      email: user.email,
+      name,
+      avatar,
+      role: user.role,
+    };
+  }
+
+  /**
+   * Tạo direct chat channel giữa 2 users
+   */
+  async createDirectChatChannel(
+    currentUserId: number,
+    targetUserEmail: string,
+  ): Promise<{ channelId: string; targetUserName: string; members: number }> {
+    // Lấy thông tin target user theo email
+    const targetUser = await this.prisma.user.findUnique({
+      where: { email: targetUserEmail },
+      include: {
+        doctorProfile: true,
+        receptionistProfile: true,
+        adminProfile: true,
+        patientProfiles: {
+          where: { relationship: 'SELF' },
+          take: 1,
+        },
+      },
+    });
+
+    if (!targetUser) {
+      throw new NotFoundException(
+        `Không tìm thấy user với email: ${targetUserEmail}`,
+      );
+    }
+
+    const targetUserId = targetUser.id;
+
+    // Không cho phép tự chat với chính mình
+    if (currentUserId === targetUserId) {
+      throw new Error('Không thể tạo cuộc trò chuyện với chính mình');
+    }
+
+    // Lấy thông tin current user
+    const currentUser = await this.prisma.user.findUnique({
+      where: { id: currentUserId },
+      include: {
+        doctorProfile: true,
+        receptionistProfile: true,
+        adminProfile: true,
+        patientProfiles: {
+          where: { relationship: 'SELF' },
+          take: 1,
+        },
+      },
+    });
+
+    if (!currentUser) {
+      throw new NotFoundException(
+        `Không tìm thấy user với ID: ${currentUserId}`,
+      );
+    }
+
+    // Lấy tên và avatar của target user
+    let targetUserName = `User ${targetUserId}`;
+    let targetAvatar: string | undefined = undefined;
+
+    if (targetUser.doctorProfile) {
+      targetUserName = `${targetUser.doctorProfile.firstName} ${targetUser.doctorProfile.lastName}`;
+      targetAvatar = targetUser.doctorProfile.avatar || undefined;
+    } else if (targetUser.receptionistProfile) {
+      targetUserName = `${targetUser.receptionistProfile.firstName} ${targetUser.receptionistProfile.lastName}`;
+      targetAvatar = targetUser.receptionistProfile.avatar || undefined;
+    } else if (targetUser.adminProfile) {
+      targetUserName = `${targetUser.adminProfile.firstName} ${targetUser.adminProfile.lastName}`;
+      targetAvatar = targetUser.adminProfile.avatar || undefined;
+    } else if (targetUser.patientProfiles.length > 0) {
+      const patientProfile = targetUser.patientProfiles[0];
+      targetUserName = `${patientProfile.firstName} ${patientProfile.lastName}`;
+      targetAvatar = patientProfile.avatar || undefined;
+    }
+
+    // Lấy tên và avatar của current user
+    let currentUserName = `User ${currentUserId}`;
+    let currentAvatar: string | undefined = undefined;
+
+    if (currentUser.doctorProfile) {
+      currentUserName = `${currentUser.doctorProfile.firstName} ${currentUser.doctorProfile.lastName}`;
+      currentAvatar = currentUser.doctorProfile.avatar || undefined;
+    } else if (currentUser.receptionistProfile) {
+      currentUserName = `${currentUser.receptionistProfile.firstName} ${currentUser.receptionistProfile.lastName}`;
+      currentAvatar = currentUser.receptionistProfile.avatar || undefined;
+    } else if (currentUser.adminProfile) {
+      currentUserName = `${currentUser.adminProfile.firstName} ${currentUser.adminProfile.lastName}`;
+      currentAvatar = currentUser.adminProfile.avatar || undefined;
+    } else if (currentUser.patientProfiles.length > 0) {
+      const patientProfile = currentUser.patientProfiles[0];
+      currentUserName = `${patientProfile.firstName} ${patientProfile.lastName}`;
+      currentAvatar = patientProfile.avatar || undefined;
+    }
+
+    // Tạo channel ID với format: direct_{userId1}_{userId2} (sắp xếp để đảm bảo unique)
+    const userIds = [currentUserId, targetUserId].sort((a, b) => a - b);
+    const channelId = `direct_${userIds[0]}_${userIds[1]}`;
+
+    // Kiểm tra xem channel đã tồn tại chưa
+    try {
+      const existingChannel = this.streamClient.channel('messaging', channelId);
+      await existingChannel.watch();
+
+      // Nếu channel đã tồn tại và có đủ members, trả về channel đó
+      if (existingChannel.state && existingChannel.state.members) {
+        const memberIds = Object.keys(existingChannel.state.members).map((id) =>
+          parseInt(id),
+        );
+        if (
+          memberIds.includes(currentUserId) &&
+          memberIds.includes(targetUserId)
+        ) {
+          return {
+            channelId,
+            targetUserName,
+            members: Object.keys(existingChannel.state.members).length,
+          };
+        }
+      }
+    } catch {
+      // Channel chưa tồn tại, tiếp tục tạo mới
+      console.log('Channel does not exist, creating new one');
+    }
+
+    // Upsert users vào Stream Chat
+    await this.streamClient.upsertUser({
+      id: currentUserId.toString(),
+      name: currentUserName,
+      role: 'user',
+      image: currentAvatar || undefined,
+    });
+
+    await this.streamClient.upsertUser({
+      id: targetUserId.toString(),
+      name: targetUserName,
+      role: 'user',
+      image: targetAvatar || undefined,
+    });
+
+    // Tạo channel mới
+    const channel = this.streamClient.channel('messaging', channelId, {
+      created_by_id: currentUserId.toString(),
+      members: [currentUserId.toString(), targetUserId.toString()],
+    });
+
+    await channel.create();
+    await channel.addMembers([
+      currentUserId.toString(),
+      targetUserId.toString(),
+    ]);
+
+    // Gửi tin nhắn chào mừng
+    await channel.sendMessage({
+      text: `Cuộc trò chuyện giữa ${currentUserName} và ${targetUserName}`,
+      user_id: 'system',
+    });
+
+    return {
+      channelId,
+      targetUserName,
+      members: 2,
+    };
   }
 }
