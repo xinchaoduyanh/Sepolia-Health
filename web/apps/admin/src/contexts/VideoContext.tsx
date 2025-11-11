@@ -131,7 +131,59 @@ export function VideoProvider({ children, apiKey }: VideoProviderProps) {
             unsubscribes.forEach(unsub => unsub())
             clearInterval(interval)
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [currentCall, isRinging])
+
+    // Listen for call ended event to detect when other person hangs up
+    useEffect(() => {
+        if (!currentCall) return
+
+        const unsubscribes: (() => void)[] = []
+
+        // Listen for call ended event
+        unsubscribes.push(
+            currentCall.on('call.ended', event => {
+                console.log('📵 call.ended event:', event)
+                // Reset all call states
+                setCurrentCall(null)
+                setIsInCall(false)
+                setIsRinging(false)
+                setCallType(null)
+                setCallStartTime(null)
+                setRingingCallInfo(null)
+                setIsMicOn(true)
+                setIsCameraOn(true)
+            }),
+        )
+
+        // Listen for participant left event
+        unsubscribes.push(
+            currentCall.on('call.session_participant_left', event => {
+                console.log('👋 call.session_participant_left event:', event)
+                // Check if all other participants have left
+                const participants = currentCall.state.participants || {}
+                const participantCount = Object.keys(participants).length
+                console.log('Participants remaining:', participantCount)
+
+                // If only we remain (or no one), end the call
+                if (participantCount <= 1) {
+                    console.log('🔚 All participants left, ending call')
+                    setCurrentCall(null)
+                    setIsInCall(false)
+                    setIsRinging(false)
+                    setCallType(null)
+                    setCallStartTime(null)
+                    setRingingCallInfo(null)
+                    setIsMicOn(true)
+                    setIsCameraOn(true)
+                }
+            }),
+        )
+
+        return () => {
+            unsubscribes.forEach(unsub => unsub())
+        }
+    }, [currentCall])
 
     const connectUser = async (userId: string, token: string, name?: string, image?: string) => {
         try {
@@ -200,12 +252,14 @@ export function VideoProvider({ children, apiKey }: VideoProviderProps) {
                 ring: true, // Ring the other participant
             })
 
-            // Disable camera for audio-only call
+            // Enable microphone and disable camera for audio-only call
+            await call.microphone.enable()
             await call.camera.disable()
 
             setCurrentCall(call)
             setIsRinging(true) // Set ringing state instead of isInCall
             setCallType('audio')
+            setIsMicOn(true)
             setIsCameraOn(false)
             setRingingCallInfo({ channelId, callId, callType: 'audio' })
 
@@ -252,9 +306,14 @@ export function VideoProvider({ children, apiKey }: VideoProviderProps) {
                 ring: true, // Ring the other participant
             })
 
+            // Enable both microphone and camera for video call
+            await call.microphone.enable()
+            await call.camera.enable()
+
             setCurrentCall(call)
             setIsRinging(true) // Set ringing state instead of isInCall
             setCallType('video')
+            setIsMicOn(true)
             setIsCameraOn(true)
             setRingingCallInfo({ channelId, callId, callType: 'video' })
 
@@ -355,20 +414,25 @@ export function VideoProvider({ children, apiKey }: VideoProviderProps) {
             const call = client.call('default', callId)
             await call.join()
 
+            // Enable microphone first
+            await call.microphone.enable()
+
             setCurrentCall(call)
             setIsInCall(true)
             setCallType(callType)
             setCallStartTime(Date.now())
             setIncomingCall(null)
+            setIsMicOn(true)
 
             if (callType === 'audio') {
                 await call.camera.disable()
                 setIsCameraOn(false)
             } else {
+                await call.camera.enable()
                 setIsCameraOn(true)
             }
 
-            console.log('Joined call:', callId)
+            console.log('Joined call:', callId, 'with mic and', callType === 'video' ? 'camera' : 'no camera')
         } catch (error) {
             console.error('Failed to join call:', error)
             throw error
@@ -507,24 +571,38 @@ export function VideoProvider({ children, apiKey }: VideoProviderProps) {
         }
     }
 
-    const toggleMic = () => {
+    const toggleMic = async () => {
         if (!currentCall) return
-        currentCall.microphone.toggle()
-        setIsMicOn(!isMicOn)
+        try {
+            await currentCall.microphone.toggle()
+            // Get the actual state from the call
+            const isEnabled = currentCall.microphone.state.status === 'enabled'
+            setIsMicOn(isEnabled)
+            console.log('Mic toggled:', isEnabled ? 'ON' : 'OFF')
+        } catch (error) {
+            console.error('Failed to toggle mic:', error)
+        }
     }
 
-    const toggleCamera = () => {
+    const toggleCamera = async () => {
         if (!currentCall || callType !== 'video') return
-        currentCall.camera.toggle()
-        setIsCameraOn(!isCameraOn)
+        try {
+            await currentCall.camera.toggle()
+            // Get the actual state from the call
+            const isEnabled = currentCall.camera.state.status === 'enabled'
+            setIsCameraOn(isEnabled)
+            console.log('Camera toggled:', isEnabled ? 'ON' : 'OFF')
+        } catch (error) {
+            console.error('Failed to toggle camera:', error)
+        }
     }
 
     useEffect(() => {
         return () => {
-            // Cleanup on unmount
-            if (clientRef.current && currentCall) {
+            // Cleanup on unmount - using ref to avoid adding currentCall as dependency
+            if (clientRef.current && callStateRef.current) {
                 console.log('VideoProvider unmounting, leaving call...')
-                currentCall.leave().catch(err => console.error('Error leaving call on unmount:', err))
+                callStateRef.current.leave().catch(err => console.error('Error leaving call on unmount:', err))
             }
         }
     }, [])

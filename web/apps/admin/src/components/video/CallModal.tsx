@@ -10,25 +10,43 @@ import { Button } from '@workspace/ui/components/Button'
 import { SpeakerLayout, useCallStateHooks, StreamCall } from '@stream-io/video-react-sdk'
 
 export function CallModal() {
-    const { currentCall, isInCall, isRinging, callType, endCall, toggleMic, toggleCamera, isMicOn, isCameraOn } =
-        useVideo()
+    const {
+        currentCall,
+        isInCall,
+        isRinging,
+        callType,
+        callStartTime,
+        endCall,
+        toggleMic,
+        toggleCamera,
+        isMicOn,
+        isCameraOn,
+    } = useVideo()
     const { client: chatClient } = useChat()
     const { user } = useAuth()
     const [callDuration, setCallDuration] = useState(0)
 
-    // Update call duration
+    // Update call duration based on callStartTime for synchronization
     useEffect(() => {
-        if (!isInCall) {
+        if (!isInCall || !callStartTime) {
             setCallDuration(0)
             return
         }
 
-        const interval = setInterval(() => {
-            setCallDuration(prev => prev + 1)
-        }, 1000)
+        // Calculate initial duration
+        const updateDuration = () => {
+            const elapsed = Math.floor((Date.now() - callStartTime) / 1000)
+            setCallDuration(elapsed)
+        }
+
+        // Update immediately
+        updateDuration()
+
+        // Update every second
+        const interval = setInterval(updateDuration, 1000)
 
         return () => clearInterval(interval)
-    }, [isInCall])
+    }, [isInCall, callStartTime])
 
     const formatDuration = (seconds: number) => {
         const mins = Math.floor(seconds / 60)
