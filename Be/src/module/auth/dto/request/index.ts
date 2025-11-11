@@ -11,7 +11,7 @@ const resetPasswordSchema = z.object({
 // Login DTO
 const LoginSchema = z.object({
   email: z.email({ error: 'Email không hợp lệ' }),
-  password: z.string().min(6, 'Mật khẩu phải có ít nhất 6 ký tự'),
+  password: z.string().nonempty('Mật khẩu không được để trống'),
 });
 
 // Register DTO
