@@ -1,7 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react'
-import { StreamVideoClient, Call, StreamCall, StreamVideo, StreamTheme } from '@stream-io/video-react-sdk'
+import { StreamVideoClient, Call, StreamVideo, StreamTheme } from '@stream-io/video-react-sdk'
 import '@stream-io/video-react-sdk/dist/css/styles.css'
 
 interface VideoContextType {
@@ -11,11 +11,16 @@ interface VideoContextType {
     isInCall: boolean
     callType: 'audio' | 'video' | null
     callStartTime: number | null
+    isRinging: boolean // Caller is waiting for answer
+    incomingCall: Call | null // Incoming call for the receiver
     connectUser: (userId: string, token: string, name?: string, image?: string) => Promise<void>
     disconnectUser: () => void
-    startAudioCall: (channelId: string) => Promise<void>
-    startVideoCall: (channelId: string) => Promise<void>
-    endCall: (sendSummary?: boolean, chatClient?: any) => Promise<void>
+    startAudioCall: (channelId: string, chatClient?: any, otherUserId?: string) => Promise<void>
+    startVideoCall: (channelId: string, chatClient?: any, otherUserId?: string) => Promise<void>
+    acceptCall: () => Promise<void>
+    rejectCall: (chatClient?: any, userName?: string) => Promise<void>
+    joinCallFromId: (callId: string, callType?: 'audio' | 'video') => Promise<void>
+    endCall: (sendSummary?: boolean, chatClient?: any, userName?: string) => Promise<void>
     toggleMic: () => void
     toggleCamera: () => void
     isMicOn: boolean
@@ -36,13 +41,60 @@ export function VideoProvider({ children, apiKey }: VideoProviderProps) {
     const [isInCall, setIsInCall] = useState(false)
     const [callType, setCallType] = useState<'audio' | 'video' | null>(null)
     const [callStartTime, setCallStartTime] = useState<number | null>(null)
+    const [isRinging, setIsRinging] = useState(false)
+    const [incomingCall, setIncomingCall] = useState<Call | null>(null)
     const [isMicOn, setIsMicOn] = useState(true)
     const [isCameraOn, setIsCameraOn] = useState(true)
+    const [ringingCallInfo, setRingingCallInfo] = useState<{
+        channelId: string
+        callId: string
+        callType: 'audio' | 'video'
+    } | null>(null)
     const clientRef = useRef<StreamVideoClient | null>(null)
+    const callStateRef = useRef<Call | null>(null)
 
     useEffect(() => {
         clientRef.current = client
     }, [client])
+
+    useEffect(() => {
+        callStateRef.current = currentCall
+    }, [currentCall])
+
+    // Listen for call state changes to detect when someone joins
+    useEffect(() => {
+        if (!currentCall || !isRinging) return
+
+        const checkParticipants = () => {
+            try {
+                const participants = currentCall.state.participants || {}
+                const participantCount = Object.keys(participants).length
+
+                // If we're ringing and someone else joins, start the call
+                if (participantCount >= 2) {
+                    console.log('Call accepted, participant joined')
+                    setIsRinging(false)
+                    setIsInCall(true)
+                    setCallStartTime(Date.now())
+                    setRingingCallInfo(null) // Clear ringing info since call is now active
+                }
+            } catch (error) {
+                console.error('Error checking participants:', error)
+            }
+        }
+
+        // Check immediately
+        checkParticipants()
+
+        // Subscribe to call state changes
+        const unsubscribe = currentCall.on('call.updated', () => {
+            checkParticipants()
+        })
+
+        return () => {
+            unsubscribe()
+        }
+    }, [currentCall, isRinging])
 
     const connectUser = async (userId: string, token: string, name?: string, image?: string) => {
         try {
@@ -88,7 +140,7 @@ export function VideoProvider({ children, apiKey }: VideoProviderProps) {
         }
     }
 
-    const startAudioCall = async (channelId: string) => {
+    const startAudioCall = async (channelId: string, chatClient?: any, otherUserId?: string) => {
         if (!client || !isConnected) {
             console.error('Video client not connected')
             throw new Error('Video client not connected')
@@ -98,6 +150,7 @@ export function VideoProvider({ children, apiKey }: VideoProviderProps) {
             const callId = `audio_${channelId}_${Date.now()}`
             const call = client.call('default', callId)
 
+            // Create call and join, but mark as ringing
             await call.join({
                 create: true,
                 data: {
@@ -105,25 +158,41 @@ export function VideoProvider({ children, apiKey }: VideoProviderProps) {
                         channelId,
                         callType: 'audio',
                     },
+                    members: otherUserId ? [{ user_id: otherUserId }] : undefined,
                 },
+                ring: true, // Ring the other participant
             })
 
             // Disable camera for audio-only call
             await call.camera.disable()
 
             setCurrentCall(call)
-            setIsInCall(true)
+            setIsRinging(true) // Set ringing state instead of isInCall
             setCallType('audio')
-            setCallStartTime(Date.now())
             setIsCameraOn(false)
-            console.log('Audio call started:', callId)
+            setRingingCallInfo({ channelId, callId, callType: 'audio' })
+
+            // Send notification via chat if chatClient is provided
+            // Include call ID in message text for easy parsing
+            if (chatClient && channelId) {
+                try {
+                    const channel = chatClient.channel('messaging', channelId)
+                    await channel.sendMessage({
+                        text: `📞 Đang gọi... CALL_ID:${callId} CALL_TYPE:audio`,
+                    })
+                } catch (error) {
+                    console.error('Failed to send call notification:', error)
+                }
+            }
+
+            console.log('Audio call initiated, ringing:', callId)
         } catch (error) {
             console.error('Failed to start audio call:', error)
             throw error
         }
     }
 
-    const startVideoCall = async (channelId: string) => {
+    const startVideoCall = async (channelId: string, chatClient?: any, otherUserId?: string) => {
         if (!client || !isConnected) {
             console.error('Video client not connected')
             throw new Error('Video client not connected')
@@ -133,6 +202,7 @@ export function VideoProvider({ children, apiKey }: VideoProviderProps) {
             const callId = `video_${channelId}_${Date.now()}`
             const call = client.call('default', callId)
 
+            // Create call and join, but mark as ringing
             await call.join({
                 create: true,
                 data: {
@@ -140,23 +210,223 @@ export function VideoProvider({ children, apiKey }: VideoProviderProps) {
                         channelId,
                         callType: 'video',
                     },
+                    members: otherUserId ? [{ user_id: otherUserId }] : undefined,
                 },
+                ring: true, // Ring the other participant
             })
 
             setCurrentCall(call)
-            setIsInCall(true)
+            setIsRinging(true) // Set ringing state instead of isInCall
             setCallType('video')
-            setCallStartTime(Date.now())
             setIsCameraOn(true)
-            console.log('Video call started:', callId)
+            setRingingCallInfo({ channelId, callId, callType: 'video' })
+
+            // Send notification via chat if chatClient is provided
+            // Include call ID in message text for easy parsing
+            if (chatClient && channelId) {
+                try {
+                    const channel = chatClient.channel('messaging', channelId)
+                    await channel.sendMessage({
+                        text: `📹 Đang gọi video... CALL_ID:${callId} CALL_TYPE:video`,
+                    })
+                } catch (error) {
+                    console.error('Failed to send call notification:', error)
+                }
+            }
+
+            console.log('Video call initiated, ringing:', callId)
         } catch (error) {
             console.error('Failed to start video call:', error)
             throw error
         }
     }
 
-    const endCall = async (sendSummary: boolean = true, chatClient?: any) => {
-        if (!currentCall) return
+    const acceptCall = async () => {
+        if (!incomingCall || !client) {
+            console.error('No incoming call to accept')
+            return
+        }
+
+        try {
+            await incomingCall.join()
+
+            // Determine call type from call data
+            const callTypeFromCall = incomingCall.state.custom?.callType as 'audio' | 'video' | undefined
+
+            setCurrentCall(incomingCall)
+            setIsInCall(true)
+            setCallType(callTypeFromCall || 'video')
+            setCallStartTime(Date.now())
+            setIncomingCall(null)
+
+            if (callTypeFromCall === 'audio') {
+                await incomingCall.camera.disable()
+                setIsCameraOn(false)
+            } else {
+                setIsCameraOn(true)
+            }
+
+            console.log('Call accepted:', incomingCall.id)
+        } catch (error) {
+            console.error('Failed to accept call:', error)
+            throw error
+        }
+    }
+
+    const rejectCall = async (chatClient?: any, userName?: string) => {
+        if (!incomingCall) {
+            console.error('No incoming call to reject')
+            return
+        }
+
+        try {
+            const channelId = incomingCall.state.custom?.channelId as string
+            const callType = incomingCall.state.custom?.callType as 'audio' | 'video' | undefined
+            const callId = incomingCall.id
+
+            await incomingCall.reject()
+
+            // Send rejection message to chat
+            if (chatClient && channelId && userName) {
+                try {
+                    const channel = chatClient.channel('messaging', channelId)
+                    const callTypeText = callType === 'video' ? 'video' : 'cuộc gọi'
+                    await channel.sendMessage({
+                        text: `❌ ${userName} đã từ chối ${callTypeText}`,
+                    })
+                } catch (error) {
+                    console.error('Failed to send rejection message:', error)
+                }
+            }
+
+            setIncomingCall(null)
+            console.log('Call rejected:', callId)
+        } catch (error) {
+            console.error('Failed to reject call:', error)
+            // Still clear the incoming call state
+            setIncomingCall(null)
+        }
+    }
+
+    const joinCallFromId = async (callId: string, callType: 'audio' | 'video' = 'video') => {
+        if (!client || !isConnected) {
+            console.error('Video client not connected')
+            throw new Error('Video client not connected')
+        }
+
+        try {
+            const call = client.call('default', callId)
+            await call.join()
+
+            setCurrentCall(call)
+            setIsInCall(true)
+            setCallType(callType)
+            setCallStartTime(Date.now())
+            setIncomingCall(null)
+
+            if (callType === 'audio') {
+                await call.camera.disable()
+                setIsCameraOn(false)
+            } else {
+                setIsCameraOn(true)
+            }
+
+            console.log('Joined call:', callId)
+        } catch (error) {
+            console.error('Failed to join call:', error)
+            throw error
+        }
+    }
+
+    const endCall = async (sendSummary: boolean = true, chatClient?: any, userName?: string) => {
+        console.log('📞 endCall called', {
+            hasCurrentCall: !!currentCall,
+            isRinging,
+            isInCall,
+            hasRingingCallInfo: !!ringingCallInfo,
+            hasChatClient: !!chatClient,
+            hasUserName: !!userName,
+        })
+
+        if (!currentCall && !isRinging) {
+            console.log('⚠️ No call to end')
+            return
+        }
+
+        const callToEnd = currentCall
+
+        // If we're ringing but call hasn't been accepted yet (no one else joined)
+        // This means the caller (A) is cancelling the call before B accepts
+        if (isRinging && !isInCall && ringingCallInfo) {
+            console.log('🔔 Call is ringing but not accepted yet, sending cancellation message')
+
+            // Send cancellation message to chat
+            if (chatClient && userName && ringingCallInfo.channelId) {
+                try {
+                    console.log('📤 Sending cancellation message to channel:', ringingCallInfo.channelId)
+                    const channel = chatClient.channel('messaging', ringingCallInfo.channelId)
+
+                    // Ensure channel is watched/loaded before sending message
+                    console.log('👀 Watching channel before sending cancellation message...')
+                    await channel.watch()
+                    console.log('✅ Channel watched successfully')
+
+                    const callTypeText = ringingCallInfo.callType === 'video' ? 'video' : 'cuộc gọi'
+                    const cancellationMessage = `❌ ${userName} đã hủy ${callTypeText}`
+
+                    console.log('📝 Sending cancellation message:', cancellationMessage)
+                    const messageResponse = await channel.sendMessage({
+                        text: cancellationMessage,
+                    })
+                    console.log('✅ Cancellation message sent successfully:', messageResponse)
+                } catch (error) {
+                    console.error('❌ Failed to send cancellation message:', error)
+                    console.error('Error details:', {
+                        error,
+                        message: error instanceof Error ? error.message : String(error),
+                        stack: error instanceof Error ? error.stack : undefined,
+                    })
+                }
+            } else {
+                console.warn('⚠️ Cannot send cancellation message: missing required info', {
+                    hasChatClient: !!chatClient,
+                    hasUserName: !!userName,
+                    hasChannelId: !!ringingCallInfo?.channelId,
+                    ringingCallInfo,
+                })
+            }
+
+            // Leave the call if it exists
+            if (callToEnd) {
+                try {
+                    console.log('🚪 Leaving call...')
+                    await callToEnd.leave()
+                    console.log('✅ Call left successfully')
+                } catch (error) {
+                    console.error('❌ Error leaving call:', error)
+                }
+            }
+
+            // Clear ringing state
+            setIsRinging(false)
+            setCurrentCall(null)
+            setCallType(null)
+            setRingingCallInfo(null)
+            setIsMicOn(true)
+            setIsCameraOn(true)
+            console.log('✅ Call cancellation completed')
+            return
+        }
+
+        if (!callToEnd) {
+            // If we're just ringing but no call object, clear the state
+            console.log('⚠️ No call object but isRinging is true, clearing state')
+            setIsRinging(false)
+            setCurrentCall(null)
+            setCallType(null)
+            setRingingCallInfo(null)
+            return
+        }
 
         try {
             // Calculate duration
@@ -166,13 +436,13 @@ export function VideoProvider({ children, apiKey }: VideoProviderProps) {
             const durationText = `${durationMinutes}:${durationSeconds.toString().padStart(2, '0')}`
 
             // Get channel ID from call metadata
-            const channelId = currentCall.state.custom?.channelId as string
+            const channelId = callToEnd.state.custom?.channelId as string
 
             // Leave call first
-            await currentCall.leave()
+            await callToEnd.leave()
 
-            // Send summary message to chat if requested
-            if (sendSummary && channelId && chatClient) {
+            // Send summary message to chat if requested and call was actually connected
+            if (sendSummary && channelId && chatClient && callStartTime) {
                 try {
                     const channel = chatClient.channel('messaging', channelId)
                     await channel.sendMessage({
@@ -187,8 +457,10 @@ export function VideoProvider({ children, apiKey }: VideoProviderProps) {
             // Reset state
             setCurrentCall(null)
             setIsInCall(false)
+            setIsRinging(false)
             setCallType(null)
             setCallStartTime(null)
+            setRingingCallInfo(null)
             setIsMicOn(true)
             setIsCameraOn(true)
             console.log('Call ended successfully')
@@ -231,10 +503,15 @@ export function VideoProvider({ children, apiKey }: VideoProviderProps) {
                     isInCall,
                     callType,
                     callStartTime,
+                    isRinging,
+                    incomingCall,
                     connectUser,
                     disconnectUser,
                     startAudioCall,
                     startVideoCall,
+                    acceptCall,
+                    rejectCall,
+                    joinCallFromId,
                     endCall,
                     toggleMic,
                     toggleCamera,
@@ -258,10 +535,15 @@ export function VideoProvider({ children, apiKey }: VideoProviderProps) {
                 isInCall,
                 callType,
                 callStartTime,
+                isRinging,
+                incomingCall,
                 connectUser,
                 disconnectUser,
                 startAudioCall,
                 startVideoCall,
+                acceptCall,
+                rejectCall,
+                joinCallFromId,
                 endCall,
                 toggleMic,
                 toggleCamera,

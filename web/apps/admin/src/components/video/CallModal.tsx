@@ -3,13 +3,17 @@
 import { useEffect, useState } from 'react'
 import { useVideo } from '@/contexts/VideoContext'
 import { useChat } from '@/contexts/ChatContext'
+import { useAuth } from '@/shared/hooks/useAuth'
+import { getUserProfile } from '@/shared/lib/user-profile'
 import { Phone, Mic, MicOff, VideoIcon, VideoOff, X } from 'lucide-react'
 import { Button } from '@workspace/ui/components/Button'
 import { SpeakerLayout, useCallStateHooks, StreamCall } from '@stream-io/video-react-sdk'
 
 export function CallModal() {
-    const { currentCall, isInCall, callType, endCall, toggleMic, toggleCamera, isMicOn, isCameraOn } = useVideo()
+    const { currentCall, isInCall, isRinging, callType, endCall, toggleMic, toggleCamera, isMicOn, isCameraOn } =
+        useVideo()
     const { client: chatClient } = useChat()
+    const { user } = useAuth()
     const [callDuration, setCallDuration] = useState(0)
 
     // Update call duration
@@ -33,7 +37,36 @@ export function CallModal() {
     }
 
     const handleEndCall = async () => {
-        await endCall(true, chatClient)
+        // Get current user name
+        const userName = user ? getUserProfile(user).name : 'Người dùng'
+        await endCall(true, chatClient, userName)
+    }
+
+    // Show ringing UI if call is ringing but not yet connected
+    if (currentCall && isRinging && !isInCall) {
+        return (
+            <div className="fixed inset-0 z-50 bg-gray-900 flex flex-col items-center justify-center">
+                <div className="text-center">
+                    <div className="w-32 h-32 rounded-full bg-blue-600 flex items-center justify-center mx-auto mb-6 animate-pulse">
+                        {callType === 'video' ? (
+                            <VideoIcon className="h-16 w-16 text-white" />
+                        ) : (
+                            <Phone className="h-16 w-16 text-white" />
+                        )}
+                    </div>
+                    <h3 className="text-2xl font-semibold text-white mb-2">Đang gọi...</h3>
+                    <p className="text-gray-400 mb-6">Đang chờ người nhận trả lời</p>
+                    <Button
+                        onClick={handleEndCall}
+                        variant="destructive"
+                        size="lg"
+                        className="rounded-full w-16 h-16 bg-red-600 hover:bg-red-700"
+                    >
+                        <Phone className="h-6 w-6 rotate-[135deg]" />
+                    </Button>
+                </div>
+            </div>
+        )
     }
 
     if (!currentCall || !isInCall) {

@@ -8,8 +8,9 @@ import { useChat } from '@/contexts/ChatContext'
 import { useVideo } from '@/contexts/VideoContext'
 import { useAuth } from '@/shared/hooks/useAuth'
 import { Channel, MessageList, MessageInput, Window, Thread } from 'stream-chat-react'
-import type { Channel as StreamChannel } from 'stream-chat'
+import type { Channel as StreamChannel, MessageResponse } from 'stream-chat'
 import { toast } from '@workspace/ui/components/Sonner'
+import { IncomingCallNotification } from '@/components/video/IncomingCallNotification'
 
 interface ChatWindowProps {
     channelId: string
@@ -24,34 +25,58 @@ export function ChatWindow({ channelId, onClose }: ChatWindowProps) {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [showChannelInfo, setShowChannelInfo] = useState(false)
+    const [incomingCall, setIncomingCall] = useState<{
+        callId: string
+        callType: 'audio' | 'video'
+        callerName: string
+        channelId: string
+    } | null>(null)
+
+    // Get channel info
+    const channelInfo = useMemo(() => {
+        if (!channel || !user) return null
+
+        const members = channel.state.members ? Object.values(channel.state.members) : []
+        // Find the other member (not the current user)
+        const otherMember = members.find(member => member.user_id !== String(user.id))
+        const name = otherMember?.user?.name || otherMember?.user?.id || 'Cuộc trò chuyện'
+        const memberIds = members.map(member => member.user_id).filter(id => id !== undefined)
+        const isOnline = channel.state.watcher_count ? channel.state.watcher_count > 0 : false
+
+        return { name, members: memberIds, isOnline }
+    }, [channel, user])
 
     const handleAudioCall = async () => {
         if (!isVideoConnected) {
-            toast.error('Dịch vụ gọi điện chưa sẵn sàng')
+            toast.error({ title: 'Lỗi', description: 'Dịch vụ gọi điện chưa sẵn sàng' })
             return
         }
         if (!channelId) return
 
         try {
-            await startAudioCall(channelId)
+            // Get other user ID from channel
+            const otherUserId = channelInfo?.members?.find(id => id !== String(user?.id))
+            await startAudioCall(channelId, chatClient, otherUserId)
         } catch (error) {
             console.error('Failed to start audio call:', error)
-            toast.error('Không thể bắt đầu cuộc gọi')
+            toast.error({ title: 'Lỗi', description: 'Không thể bắt đầu cuộc gọi' })
         }
     }
 
     const handleVideoCall = async () => {
         if (!isVideoConnected) {
-            toast.error('Dịch vụ video call chưa sẵn sàng')
+            toast.error({ title: 'Lỗi', description: 'Dịch vụ video call chưa sẵn sàng' })
             return
         }
         if (!channelId) return
 
         try {
-            await startVideoCall(channelId)
+            // Get other user ID from channel
+            const otherUserId = channelInfo?.members?.find(id => id !== String(user?.id))
+            await startVideoCall(channelId, chatClient, otherUserId)
         } catch (error) {
             console.error('Failed to start video call:', error)
-            toast.error('Không thể bắt đầu video call')
+            toast.error({ title: 'Lỗi', description: 'Không thể bắt đầu video call' })
         }
     }
 
@@ -87,19 +112,53 @@ export function ChatWindow({ channelId, onClose }: ChatWindowProps) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isConnected, channelId])
 
-    // Get channel info
-    const channelInfo = useMemo(() => {
-        if (!channel || !user) return null
+    // Listen for call notifications in messages
+    useEffect(() => {
+        if (!channel || !user) return
+        // Store channelId in a local variable to help TypeScript understand it's defined
+        const currentChannelId = channelId
+        if (!currentChannelId) return
 
-        const members = channel.state.members ? Object.values(channel.state.members) : []
-        // Find the other member (not the current user)
-        const otherMember = members.find(member => member.user_id !== String(user.id))
-        const name = otherMember?.user?.name || otherMember?.user?.id || 'Cuộc trò chuyện'
-        const memberIds = members.map(member => member.user_id).filter(id => id !== undefined)
-        const isOnline = channel.state.watcher_count ? channel.state.watcher_count > 0 : false
+        const handleNewMessage = (event: any) => {
+            const message: MessageResponse = event.message
+            // Only process messages from other users
+            if (message.user?.id === String(user.id)) return
 
-        return { name, members: memberIds, isOnline }
-    }, [channel, user])
+            const text = message.text || ''
+            // Check if message contains call notification
+            const callIdMatch = text.match(/CALL_ID:([^\s]+)/)
+            const callTypeMatch = text.match(/CALL_TYPE:(audio|video)/)
+
+            if (callIdMatch && callTypeMatch) {
+                const callId = callIdMatch[1]
+                const callType = callTypeMatch[1] as 'audio' | 'video'
+
+                // Get caller name with fallback
+                const userName = message.user?.name
+                const channelName = channelInfo?.name
+                const finalCallerName = userName || channelName || 'Người gọi'
+
+                // TypeScript assertion to ensure it's a string
+                const callerName = finalCallerName as string
+
+                console.log('📞 Incoming call detected:', { callId, callType, callerName, channelId: currentChannelId })
+                // TypeScript: currentChannelId is checked to be truthy above, so it's a string
+                setIncomingCall({
+                    callId: callId as string,
+                    callType,
+                    callerName,
+                    channelId: currentChannelId as string,
+                })
+                console.log('✅ IncomingCallNotification state set, notification should appear')
+            }
+        }
+
+        channel.on('message.new', handleNewMessage)
+
+        return () => {
+            channel.off('message.new', handleNewMessage)
+        }
+    }, [channel, user, channelInfo, channelId])
 
     const getInitials = (name: string) => {
         return name
@@ -142,6 +201,20 @@ export function ChatWindow({ channelId, onClose }: ChatWindowProps) {
 
     return (
         <div className="h-full flex flex-col bg-gray-50 dark:bg-gray-900">
+            {/* Incoming Call Notification */}
+            {incomingCall && (
+                <IncomingCallNotification
+                    callId={incomingCall.callId}
+                    callType={incomingCall.callType}
+                    callerName={incomingCall.callerName}
+                    channelId={incomingCall.channelId}
+                    onClose={() => {
+                        console.log('🚪 Closing IncomingCallNotification')
+                        setIncomingCall(null)
+                    }}
+                />
+            )}
+
             <Channel channel={channel}>
                 <Window>
                     {/* Chat Header - Improved Layout */}
@@ -169,7 +242,6 @@ export function ChatWindow({ channelId, onClose }: ChatWindowProps) {
                                     onClick={handleAudioCall}
                                     className="hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"
                                     aria-label="Gọi điện"
-                                    title="Gọi điện thoại"
                                 >
                                     <Phone className="h-4 w-4" />
                                 </Button>
@@ -179,7 +251,6 @@ export function ChatWindow({ channelId, onClose }: ChatWindowProps) {
                                     onClick={handleVideoCall}
                                     className="hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"
                                     aria-label="Video call"
-                                    title="Gọi video"
                                 >
                                     <Video className="h-4 w-4" />
                                 </Button>
