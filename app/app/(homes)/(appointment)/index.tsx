@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,8 @@ import {
   ScrollView,
   StatusBar,
   ActivityIndicator,
+  Modal,
+  Pressable,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -13,6 +15,7 @@ import Svg, { Path } from 'react-native-svg';
 import { router } from 'expo-router';
 import { useMyAppointments } from '@/lib/api/appointments';
 import { usePayment } from '@/contexts/PaymentContext';
+import QRCode from 'react-native-qrcode-svg';
 
 type AppointmentStatus = 'UPCOMING' | 'ON_GOING' | 'COMPLETED' | 'CANCELLED';
 type PaymentStatus = 'pending' | 'paid' | 'refunded' | 'PENDING' | 'PAID' | 'REFUNDED';
@@ -22,6 +25,9 @@ export default function AppointmentsListScreen() {
   const { hasPendingPayment, isPendingPaymentForAppointment } = usePayment();
 
   const appointments = appointmentsData?.data || [];
+
+  const [qrModalVisible, setQrModalVisible] = useState(false);
+  const [qrAppointmentId, setQrAppointmentId] = useState<number | null>(null);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -341,6 +347,17 @@ export default function AppointmentsListScreen() {
                           <View className="mt-3 flex-row gap-3">
                             <TouchableOpacity
                               className="flex-1 items-center rounded-lg border py-2"
+                              style={{ borderColor: '#0284C7' }}
+                              onPress={() => {
+                                setQrAppointmentId(appointment.id);
+                                setQrModalVisible(true);
+                              }}>
+                              <Text className="text-sm font-medium" style={{ color: '#0284C7' }}>
+                                Mã QR
+                              </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                              className="flex-1 items-center rounded-lg border py-2"
                               style={{ borderColor: '#0284C7' }}>
                               <Text className="text-sm font-medium" style={{ color: '#0284C7' }}>
                                 Đổi lịch
@@ -366,6 +383,59 @@ export default function AppointmentsListScreen() {
           )}
         </View>
       </ScrollView>
+
+      {/* QR Modal */}
+      <Modal
+        visible={qrModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setQrModalVisible(false)}>
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: 24,
+          }}>
+          <View
+            style={{
+              width: '100%',
+              maxWidth: 420,
+              backgroundColor: 'white',
+              borderRadius: 12,
+              padding: 20,
+              alignItems: 'center',
+            }}>
+            <Text style={{ fontSize: 18, fontWeight: '700', marginBottom: 12 }}>Mã QR CheckIn</Text>
+
+            <QRCode
+              value={`${process.env.EXPO_PUBLIC_WEB_URL}/appointment/${qrAppointmentId}`}
+              size={200}
+              color="black"
+              backgroundColor="white"
+              logoSize={40}
+              logoMargin={2}
+              logoBorderRadius={8}
+            />
+
+            <Text style={{ color: '#6B7280', marginBottom: 12, marginTop: 12 }}>
+              {qrAppointmentId ? `Lịch hẹn #${qrAppointmentId}` : ''}
+            </Text>
+
+            <Pressable
+              onPress={() => setQrModalVisible(false)}
+              style={{
+                backgroundColor: '#0284C7',
+                paddingVertical: 10,
+                paddingHorizontal: 18,
+                borderRadius: 8,
+              }}>
+              <Text style={{ color: 'white', fontWeight: '600' }}>Đóng</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
