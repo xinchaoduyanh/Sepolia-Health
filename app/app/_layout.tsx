@@ -8,6 +8,7 @@ import { AppointmentProvider } from '@/contexts/AppointmentContext';
 import { PaymentProvider } from '@/contexts/PaymentContext';
 import { QueryProvider } from '@/providers/QueryProvider';
 import { ChatProvider } from '@/contexts/ChatContext';
+import { NotificationProvider } from '@/contexts/NotificationContext';
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 
@@ -30,17 +31,19 @@ export default function Layout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryProvider>
         <ChatProvider>
-          <VideoProvider>
-            <AppointmentProvider>
-              <PaymentProvider>
-                <Stack
-                  screenOptions={{
-                    headerShown: false,
-                  }}
-                />
-              </PaymentProvider>
-            </AppointmentProvider>
-          </VideoProvider>
+          <NotificationProvider>
+            <VideoProvider>
+              <AppointmentProvider>
+                <PaymentProvider>
+                  <Stack
+                    screenOptions={{
+                      headerShown: false,
+                    }}
+                  />
+                </PaymentProvider>
+              </AppointmentProvider>
+            </VideoProvider>
+          </NotificationProvider>
         </ChatProvider>
       </QueryProvider>
     </GestureHandlerRootView>

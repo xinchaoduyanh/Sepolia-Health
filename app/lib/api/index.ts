@@ -3,6 +3,7 @@ export * from './auth';
 export * from './user';
 export * from './payment';
 export * from './chat';
+export * from './notification';
 
 // Appointments exports (excluding conflicting useServices)
 export {

@@ -69,65 +69,39 @@ export default function PaymentScreen() {
       try {
         const status = await checkPaymentStatus(appointmentId);
         if (status.isPaid) {
-          console.log('Payment success detected, starting cleanup...');
-
           // Stop polling first
           stopPolling();
-          console.log('Polling stopped');
 
           // Clear pending payment synchronously
-          console.log('Clearing pending payment...');
           clearPendingPayment();
-          console.log('Pending payment cleared synchronously');
 
           // Set completed state
           setPaymentCompleted(true);
-          console.log('Payment completed set to true');
 
           // Đóng QR modal trước
           setIsQrModalVisible(false);
-          console.log('QR modal closed');
 
           // Đơn giản hóa - chỉ hiển thị Alert và navigate
           setTimeout(() => {
-            console.log('Showing success alert');
-
-            // Update cache cho single appointment
-            queryClient.setQueryData(['appointment', appointmentId], (oldData: any) => {
-              if (!oldData) return oldData;
-              return {
-                ...oldData,
-                paymentStatus: 'PAID', // Update root level paymentStatus
-                billing: {
-                  ...oldData.billing,
-                  status: 'PAID', // Update nested billing status
-                },
-              };
-            });
-
-            // Update cache cho appointment list (nếu có)
-            queryClient.setQueryData(['appointments', 'my'], (oldData: any) => {
-              if (!oldData?.data) return oldData;
-              const updatedAppointments = oldData.data.map((apt: any) => {
-                if (apt.id === appointmentId) {
-                  return {
-                    ...apt,
-                    paymentStatus: 'PAID', // Update root level paymentStatus
-                    billing: {
-                      ...apt.billing,
-                      status: 'PAID', // Update nested billing status
-                    },
-                  };
-                }
-                return apt;
-              });
-              return {
-                ...oldData,
-                data: updatedAppointments,
-              };
-            });
-
-            console.log('Cache updated with PAID status for both single and list views');
+            // Cải tiến: invalidate toàn bộ các query lịch hẹn (my/list/detail...)
+            queryClient.invalidateQueries({ queryKey: ['appointments'] });
+            // Dùng Promise.all để lấy lại dữ liệu mới nhất của cả detail và list
+            Promise.all([
+              queryClient.fetchQuery({
+                queryKey: ['appointments', 'detail', appointmentId],
+                queryFn: () =>
+                  import('@/lib/api/appointments').then((m) =>
+                    m.appointmentApi.getAppointment(appointmentId)
+                  ),
+              }),
+              queryClient.fetchQuery({
+                queryKey: ['appointments', 'my'],
+                queryFn: () =>
+                  import('@/lib/api/appointments').then((m) =>
+                    m.appointmentApi.getMyAppointments()
+                  ),
+              }),
+            ]);
 
             // Hiển thị Alert đơn giản thay vì modal phức tạp
             Alert.alert(
@@ -137,7 +111,6 @@ export default function PaymentScreen() {
                 {
                   text: 'OK',
                   onPress: () => {
-                    console.log('Navigating back to appointments');
                     router.replace('/(homes)/(appointment)');
                   },
                 },
@@ -256,12 +229,6 @@ export default function PaymentScreen() {
         createdAt: new Date().toISOString(),
       });
 
-      console.log('QR Code URL:', result.qrCodeUrl);
-      console.log('Payment Code (raw):', result.paymentCode);
-      console.log('Payment Code (full): DADZ' + result.paymentCode);
-      console.log('Amount (original):', result.amount);
-      console.log('Amount (QR): 4000');
-      console.log('Description: DADZ' + result.paymentCode);
       setQrData(result);
       setPaymentCompleted(false);
       countdownStartedRef.current = false; // Reset for new QR

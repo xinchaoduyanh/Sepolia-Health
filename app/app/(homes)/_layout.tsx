@@ -151,6 +151,12 @@ export default function TabLayout() {
             href: null,
           }}
         />
+        <Tabs.Screen
+          name="(notification)"
+          options={{
+            href: null,
+          }}
+        />
       </Tabs>
 
       {/* Global Call Overlay */}

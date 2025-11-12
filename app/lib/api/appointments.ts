@@ -239,7 +239,7 @@ export const useCreateAppointment = () => {
       queryClient.invalidateQueries({ queryKey: ['appointments'] });
     },
     onError: (error) => {
-      console.error('Create appointment error:', error);
+      // Error is handled by UI
     },
   });
 };
@@ -255,7 +255,7 @@ export const useUpdateAppointment = () => {
       queryClient.invalidateQueries({ queryKey: ['appointments'] });
     },
     onError: (error) => {
-      console.error('Update appointment error:', error);
+      // Error is handled by UI
     },
   });
 };
@@ -270,7 +270,7 @@ export const useDeleteAppointment = () => {
       queryClient.invalidateQueries({ queryKey: ['appointments'] });
     },
     onError: (error) => {
-      console.error('Delete appointment error:', error);
+      // Error is handled by UI
     },
   });
 };

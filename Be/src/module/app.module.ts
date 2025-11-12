@@ -14,6 +14,7 @@ import { JwtAuthGuard, RolesGuard } from '@/common/guards';
 import { AuthModule } from './auth/auth.module';
 import { PaymentModule } from './payment/payment.module';
 import { ChatModule } from '@/module/chat/chat.module';
+import { NotificationModule } from '@/module/notification/notification.module';
 import { BullModule } from '@nestjs/bullmq';
 import IORedis from 'ioredis';
 
@@ -39,6 +40,7 @@ import IORedis from 'ioredis';
     ReceptionistModule,
     PaymentModule,
     ChatModule,
+    NotificationModule,
   ],
   controllers: [AppController],
   providers: [

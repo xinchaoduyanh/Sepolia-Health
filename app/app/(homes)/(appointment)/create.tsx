@@ -93,22 +93,6 @@ export default function AppointmentScreen() {
   // API call để tạo appointment
   const createAppointmentMutation = useCreateAppointment();
 
-  // Debug: Log response từ BE
-  useEffect(() => {
-    if (availabilityData) {
-      console.log('📅 Availability Response:', availabilityData);
-    }
-    if (availabilityError) {
-      console.log('❌ Availability Error:', availabilityError);
-      console.log('❌ Error Response:', (availabilityError as any)?.response);
-      console.log('❌ Error Status:', (availabilityError as any)?.response?.status);
-      console.log('❌ Error Code:', (availabilityError as any)?.code);
-      console.log('❌ Error Message:', (availabilityError as any)?.message);
-      console.log('❌ Error Data:', (availabilityError as any)?.response?.data);
-      console.log('❌ Is Doctor Not Available:', isDoctorNotAvailable);
-    }
-  }, [availabilityData, availabilityError, isDoctorNotAvailable]);
-
   const handleCustomerSelect = (customerId: string, profile?: PatientProfile) => {
     setSelectedCustomer(customerId);
 
@@ -155,7 +139,6 @@ export default function AppointmentScreen() {
   const handleTimeSlotSelect = (time: string) => {
     // Set selected time slot in context
     setSelectedTimeSlot(time);
-    console.log('Selected time:', time);
   };
 
   const handleCustomDateConfirm = (date: Date) => {
@@ -252,15 +235,8 @@ export default function AppointmentScreen() {
         appointmentData.patientProfileId = selectedProfile.id;
       }
 
-      console.log('📝 Creating appointment:', appointmentData);
-      console.log('📝 Selected Profile:', selectedProfile);
-      console.log('📝 Patient Profile ID:', selectedProfile?.id);
-      console.log('📝 Selected Customer:', selectedCustomer);
-
       // Gọi API tạo appointment
       const result = await createAppointmentMutation.mutateAsync(appointmentData);
-
-      console.log('✅ Appointment created successfully:', result);
 
       // Lưu appointment ID để sử dụng trong modal
       setCreatedAppointmentId(result.id);
@@ -273,8 +249,6 @@ export default function AppointmentScreen() {
       // Hiển thị success modal
       setShowSuccessModal(true);
     } catch (error: any) {
-      console.error('❌ Error creating appointment:', error);
-
       // Handle different error types
       let errorMessage = 'Có lỗi xảy ra khi đặt lịch. Vui lòng thử lại.';
 

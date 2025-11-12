@@ -5,10 +5,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useNotificationContext } from '@/contexts/NotificationContext';
 import Svg, { Path } from 'react-native-svg';
 
 export default function HomeScreen() {
   const { user } = useAuth();
+  const { unreadCount } = useNotificationContext();
 
   // Lấy patientProfiles từ user data
   const patientProfiles = user?.patientProfiles || [];
@@ -72,6 +74,7 @@ export default function HomeScreen() {
 
           {/* Notification button - positioned within gradient */}
           <TouchableOpacity
+            onPress={() => router.push('/(homes)/(notification)')}
             style={{
               position: 'absolute',
               top: 120,
@@ -90,22 +93,27 @@ export default function HomeScreen() {
               elevation: 6,
             }}>
             <Ionicons name="notifications-outline" size={24} color="#0284C7" />
-            <View
-              style={{
-                position: 'absolute',
-                top: 8,
-                right: 8,
-                height: 20,
-                width: 20,
-                borderRadius: 10,
-                backgroundColor: '#10B981',
-                borderWidth: 2,
-                borderColor: '#FFFFFF',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}>
-              <Text style={{ fontSize: 10, fontWeight: 'bold', color: 'white' }}>3</Text>
-            </View>
+            {unreadCount > 0 && (
+              <View
+                style={{
+                  position: 'absolute',
+                  top: 8,
+                  right: 8,
+                  height: 20,
+                  width: unreadCount > 99 ? 28 : 20,
+                  borderRadius: 10,
+                  backgroundColor: '#10B981',
+                  borderWidth: 2,
+                  borderColor: '#FFFFFF',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  paddingHorizontal: unreadCount > 99 ? 4 : 0,
+                }}>
+                <Text style={{ fontSize: 10, fontWeight: 'bold', color: 'white' }}>
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </Text>
+              </View>
+            )}
           </TouchableOpacity>
 
           {/* Avatar + Info - positioned within gradient */}

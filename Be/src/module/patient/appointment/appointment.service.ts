@@ -19,6 +19,11 @@ import {
   GetDoctorAvailabilityResponseDto,
   GetAvailabilityDateResponseDto,
 } from './dto';
+import { NotificationUtils } from '@/module/notification/notification.utils';
+import {
+  NotificationPriority,
+  NotificationType,
+} from '@/module/notification/notification.types';
 
 @Injectable()
 export class AppointmentService {
@@ -122,6 +127,7 @@ export class AppointmentService {
             firstName: true,
             lastName: true,
             phone: true,
+            managerId: true, // Cần managerId để gửi notification
           },
         },
         doctor: {
@@ -212,6 +218,7 @@ export class AppointmentService {
             firstName: true,
             lastName: true,
             phone: true,
+            managerId: true, // Cần managerId để gửi notification
           },
         },
         doctor: {
@@ -698,6 +705,7 @@ export class AppointmentService {
             firstName: true,
             lastName: true,
             phone: true,
+            managerId: true, // Cần managerId để gửi notification
           },
         },
         doctor: {
@@ -727,6 +735,61 @@ export class AppointmentService {
         createdAt: true,
       },
     });
+
+    // Send notification to patient
+    try {
+      // Lấy userId từ managerId của patientProfile (không phải patientProfileId)
+      const patientUserId = appointment.patientProfile?.managerId?.toString();
+      if (!patientUserId) {
+        console.warn(
+          '⚠️ [AppointmentService] Cannot send notification: patientProfile.managerId is missing',
+        );
+      } else {
+        await NotificationUtils.sendNotification(
+          NotificationType.CREATE_APPOINTMENT_PATIENT,
+          NotificationPriority.MEDIUM,
+          patientUserId,
+          'system',
+          'Đặt lịch hẹn thành công',
+          `Bạn đã đặt lịch vào ${appointment.date.toLocaleDateString('vi-VN')} lúc ${appointment.startTime}. Dịch vụ: ${doctorService.service.name}.`,
+          {
+            appointmentId: appointment.id,
+            appointmentDate: appointment.date.toLocaleDateString('vi-VN'),
+            appointmentTime: appointment.startTime,
+            doctorName: `${doctorService.doctor.firstName} ${doctorService.doctor.lastName}`,
+            serviceName: doctorService.service.name,
+            clinicName: clinic.name,
+          },
+        );
+      }
+    } catch (error) {
+      console.error('Failed to send notification:', error);
+      // Don't throw error, just log it
+    }
+
+    // Send notification to doctor
+    try {
+      await NotificationUtils.sendNotification(
+        NotificationType.CREATE_APPOINTMENT_DOCTOR,
+        NotificationPriority.MEDIUM,
+        doctorService.doctor.userId.toString(),
+        'system',
+        'Lịch hẹn mới',
+        `Bạn có lịch hẹn mới với bệnh nhân ${patientName} vào ${appointment.date.toLocaleDateString('vi-VN')} lúc ${appointment.startTime} tại ${clinic.name}. Dịch vụ: ${doctorService.service.name}.`,
+        {
+          appointmentId: appointment.id,
+          appointmentDate: appointment.date.toLocaleDateString('vi-VN'),
+          appointmentTime: appointment.startTime,
+          patientName: patientName,
+          serviceName: doctorService.service.name,
+          clinicName: clinic.name,
+          notes: notes,
+        },
+      );
+    } catch (error) {
+      console.error('Failed to send notification to doctor:', error);
+      // Don't throw error, just log it
+    }
 
     // Return appointment with billing included
     return this.formatAppointmentResponse({
