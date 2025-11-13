@@ -618,7 +618,6 @@ async function main() {
           startTime,
           endTime,
           status: status,
-          paymentStatus: 'PAID', // Giả định đã thanh toán
           notes: 'Lịch hẹn được tạo tự động (seed)',
 
           patientProfileId: patient.id,

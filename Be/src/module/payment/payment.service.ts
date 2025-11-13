@@ -44,12 +44,6 @@ export class PaymentService {
       throw new NotFoundException(ERROR_MESSAGES.PAYMENT.APPOINTMENT_NOT_FOUND);
     }
 
-    if (appointment.paymentStatus === PaymentStatus.PAID) {
-      throw new BadRequestException(
-        ERROR_MESSAGES.PAYMENT.APPOINTMENT_ALREADY_PAID,
-      );
-    }
-
     // Validate billing exists (should be created with appointment)
     if (!appointment.billing) {
       throw new BadRequestException(
@@ -58,6 +52,12 @@ export class PaymentService {
     }
 
     const billing = appointment.billing;
+
+    if (billing.status === PaymentStatus.PAID) {
+      throw new BadRequestException(
+        ERROR_MESSAGES.PAYMENT.APPOINTMENT_ALREADY_PAID,
+      );
+    }
 
     // Update billing amount if different
     if (billing.amount !== amount) {
@@ -283,14 +283,6 @@ export class PaymentService {
       },
     });
 
-    // Update appointment payment status
-    await this.prisma.appointment.update({
-      where: { id: paymentCodeData.appointmentId },
-      data: {
-        paymentStatus: PaymentStatus.PAID,
-      },
-    });
-
     // Mark payment code as used in Redis
     await this.redis.markPaymentCodeAsUsed(paymentCode);
 
@@ -327,9 +319,15 @@ export class PaymentService {
       );
     }
 
+    if (!appointment.billing) {
+      throw new BadRequestException(
+        'Billing không tồn tại cho appointment này',
+      );
+    }
+
     return {
-      isPaid: appointment.paymentStatus === PaymentStatus.PAID,
-      paymentStatus: appointment.paymentStatus,
+      isPaid: appointment.billing.status === PaymentStatus.PAID,
+      paymentStatus: appointment.billing.status,
     };
   }
 
@@ -358,8 +356,14 @@ export class PaymentService {
       throw new BadRequestException('Bạn không có quyền hủy mã thanh toán này');
     }
 
-    // Check if appointment is already paid
-    if (appointment.paymentStatus === PaymentStatus.PAID) {
+    // Check if billing exists and is already paid
+    if (!appointment.billing) {
+      throw new BadRequestException(
+        'Billing không tồn tại cho appointment này',
+      );
+    }
+
+    if (appointment.billing.status === PaymentStatus.PAID) {
       throw new BadRequestException(
         'Không thể hủy mã thanh toán đã được thanh toán',
       );

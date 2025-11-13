@@ -20,7 +20,6 @@ export interface Appointment {
   startTime: string;
   endTime: string;
   status: 'scheduled' | 'completed' | 'cancelled';
-  paymentStatus: 'pending' | 'paid' | 'refunded';
   notes: string | null;
   patientProfile?: {
     id: number;
@@ -55,7 +54,6 @@ export interface Appointment {
 export interface UpdateAppointmentRequest {
   date?: string; // ISO datetime
   status?: 'scheduled' | 'completed' | 'cancelled';
-  paymentStatus?: 'pending' | 'paid' | 'refunded';
   notes?: string;
 }
 
@@ -63,7 +61,6 @@ export interface AppointmentFilters {
   page?: number;
   limit?: number;
   status?: 'scheduled' | 'completed' | 'cancelled';
-  paymentStatus?: 'pending' | 'paid' | 'refunded';
   doctorId?: number;
   patientId?: number;
   dateFrom?: string; // ISO datetime

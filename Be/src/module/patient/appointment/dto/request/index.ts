@@ -1,4 +1,4 @@
-import { AppointmentStatus, Gender, PaymentStatus } from '@prisma/client';
+import { AppointmentStatus, Gender } from '@prisma/client';
 import { createZodDto } from 'nestjs-zod';
 import z from 'zod';
 
@@ -7,7 +7,6 @@ const GetAppointmentsQuerySchema = z.object({
   page: z.coerce.number().default(() => 1),
   limit: z.coerce.number().default(() => 10),
   status: z.enum(AppointmentStatus).optional(),
-  paymentStatus: z.enum(PaymentStatus).optional(),
   doctorId: z.coerce.number().optional(),
   patientId: z.coerce.number().optional(),
   dateFrom: z.iso.datetime().optional(),
@@ -39,7 +38,6 @@ export const UpdateAppointmentSchema = z.object({
     )
     .optional(),
   status: z.enum(AppointmentStatus).optional(),
-  paymentStatus: z.enum(PaymentStatus).optional(),
   notes: z.string().optional(),
 });
 

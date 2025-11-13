@@ -87,9 +87,6 @@ export class AppointmentResponseDto {
   status: string;
 
   @ApiProperty()
-  paymentStatus: string;
-
-  @ApiProperty()
   notes?: string | null;
 
   @ApiProperty({ type: PatientDto })

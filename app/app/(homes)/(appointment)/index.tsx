@@ -43,11 +43,11 @@ export default function AppointmentsListScreen() {
 
   const getStatusInfo = (
     status: AppointmentStatus,
-    paymentStatus: PaymentStatus,
+    billingStatus: PaymentStatus | undefined,
     appointmentId: number
   ) => {
     // If already paid, don't check pending payment status
-    if (paymentStatus.toUpperCase() === 'PAID') {
+    if (billingStatus && billingStatus.toUpperCase() === 'PAID') {
       return { text: 'Đã thanh toán', color: '#10B981', bgColor: '#D1FAE5' };
     }
 
@@ -74,11 +74,14 @@ export default function AppointmentsListScreen() {
     }
   };
 
-  const getCardBorderColor = (status: AppointmentStatus, paymentStatus: PaymentStatus) => {
-    const normalizedPaymentStatus = paymentStatus.toUpperCase();
+  const getCardBorderColor = (
+    status: AppointmentStatus,
+    billingStatus: PaymentStatus | undefined
+  ) => {
+    const normalizedBillingStatus = billingStatus?.toUpperCase();
 
-    if (status === 'UPCOMING' && normalizedPaymentStatus === 'PENDING') return '#F59E0B';
-    if (status === 'UPCOMING' && normalizedPaymentStatus === 'PAID') return '#10B981';
+    if (status === 'UPCOMING' && normalizedBillingStatus === 'PENDING') return '#F59E0B';
+    if (status === 'UPCOMING' && normalizedBillingStatus === 'PAID') return '#10B981';
     if (status === 'ON_GOING') return '#3B82F6';
     if (status === 'COMPLETED') return '#6B7280';
     if (status === 'CANCELLED') return '#EF4444';
@@ -209,14 +212,15 @@ export default function AppointmentsListScreen() {
             appointments.map((appointment) => {
               const { day, month, year } = formatDate(appointment.date);
               const timeRange = formatTimeRange(appointment.startTime, appointment.endTime);
+              const billingStatus = appointment.billing?.status as PaymentStatus | undefined;
               const statusInfo = getStatusInfo(
                 appointment.status as AppointmentStatus,
-                appointment.paymentStatus as PaymentStatus,
+                billingStatus,
                 appointment.id
               );
               const borderColor = getCardBorderColor(
                 appointment.status as AppointmentStatus,
-                appointment.paymentStatus as PaymentStatus
+                billingStatus
               );
               const isPaymentPending = isPendingPaymentForAppointment(appointment.id);
               const canCreatePayment = !hasPendingPayment || isPaymentPending;

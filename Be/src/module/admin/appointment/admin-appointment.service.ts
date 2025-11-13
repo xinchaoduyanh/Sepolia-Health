@@ -19,7 +19,7 @@ export class AdminAppointmentService {
       limit = 10,
       search,
       status,
-      paymentStatus,
+      billingStatus,
       doctorId,
       clinicId,
       dateFrom,
@@ -44,9 +44,11 @@ export class AdminAppointmentService {
       where.status = status;
     }
 
-    // Filter by payment status
-    if (paymentStatus) {
-      where.paymentStatus = paymentStatus;
+    // Filter by billing status
+    if (billingStatus) {
+      where.billing = {
+        status: billingStatus,
+      };
     }
 
     // Filter by doctor
@@ -202,7 +204,6 @@ export class AdminAppointmentService {
       startTime: appointment.startTime,
       endTime: appointment.endTime,
       status: appointment.status,
-      paymentStatus: appointment.paymentStatus,
       notes: appointment.notes || undefined,
       patientName: appointment.patientName,
       patientDob: appointment.patientDob.toISOString().split('T')[0],

@@ -17,7 +17,7 @@ export const GetAppointmentsSchema = z.object({
   limit: z.coerce.number().min(1).max(100).default(10),
   search: z.string().optional(),
   status: z.enum(appointmentStatusValues).optional(),
-  paymentStatus: z.enum(paymentStatusValues).optional(),
+  billingStatus: z.enum(paymentStatusValues).optional(),
   doctorId: z.coerce.number().optional(),
   clinicId: z.coerce.number().optional(),
   dateFrom: z.string().optional(),
@@ -57,12 +57,12 @@ export class GetAppointmentsDtoClass {
   status?: string;
 
   @ApiProperty({
-    description: 'Lọc theo trạng thái thanh toán',
+    description: 'Lọc theo trạng thái thanh toán (từ billing)',
     example: 'PAID',
     enum: paymentStatusValues,
     required: false,
   })
-  paymentStatus?: string;
+  billingStatus?: string;
 
   @ApiProperty({
     description: 'Lọc theo bác sĩ',
@@ -283,12 +283,6 @@ export class AppointmentResponseDto {
     example: 'UPCOMING',
   })
   status: string;
-
-  @ApiProperty({
-    description: 'Trạng thái thanh toán',
-    example: 'PAID',
-  })
-  paymentStatus: string;
 
   @ApiProperty({
     description: 'Ghi chú',

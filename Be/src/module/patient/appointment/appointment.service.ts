@@ -39,7 +39,6 @@ export class AppointmentService {
       page = 1,
       limit = 10,
       status,
-      paymentStatus,
       doctorId,
       patientId,
       dateFrom,
@@ -50,7 +49,6 @@ export class AppointmentService {
     const where: any = {};
 
     if (status) where.status = status;
-    if (paymentStatus) where.paymentStatus = paymentStatus;
     if (doctorId) where.doctorId = doctorId;
     if (patientId) where.patientProfileId = patientId;
     if (dateFrom || dateTo) {
@@ -204,9 +202,6 @@ export class AppointmentService {
         ...(updateAppointmentDto.status && {
           status: updateAppointmentDto.status as AppointmentStatus,
         }),
-        ...(updateAppointmentDto.paymentStatus && {
-          paymentStatus: updateAppointmentDto.paymentStatus as PaymentStatus,
-        }),
         ...(updateAppointmentDto.notes !== undefined && {
           notes: updateAppointmentDto.notes,
         }),
@@ -296,15 +291,7 @@ export class AppointmentService {
     }
 
     // Query appointments for all patient profiles
-    const {
-      page = 1,
-      limit = 10,
-      status,
-      paymentStatus,
-      doctorId,
-      dateFrom,
-      dateTo,
-    } = query;
+    const { page = 1, limit = 10, status, doctorId, dateFrom, dateTo } = query;
     const skip = (Number(page) - 1) * Number(limit);
 
     const where: any = {
@@ -312,7 +299,6 @@ export class AppointmentService {
     };
 
     if (status) where.status = status;
-    if (paymentStatus) where.paymentStatus = paymentStatus;
     if (doctorId) where.doctorId = doctorId;
     if (dateFrom || dateTo) {
       where.date = {};
@@ -687,7 +673,6 @@ export class AppointmentService {
         startTime,
         endTime,
         status: 'UPCOMING',
-        paymentStatus: 'PENDING',
         notes,
         patientProfileId: validatedPatientProfileId,
         patientName,
@@ -808,7 +793,6 @@ export class AppointmentService {
       startTime: appointment.startTime,
       endTime: appointment.endTime,
       status: appointment.status,
-      paymentStatus: appointment.paymentStatus,
       notes: appointment.notes,
       patient: appointment.patientProfile
         ? {

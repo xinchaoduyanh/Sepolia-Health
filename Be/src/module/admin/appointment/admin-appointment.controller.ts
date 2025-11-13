@@ -65,10 +65,10 @@ export class AdminAppointmentController {
     description: 'Lọc theo trạng thái cuộc hẹn',
   })
   @ApiQuery({
-    name: 'paymentStatus',
+    name: 'billingStatus',
     required: false,
     type: String,
-    description: 'Lọc theo trạng thái thanh toán',
+    description: 'Lọc theo trạng thái thanh toán (từ billing)',
   })
   @ApiQuery({
     name: 'doctorId',

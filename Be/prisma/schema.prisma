@@ -246,7 +246,6 @@ model Appointment {
   startTime     String
   endTime       String
   status        AppointmentStatus
-  paymentStatus PaymentStatus
   notes         String?
 
   // Liên kết tùy chọn với hồ sơ bệnh nhân

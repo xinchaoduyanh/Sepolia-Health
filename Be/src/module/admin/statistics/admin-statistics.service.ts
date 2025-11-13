@@ -121,13 +121,22 @@ export class AdminStatisticsService {
     const [pendingPayments, paidPayments, refundedPayments] = await Promise.all(
       [
         this.prisma.appointment.count({
-          where: { ...dateFilter, paymentStatus: 'pending' },
+          where: {
+            ...dateFilter,
+            billing: { status: 'PENDING' },
+          },
         }),
         this.prisma.appointment.count({
-          where: { ...dateFilter, paymentStatus: 'paid' },
+          where: {
+            ...dateFilter,
+            billing: { status: 'PAID' },
+          },
         }),
         this.prisma.appointment.count({
-          where: { ...dateFilter, paymentStatus: 'refunded' },
+          where: {
+            ...dateFilter,
+            billing: { status: 'REFUNDED' },
+          },
         }),
       ],
     );
