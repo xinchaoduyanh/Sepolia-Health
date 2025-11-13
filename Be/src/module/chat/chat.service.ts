@@ -191,10 +191,16 @@ export class ChatService {
       typ: 'JWT',
     };
 
+    // Subtract 10 seconds from iat to account for clock skew between server and Stream's servers
+    // This prevents "token used before issue at (iat)" errors
+    const clockSkewBuffer = 10; // seconds
+    const now = Math.floor(Date.now() / 1000);
+    const issuedAt = now - clockSkewBuffer;
+
     const payload = {
       user_id: userId.toString(),
-      iat: Math.floor(Date.now() / 1000),
-      exp: Math.floor(Date.now() / 1000) + 3600 * 24, // 24 hours
+      iat: issuedAt,
+      exp: now + 3600 * 24, // 24 hours
     };
 
     const base64Header = Buffer.from(JSON.stringify(header)).toString(

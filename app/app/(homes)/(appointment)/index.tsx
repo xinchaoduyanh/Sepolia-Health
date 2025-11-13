@@ -21,13 +21,46 @@ type AppointmentStatus = 'UPCOMING' | 'ON_GOING' | 'COMPLETED' | 'CANCELLED';
 type PaymentStatus = 'pending' | 'paid' | 'refunded' | 'PENDING' | 'PAID' | 'REFUNDED';
 
 export default function AppointmentsListScreen() {
-  const { data: appointmentsData, isLoading } = useMyAppointments();
+  const [page, setPage] = useState(1);
+  const [dateSortOrder, setDateSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [paymentFilter, setPaymentFilter] = useState<'all' | 'PENDING' | 'PAID'>('all');
+
+  // Always sort by date (default: Sớm nhất)
+  const sortBy = 'date';
+  const sortOrder = dateSortOrder;
+
+  const filters: {
+    page: number;
+    limit: number;
+    sortBy: 'date' | 'status' | 'billingStatus';
+    sortOrder: 'asc' | 'desc';
+    billingStatus?: 'PENDING' | 'PAID' | 'REFUNDED';
+  } = {
+    page,
+    limit: 10,
+    sortBy,
+    sortOrder,
+    ...(paymentFilter !== 'all' && { billingStatus: paymentFilter }),
+  };
+
+  const { data: appointmentsData, isLoading } = useMyAppointments(filters);
   const { hasPendingPayment, isPendingPaymentForAppointment } = usePayment();
 
   const appointments = appointmentsData?.data || [];
+  const total = appointmentsData?.total || 0;
+  const totalPages = Math.ceil(total / 10);
 
   const [qrModalVisible, setQrModalVisible] = useState(false);
   const [qrAppointmentId, setQrAppointmentId] = useState<number | null>(null);
+
+  // Modal states for dropdowns
+  const [dateSortModalVisible, setDateSortModalVisible] = useState(false);
+  const [paymentFilterModalVisible, setPaymentFilterModalVisible] = useState(false);
+
+  // Reset to page 1 when sort or filter changes
+  React.useEffect(() => {
+    setPage(1);
+  }, [sortOrder, paymentFilter]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -177,6 +210,89 @@ export default function AppointmentsListScreen() {
         </View>
 
         <View style={{ paddingHorizontal: 24, marginTop: -100, marginBottom: 24 }}>
+          {/* Sort Fields */}
+          <View className="mb-4 flex-row gap-3">
+            {/* Date Sort Dropdown */}
+            <View className="flex-1">
+              <View className="mb-2 flex-row items-center">
+                <Ionicons name="time-outline" size={16} color="#0284C7" />
+                <Text className="ml-1.5 text-sm font-semibold text-gray-700">Thời gian khám</Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setDateSortModalVisible(true)}
+                activeOpacity={0.7}
+                className="flex-row items-center justify-between rounded-xl border-2 bg-white px-4 py-3.5"
+                style={{
+                  borderColor: '#E5E7EB',
+                  shadowColor: '#0284C7',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 4,
+                  elevation: 3,
+                }}>
+                <View className="flex-row items-center">
+                  <Ionicons
+                    name={dateSortOrder === 'asc' ? 'calendar-outline' : 'calendar'}
+                    size={18}
+                    color="#0284C7"
+                  />
+                  <Text className="ml-2 text-sm font-semibold text-gray-900">
+                    {dateSortOrder === 'asc' ? 'Cũ nhất' : 'Sớm nhất'}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-down" size={18} color="#0284C7" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Payment Status Filter Dropdown */}
+            <View className="flex-1">
+              <View className="mb-2 flex-row items-center">
+                <Ionicons name="card-outline" size={16} color="#10B981" />
+                <Text className="ml-1.5 text-sm font-semibold text-gray-700">Thanh toán</Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setPaymentFilterModalVisible(true)}
+                activeOpacity={0.7}
+                className="flex-row items-center justify-between rounded-xl border-2 bg-white px-4 py-3.5"
+                style={{
+                  borderColor: '#E5E7EB',
+                  shadowColor: '#10B981',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 4,
+                  elevation: 3,
+                }}>
+                <View className="flex-row items-center">
+                  <Ionicons
+                    name={
+                      paymentFilter === 'all'
+                        ? 'wallet-outline'
+                        : paymentFilter === 'PENDING'
+                          ? 'time-outline'
+                          : 'checkmark-circle-outline'
+                    }
+                    size={18}
+                    color={
+                      paymentFilter === 'all'
+                        ? '#6B7280'
+                        : paymentFilter === 'PENDING'
+                          ? '#F59E0B'
+                          : '#10B981'
+                    }
+                  />
+                  <Text className="ml-2 text-sm font-semibold text-gray-900">
+                    {paymentFilter === 'all'
+                      ? 'Tất cả'
+                      : paymentFilter === 'PENDING'
+                        ? 'Chưa thanh toán'
+                        : 'Đã thanh toán'}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-down" size={18} color="#10B981" />
+              </TouchableOpacity>
+            </View>
+          </View>
+
           {/* Appointments List */}
           {isLoading ? (
             <View className="items-center py-20">
@@ -348,29 +464,59 @@ export default function AppointmentsListScreen() {
                           )}
 
                           {/* Other Action Buttons */}
-                          <View className="mt-3 flex-row gap-3">
+                          <View className="mt-3 flex-row gap-2">
                             <TouchableOpacity
-                              className="flex-1 items-center rounded-lg border py-2"
-                              style={{ borderColor: '#0284C7' }}
+                              className="flex-1 flex-row items-center justify-center rounded-lg border-2 bg-white py-2.5"
+                              style={{
+                                borderColor: '#0284C7',
+                                shadowColor: '#0284C7',
+                                shadowOffset: { width: 0, height: 1 },
+                                shadowOpacity: 0.1,
+                                shadowRadius: 2,
+                                elevation: 2,
+                              }}
                               onPress={() => {
                                 setQrAppointmentId(appointment.id);
                                 setQrModalVisible(true);
                               }}>
-                              <Text className="text-sm font-medium" style={{ color: '#0284C7' }}>
+                              <Ionicons name="qr-code-outline" size={16} color="#0284C7" />
+                              <Text
+                                className="ml-1.5 text-sm font-semibold"
+                                style={{ color: '#0284C7' }}>
                                 Mã QR
                               </Text>
                             </TouchableOpacity>
                             <TouchableOpacity
-                              className="flex-1 items-center rounded-lg border py-2"
-                              style={{ borderColor: '#0284C7' }}>
-                              <Text className="text-sm font-medium" style={{ color: '#0284C7' }}>
+                              className="flex-1 flex-row items-center justify-center rounded-lg border-2 bg-white py-2.5"
+                              style={{
+                                borderColor: '#0284C7',
+                                shadowColor: '#0284C7',
+                                shadowOffset: { width: 0, height: 1 },
+                                shadowOpacity: 0.1,
+                                shadowRadius: 2,
+                                elevation: 2,
+                              }}>
+                              <Ionicons name="calendar-outline" size={16} color="#0284C7" />
+                              <Text
+                                className="ml-1.5 text-sm font-semibold"
+                                style={{ color: '#0284C7' }}>
                                 Đổi lịch
                               </Text>
                             </TouchableOpacity>
                             <TouchableOpacity
-                              className="flex-1 items-center rounded-lg border py-2"
-                              style={{ borderColor: '#EF4444' }}>
-                              <Text className="text-sm font-medium text-red-500">Hủy lịch</Text>
+                              className="flex-1 flex-row items-center justify-center rounded-lg border-2 bg-white py-2.5"
+                              style={{
+                                borderColor: '#EF4444',
+                                shadowColor: '#EF4444',
+                                shadowOffset: { width: 0, height: 1 },
+                                shadowOpacity: 0.1,
+                                shadowRadius: 2,
+                                elevation: 2,
+                              }}>
+                              <Ionicons name="close-circle-outline" size={16} color="#EF4444" />
+                              <Text className="ml-1.5 text-sm font-semibold text-red-500">
+                                Hủy lịch
+                              </Text>
                             </TouchableOpacity>
                           </View>
 
@@ -385,8 +531,439 @@ export default function AppointmentsListScreen() {
               );
             })
           )}
+
+          {/* Pagination */}
+          {!isLoading && appointments.length > 0 && totalPages > 1 && (
+            <View className="mt-6 flex-row items-center justify-center gap-2">
+              <TouchableOpacity
+                onPress={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className={`rounded-lg border px-4 py-2 ${
+                  page === 1 ? 'border-gray-300 bg-gray-100' : 'border-blue-500 bg-white'
+                }`}>
+                <Ionicons
+                  name="chevron-back"
+                  size={20}
+                  color={page === 1 ? '#9CA3AF' : '#0284C7'}
+                />
+              </TouchableOpacity>
+
+              <View className="flex-row items-center gap-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum: number;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (page <= 3) {
+                    pageNum = i + 1;
+                  } else if (page >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = page - 2 + i;
+                  }
+
+                  return (
+                    <TouchableOpacity
+                      key={pageNum}
+                      onPress={() => setPage(pageNum)}
+                      className={`rounded-lg border px-4 py-2 ${
+                        page === pageNum
+                          ? 'border-blue-500 bg-blue-500'
+                          : 'border-gray-300 bg-white'
+                      }`}>
+                      <Text
+                        className={`text-sm font-medium ${
+                          page === pageNum ? 'text-white' : 'text-gray-700'
+                        }`}>
+                        {pageNum}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              <TouchableOpacity
+                onPress={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className={`rounded-lg border px-4 py-2 ${
+                  page === totalPages ? 'border-gray-300 bg-gray-100' : 'border-blue-500 bg-white'
+                }`}>
+                <Ionicons
+                  name="chevron-forward"
+                  size={20}
+                  color={page === totalPages ? '#9CA3AF' : '#0284C7'}
+                />
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Page Info */}
+          {!isLoading && appointments.length > 0 && (
+            <Text className="mt-4 text-center text-sm text-gray-500">
+              Trang {page} / {totalPages} ({total} lịch hẹn)
+            </Text>
+          )}
         </View>
       </ScrollView>
+
+      {/* Date Sort Modal */}
+      <Modal
+        visible={dateSortModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setDateSortModalVisible(false)}>
+        <Pressable
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.6)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: 20,
+          }}
+          onPress={() => setDateSortModalVisible(false)}>
+          <View
+            style={{
+              width: '100%',
+              maxWidth: 320,
+              backgroundColor: 'white',
+              borderRadius: 20,
+              overflow: 'hidden',
+              shadowColor: '#0284C7',
+              shadowOffset: { width: 0, height: 8 },
+              shadowOpacity: 0.3,
+              shadowRadius: 16,
+              elevation: 10,
+            }}
+            onStartShouldSetResponder={() => true}>
+            {/* Header with Gradient */}
+            <LinearGradient
+              colors={['#0284C7', '#06B6D4']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              className="px-5 py-4">
+              <View className="flex-row items-center">
+                <View className="mr-3 rounded-full bg-white/20 p-2">
+                  <Ionicons name="time" size={20} color="white" />
+                </View>
+                <Text className="flex-1 text-lg font-bold text-white">Sắp xếp theo thời gian</Text>
+              </View>
+            </LinearGradient>
+
+            {/* Options */}
+            <View className="py-2">
+              <TouchableOpacity
+                onPress={() => {
+                  setDateSortOrder('asc');
+                  setDateSortModalVisible(false);
+                }}
+                activeOpacity={0.7}
+                className={`mx-2 my-1 flex-row items-center justify-between rounded-xl px-4 py-4 ${
+                  dateSortOrder === 'asc' ? 'bg-blue-50' : 'bg-white active:bg-gray-50'
+                }`}
+                style={
+                  dateSortOrder === 'asc'
+                    ? {
+                        borderWidth: 2,
+                        borderColor: '#0284C7',
+                        shadowColor: '#0284C7',
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.1,
+                        shadowRadius: 4,
+                        elevation: 2,
+                      }
+                    : {}
+                }>
+                <View className="flex-1 flex-row items-center">
+                  <View
+                    className={`mr-3 rounded-lg p-2 ${
+                      dateSortOrder === 'asc' ? 'bg-blue-100' : 'bg-gray-100'
+                    }`}>
+                    <Ionicons
+                      name="arrow-up"
+                      size={22}
+                      color={dateSortOrder === 'asc' ? '#0284C7' : '#6B7280'}
+                    />
+                  </View>
+                  <View className="flex-1">
+                    <Text
+                      className={`text-base ${
+                        dateSortOrder === 'asc'
+                          ? 'font-bold text-blue-700'
+                          : 'font-medium text-gray-700'
+                      }`}>
+                      Cũ nhất
+                    </Text>
+                    <Text className="mt-0.5 text-xs text-gray-500">Từ quá khứ đến hiện tại</Text>
+                  </View>
+                </View>
+                {dateSortOrder === 'asc' && (
+                  <View className="ml-2 rounded-full bg-blue-500 p-1">
+                    <Ionicons name="checkmark" size={16} color="white" />
+                  </View>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => {
+                  setDateSortOrder('desc');
+                  setDateSortModalVisible(false);
+                }}
+                activeOpacity={0.7}
+                className={`mx-2 my-1 flex-row items-center justify-between rounded-xl px-4 py-4 ${
+                  dateSortOrder === 'desc' ? 'bg-blue-50' : 'bg-white active:bg-gray-50'
+                }`}
+                style={
+                  dateSortOrder === 'desc'
+                    ? {
+                        borderWidth: 2,
+                        borderColor: '#0284C7',
+                        shadowColor: '#0284C7',
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.1,
+                        shadowRadius: 4,
+                        elevation: 2,
+                      }
+                    : {}
+                }>
+                <View className="flex-1 flex-row items-center">
+                  <View
+                    className={`mr-3 rounded-lg p-2 ${
+                      dateSortOrder === 'desc' ? 'bg-blue-100' : 'bg-gray-100'
+                    }`}>
+                    <Ionicons
+                      name="arrow-down"
+                      size={22}
+                      color={dateSortOrder === 'desc' ? '#0284C7' : '#6B7280'}
+                    />
+                  </View>
+                  <View className="flex-1">
+                    <Text
+                      className={`text-base ${
+                        dateSortOrder === 'desc'
+                          ? 'font-bold text-blue-700'
+                          : 'font-medium text-gray-700'
+                      }`}>
+                      Sớm nhất
+                    </Text>
+                    <Text className="mt-0.5 text-xs text-gray-500">Từ hiện tại đến tương lai</Text>
+                  </View>
+                </View>
+                {dateSortOrder === 'desc' && (
+                  <View className="ml-2 rounded-full bg-blue-500 p-1">
+                    <Ionicons name="checkmark" size={16} color="white" />
+                  </View>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Pressable>
+      </Modal>
+
+      {/* Payment Filter Modal */}
+      <Modal
+        visible={paymentFilterModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setPaymentFilterModalVisible(false)}>
+        <Pressable
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.6)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: 20,
+          }}
+          onPress={() => setPaymentFilterModalVisible(false)}>
+          <View
+            style={{
+              width: '100%',
+              maxWidth: 320,
+              backgroundColor: 'white',
+              borderRadius: 20,
+              overflow: 'hidden',
+              shadowColor: '#10B981',
+              shadowOffset: { width: 0, height: 8 },
+              shadowOpacity: 0.3,
+              shadowRadius: 16,
+              elevation: 10,
+            }}
+            onStartShouldSetResponder={() => true}>
+            {/* Header with Gradient */}
+            <LinearGradient
+              colors={['#10B981', '#059669']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              className="px-5 py-4">
+              <View className="flex-row items-center">
+                <View className="mr-3 rounded-full bg-white/20 p-2">
+                  <Ionicons name="card" size={20} color="white" />
+                </View>
+                <Text className="flex-1 text-lg font-bold text-white">Lọc theo thanh toán</Text>
+              </View>
+            </LinearGradient>
+
+            {/* Options */}
+            <View className="py-2">
+              <TouchableOpacity
+                onPress={() => {
+                  setPaymentFilter('all');
+                  setPaymentFilterModalVisible(false);
+                }}
+                activeOpacity={0.7}
+                className={`mx-2 my-1 flex-row items-center justify-between rounded-xl px-4 py-4 ${
+                  paymentFilter === 'all' ? 'bg-green-50' : 'bg-white active:bg-gray-50'
+                }`}
+                style={
+                  paymentFilter === 'all'
+                    ? {
+                        borderWidth: 2,
+                        borderColor: '#10B981',
+                        shadowColor: '#10B981',
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.1,
+                        shadowRadius: 4,
+                        elevation: 2,
+                      }
+                    : {}
+                }>
+                <View className="flex-1 flex-row items-center">
+                  <View
+                    className={`mr-3 rounded-lg p-2 ${
+                      paymentFilter === 'all' ? 'bg-green-100' : 'bg-gray-100'
+                    }`}>
+                    <Ionicons
+                      name="wallet"
+                      size={22}
+                      color={paymentFilter === 'all' ? '#10B981' : '#6B7280'}
+                    />
+                  </View>
+                  <View className="flex-1">
+                    <Text
+                      className={`text-base ${
+                        paymentFilter === 'all'
+                          ? 'font-bold text-green-700'
+                          : 'font-medium text-gray-700'
+                      }`}>
+                      Tất cả
+                    </Text>
+                    <Text className="mt-0.5 text-xs text-gray-500">Hiển thị tất cả lịch hẹn</Text>
+                  </View>
+                </View>
+                {paymentFilter === 'all' && (
+                  <View className="ml-2 rounded-full bg-green-500 p-1">
+                    <Ionicons name="checkmark" size={16} color="white" />
+                  </View>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => {
+                  setPaymentFilter('PENDING');
+                  setPaymentFilterModalVisible(false);
+                }}
+                activeOpacity={0.7}
+                className={`mx-2 my-1 flex-row items-center justify-between rounded-xl px-4 py-4 ${
+                  paymentFilter === 'PENDING' ? 'bg-orange-50' : 'bg-white active:bg-gray-50'
+                }`}
+                style={
+                  paymentFilter === 'PENDING'
+                    ? {
+                        borderWidth: 2,
+                        borderColor: '#F59E0B',
+                        shadowColor: '#F59E0B',
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.1,
+                        shadowRadius: 4,
+                        elevation: 2,
+                      }
+                    : {}
+                }>
+                <View className="flex-1 flex-row items-center">
+                  <View
+                    className={`mr-3 rounded-lg p-2 ${
+                      paymentFilter === 'PENDING' ? 'bg-orange-100' : 'bg-gray-100'
+                    }`}>
+                    <Ionicons
+                      name="time"
+                      size={22}
+                      color={paymentFilter === 'PENDING' ? '#F59E0B' : '#6B7280'}
+                    />
+                  </View>
+                  <View className="flex-1">
+                    <Text
+                      className={`text-base ${
+                        paymentFilter === 'PENDING'
+                          ? 'font-bold text-orange-700'
+                          : 'font-medium text-gray-700'
+                      }`}>
+                      Chưa thanh toán
+                    </Text>
+                    <Text className="mt-0.5 text-xs text-gray-500">
+                      Chỉ hiển thị chưa thanh toán
+                    </Text>
+                  </View>
+                </View>
+                {paymentFilter === 'PENDING' && (
+                  <View className="ml-2 rounded-full bg-orange-500 p-1">
+                    <Ionicons name="checkmark" size={16} color="white" />
+                  </View>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => {
+                  setPaymentFilter('PAID');
+                  setPaymentFilterModalVisible(false);
+                }}
+                activeOpacity={0.7}
+                className={`mx-2 my-1 flex-row items-center justify-between rounded-xl px-4 py-4 ${
+                  paymentFilter === 'PAID' ? 'bg-green-50' : 'bg-white active:bg-gray-50'
+                }`}
+                style={
+                  paymentFilter === 'PAID'
+                    ? {
+                        borderWidth: 2,
+                        borderColor: '#10B981',
+                        shadowColor: '#10B981',
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.1,
+                        shadowRadius: 4,
+                        elevation: 2,
+                      }
+                    : {}
+                }>
+                <View className="flex-1 flex-row items-center">
+                  <View
+                    className={`mr-3 rounded-lg p-2 ${
+                      paymentFilter === 'PAID' ? 'bg-green-100' : 'bg-gray-100'
+                    }`}>
+                    <Ionicons
+                      name="checkmark-circle"
+                      size={22}
+                      color={paymentFilter === 'PAID' ? '#10B981' : '#6B7280'}
+                    />
+                  </View>
+                  <View className="flex-1">
+                    <Text
+                      className={`text-base ${
+                        paymentFilter === 'PAID'
+                          ? 'font-bold text-green-700'
+                          : 'font-medium text-gray-700'
+                      }`}>
+                      Đã thanh toán
+                    </Text>
+                    <Text className="mt-0.5 text-xs text-gray-500">Chỉ hiển thị đã thanh toán</Text>
+                  </View>
+                </View>
+                {paymentFilter === 'PAID' && (
+                  <View className="ml-2 rounded-full bg-green-500 p-1">
+                    <Ionicons name="checkmark" size={16} color="white" />
+                  </View>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Pressable>
+      </Modal>
 
       {/* QR Modal */}
       <Modal

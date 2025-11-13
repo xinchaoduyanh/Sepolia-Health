@@ -60,11 +60,14 @@ export interface UpdateAppointmentRequest {
 export interface AppointmentFilters {
   page?: number;
   limit?: number;
-  status?: 'scheduled' | 'completed' | 'cancelled';
+  status?: 'UPCOMING' | 'ON_GOING' | 'COMPLETED' | 'CANCELLED';
+  billingStatus?: 'PENDING' | 'PAID' | 'REFUNDED';
   doctorId?: number;
   patientId?: number;
   dateFrom?: string; // ISO datetime
   dateTo?: string; // ISO datetime
+  sortBy?: 'date' | 'status' | 'billingStatus';
+  sortOrder?: 'asc' | 'desc';
 }
 
 // API Functions

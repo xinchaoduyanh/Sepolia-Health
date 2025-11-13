@@ -1,16 +1,19 @@
-import { AppointmentStatus, Gender } from '@prisma/client';
+import { AppointmentStatus, Gender, PaymentStatus } from '@prisma/client';
 import { createZodDto } from 'nestjs-zod';
 import z from 'zod';
 
 // Get Appointments Query DTO
 const GetAppointmentsQuerySchema = z.object({
-  page: z.coerce.number().default(() => 1),
-  limit: z.coerce.number().default(() => 10),
+  page: z.coerce.number().default(1),
+  limit: z.coerce.number().default(10),
   status: z.enum(AppointmentStatus).optional(),
+  billingStatus: z.enum(PaymentStatus).optional(),
   doctorId: z.coerce.number().optional(),
   patientId: z.coerce.number().optional(),
   dateFrom: z.iso.datetime().optional(),
   dateTo: z.iso.datetime().optional(),
+  sortBy: z.enum(['date', 'status', 'billingStatus']).default('date'),
+  sortOrder: z.enum(['asc', 'desc']).default('asc'),
 });
 
 // Create Appointment DTO

@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { MESSAGES } from '@/common/constants/messages';
 import { PrismaService } from '@/common/prisma/prisma.service';
-import { AppointmentStatus, PaymentStatus } from '@prisma/client';
+import { AppointmentStatus } from '@prisma/client';
 import {
   UpdateAppointmentDto,
   AppointmentResponseDto,
@@ -291,7 +291,22 @@ export class AppointmentService {
     }
 
     // Query appointments for all patient profiles
-    const { page = 1, limit = 10, status, doctorId, dateFrom, dateTo } = query;
+    const {
+      page = 1,
+      limit = 10,
+      status,
+      billingStatus,
+      doctorId,
+      dateFrom,
+      dateTo,
+      sortBy = 'date',
+      sortOrder = 'asc',
+    } = query;
+
+    // Ensure sortBy and sortOrder are properly set
+    const finalSortBy = sortBy || 'date';
+    const finalSortOrder = sortOrder || 'asc';
+
     const skip = (Number(page) - 1) * Number(limit);
 
     const where: any = {
@@ -300,10 +315,111 @@ export class AppointmentService {
 
     if (status) where.status = status;
     if (doctorId) where.doctorId = doctorId;
+    if (billingStatus) {
+      where.billing = {
+        status: billingStatus,
+      };
+    }
     if (dateFrom || dateTo) {
       where.date = {};
       if (dateFrom) where.date.gte = new Date(dateFrom);
       if (dateTo) where.date.lte = new Date(dateTo);
+    }
+
+    // Build orderBy based on sortBy and sortOrder
+    // Note: Prisma doesn't support nested orderBy for billing.status
+    // So we need to fetch all matching appointments, sort in memory, then paginate
+    let orderBy: any = {};
+    let shouldSortInMemory = false;
+
+    if (finalSortBy === 'status') {
+      orderBy = { status: finalSortOrder };
+    } else if (finalSortBy === 'billingStatus') {
+      // For billingStatus, we need to sort in memory
+      shouldSortInMemory = true;
+      orderBy = { date: 'asc' }; // Temporary orderBy, will be overridden
+    } else {
+      // Default: sort by date
+      orderBy = { date: finalSortOrder };
+    }
+
+    // If sorting by billingStatus, fetch all then sort in memory
+    if (shouldSortInMemory) {
+      const allAppointments = await this.prisma.appointment.findMany({
+        where,
+        include: {
+          patientProfile: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              phone: true,
+            },
+          },
+          doctor: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+            },
+          },
+          service: true,
+          clinic: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          billing: {
+            select: {
+              id: true,
+              amount: true,
+              status: true,
+              paymentMethod: true,
+              notes: true,
+              createdAt: true,
+            },
+          },
+        },
+      });
+
+      // Sort by billing status
+      // asc: PENDING -> PAID -> REFUNDED (Chưa thanh toán trước)
+      // desc: PAID -> PENDING -> REFUNDED (Đã thanh toán trước)
+      allAppointments.sort((a, b) => {
+        const aStatus = a.billing?.status || 'PENDING';
+        const bStatus = b.billing?.status || 'PENDING';
+
+        if (finalSortOrder === 'asc') {
+          // PENDING (1) -> PAID (2) -> REFUNDED (3)
+          const statusOrder = { PENDING: 1, PAID: 2, REFUNDED: 3 };
+          const aOrder = statusOrder[aStatus] || 0;
+          const bOrder = statusOrder[bStatus] || 0;
+          return aOrder - bOrder;
+        } else {
+          // PAID (1) -> PENDING (2) -> REFUNDED (3)
+          const statusOrder = { PAID: 1, PENDING: 2, REFUNDED: 3 };
+          const aOrder = statusOrder[aStatus] || 0;
+          const bOrder = statusOrder[bStatus] || 0;
+          return aOrder - bOrder;
+        }
+      });
+
+      // Paginate after sorting
+      const total = allAppointments.length;
+      const paginatedAppointments = allAppointments.slice(
+        skip,
+        skip + Number(limit),
+      );
+
+      return {
+        data: paginatedAppointments.map((appointment) =>
+          this.formatAppointmentResponse(appointment),
+        ),
+        total,
+        page,
+        limit,
+      };
     }
 
     const [appointments, total] = await Promise.all([
@@ -311,7 +427,7 @@ export class AppointmentService {
         where,
         skip,
         take: Number(limit),
-        orderBy: { date: 'asc' },
+        orderBy,
         include: {
           patientProfile: {
             select: {

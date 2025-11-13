@@ -79,8 +79,12 @@ export interface AppointmentFilters {
   page?: number;
   limit?: number;
   status?: 'UPCOMING' | 'ON_GOING' | 'COMPLETED' | 'CANCELLED';
+  billingStatus?: 'PENDING' | 'PAID' | 'REFUNDED';
   doctorId?: number;
+  patientId?: number;
   patientProfileId?: number;
-  dateFrom?: string; // ISO date
-  dateTo?: string; // ISO date
+  dateFrom?: string; // ISO datetime
+  dateTo?: string; // ISO datetime
+  sortBy?: 'date' | 'status' | 'billingStatus';
+  sortOrder?: 'asc' | 'desc';
 }
