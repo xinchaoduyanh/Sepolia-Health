@@ -1,97 +1,24 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { z } from 'zod';
 import { AppointmentStatus, PaymentStatus } from '@prisma/client';
-
-const appointmentStatusValues = Object.values(AppointmentStatus) as [
-  string,
-  ...string[],
-];
-const paymentStatusValues = Object.values(PaymentStatus) as [
-  string,
-  ...string[],
-];
+import { createZodDto } from 'nestjs-zod';
 
 // Zod schemas
 export const GetAppointmentsSchema = z.object({
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(100).default(10),
   search: z.string().optional(),
-  status: z.enum(appointmentStatusValues).optional(),
-  billingStatus: z.enum(paymentStatusValues).optional(),
+  status: z.enum(AppointmentStatus).optional(),
+  billingStatus: z.enum(PaymentStatus).optional(),
   doctorId: z.coerce.number().optional(),
   clinicId: z.coerce.number().optional(),
   dateFrom: z.string().optional(),
   dateTo: z.string().optional(),
 });
 
-export type GetAppointmentsDto = z.infer<typeof GetAppointmentsSchema>;
-
-export class GetAppointmentsDtoClass {
-  @ApiProperty({
-    description: 'Trang hiện tại',
-    example: 1,
-    required: false,
-  })
-  page?: number;
-
-  @ApiProperty({
-    description: 'Số lượng mỗi trang',
-    example: 10,
-    required: false,
-  })
-  limit?: number;
-
-  @ApiProperty({
-    description: 'Tìm kiếm theo tên bệnh nhân, số điện thoại',
-    example: 'Nguyễn Văn A',
-    required: false,
-  })
-  search?: string;
-
-  @ApiProperty({
-    description: 'Lọc theo trạng thái cuộc hẹn',
-    example: 'UPCOMING',
-    enum: appointmentStatusValues,
-    required: false,
-  })
-  status?: string;
-
-  @ApiProperty({
-    description: 'Lọc theo trạng thái thanh toán (từ billing)',
-    example: 'PAID',
-    enum: paymentStatusValues,
-    required: false,
-  })
-  billingStatus?: string;
-
-  @ApiProperty({
-    description: 'Lọc theo bác sĩ',
-    example: 1,
-    required: false,
-  })
-  doctorId?: number;
-
-  @ApiProperty({
-    description: 'Lọc theo phòng khám',
-    example: 1,
-    required: false,
-  })
-  clinicId?: number;
-
-  @ApiProperty({
-    description: 'Lọc từ ngày',
-    example: '2024-01-01',
-    required: false,
-  })
-  dateFrom?: string;
-
-  @ApiProperty({
-    description: 'Lọc đến ngày',
-    example: '2024-12-31',
-    required: false,
-  })
-  dateTo?: string;
-}
+export class GetAppointmentQueryDto extends createZodDto(
+  GetAppointmentsSchema,
+) {}
 
 // Response DTOs
 export class AppointmentDoctorDto {
