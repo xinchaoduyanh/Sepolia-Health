@@ -1,6 +1,7 @@
 import { apiClient } from '../api-client'
 import { config } from '../config'
 import { normalizeApiResponse, normalizeApiError } from '../api-response-normalizer'
+import { Role } from '@/types/role'
 
 // Types for auth API - matching BE DTOs
 export interface AdminLoginRequest {
@@ -11,22 +12,13 @@ export interface AdminLoginRequest {
 export interface AdminLoginResponse {
     accessToken: string
     refreshToken: string
-    admin: {
-        id: number
-        email: string
-        phone: string | null
-        role: string
-        status: string
-        createdAt: string
-        updatedAt: string
-    }
 }
 
 export interface AdminProfile {
     id: number
     email: string
     phone: string | null
-    role: string
+    role: Role
     status: string
     createdAt: string
     updatedAt: string

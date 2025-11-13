@@ -1,4 +1,4 @@
-import { get } from 'http'
+import { Role } from '@/types/role'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
@@ -7,7 +7,7 @@ export interface User {
     id: number
     email: string
     phone: string | null
-    role: string
+    role: Role
     status: string
     createdAt: string
     updatedAt: string
