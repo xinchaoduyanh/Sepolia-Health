@@ -16,6 +16,7 @@ import { AuthService } from './auth.service';
 import { CurrentUser, Public } from '@/common/decorators';
 import { SuccessResponseDto } from '@/common/dto';
 import {
+  ChangePasswordDto,
   CompleteRegisterDto,
   ForgotPasswordDto,
   LoginDto,
@@ -154,6 +155,26 @@ export class AuthController {
     @Body() body: ResetPasswordBodyDto,
   ): Promise<SuccessResponseDto> {
     return this.authService.resetPassword(body);
+  }
+
+  @Post('change-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Đổi mật khẩu' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    type: SuccessResponseDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Mật khẩu cũ không đúng hoặc chưa đăng nhập',
+  })
+  async changePassword(
+    @CurrentUser('userId') userId: number,
+    @Body() changePasswordDto: ChangePasswordDto,
+  ): Promise<SuccessResponseDto> {
+    await this.authService.changePassword(userId, changePasswordDto);
+    return new SuccessResponseDto();
   }
 
   @Get('me')

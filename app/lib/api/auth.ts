@@ -3,6 +3,7 @@ import { apiClient } from '@/lib/api-client';
 import { API_ENDPOINTS } from '@/lib/config';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type {
+  ChangePasswordRequest,
   LoginRequest,
   RegisterRequest,
   VerifyEmailRequest,
@@ -76,6 +77,11 @@ export const authApi = {
 
   forgotPassword: async (email: string) => {
     const response = await apiClient.post(API_ENDPOINTS.AUTH.FORGOT_PASSWORD, { email });
+    return response.data;
+  },
+
+  changePassword: async (data: ChangePasswordRequest) => {
+    const response = await apiClient.post(API_ENDPOINTS.AUTH.CHANGE_PASSWORD, data);
     return response.data;
   },
 };
@@ -162,5 +168,14 @@ export const useProfile = (enabled: boolean = false) => {
     retry: enabled ? 1 : false, // Don't retry when disabled
     // Only run when enabled
     enabled,
+  });
+};
+
+export const useChangePassword = () => {
+  return useMutation({
+    mutationFn: authApi.changePassword,
+    onError: (error) => {
+      // Error is handled by UI
+    },
   });
 };

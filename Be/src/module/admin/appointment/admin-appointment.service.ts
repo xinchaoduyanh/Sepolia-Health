@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/common/prisma/prisma.service';
 import {
-  GetAppointmentsDto,
+  GetAppointmentQueryDto,
   AppointmentListResponseDto,
   AppointmentDetailResponseDto,
   AppointmentResponseDto,
@@ -12,7 +12,7 @@ export class AdminAppointmentService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getAppointments(
-    query: GetAppointmentsDto,
+    query: GetAppointmentQueryDto,
   ): Promise<AppointmentListResponseDto> {
     const {
       page = 1,

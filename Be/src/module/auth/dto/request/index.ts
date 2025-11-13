@@ -46,6 +46,12 @@ const RefreshTokenSchema = z.object({
   refreshToken: z.string().min(1, 'Refresh token không được để trống'),
 });
 
+// Change Password DTO
+const ChangePasswordSchema = z.object({
+  oldPassword: z.string().nonempty('Mật khẩu cũ không được để trống'),
+  newPassword: z.string().min(6, 'Mật khẩu mới phải có ít nhất 6 ký tự'),
+});
+
 export class LoginDto extends createZodDto(LoginSchema) {}
 export class RegisterDto extends createZodDto(RegisterSchema) {}
 export class ForgotPasswordDto extends RegisterDto {}
@@ -53,3 +59,4 @@ export class VerifyEmailDto extends createZodDto(VerifyEmailSchema) {}
 export class RefreshTokenDto extends createZodDto(RefreshTokenSchema) {}
 export class ResetPasswordBodyDto extends createZodDto(resetPasswordSchema) {}
 export class CompleteRegisterDto extends createZodDto(CompleteRegisterSchema) {}
+export class ChangePasswordDto extends createZodDto(ChangePasswordSchema) {}

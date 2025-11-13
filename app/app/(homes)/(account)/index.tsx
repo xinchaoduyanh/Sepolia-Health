@@ -4,6 +4,7 @@ import { View, Text, TouchableOpacity, Alert, ScrollView, StatusBar, Image } fro
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path } from 'react-native-svg';
+import { router } from 'expo-router';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { PatientProfile } from '@/types/auth';
 
@@ -191,7 +192,9 @@ export default function AccountScreen() {
           <View className="mb-6">
             <Text className="mb-4 text-lg font-bold text-slate-900">Cài đặt</Text>
             <View className="overflow-hidden rounded-2xl bg-white shadow-lg shadow-sky-600/10">
-              <TouchableOpacity className="flex-row items-center border-b border-sky-50 p-4">
+              <TouchableOpacity
+                onPress={() => router.push('/(homes)/(account)/change-password')}
+                className="flex-row items-center border-b border-sky-50 p-4">
                 <View className="mr-4 h-10 w-10 items-center justify-center rounded-lg bg-green-100">
                   <Ionicons name="lock-closed-outline" size={20} color="#10B981" />
                 </View>

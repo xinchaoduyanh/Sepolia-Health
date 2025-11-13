@@ -18,6 +18,7 @@ import {
 } from '@/common/modules/mail/templates';
 import { SuccessResponseDto } from '@/common/dto';
 import {
+  ChangePasswordDto,
   CompleteRegisterDto,
   ForgotPasswordDto,
   LoginDto,
@@ -320,6 +321,24 @@ export class AuthService {
     // todo send mail
 
     return new SuccessResponseDto();
+  }
+
+  /**
+   * Change password
+   */
+  async changePassword(
+    userId: number,
+    changePasswordDto: ChangePasswordDto,
+  ): Promise<void> {
+    const { oldPassword, newPassword } = changePasswordDto;
+
+    const user = await this.authRepository.findById(userId);
+
+    if (user.password !== oldPassword) {
+      throw new UnauthorizedException(ERROR_MESSAGES.AUTH.INVALID_CREADENTIALS);
+    }
+
+    await this.authRepository.updateUser(userId, { password: newPassword });
   }
 
   /**
