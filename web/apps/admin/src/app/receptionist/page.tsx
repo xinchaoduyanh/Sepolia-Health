@@ -8,7 +8,7 @@ export default function ReceptionistDashboardPage() {
 
     useEffect(() => {
         // Redirect to schedule appointment page
-        router.replace('/dashboard/receptionist/schedule-appointment')
+        router.replace('/receptionist/schedule-appointment')
     }, [router])
 
     return null
