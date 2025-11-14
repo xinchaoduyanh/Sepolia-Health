@@ -57,25 +57,25 @@ enum UserStatus {
 }
 
 enum Relationship {
-  SELF        // Bản thân
-  SPOUSE      // Vợ/Chồng
-  CHILD       // Con
-  PARENT      // Bố/Mẹ
-  SIBLING     // Anh/Chị/Em
-  RELATIVE    // Họ hàng
-  FRIEND      // Bạn bè
-  OTHER       // Khác
+  SELF // Bản thân
+  SPOUSE // Vợ/Chồng
+  CHILD // Con
+  PARENT // Bố/Mẹ
+  SIBLING // Anh/Chị/Em
+  RELATIVE // Họ hàng
+  FRIEND // Bạn bè
+  OTHER // Khác
 }
 
 // ----------------- CORE MODELS -----------------
 
 /// Bảng User: Chỉ dùng để xác thực và quản lý vai trò.
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  phone     String?  @unique // SĐT đăng nhập/khôi phục
-  password  String
-  role      Role
+  id       Int     @id @default(autoincrement())
+  email    String  @unique
+  phone    String? @unique // SĐT đăng nhập/khôi phục
+  password String
+  role     Role
 
   // Quan hệ 1-1 với các hồ sơ chuyên môn
   doctorProfile       DoctorProfile?
@@ -83,105 +83,113 @@ model User {
   adminProfile        AdminProfile?
 
   // Quan hệ 1-nhiều: Một user có thể quản lý nhiều hồ sơ bệnh nhân
-  patientProfiles     PatientProfile[]
+  patientProfiles PatientProfile[]
 
   // Quan hệ với giao dịch
-  transactions        Transaction[]
+  transactions Transaction[]
 
   // Quan hệ với chat system
 
-  status      UserStatus @default(UNVERIFIED)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  deletedAt   DateTime?
+  // Quan hệ với Q&A
+  questions           Question[]            @relation("QuestionAuthor")
+  answers             Answer[]              @relation("AnswerAuthor")
+  questionVotes       QuestionVote[]        @relation("QuestionVotes")
+  answerVotes         AnswerVote[]          @relation("AnswerVotes")
+  questionEditHistory QuestionEditHistory[] @relation("QuestionEditor")
+  answerEditHistory   AnswerEditHistory[]   @relation("AnswerEditor")
+
+  status    UserStatus @default(UNVERIFIED)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  deletedAt DateTime?
 }
 
 /// Hồ sơ Bác sĩ: Chứa TẤT CẢ thông tin về một bác sĩ.
 model DoctorProfile {
-  id            Int      @id @default(autoincrement())
+  id Int @id @default(autoincrement())
 
   // Thông tin cá nhân của bác sĩ
-  firstName     String
-  lastName      String
-  dateOfBirth   DateTime? @db.Date
-  gender        Gender?
-  avatar        String?
+  firstName   String
+  lastName    String
+  dateOfBirth DateTime? @db.Date
+  gender      Gender?
+  avatar      String?
 
   // Thông tin chuyên môn
-  experience    String?
-  contactInfo   String?
+  experience  String?
+  contactInfo String?
 
-  userId        Int      @unique
-  user          User     @relation(fields: [userId], references: [id])
+  userId Int  @unique
+  user   User @relation(fields: [userId], references: [id])
 
   // Quan hệ
-  clinicId        Int?
-  clinic          Clinic?              @relation("ClinicDoctors", fields: [clinicId], references: [id])
-  appointments    Appointment[]        @relation("DoctorAppointments")
-  feedbacks       Feedback[]           @relation("DoctorFeedbacks")
-  prescriptions   Prescription[]
-  services        DoctorService[]      @relation("Services")
-  availabilities  DoctorAvailability[]
-  overrides       AvailabilityOverride[]
+  clinicId       Int?
+  clinic         Clinic?                @relation("ClinicDoctors", fields: [clinicId], references: [id])
+  appointments   Appointment[]          @relation("DoctorAppointments")
+  feedbacks      Feedback[]             @relation("DoctorFeedbacks")
+  prescriptions  Prescription[]
+  services       DoctorService[]        @relation("Services")
+  availabilities DoctorAvailability[]
+  overrides      AvailabilityOverride[]
 
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  deletedAt       DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 }
 
 /// Hồ sơ Lễ tân: Chứa TẤT CẢ thông tin về một lễ tân.
 model ReceptionistProfile {
-  id            Int      @id @default(autoincrement())
+  id Int @id @default(autoincrement())
 
   // Thông tin cá nhân của lễ tân
-  firstName     String
-  lastName      String
-  dateOfBirth   DateTime? @db.Date
-  gender        Gender?
-  avatar        String?
+  firstName   String
+  lastName    String
+  dateOfBirth DateTime? @db.Date
+  gender      Gender?
+  avatar      String?
 
   // Thông tin công việc
-  shift         String?
+  shift String?
 
-  userId        Int      @unique
-  user          User     @relation(fields: [userId], references: [id])
+  userId Int  @unique
+  user   User @relation(fields: [userId], references: [id])
 
   // Quan hệ với clinic cho chat system
-  clinicId        Int?
-  clinic          Clinic?              @relation("ClinicReceptionists", fields: [clinicId], references: [id])
+  clinicId Int?
+  clinic   Clinic? @relation("ClinicReceptionists", fields: [clinicId], references: [id])
 
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 /// Hồ sơ Admin: Chứa thông tin cơ bản về một admin.
 model AdminProfile {
-  id            Int      @id @default(autoincrement())
+  id Int @id @default(autoincrement())
 
   // Thông tin cá nhân của admin
-  firstName     String
-  lastName      String
-  dateOfBirth   DateTime? @db.Date
-  gender        Gender?
-  avatar        String?
+  firstName   String
+  lastName    String
+  dateOfBirth DateTime? @db.Date
+  gender      Gender?
+  avatar      String?
 
-  userId        Int      @unique
-  user          User     @relation(fields: [userId], references: [id])
+  userId Int  @unique
+  user   User @relation(fields: [userId], references: [id])
 
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 /// Hồ sơ Bệnh nhân: Chứa TẤT CẢ thông tin y tế và cá nhân của một bệnh nhân.
 model PatientProfile {
-  id           Int      @id @default(autoincrement())
+  id Int @id @default(autoincrement())
 
   // Thông tin cá nhân
   firstName    String
   lastName     String
-  dateOfBirth  DateTime @db.Date
+  dateOfBirth  DateTime     @db.Date
   gender       Gender
-  phone        String   // SĐT liên lạc y tế (không cần unique)
+  phone        String // SĐT liên lạc y tế (không cần unique)
   relationship Relationship // Mối quan hệ với người quản lý
   avatar       String?
 
@@ -192,17 +200,17 @@ model PatientProfile {
   address      String?
 
   // Thông tin sức khỏe
-  healthDetailsJson Json?          // Lưu các thông tin linh hoạt khác
+  healthDetailsJson Json? // Lưu các thông tin linh hoạt khác
 
   // Quan hệ
-  managerId    Int
-  manager      User          @relation(fields: [managerId], references: [id])
+  managerId     Int
+  manager       User           @relation(fields: [managerId], references: [id])
   appointments  Appointment[]
   prescriptions Prescription[]
   feedbacks     Feedback[]
 
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([phone]) // Tối ưu tìm kiếm theo SĐT
 }
@@ -213,13 +221,13 @@ model PatientProfile {
 
 /// Lịch làm việc cố định hàng tuần của bác sĩ
 model DoctorAvailability {
-  id        Int       @id @default(autoincrement())
-  dayOfWeek Int       // 0 = Sunday, 1 = Monday, 2 = Tuesday, ..., 6 = Saturday
+  id        Int    @id @default(autoincrement())
+  dayOfWeek Int // 0 = Sunday, 1 = Monday, 2 = Tuesday, ..., 6 = Saturday
   startTime String
   endTime   String
 
-  doctorId  Int
-  doctor    DoctorProfile @relation(fields: [doctorId], references: [id])
+  doctorId Int
+  doctor   DoctorProfile @relation(fields: [doctorId], references: [id])
 
   @@unique([doctorId, dayOfWeek])
 }
@@ -231,8 +239,8 @@ model AvailabilityOverride {
   startTime String?
   endTime   String?
 
-  doctorId  Int
-  doctor    DoctorProfile @relation(fields: [doctorId], references: [id])
+  doctorId Int
+  doctor   DoctorProfile @relation(fields: [doctorId], references: [id])
 
   @@unique([doctorId, date])
 }
@@ -241,12 +249,12 @@ model AvailabilityOverride {
 
 /// Lịch hẹn khám bệnh: Linh hoạt cho cả khách có hồ sơ và khách vãng lai.
 model Appointment {
-  id            Int      @id @default(autoincrement())
-  date          DateTime @db.Date
-  startTime     String
-  endTime       String
-  status        AppointmentStatus
-  notes         String?
+  id        Int               @id @default(autoincrement())
+  date      DateTime          @db.Date
+  startTime String
+  endTime   String
+  status    AppointmentStatus
+  notes     String?
 
   // Liên kết tùy chọn với hồ sơ bệnh nhân
   patientProfileId Int?
@@ -259,44 +267,44 @@ model Appointment {
   patientGender String
 
   // Quan hệ
-  doctorId      Int
-  doctor        DoctorProfile @relation("DoctorAppointments", fields: [doctorId], references: [id])
-  serviceId     Int
-  service       Service     @relation(fields: [serviceId], references: [id])
-  clinicId      Int
-  clinic        Clinic      @relation("ClinicAppointments", fields: [clinicId], references: [id])
-  billing       Billing?
+  doctorId  Int
+  doctor    DoctorProfile @relation("DoctorAppointments", fields: [doctorId], references: [id])
+  serviceId Int
+  service   Service       @relation(fields: [serviceId], references: [id])
+  clinicId  Int
+  clinic    Clinic        @relation("ClinicAppointments", fields: [clinicId], references: [id])
+  billing   Billing?
 
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 /// Đơn thuốc: Gắn với một hồ sơ bệnh nhân cụ thể.
 model Prescription {
-  id        Int      @id @default(autoincrement())
-  notes     String?
+  id    Int     @id @default(autoincrement())
+  notes String?
 
-  doctorId      Int
-  doctor        DoctorProfile  @relation(fields: [doctorId], references: [id])
+  doctorId Int
+  doctor   DoctorProfile @relation(fields: [doctorId], references: [id])
 
   patientProfileId Int
   patientProfile   PatientProfile @relation(fields: [patientProfileId], references: [id])
 
   items     PrescriptionItem[]
-  createdAt DateTime       @default(now())
+  createdAt DateTime           @default(now())
 }
 
 /// Feedback: Gắn với một hồ sơ bệnh nhân cụ thể.
 model Feedback {
-  id        Int      @id @default(autoincrement())
-  rating    Int
-  comment   String?
+  id      Int     @id @default(autoincrement())
+  rating  Int
+  comment String?
 
   patientProfileId Int
   patientProfile   PatientProfile @relation(fields: [patientProfileId], references: [id])
 
-  doctorId  Int
-  doctor    DoctorProfile @relation("DoctorFeedbacks", fields: [doctorId], references: [id])
+  doctorId Int
+  doctor   DoctorProfile @relation("DoctorFeedbacks", fields: [doctorId], references: [id])
 
   createdAt DateTime @default(now())
 }
@@ -304,45 +312,46 @@ model Feedback {
 // ----------------- OTHER MODELS (Giữ nguyên hoặc ít thay đổi) -----------------
 
 model Service {
-  id            Int      @id @default(autoincrement())
+  id            Int             @id @default(autoincrement())
   name          String
   price         Float
-  duration      Int      // thời lượng (phút)
+  duration      Int // thời lượng (phút)
   description   String?
-  createdAt     DateTime @default(now())
+  createdAt     DateTime        @default(now())
   updatedAt     DateTime?
   appointments  Appointment[]
   doctorService DoctorService[] @relation("Doctor")
 }
 
 model DoctorService {
-  id         Int      @id @default(autoincrement())
-  doctorId   Int
-  doctor     DoctorProfile @relation("Services", fields: [doctorId], references: [id])
-  serviceId  Int
-  service    Service  @relation("Doctor", fields: [serviceId], references: [id])
-  createdAt  DateTime @default(now())
+  id        Int           @id @default(autoincrement())
+  doctorId  Int
+  doctor    DoctorProfile @relation("Services", fields: [doctorId], references: [id])
+  serviceId Int
+  service   Service       @relation("Doctor", fields: [serviceId], references: [id])
+  createdAt DateTime      @default(now())
+
   @@unique([doctorId, serviceId])
 }
 
 model Billing {
-  id            Int           @id @default(autoincrement())
+  id            Int            @id @default(autoincrement())
   amount        Float
   status        PaymentStatus // Overall status of the billing
   paymentMethod PaymentMethod?
   notes         String?
-  appointmentId Int           @unique
-  appointment   Appointment   @relation(fields: [appointmentId], references: [id])
+  appointmentId Int            @unique
+  appointment   Appointment    @relation(fields: [appointmentId], references: [id])
 
   // One-to-many relationship: One billing can have multiple transactions
-  transactions  Transaction[]
+  transactions Transaction[]
 
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Medicine {
-  id                Int      @id @default(autoincrement())
+  id                Int                @id @default(autoincrement())
   name              String
   dosage            String?
   stock             Int
@@ -351,33 +360,33 @@ model Medicine {
 }
 
 model PrescriptionItem {
-  id             Int      @id @default(autoincrement())
+  id             Int          @id @default(autoincrement())
   quantity       Int
   instructions   String?
   prescriptionId Int
   prescription   Prescription @relation(fields: [prescriptionId], references: [id])
   medicineId     Int
-  medicine       Medicine @relation(fields: [medicineId], references: [id])
+  medicine       Medicine     @relation(fields: [medicineId], references: [id])
 }
 
 model Clinic {
-  id           Int      @id @default(autoincrement())
-  name         String
-  address      String
-  phone        String?
-  email        String?
-  description  String?
-  isActive     Boolean  @default(true)
-  doctors      DoctorProfile[] @relation("ClinicDoctors")
-  appointments Appointment[]   @relation("ClinicAppointments")
+  id            Int                   @id @default(autoincrement())
+  name          String
+  address       String
+  phone         String?
+  email         String?
+  description   String?
+  isActive      Boolean               @default(true)
+  doctors       DoctorProfile[]       @relation("ClinicDoctors")
+  appointments  Appointment[]         @relation("ClinicAppointments")
   receptionists ReceptionistProfile[] @relation("ClinicReceptionists")
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
 }
 
 /// Giao dịch thanh toán (SEPAY, tiền mặt, ...)
 model Transaction {
-  id     Int    @id @default(autoincrement())
+  id     Int   @id @default(autoincrement())
   amount Float
 
   // Use the new TransactionStatus enum for individual transaction status
@@ -417,10 +426,10 @@ model Transaction {
 
 /// Bài viết do admin tạo (tin tức, bài sức khỏe, ...)
 model Article {
-  id          Int      @id @default(autoincrement())
-  title     String
-  content   String
-  image     String?
+  id      Int     @id @default(autoincrement())
+  title   String
+  content String
+  image   String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -434,4 +443,168 @@ model Promotion {
   discount    Float
   validFrom   DateTime
   validTo     DateTime
+}
+
+// ----------------- Q&A MODELS -----------------
+
+enum VoteType {
+  UP
+  DOWN
+}
+
+/// Câu hỏi trong cộng đồng
+model Question {
+  id        Int    @id @default(autoincrement())
+  title     String
+  content   String
+  views     Int    @default(0)
+  upvotes   Int    @default(0)
+  downvotes Int    @default(0)
+
+  authorId Int
+  author   User @relation("QuestionAuthor", fields: [authorId], references: [id])
+
+  bestAnswerId Int?
+  bestAnswer   Answer? @relation("BestAnswer", fields: [bestAnswerId], references: [id])
+
+  tags        QuestionTag[]
+  answers     Answer[] @relation("QuestionAnswers")
+  votes       QuestionVote[]
+  editHistory QuestionEditHistory[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([authorId])
+  @@index([createdAt])
+  @@index([upvotes, downvotes])
+}
+
+/// Câu trả lời cho câu hỏi
+model Answer {
+  id           Int     @id @default(autoincrement())
+  content      String
+  upvotes      Int     @default(0)
+  downvotes    Int     @default(0)
+  isBestAnswer Boolean @default(false)
+
+  questionId Int
+  question   Question @relation("QuestionAnswers", fields: [questionId], references: [id], onDelete: Cascade)
+
+  bestAnswerFor Question[] @relation("BestAnswer")
+
+  authorId Int
+  author   User @relation("AnswerAuthor", fields: [authorId], references: [id])
+
+  votes       AnswerVote[]
+  editHistory AnswerEditHistory[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([questionId])
+  @@index([authorId])
+  @@index([createdAt])
+}
+
+/// Tag cho câu hỏi
+model Tag {
+  id          Int     @id @default(autoincrement())
+  name        String  @unique
+  slug        String  @unique
+  description String?
+  usageCount  Int     @default(0)
+
+  questions QuestionTag[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([slug])
+  @@index([usageCount])
+}
+
+/// Quan hệ many-to-many giữa Question và Tag
+model QuestionTag {
+  id         Int      @id @default(autoincrement())
+  questionId Int
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  tagId      Int
+  tag        Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([questionId, tagId])
+  @@index([questionId])
+  @@index([tagId])
+}
+
+/// Vote cho câu hỏi
+model QuestionVote {
+  id         Int      @id @default(autoincrement())
+  questionId Int
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  userId     Int
+  user       User     @relation("QuestionVotes", fields: [userId], references: [id])
+  voteType   VoteType
+
+  createdAt DateTime @default(now())
+
+  @@unique([questionId, userId])
+  @@index([questionId])
+  @@index([userId])
+}
+
+/// Vote cho câu trả lời
+model AnswerVote {
+  id       Int      @id @default(autoincrement())
+  answerId Int
+  answer   Answer   @relation(fields: [answerId], references: [id], onDelete: Cascade)
+  userId   Int
+  user     User     @relation("AnswerVotes", fields: [userId], references: [id])
+  voteType VoteType
+
+  createdAt DateTime @default(now())
+
+  @@unique([answerId, userId])
+  @@index([answerId])
+  @@index([userId])
+}
+
+/// Lịch sử chỉnh sửa câu hỏi
+model QuestionEditHistory {
+  id         Int      @id @default(autoincrement())
+  questionId Int
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  editedBy   Int
+  editor     User     @relation("QuestionEditor", fields: [editedBy], references: [id])
+  oldTitle   String?
+  newTitle   String?
+  oldContent String?
+  newContent String?
+  reason     String?
+
+  createdAt DateTime @default(now())
+
+  @@index([questionId])
+  @@index([editedBy])
+}
+
+/// Lịch sử chỉnh sửa câu trả lời
+model AnswerEditHistory {
+  id         Int     @id @default(autoincrement())
+  answerId   Int
+  answer     Answer  @relation(fields: [answerId], references: [id], onDelete: Cascade)
+  editedBy   Int
+  editor     User    @relation("AnswerEditor", fields: [editedBy], references: [id])
+  oldContent String?
+  newContent String?
+  reason     String?
+
+  createdAt DateTime @default(now())
+
+  @@index([answerId])
+  @@index([editedBy])
 }

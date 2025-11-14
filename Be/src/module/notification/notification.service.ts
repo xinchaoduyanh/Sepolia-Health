@@ -322,9 +322,38 @@ export class NotificationService {
     }));
   }
 
-  // async markAsRead(userId: string, _messageId: string): Promise<void> {
-  //   // TODO: Implement mark as read for a notification message if SDK supports, hiện tại chưa dùng tới biến truyền vào.
-  // }
+  /**
+   * Mark notification as read
+   */
+  async markAsRead(userId: string, messageId: string): Promise<void> {
+    const channel = await this.getOrCreateNotificationChannel(userId);
+
+    // Get the message from channel state
+    const message = channel.state.messages.find((msg) => msg.id === messageId);
+
+    if (!message) {
+      throw new Error(`Message ${messageId} not found`);
+    }
+
+    // Update message metadata with read status
+    const currentMetadata = (message as any).metadata || {};
+    const updatedMetadata = {
+      ...currentMetadata,
+      status: NotificationStatus.READ,
+      readAt: new Date().toISOString(),
+    };
+
+    // Update message in StreamChat using streamClient
+    // Cần thêm user_id để StreamChat xác thực server-side
+    const channelId = `${this.NOTIFICATION_CHANNEL_PREFIX}_${userId}`;
+    await this.streamClient.updateMessage({
+      id: messageId,
+      channel_id: channelId,
+      channel_type: 'messaging',
+      user_id: 'system', // Message được gửi bởi system, nên update cũng dùng system
+      metadata: updatedMetadata,
+    } as any);
+  }
 
   /**
    * Get unread notification count

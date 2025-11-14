@@ -75,6 +75,16 @@ export class AppointmentController {
     return this.appointmentService.getMyAppointments(query, userId);
   }
 
+  @Get('closest')
+  @ApiOperation({ summary: 'Lấy lịch hẹn gần nhất của bệnh nhân hiện tại' })
+  @ApiResponse({ status: 200, description: 'Lấy lịch hẹn gần nhất thành công' })
+  @ApiResponse({ status: 404, description: 'Không tìm thấy lịch hẹn' })
+  async getClosestAppointment(
+    @CurrentUser('userId') userId: number,
+  ): Promise<AppointmentResponseDto | null> {
+    return this.appointmentService.getClosestAppointment(userId);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Lấy thông tin lịch hẹn theo ID' })
   @ApiParam({ name: 'id', description: 'ID lịch hẹn' })

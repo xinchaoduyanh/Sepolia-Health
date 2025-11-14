@@ -22,7 +22,7 @@ type PaymentStatus = 'pending' | 'paid' | 'refunded' | 'PENDING' | 'PAID' | 'REF
 
 export default function AppointmentsListScreen() {
   const [page, setPage] = useState(1);
-  const [dateSortOrder, setDateSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [dateSortOrder, setDateSortOrder] = useState<'asc' | 'desc'>('desc');
   const [paymentFilter, setPaymentFilter] = useState<'all' | 'PENDING' | 'PAID'>('all');
 
   // Always sort by date (default: Sớm nhất)

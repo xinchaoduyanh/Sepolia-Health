@@ -43,6 +43,8 @@ export class AppointmentService {
       patientId,
       dateFrom,
       dateTo,
+      sortBy = 'date',
+      sortOrder = 'desc',
     } = query;
     const skip = (Number(page) - 1) * Number(limit);
 
@@ -57,12 +59,21 @@ export class AppointmentService {
       if (dateTo) where.date.lte = new Date(dateTo);
     }
 
+    // Build orderBy based on sortBy and sortOrder
+    let orderBy: any = {};
+    if (sortBy === 'status') {
+      orderBy = { status: sortOrder };
+    } else {
+      // Default: sort by date
+      orderBy = { date: sortOrder };
+    }
+
     const [appointments, total] = await Promise.all([
       this.prisma.appointment.findMany({
         where,
         skip,
         take: Number(limit),
-        orderBy: { date: 'asc' },
+        orderBy,
         include: {
           patientProfile: {
             select: {
@@ -300,12 +311,12 @@ export class AppointmentService {
       dateFrom,
       dateTo,
       sortBy = 'date',
-      sortOrder = 'asc',
+      sortOrder = 'desc',
     } = query;
 
     // Ensure sortBy and sortOrder are properly set
     const finalSortBy = sortBy || 'date';
-    const finalSortOrder = sortOrder || 'asc';
+    const finalSortOrder = sortOrder || 'desc';
 
     const skip = (Number(page) - 1) * Number(limit);
 
@@ -498,6 +509,153 @@ export class AppointmentService {
       ...query,
       doctorId: doctorProfile.id,
     });
+  }
+
+  /**
+   * Get closest upcoming appointment for current user
+   */
+  async getClosestAppointment(
+    userId: number,
+  ): Promise<AppointmentResponseDto | null> {
+    // Find patient profiles managed by this user
+    const patientProfiles = await this.prisma.patientProfile.findMany({
+      where: { managerId: userId },
+      select: { id: true },
+    });
+
+    const patientProfileIds = patientProfiles.map((p) => p.id);
+
+    if (patientProfileIds.length === 0) {
+      return null;
+    }
+
+    // Get current date and time
+    const nowUTC = new Date();
+
+    // Calculate current time in UTC+7 (Vietnam timezone)
+    // UTC+7 = UTC + 7 hours
+    const nowUTC7 = new Date(nowUTC.getTime() + 7 * 60 * 60 * 1000);
+    const currentTime = `${nowUTC7.getUTCHours().toString().padStart(2, '0')}:${nowUTC7.getUTCMinutes().toString().padStart(2, '0')}`;
+
+    // Calculate start of today in UTC+7 (00:00:00 UTC+7)
+    // Get the date components in UTC+7
+    const yearUTC7 = nowUTC7.getUTCFullYear();
+    const monthUTC7 = nowUTC7.getUTCMonth();
+    const dateUTC7 = nowUTC7.getUTCDate();
+
+    // Start of day UTC+7 = 00:00:00 UTC+7
+    // To convert to UTC: 00:00 UTC+7 = 17:00 UTC (previous day)
+    // Example: 14-11 00:00 UTC+7 = 13-11 17:00 UTC
+    // Create UTC timestamp for 00:00 of the UTC+7 date, then subtract 7 hours
+    const todayUTC7StartUTC = new Date(
+      Date.UTC(yearUTC7, monthUTC7, dateUTC7, 0, 0, 0, 0),
+    );
+    // Subtract 7 hours to get the UTC equivalent of 00:00 UTC+7
+    const todayUTC = new Date(todayUTC7StartUTC.getTime() - 7 * 60 * 60 * 1000);
+
+    // For comparison in filter, we use the same UTC timestamp (todayUTC7StartUTC)
+    // This represents 00:00 UTC+7 in UTC format, which is what we need for comparison
+    const todayUTC7StartDateOnly = todayUTC7StartUTC;
+
+    // Get all upcoming appointments (date >= today, status = UPCOMING or ON_GOING)
+    // Note: DB stores dates in UTC, so we use todayUTC for comparison
+    const appointments = await this.prisma.appointment.findMany({
+      where: {
+        patientProfileId: { in: patientProfileIds },
+        date: { gte: todayUTC },
+        status: {
+          in: [AppointmentStatus.UPCOMING, AppointmentStatus.ON_GOING],
+        },
+      },
+      orderBy: [{ date: 'asc' }, { startTime: 'asc' }],
+      include: {
+        patientProfile: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            phone: true,
+          },
+        },
+        doctor: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+        service: true,
+        clinic: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        billing: {
+          select: {
+            id: true,
+            amount: true,
+            status: true,
+            paymentMethod: true,
+            notes: true,
+            createdAt: true,
+          },
+        },
+      },
+    });
+
+    // Filter appointments: if date is today, only include those with startTime > currentTime
+    const validAppointments = appointments.filter((appointment) => {
+      // Convert appointment date (UTC from DB) to UTC+7
+      const appointmentDateUTC = new Date(appointment.date);
+      const appointmentDateUTC7 = new Date(
+        appointmentDateUTC.getTime() + 7 * 60 * 60 * 1000,
+      );
+
+      // Get date-only components in UTC+7
+      const appointmentYear = appointmentDateUTC7.getUTCFullYear();
+      const appointmentMonth = appointmentDateUTC7.getUTCMonth();
+      const appointmentDate = appointmentDateUTC7.getUTCDate();
+
+      // Create date-only object in UTC+7 for comparison
+      const appointmentDateOnly = new Date(
+        Date.UTC(
+          appointmentYear,
+          appointmentMonth,
+          appointmentDate,
+          0,
+          0,
+          0,
+          0,
+        ),
+      );
+
+      // Compare dates (date only, no time) - both in UTC
+      const appointmentDateOnlyTime = appointmentDateOnly.getTime();
+      const todayTime = todayUTC7StartDateOnly.getTime();
+      const isToday = appointmentDateOnlyTime === todayTime;
+      const isPastDate = appointmentDateOnlyTime < todayTime;
+
+      // If appointment date is in the past (before today), exclude it immediately
+      if (isPastDate) {
+        return false;
+      }
+
+      // If appointment is today, check if startTime is in the future
+      if (isToday) {
+        return appointment.startTime > currentTime;
+      }
+
+      // If appointment is in the future (after today), include it
+      return true;
+    });
+
+    if (validAppointments.length === 0) {
+      return null;
+    }
+
+    // Return the closest appointment (already sorted by date and startTime)
+    return this.formatAppointmentResponse(validAppointments[0]);
   }
 
   /**

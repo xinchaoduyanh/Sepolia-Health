@@ -49,6 +49,12 @@ export default function TabLayout() {
             ),
           }}
         />
+        <Tabs.Screen
+          name="(qna)"
+          options={{
+            href: null,
+          }}
+        />
 
         <Tabs.Screen
           name="(qr-scanner)"

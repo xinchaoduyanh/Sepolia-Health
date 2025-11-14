@@ -4,12 +4,15 @@ import { PrismaModule } from '@/common/prisma/prisma.module';
 import { CommonModule } from '@/common/common.module';
 import { PrismaService } from '@/common/prisma/prisma.service';
 import { NotificationUtils } from './notification.utils';
+import { NotificationService } from './notification.service';
+import { NotificationController } from './notification.controller';
 
 @Global()
 @Module({
   imports: [PrismaModule, CommonModule],
-  providers: [],
-  exports: [],
+  controllers: [NotificationController],
+  providers: [NotificationService],
+  exports: [NotificationService],
 })
 export class NotificationModule implements OnModuleInit {
   constructor(

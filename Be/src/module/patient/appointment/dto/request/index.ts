@@ -13,7 +13,7 @@ const GetAppointmentsQuerySchema = z.object({
   dateFrom: z.iso.datetime().optional(),
   dateTo: z.iso.datetime().optional(),
   sortBy: z.enum(['date', 'status', 'billingStatus']).default('date'),
-  sortOrder: z.enum(['asc', 'desc']).default('asc'),
+  sortOrder: z.enum(['asc', 'desc']).default('desc'),
 });
 
 // Create Appointment DTO

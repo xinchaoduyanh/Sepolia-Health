@@ -8,6 +8,7 @@ import { AdminUploadModule } from './upload/admin-upload.module';
 import { AdminArticleModule } from './article/admin-article.module';
 import { AdminServiceModule } from './service/admin-service.module';
 import { AdminClinicModule } from './clinic/admin-clinic.module';
+import { AdminQnaModule } from './qna/admin-qna.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { AdminClinicModule } from './clinic/admin-clinic.module';
     AdminArticleModule,
     AdminServiceModule,
     AdminClinicModule,
+    AdminQnaModule,
   ],
   exports: [
     AdminPatientModule,
@@ -31,6 +33,7 @@ import { AdminClinicModule } from './clinic/admin-clinic.module';
     AdminArticleModule,
     AdminServiceModule,
     AdminClinicModule,
+    AdminQnaModule,
   ],
 })
 export class AdminModule {}

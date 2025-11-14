@@ -19,7 +19,7 @@ export interface Appointment {
   date: string; // ISO datetime
   startTime: string;
   endTime: string;
-  status: 'scheduled' | 'completed' | 'cancelled';
+  status: 'UPCOMING' | 'ON_GOING' | 'COMPLETED' | 'CANCELLED';
   notes: string | null;
   patientProfile?: {
     id: number;
@@ -135,6 +135,13 @@ export const appointmentApi = {
       page: number;
       limit: number;
     }>(`${API_ENDPOINTS.APPOINTMENTS.MY_APPOINTMENTS}?${params.toString()}`);
+    return response.data;
+  },
+
+  getClosestAppointment: async () => {
+    const response = await apiClient.get<Appointment | null>(
+      `${API_ENDPOINTS.APPOINTMENTS.BASE}/closest`
+    );
     return response.data;
   },
 
@@ -280,6 +287,14 @@ export const useMyAppointments = (filters?: AppointmentFilters) => {
     queryKey: ['appointments', 'my', filters],
     queryFn: () => appointmentApi.getMyAppointments(filters),
     staleTime: 2 * 60 * 1000, // 2 minutes
+  });
+};
+
+export const useClosestAppointment = () => {
+  return useQuery({
+    queryKey: ['appointments', 'closest'],
+    queryFn: () => appointmentApi.getClosestAppointment(),
+    staleTime: 1 * 60 * 1000, // 1 minute
   });
 };
 

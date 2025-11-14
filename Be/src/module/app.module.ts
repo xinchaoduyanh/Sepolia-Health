@@ -15,6 +15,7 @@ import { AuthModule } from './auth/auth.module';
 import { PaymentModule } from './payment/payment.module';
 import { ChatModule } from '@/module/chat/chat.module';
 import { NotificationModule } from '@/module/notification/notification.module';
+import { QnaModule } from '@/module/qna/qna.module';
 import { BullModule } from '@nestjs/bullmq';
 import IORedis from 'ioredis';
 
@@ -41,6 +42,7 @@ import IORedis from 'ioredis';
     PaymentModule,
     ChatModule,
     NotificationModule,
+    QnaModule,
   ],
   controllers: [AppController],
   providers: [

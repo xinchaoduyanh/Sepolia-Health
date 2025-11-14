@@ -34,6 +34,7 @@ export const API_ENDPOINTS = {
   APPOINTMENTS: {
     BASE: '/patient/appointments',
     MY_APPOINTMENTS: '/patient/appointments/my-appointments',
+    CLOSEST: '/patient/appointments/closest',
     DOCTOR_APPOINTMENTS: '/patient/appointments/doctor/my-appointments',
     LOCATIONS: '/patient/appointments/booking/locations',
     SERVICES: '/patient/appointments/booking/services',
@@ -62,6 +63,15 @@ export const API_ENDPOINTS = {
     CHECK_STATUS: '/payment/check-payment-status',
     CANCEL: '/payment/cancel-payment-code',
     WEBHOOK: '/payment/sepay-webhook',
+  },
+
+  // Q&A
+  QNA: {
+    BASE: '/qna',
+    QUESTIONS: '/qna/questions',
+    ANSWERS: '/qna/questions',
+    TAGS: '/qna/tags',
+    POPULAR_TAGS: '/qna/tags/popular',
   },
 } as const;
 

@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, useCallback, ReactNode 
 import { Channel } from 'stream-chat';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useChatContext } from './ChatContext';
+import { markNotificationAsRead } from '@/lib/api/notification';
 
 export interface NotificationData {
   id: string;
@@ -178,18 +179,40 @@ const NotificationProvider = ({ children }: { children: ReactNode }) => {
 
   // Mark notification as read
   const markAsRead = async (notificationId: string) => {
-    if (!notificationChannel) return;
+    if (!notificationChannel || !user) return;
 
     try {
-      // StreamChat không hỗ trợ update message metadata sau khi gửi
-      // Chỉ update local state để UI phản ánh trạng thái đã đọc
+      // Gọi backend API để update message metadata trong StreamChat
+      await markNotificationAsRead(user.id.toString(), notificationId);
+
+      // Update local state sau khi update thành công
+      const readAt = new Date().toISOString();
+      setNotifications((prev) =>
+        prev.map((n) =>
+          n.id === notificationId
+            ? {
+                ...n,
+                status: 'READ',
+                readAt,
+                metadata: {
+                  ...n.metadata,
+                  status: 'READ',
+                  readAt,
+                },
+              }
+            : n
+        )
+      );
+
+      console.log('✅ Notification marked as read:', notificationId);
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+      // Fallback: update local state nếu API call fail
       setNotifications((prev) =>
         prev.map((n) =>
           n.id === notificationId ? { ...n, status: 'READ', readAt: new Date().toISOString() } : n
         )
       );
-    } catch (error) {
-      console.error('Error marking notification as read:', error);
     }
   };
 

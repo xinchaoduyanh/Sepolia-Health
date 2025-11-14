@@ -6,17 +6,32 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useNotificationContext } from '@/contexts/NotificationContext';
+import { useClosestAppointment } from '@/lib/api/appointments';
 import Svg, { Path } from 'react-native-svg';
 
 export default function HomeScreen() {
   const { user } = useAuth();
   const { unreadCount } = useNotificationContext();
+  const { data: closestAppointment, isLoading: isLoadingAppointment } = useClosestAppointment();
 
   // Lấy patientProfiles từ user data
   const patientProfiles = user?.patientProfiles || [];
 
   // Lấy primary profile (hồ sơ chính)
   const primaryProfile = patientProfiles.find((profile) => profile.relationship === 'SELF');
+
+  // Format date helper
+  const formatAppointmentDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const day = date.getDate();
+    const month = date.toLocaleDateString('vi-VN', { month: 'short' });
+    return { day, month };
+  };
+
+  // Format time helper
+  const formatTime = (timeString: string) => {
+    return timeString.substring(0, 5); // Get HH:mm format
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: '#E0F2FE' }}>
@@ -259,78 +274,121 @@ export default function HomeScreen() {
             <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#0F172A' }}>
               Lịch trình sắp tới
             </Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => router.push('/(homes)/(appointment)')}>
               <Text style={{ fontSize: 14, fontWeight: '600', color: '#0284C7' }}>Xem tất cả</Text>
             </TouchableOpacity>
           </View>
-          <View
-            style={{
-              borderRadius: 20,
-              padding: 20,
-              backgroundColor: '#FFFFFF',
-            }}>
-            <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-              <View style={{ marginRight: 16, alignItems: 'center' }}>
-                <View
+          {isLoadingAppointment ? (
+            <View
+              style={{
+                borderRadius: 20,
+                padding: 20,
+                backgroundColor: '#FFFFFF',
+                alignItems: 'center',
+                justifyContent: 'center',
+                minHeight: 120,
+              }}>
+              <Text style={{ fontSize: 14, color: '#475569' }}>Đang tải...</Text>
+            </View>
+          ) : closestAppointment ? (
+            <TouchableOpacity
+              onPress={() =>
+                router.push(`/(homes)/(appointment)/appointment-detail?id=${closestAppointment.id}`)
+              }
+              style={{
+                borderRadius: 20,
+                padding: 20,
+                backgroundColor: '#FFFFFF',
+              }}>
+              <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+                <View style={{ marginRight: 16, alignItems: 'center' }}>
+                  <View
+                    style={{
+                      height: 56,
+                      width: 56,
+                      borderRadius: 16,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backgroundColor: '#E0F2FE',
+                    }}>
+                    <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#0284C7' }}>
+                      {formatAppointmentDate(closestAppointment.date).day}
+                    </Text>
+                    <Text
+                      style={{
+                        fontSize: 11,
+                        fontWeight: '600',
+                        color: '#0284C7',
+                        marginTop: 2,
+                      }}>
+                      {formatAppointmentDate(closestAppointment.date).month}
+                    </Text>
+                  </View>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                    <View
+                      style={{
+                        height: 6,
+                        width: 6,
+                        borderRadius: 3,
+                        backgroundColor: '#10B981',
+                        marginRight: 8,
+                      }}
+                    />
+                    <Text style={{ fontSize: 13, fontWeight: '600', color: '#10B981' }}>
+                      {formatTime(closestAppointment.startTime)} -{' '}
+                      {formatTime(closestAppointment.endTime)}
+                    </Text>
+                  </View>
+                  <Text
+                    style={{ fontSize: 18, fontWeight: '600', color: '#0F172A', marginBottom: 12 }}>
+                    {closestAppointment.service.name}
+                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                    <Ionicons name="person-outline" size={16} color="#475569" />
+                    <Text style={{ fontSize: 14, color: '#475569', marginLeft: 8 }}>
+                      Bác sĩ {closestAppointment.doctor.firstName}{' '}
+                      {closestAppointment.doctor.lastName}
+                    </Text>
+                  </View>
+                  {closestAppointment.clinic && (
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <Ionicons name="location-outline" size={16} color="#475569" />
+                      <Text style={{ fontSize: 14, color: '#475569', marginLeft: 8 }}>
+                        {closestAppointment.clinic.name}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+                <TouchableOpacity
                   style={{
-                    height: 56,
-                    width: 56,
-                    borderRadius: 16,
+                    height: 40,
+                    width: 40,
+                    borderRadius: 20,
                     alignItems: 'center',
                     justifyContent: 'center',
                     backgroundColor: '#E0F2FE',
                   }}>
-                  <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#0284C7' }}>15</Text>
-                  <Text style={{ fontSize: 11, fontWeight: '600', color: '#0284C7', marginTop: 2 }}>
-                    Th1
-                  </Text>
-                </View>
+                  <Ionicons name="chevron-forward" size={20} color="#0284C7" />
+                </TouchableOpacity>
               </View>
-              <View style={{ flex: 1 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-                  <View
-                    style={{
-                      height: 6,
-                      width: 6,
-                      borderRadius: 3,
-                      backgroundColor: '#10B981',
-                      marginRight: 8,
-                    }}
-                  />
-                  <Text style={{ fontSize: 13, fontWeight: '600', color: '#10B981' }}>
-                    09:00 - 14:00
-                  </Text>
-                </View>
-                <Text
-                  style={{ fontSize: 18, fontWeight: '600', color: '#0F172A', marginBottom: 12 }}>
-                  Khám tổng quát
-                </Text>
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-                  <Ionicons name="person-outline" size={16} color="#475569" />
-                  <Text style={{ fontSize: 14, color: '#475569', marginLeft: 8 }}>
-                    Bác sĩ Nguyễn Văn B
-                  </Text>
-                </View>
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <Ionicons name="location-outline" size={16} color="#475569" />
-                  <Text style={{ fontSize: 14, color: '#475569', marginLeft: 8 }}>
-                    Phòng 201 - Tầng 2
-                  </Text>
-                </View>
-              </View>
-              <TouchableOpacity
-                style={{
-                  height: 40,
-                  width: 40,
-                  borderRadius: 20,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: '#E0F2FE',
-                }}>
-                <Ionicons name="chevron-forward" size={20} color="#0284C7" />
-              </TouchableOpacity>
+            </TouchableOpacity>
+          ) : (
+            <View
+              style={{
+                borderRadius: 20,
+                padding: 20,
+                backgroundColor: '#FFFFFF',
+                alignItems: 'center',
+                justifyContent: 'center',
+                minHeight: 120,
+              }}>
+              <Text style={{ fontSize: 14, color: '#475569', textAlign: 'center' }}>
+                Bạn không có Lịch khám mới nhất
+              </Text>
             </View>
-          </View>
+          )}
         </View>
 
         {/* Dịch vụ Section */}
@@ -354,6 +412,7 @@ export default function HomeScreen() {
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
               <View style={{ width: '22%', alignItems: 'center' }}>
                 <TouchableOpacity
+                  activeOpacity={0.7}
                   style={{ alignItems: 'center' }}
                   onPress={() => router.push('/(homes)/(appointment)/create')}>
                   <View
@@ -375,7 +434,7 @@ export default function HomeScreen() {
               </View>
 
               <View style={{ width: '22%', alignItems: 'center' }}>
-                <TouchableOpacity style={{ alignItems: 'center' }}>
+                <TouchableOpacity activeOpacity={0.7} style={{ alignItems: 'center' }}>
                   <View
                     style={{
                       height: 56,
@@ -395,7 +454,7 @@ export default function HomeScreen() {
               </View>
 
               <View style={{ width: '22%', alignItems: 'center' }}>
-                <TouchableOpacity style={{ alignItems: 'center' }}>
+                <TouchableOpacity activeOpacity={0.7} style={{ alignItems: 'center' }}>
                   <View
                     style={{
                       height: 56,
@@ -415,7 +474,7 @@ export default function HomeScreen() {
               </View>
 
               <View style={{ width: '22%', alignItems: 'center' }}>
-                <TouchableOpacity style={{ alignItems: 'center' }}>
+                <TouchableOpacity activeOpacity={0.7} style={{ alignItems: 'center' }}>
                   <View
                     style={{
                       height: 56,
@@ -436,6 +495,7 @@ export default function HomeScreen() {
 
               <View style={{ width: '22%', alignItems: 'center' }}>
                 <TouchableOpacity
+                  activeOpacity={0.7}
                   style={{ alignItems: 'center' }}
                   onPress={() => router.push('/(homes)/(chat)/channels')}>
                   <View
@@ -457,7 +517,7 @@ export default function HomeScreen() {
               </View>
 
               <View style={{ width: '22%', alignItems: 'center' }}>
-                <TouchableOpacity style={{ alignItems: 'center' }}>
+                <TouchableOpacity activeOpacity={0.7} style={{ alignItems: 'center' }}>
                   <View
                     style={{
                       height: 56,
@@ -477,7 +537,7 @@ export default function HomeScreen() {
               </View>
 
               <View style={{ width: '22%', alignItems: 'center' }}>
-                <TouchableOpacity style={{ alignItems: 'center' }}>
+                <TouchableOpacity activeOpacity={0.7} style={{ alignItems: 'center' }}>
                   <View
                     style={{
                       height: 56,
@@ -497,7 +557,10 @@ export default function HomeScreen() {
               </View>
 
               <View style={{ width: '22%', alignItems: 'center' }}>
-                <TouchableOpacity style={{ alignItems: 'center' }}>
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  style={{ alignItems: 'center' }}
+                  onPress={() => router.push('/(homes)/(qna)')}>
                   <View
                     style={{
                       height: 56,
