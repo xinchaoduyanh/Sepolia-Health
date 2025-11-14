@@ -32,7 +32,8 @@ export default function TabLayout() {
             paddingTop: 5,
             height: 70,
           },
-        }}>
+        }}
+        className="bg-teal-50">
         <Tabs.Screen
           name="index"
           options={{

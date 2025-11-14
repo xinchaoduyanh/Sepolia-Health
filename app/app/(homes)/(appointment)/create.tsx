@@ -506,6 +506,7 @@ export default function AppointmentScreen() {
 
             <View className="space-y-6">
               <TouchableOpacity
+                activeOpacity={0.7}
                 onPress={handleFacilitySelect}
                 className="flex-row items-center rounded-xl border px-5 py-4"
                 style={{ backgroundColor: '#F0FDFA', borderColor: '#E0F2FE' }}>
@@ -523,6 +524,7 @@ export default function AppointmentScreen() {
 
               {/* Chọn dịch vụ */}
               <TouchableOpacity
+                activeOpacity={0.7}
                 onPress={handleServiceSelect}
                 disabled={!selectedFacility}
                 className={`flex-row items-center rounded-xl border px-5 py-4 ${
@@ -553,6 +555,7 @@ export default function AppointmentScreen() {
 
               {/* Chọn bác sĩ */}
               <TouchableOpacity
+                activeOpacity={0.7}
                 onPress={handleDoctorSelect}
                 disabled={!selectedFacility || !selectedService}
                 className={`flex-row items-center rounded-xl border px-5 py-4 ${
@@ -605,6 +608,7 @@ export default function AppointmentScreen() {
                 .map((date, index) => (
                   <TouchableOpacity
                     key={index}
+                    activeOpacity={0.7}
                     onPress={() => handlePresetDateSelect(date)}
                     className={`flex-1 rounded-xl px-4 py-4 ${
                       selectedDateForAPI === date.fullDate ? 'bg-[#0284C7]' : 'bg-[#F0FDFA]'
@@ -635,6 +639,7 @@ export default function AppointmentScreen() {
                 ))}
 
               <TouchableOpacity
+                activeOpacity={0.7}
                 onPress={handleCustomDatePress}
                 className="flex-1 items-center justify-center rounded-xl px-4 py-4"
                 style={{
@@ -756,6 +761,7 @@ export default function AppointmentScreen() {
             {/* Book Appointment Button */}
             <View className="mt-8">
               <TouchableOpacity
+                activeOpacity={0.7}
                 onPress={handleBookAppointment}
                 disabled={createAppointmentMutation.isPending}
                 className="items-center rounded-xl py-4"
@@ -790,6 +796,7 @@ export default function AppointmentScreen() {
                   Chọn ngày khám
                 </Text>
                 <TouchableOpacity
+                  activeOpacity={0.7}
                   onPress={() => setShowDatePicker(false)}
                   className="h-8 w-8 items-center justify-center rounded-full"
                   style={{ backgroundColor: '#E0F2FE' }}>
@@ -804,6 +811,7 @@ export default function AppointmentScreen() {
                     .map((date, index) => (
                       <TouchableOpacity
                         key={index}
+                        activeOpacity={0.7}
                         onPress={() => {
                           // Tạo Date object trực tiếp từ year, month, day để tránh timezone issue
                           const selectedDate = new Date(date.year, date.month - 1, date.day);

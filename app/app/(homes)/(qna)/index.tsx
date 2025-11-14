@@ -285,6 +285,7 @@ export default function QnaListScreen() {
                 return (
                   <TouchableOpacity
                     key={question.id}
+                    activeOpacity={0.7}
                     onPress={() => router.push(`/(homes)/(qna)/${question.id}`)}
                     style={{
                       backgroundColor: '#FFFFFF',
