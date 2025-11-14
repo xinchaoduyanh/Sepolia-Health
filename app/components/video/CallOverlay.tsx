@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, SafeAreaView } from 'react-native';
+import { View, Text, TouchableOpacity, Modal, SafeAreaView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { StreamCall, CallContent, useCallStateHooks } from '@stream-io/video-react-native-sdk';
 import { useVideoContext } from '@/contexts/VideoContext';
@@ -45,14 +45,14 @@ export const CallOverlay = () => {
   if (incomingCall) {
     return (
       <Modal visible={true} animationType="slide" presentationStyle="fullScreen">
-        <SafeAreaView style={styles.container}>
-          <View style={styles.incomingCallContainer}>
-            <View style={styles.incomingCallContent}>
+        <SafeAreaView className="flex-1 bg-gray-800">
+          <View className="py-15 flex-1 items-center justify-between">
+            <View className="items-center gap-5">
               {/* Caller Avatar */}
-              <View style={styles.incomingAvatarContainer}>
+              <View className="mb-5">
                 {incomingCall.callerImage ? (
-                  <View style={styles.avatarCircle}>
-                    <Text style={styles.avatarText}>
+                  <View className="w-30 h-30 items-center justify-center rounded-full bg-blue-600">
+                    <Text className="text-5xl font-bold text-white">
                       {incomingCall.callerName.charAt(0).toUpperCase()}
                     </Text>
                   </View>
@@ -62,45 +62,42 @@ export const CallOverlay = () => {
               </View>
 
               {/* Caller Name */}
-              <Text style={styles.incomingCallerName}>{incomingCall.callerName}</Text>
+              <Text className="text-3xl font-bold text-white">{incomingCall.callerName}</Text>
 
               {/* Call Type */}
               <View
-                style={[
-                  styles.incomingCallTypeBadge,
-                  { backgroundColor: incomingCall.callType === 'video' ? '#059669' : '#2563EB' },
-                ]}>
+                className={`flex-row items-center gap-2 rounded-full px-4 py-2 ${incomingCall.callType === 'video' ? 'bg-green-600' : 'bg-blue-600'}`}>
                 <Ionicons
                   name={incomingCall.callType === 'video' ? 'videocam' : 'call'}
                   size={16}
                   color="white"
                 />
-                <Text style={styles.incomingCallTypeText}>
+                <Text className="text-base font-semibold text-white">
                   {incomingCall.callType === 'video' ? 'Video Call' : 'Audio Call'}
                 </Text>
               </View>
 
-              <Text style={styles.incomingStatusText}>Incoming call...</Text>
+              <Text className="mt-2.5 text-lg text-slate-400">Incoming call...</Text>
             </View>
 
             {/* Action Buttons */}
-            <View style={styles.incomingActionsContainer}>
+            <View className="flex-row gap-12 px-10">
               {/* Reject Button */}
-              <TouchableOpacity onPress={rejectCall} style={styles.rejectButtonContainer}>
-                <View style={styles.rejectButtonCircle}>
+              <TouchableOpacity onPress={rejectCall} className="items-center gap-2.5">
+                <View className="w-17.5 h-17.5 items-center justify-center rounded-full bg-red-500">
                   <Ionicons name="close" size={32} color="white" />
                 </View>
-                <Text style={styles.actionButtonText}>Decline</Text>
+                <Text className="text-base font-semibold text-white">Decline</Text>
               </TouchableOpacity>
 
               {/* Accept Button */}
               <TouchableOpacity
                 onPress={() => acceptCall(incomingCall.callId)}
-                style={styles.acceptButtonContainer}>
-                <View style={styles.acceptButtonCircle}>
+                className="items-center gap-2.5">
+                <View className="w-17.5 h-17.5 items-center justify-center rounded-full bg-green-500">
                   <Ionicons name="call" size={32} color="white" />
                 </View>
-                <Text style={styles.actionButtonText}>Accept</Text>
+                <Text className="text-base font-semibold text-white">Accept</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -113,17 +110,17 @@ export const CallOverlay = () => {
   if (currentCall && isRinging && !isInCall) {
     return (
       <Modal visible={true} animationType="slide" presentationStyle="fullScreen">
-        <SafeAreaView style={styles.container}>
-          <View style={styles.ringingContainer}>
-            <View style={styles.ringingContent}>
-              <View style={styles.avatarContainer}>
+        <SafeAreaView className="flex-1 bg-gray-800">
+          <View className="flex-1 items-center justify-center">
+            <View className="items-center gap-5">
+              <View className="w-35 h-35 mb-2.5 items-center justify-center rounded-full bg-blue-600/20">
                 <Ionicons name="person-circle" size={120} color="#2563EB" />
               </View>
-              <Text style={styles.participantName}>Calling...</Text>
-              <Text style={styles.statusText}>Waiting for answer</Text>
+              <Text className="text-3xl font-bold text-white">Calling...</Text>
+              <Text className="text-base text-slate-400">Waiting for answer</Text>
 
               {/* Animated ringing indicator */}
-              <View style={styles.ringingIndicator}>
+              <View className="mt-7.5 rounded-full bg-blue-600/20 p-5">
                 <Ionicons
                   name={callType === 'video' ? 'videocam' : 'call'}
                   size={24}
@@ -133,8 +130,11 @@ export const CallOverlay = () => {
             </View>
 
             {/* Cancel Button */}
-            <View style={styles.bottomOverlay}>
-              <TouchableOpacity onPress={endCall} style={styles.endCallButton}>
+            <View className="pt-7.5 absolute bottom-0 left-0 right-0 z-10 bg-black/50 px-5 pb-10">
+              <TouchableOpacity
+                onPress={endCall}
+                className="w-17.5 h-17.5 items-center justify-center rounded-full bg-red-500"
+                style={{ transform: [{ rotate: '135deg' }] }}>
                 <Ionicons name="call" size={32} color="white" />
               </TouchableOpacity>
             </View>
@@ -151,43 +151,45 @@ export const CallOverlay = () => {
 
   return (
     <Modal visible={isInCall} animationType="slide" presentationStyle="fullScreen">
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView className="flex-1 bg-gray-800">
         <StreamCall call={currentCall}>
           <CallContentWrapper callType={callType} />
 
           {/* Call Info Overlay */}
-          <View style={styles.topOverlay}>
-            <View style={styles.callInfo}>
+          <View className="absolute left-0 right-0 top-0 z-10 bg-black/50 px-5 pb-5 pt-5">
+            <View className="flex-row items-center justify-between">
               <View
-                style={[
-                  styles.callTypeBadge,
-                  { backgroundColor: callType === 'video' ? '#059669' : '#2563EB' },
-                ]}>
+                className={`flex-row items-center gap-1.5 rounded-full px-3 py-1.5 ${callType === 'video' ? 'bg-green-600' : 'bg-blue-600'}`}>
                 <Ionicons
                   name={callType === 'video' ? 'videocam' : 'call'}
                   size={16}
                   color="white"
                 />
-                <Text style={styles.callTypeText}>
+                <Text className="text-sm font-semibold text-white">
                   {callType === 'video' ? 'Video Call' : 'Audio Call'}
                 </Text>
               </View>
-              <Text style={styles.duration}>{formatDuration(callDuration)}</Text>
+              <Text className="text-base font-semibold text-white">
+                {formatDuration(callDuration)}
+              </Text>
             </View>
           </View>
 
           {/* Call Controls */}
-          <View style={styles.bottomOverlay}>
-            <View style={styles.controlsContainer}>
+          <View className="pt-7.5 absolute bottom-0 left-0 right-0 z-10 bg-black/50 px-5 pb-10">
+            <View className="gap-7.5 flex-row items-center justify-center">
               {/* Mic Toggle */}
               <TouchableOpacity
                 onPress={toggleMic}
-                style={[styles.controlButton, !isMicOn && styles.controlButtonDisabled]}>
+                className={`w-15 h-15 items-center justify-center rounded-full ${!isMicOn ? 'bg-red-500/80' : 'bg-white/30'}`}>
                 <Ionicons name={isMicOn ? 'mic' : 'mic-off'} size={28} color="white" />
               </TouchableOpacity>
 
               {/* End Call */}
-              <TouchableOpacity onPress={endCall} style={styles.endCallButton}>
+              <TouchableOpacity
+                onPress={endCall}
+                className="w-17.5 h-17.5 items-center justify-center rounded-full bg-red-500"
+                style={{ transform: [{ rotate: '135deg' }] }}>
                 <Ionicons name="call" size={32} color="white" />
               </TouchableOpacity>
 
@@ -195,7 +197,7 @@ export const CallOverlay = () => {
               {callType === 'video' && (
                 <TouchableOpacity
                   onPress={toggleCamera}
-                  style={[styles.controlButton, !isCameraOn && styles.controlButtonDisabled]}>
+                  className={`w-15 h-15 items-center justify-center rounded-full ${!isCameraOn ? 'bg-red-500/80' : 'bg-white/30'}`}>
                   <Ionicons
                     name={isCameraOn ? 'videocam' : 'videocam-off'}
                     size={28}
@@ -205,7 +207,7 @@ export const CallOverlay = () => {
               )}
 
               {/* Placeholder for audio calls to keep layout centered */}
-              {callType === 'audio' && <View style={styles.controlButton} />}
+              {callType === 'audio' && <View className="w-15 h-15" />}
             </View>
           </View>
         </StreamCall>
@@ -222,15 +224,15 @@ const CallContentWrapper = ({ callType }: { callType?: 'audio' | 'video' }) => {
   if (callType === 'audio') {
     // Audio-only UI
     return (
-      <View style={styles.audioCallContainer}>
-        <View style={styles.audioCallContent}>
-          <View style={styles.avatarContainer}>
+      <View className="flex-1 items-center justify-center bg-gray-800">
+        <View className="items-center gap-5">
+          <View className="w-35 h-35 mb-2.5 items-center justify-center rounded-full bg-blue-600/20">
             <Ionicons name="person-circle" size={120} color="#2563EB" />
           </View>
-          <Text style={styles.participantName}>
+          <Text className="text-3xl font-bold text-white">
             {participants.length > 0 ? participants[0].name : 'Calling...'}
           </Text>
-          <Text style={styles.statusText}>
+          <Text className="text-base text-slate-400">
             {participants.length > 1 ? 'Connected' : 'Connecting...'}
           </Text>
         </View>
@@ -241,209 +243,3 @@ const CallContentWrapper = ({ callType }: { callType?: 'audio' | 'video' }) => {
   // Video call UI
   return <CallContent />;
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#1F2937',
-  },
-  topOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    zIndex: 10,
-  },
-  callInfo: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  callTypeBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    gap: 6,
-  },
-  callTypeText: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  duration: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  bottomOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: 20,
-    paddingBottom: 40,
-    paddingTop: 30,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    zIndex: 10,
-  },
-  controlsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 30,
-  },
-  controlButton: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  controlButtonDisabled: {
-    backgroundColor: 'rgba(239, 68, 68, 0.8)',
-  },
-  endCallButton: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: '#EF4444',
-    justifyContent: 'center',
-    alignItems: 'center',
-    transform: [{ rotate: '135deg' }],
-  },
-  audioCallContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#1F2937',
-  },
-  audioCallContent: {
-    alignItems: 'center',
-    gap: 20,
-  },
-  avatarContainer: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: 'rgba(37, 99, 235, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  participantName: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: 'white',
-  },
-  statusText: {
-    fontSize: 16,
-    color: '#94A3B8',
-  },
-  // Incoming call styles
-  incomingCallContainer: {
-    flex: 1,
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 60,
-  },
-  incomingCallContent: {
-    alignItems: 'center',
-    gap: 20,
-  },
-  incomingAvatarContainer: {
-    marginBottom: 20,
-  },
-  avatarCircle: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: '#2563EB',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarText: {
-    fontSize: 48,
-    fontWeight: 'bold',
-    color: 'white',
-  },
-  incomingCallerName: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: 'white',
-  },
-  incomingCallTypeBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    gap: 8,
-  },
-  incomingCallTypeText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  incomingStatusText: {
-    fontSize: 18,
-    color: '#94A3B8',
-    marginTop: 10,
-  },
-  incomingActionsContainer: {
-    flexDirection: 'row',
-    gap: 50,
-    paddingHorizontal: 40,
-  },
-  rejectButtonContainer: {
-    alignItems: 'center',
-    gap: 10,
-  },
-  rejectButtonCircle: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: '#EF4444',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  acceptButtonContainer: {
-    alignItems: 'center',
-    gap: 10,
-  },
-  acceptButtonCircle: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: '#10B981',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  actionButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  // Ringing styles
-  ringingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  ringingContent: {
-    alignItems: 'center',
-    gap: 20,
-  },
-  ringingIndicator: {
-    marginTop: 30,
-    padding: 20,
-    borderRadius: 50,
-    backgroundColor: 'rgba(37, 99, 235, 0.2)',
-  },
-});

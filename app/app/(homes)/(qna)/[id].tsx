@@ -343,22 +343,15 @@ export default function QuestionDetailScreen() {
             )}
 
             {/* Stats & Actions */}
-            <View
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-              }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <View className="flex-row items-center justify-between">
+              <View className="flex-row items-center gap-4">
+                <View className="flex-row items-center gap-1">
                   <Ionicons name="eye-outline" size={18} color="#9CA3AF" />
-                  <Text style={{ fontSize: 14, color: '#9CA3AF' }}>{question.views}</Text>
+                  <Text className="text-sm text-gray-400">{question.views}</Text>
                 </View>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <View className="flex-row items-center gap-1">
                   <Ionicons name="chatbubbles-outline" size={18} color="#0284C7" />
-                  <Text style={{ fontSize: 14, color: '#0284C7', fontWeight: '600' }}>
-                    {question.answerCount}
-                  </Text>
+                  <Text className="text-sm font-semibold text-sky-600">{question.answerCount}</Text>
                 </View>
               </View>
 
@@ -366,37 +359,17 @@ export default function QuestionDetailScreen() {
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <TouchableOpacity
                   onPress={() => handleVoteQuestion('UP')}
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    paddingHorizontal: 12,
-                    paddingVertical: 6,
-                    borderRadius: 20,
-                    backgroundColor: '#F0FDF4',
-                    borderWidth: 1,
-                    borderColor: '#10B981',
-                  }}>
+                  className="flex-row items-center rounded-full border border-green-500 bg-green-50 px-3 py-1.5">
                   <Ionicons name="thumbs-up" size={18} color="#10B981" />
-                  <Text
-                    style={{ fontSize: 14, color: '#10B981', fontWeight: '600', marginLeft: 4 }}>
+                  <Text className="ml-1 text-sm font-semibold text-green-500">
                     {question.upvotes}
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => handleVoteQuestion('DOWN')}
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    paddingHorizontal: 12,
-                    paddingVertical: 6,
-                    borderRadius: 20,
-                    backgroundColor: '#FEF2F2',
-                    borderWidth: 1,
-                    borderColor: '#EF4444',
-                  }}>
+                  className="flex-row items-center rounded-full border border-red-500 bg-red-50 px-3 py-1.5">
                   <Ionicons name="thumbs-down" size={18} color="#EF4444" />
-                  <Text
-                    style={{ fontSize: 14, color: '#EF4444', fontWeight: '600', marginLeft: 4 }}>
+                  <Text className="ml-1 text-sm font-semibold text-red-500">
                     {question.downvotes}
                   </Text>
                 </TouchableOpacity>
@@ -407,15 +380,9 @@ export default function QuestionDetailScreen() {
             {question.editHistory && question.editHistory.length > 0 && (
               <TouchableOpacity
                 onPress={() => setShowEditHistory(true)}
-                style={{
-                  marginTop: 12,
-                  paddingVertical: 8,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: 6,
-                }}>
+                className="mt-3 flex-row items-center gap-1.5 py-2">
                 <Ionicons name="time-outline" size={16} color="#6B7280" />
-                <Text style={{ fontSize: 12, color: '#6B7280' }}>
+                <Text className="text-xs text-gray-600">
                   Đã chỉnh sửa {question.editHistory.length} lần
                 </Text>
               </TouchableOpacity>
