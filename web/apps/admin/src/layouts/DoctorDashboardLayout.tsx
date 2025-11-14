@@ -14,7 +14,7 @@ import {
 import { ThemeSwitcher } from '@/shared/components/ThemeSwitcher'
 import { useAuth, useAdminLogout } from '@/shared/hooks/useAuth'
 import Image from 'next/image'
-import { Monitor, UserCheck, User, LogOut } from 'lucide-react'
+import { Monitor, UserCheck, User, LogOut, MessageSquare } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState, useRef, useEffect } from 'react'
@@ -68,6 +68,11 @@ const DOCTOR_MAIN_ITEMS: Array<SidebarNavigationMenuItem> = [
                 url: '/dashboard/doctor/schedule/appointments',
             },
         ],
+    },
+    {
+        title: 'Câu hỏi cộng đồng',
+        url: '/dashboard/doctor/qna',
+        icon: MessageSquare,
     },
 ]
 

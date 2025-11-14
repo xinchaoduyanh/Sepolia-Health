@@ -16,6 +16,7 @@ import {
     FileText as ArticleIcon,
     Wrench,
     Building2,
+    MessageSquare,
 } from 'lucide-react'
 import {
     Sidebar,
@@ -149,6 +150,11 @@ const doctorMenuItems = [
                 url: '/dashboard/doctor/schedule/appointments',
             },
         ],
+    },
+    {
+        title: 'Câu hỏi cộng đồng',
+        url: '/dashboard/doctor/qna',
+        icon: MessageSquare,
     },
 ]
 

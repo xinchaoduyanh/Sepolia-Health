@@ -79,6 +79,23 @@ export const queryKeys = {
         },
     },
 
+    // QnA related queries
+    qna: {
+        all: ['qna'] as const,
+        questions: {
+            all: () => [...queryKeys.qna.all, 'questions'] as const,
+            lists: () => [...queryKeys.qna.questions.all(), 'list'] as const,
+            list: (filters: Record<string, any>) => [...queryKeys.qna.questions.lists(), { filters }] as const,
+            details: () => [...queryKeys.qna.questions.all(), 'detail'] as const,
+            detail: (id: string) => [...queryKeys.qna.questions.details(), id] as const,
+        },
+        tags: {
+            all: () => [...queryKeys.qna.all, 'tags'] as const,
+            popular: () => [...queryKeys.qna.tags.all(), 'popular'] as const,
+            allTags: () => [...queryKeys.qna.tags.all(), 'all'] as const,
+        },
+    },
+
     // General queries
     general: {
         all: ['general'] as const,
