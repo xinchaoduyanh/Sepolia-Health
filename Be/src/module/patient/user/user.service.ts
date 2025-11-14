@@ -1,14 +1,9 @@
-import {
-  Injectable,
-  BadRequestException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { UserRepository } from './user.repository';
 import {
   UpdateUserProfileDtoType,
   UserProfileWithPatientProfilesResponseDtoType,
   UpdateUserProfileResponseDtoType,
-  ChangePasswordResponseDtoType,
   UploadAvatarResponseDtoType,
   PatientProfilesResponseDtoType,
   CreatePatientProfileDtoType,

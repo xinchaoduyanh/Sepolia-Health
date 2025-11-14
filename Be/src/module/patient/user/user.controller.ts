@@ -19,10 +19,9 @@ import {
   ApiOperation,
   ApiResponse,
   ApiConsumes,
-  ApiBody,
 } from '@nestjs/swagger';
 import { UserService } from './user.service';
-import type {
+import {
   UpdateUserProfileDtoType,
   UserProfileWithPatientProfilesResponseDtoType,
   UpdateUserProfileResponseDtoType,
@@ -33,24 +32,16 @@ import type {
   CreatePatientProfileResponseDtoType,
   UpdatePatientProfileResponseDtoType,
   DeletePatientProfileResponseDtoType,
-} from './user.dto';
-import {
-  UpdateUserProfileDto,
-  UpdateUserProfileSchema,
   UserProfileWithPatientProfilesResponseDto,
   UpdateUserProfileResponseDto,
   PatientProfilesResponseDto,
-  CreatePatientProfileDto,
-  UpdatePatientProfileDto,
-  CreatePatientProfileSchema,
-  UpdatePatientProfileSchema,
   CreatePatientProfileResponseDto,
   UpdatePatientProfileResponseDto,
   DeletePatientProfileResponseDto,
 } from './user.dto';
 import { CurrentUser } from '@/common/decorators';
-import { CustomZodValidationPipe } from '@/common/pipes';
 import { ApiBearerAuth } from '@nestjs/swagger';
+
 @ApiBearerAuth()
 @ApiTags('Patient Profile')
 @Controller('patient/user')
@@ -58,14 +49,12 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Get('profile')
-  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Lấy thông tin cá nhân' })
   @ApiResponse({
-    status: 200,
+    status: HttpStatus.OK,
     description: 'Lấy thông tin thành công',
     type: UserProfileWithPatientProfilesResponseDto,
   })
-  // @ApiResponseOk(MESSAGES.USER.GET_PROFILE_SUCCESS)
   async getProfile(
     @CurrentUser('userId') userId: number,
   ): Promise<UserProfileWithPatientProfilesResponseDtoType> {
@@ -73,38 +62,19 @@ export class UserController {
   }
 
   @Put('profile')
-  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Cập nhật thông tin cá nhân' })
   @ApiResponse({
-    status: 200,
+    status: HttpStatus.OK,
     description: 'Cập nhật thành công',
     type: UpdateUserProfileResponseDto,
   })
   @ApiResponse({
-    status: 422,
+    status: HttpStatus.BAD_REQUEST,
     description: 'Dữ liệu không hợp lệ',
-  })
-  @ApiBody({
-    type: UpdateUserProfileDto,
-    description: 'Thông tin cập nhật',
-    examples: {
-      example1: {
-        summary: 'Cập nhật thông tin cơ bản',
-        value: {
-          firstName: 'Nguyễn',
-          lastName: 'Văn A',
-          phone: '0123456789',
-          address: '123 Đường ABC, Quận 1, TP.HCM',
-          dateOfBirth: '1990-01-15T00:00:00.000Z',
-          gender: 'MALE',
-        },
-      },
-    },
   })
   async updateProfile(
     @CurrentUser('userId') userId: number,
-    @Body(new CustomZodValidationPipe(UpdateUserProfileSchema))
-    updateData: UpdateUserProfileDtoType,
+    @Body() updateData: UpdateUserProfileDtoType,
   ): Promise<UpdateUserProfileResponseDtoType> {
     return this.userService.updateProfile(userId, updateData);
   }
@@ -114,23 +84,10 @@ export class UserController {
   @UseInterceptors(FileInterceptor('avatar'))
   @ApiOperation({ summary: 'Upload ảnh đại diện' })
   @ApiConsumes('multipart/form-data')
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        avatar: {
-          type: 'string',
-          format: 'binary',
-          description: 'File ảnh đại diện (JPEG, PNG, WebP, tối đa 5MB)',
-        },
-      },
-    },
-  })
   @ApiResponse({
-    status: 200,
+    status: HttpStatus.OK,
     description: 'Upload ảnh thành công',
   })
-  // @ApiResponseOk('Upload ảnh đại diện thành công')
   async uploadAvatar(
     @CurrentUser('userId') userId: number,
     @UploadedFile() file: any,
@@ -142,15 +99,14 @@ export class UserController {
   }
 
   @Get('patient-profiles')
-  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Lấy danh sách hồ sơ bệnh nhân của người dùng' })
   @ApiResponse({
-    status: 200,
+    status: HttpStatus.OK,
     description: 'Lấy danh sách hồ sơ bệnh nhân thành công',
     type: PatientProfilesResponseDto,
   })
   @ApiResponse({
-    status: 404,
+    status: HttpStatus.NOT_FOUND,
     description: 'Không tìm thấy người dùng',
   })
   async getPatientProfiles(
@@ -160,83 +116,46 @@ export class UserController {
   }
 
   @Post('patient-profiles')
-  @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Tạo hồ sơ bệnh nhân mới' })
   @ApiResponse({
-    status: 201,
+    status: HttpStatus.CREATED,
     description: 'Tạo hồ sơ bệnh nhân thành công',
     type: CreatePatientProfileResponseDto,
   })
   @ApiResponse({
-    status: 400,
+    status: HttpStatus.BAD_REQUEST,
     description: 'Dữ liệu không hợp lệ',
   })
   @ApiResponse({
-    status: 404,
+    status: HttpStatus.NOT_FOUND,
     description: 'Không tìm thấy người dùng',
-  })
-  @ApiBody({
-    type: CreatePatientProfileDto,
-    description: 'Thông tin hồ sơ bệnh nhân mới',
-    examples: {
-      example1: {
-        summary: 'Tạo hồ sơ bệnh nhân cho con',
-        value: {
-          firstName: 'Nguyễn',
-          lastName: 'Văn B',
-          dateOfBirth: '2010-05-15T00:00:00.000Z',
-          gender: 'MALE',
-          phone: '0987654321',
-          relationship: 'CHILD',
-          address: '123 Đường ABC, Quận 1, TP.HCM',
-        },
-      },
-    },
   })
   async createPatientProfile(
     @CurrentUser('userId') userId: number,
-    @Body(new CustomZodValidationPipe(CreatePatientProfileSchema))
-    createData: CreatePatientProfileDtoType,
+    @Body() createData: CreatePatientProfileDtoType,
   ): Promise<CreatePatientProfileResponseDtoType> {
     return this.userService.createPatientProfile(userId, createData);
   }
 
   @Put('patient-profiles/:profileId')
-  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Cập nhật hồ sơ bệnh nhân' })
   @ApiResponse({
-    status: 200,
+    status: HttpStatus.OK,
     description: 'Cập nhật hồ sơ bệnh nhân thành công',
     type: UpdatePatientProfileResponseDto,
   })
   @ApiResponse({
-    status: 400,
+    status: HttpStatus.BAD_REQUEST,
     description: 'Dữ liệu không hợp lệ',
   })
   @ApiResponse({
-    status: 404,
+    status: HttpStatus.NOT_FOUND,
     description: 'Không tìm thấy hồ sơ bệnh nhân',
-  })
-  @ApiBody({
-    type: UpdatePatientProfileDto,
-    description: 'Thông tin cập nhật hồ sơ bệnh nhân',
-    examples: {
-      example1: {
-        summary: 'Cập nhật thông tin hồ sơ bệnh nhân',
-        value: {
-          firstName: 'Nguyễn',
-          lastName: 'Văn C',
-          address: '456 Đường XYZ, Quận 2, TP.HCM',
-          occupation: 'Học sinh',
-        },
-      },
-    },
   })
   async updatePatientProfile(
     @CurrentUser('userId') userId: number,
     @Param('profileId', ParseIntPipe) profileId: number,
-    @Body(new CustomZodValidationPipe(UpdatePatientProfileSchema))
-    updateData: UpdatePatientProfileDtoType,
+    @Body() updateData: UpdatePatientProfileDtoType,
   ): Promise<UpdatePatientProfileResponseDtoType> {
     return this.userService.updatePatientProfile(userId, profileId, updateData);
   }
@@ -246,28 +165,16 @@ export class UserController {
   @UseInterceptors(FileInterceptor('avatar'))
   @ApiOperation({ summary: 'Upload ảnh đại diện cho hồ sơ bệnh nhân' })
   @ApiConsumes('multipart/form-data')
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        avatar: {
-          type: 'string',
-          format: 'binary',
-          description: 'File ảnh đại diện (JPEG, PNG, WebP, tối đa 5MB)',
-        },
-      },
-    },
-  })
   @ApiResponse({
-    status: 200,
+    status: HttpStatus.OK,
     description: 'Upload ảnh thành công',
   })
   @ApiResponse({
-    status: 400,
+    status: HttpStatus.BAD_REQUEST,
     description: 'Dữ liệu không hợp lệ',
   })
   @ApiResponse({
-    status: 404,
+    status: HttpStatus.NOT_FOUND,
     description: 'Không tìm thấy hồ sơ bệnh nhân',
   })
   async uploadPatientProfileAvatar(
@@ -285,16 +192,16 @@ export class UserController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Xóa hồ sơ bệnh nhân' })
   @ApiResponse({
-    status: 200,
+    status: HttpStatus.OK,
     description: 'Xóa hồ sơ bệnh nhân thành công',
     type: DeletePatientProfileResponseDto,
   })
   @ApiResponse({
-    status: 400,
+    status: HttpStatus.BAD_REQUEST,
     description: 'Không thể xóa hồ sơ bệnh nhân đã có lịch hẹn',
   })
   @ApiResponse({
-    status: 404,
+    status: HttpStatus.NOT_FOUND,
     description: 'Không tìm thấy hồ sơ bệnh nhân',
   })
   async deletePatientProfile(

@@ -11,9 +11,9 @@ export const UpdateUserProfileSchema = z.object({
     .regex(/^[0-9]{10,11}$/, 'Số điện thoại không hợp lệ')
     .optional(),
   address: z.string().optional(),
-  dateOfBirth: z.string().datetime().optional(),
-  gender: z.nativeEnum(Gender).optional(),
-  avatar: z.string().url('URL avatar không hợp lệ').optional(),
+  dateOfBirth: z.iso.datetime().optional(),
+  gender: z.enum(Gender).optional(),
+  avatar: z.url('URL avatar không hợp lệ').optional(),
 });
 
 // Export class for Swagger
@@ -37,8 +37,8 @@ export const UserProfileResponseSchema = z.object({
   dateOfBirth: z.string().nullable(),
   gender: z.string().nullable(),
   avatar: z.string().nullable(),
-  role: z.nativeEnum(Role),
-  status: z.nativeEnum(UserStatus),
+  role: z.enum(Role),
+  status: z.enum(UserStatus),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
@@ -46,8 +46,6 @@ export const UserProfileResponseSchema = z.object({
 export const UpdateUserProfileResponseSchema = z.object({
   user: UserProfileResponseSchema,
 });
-
-export const ChangePasswordResponseSchema = z.object({});
 
 export const UploadAvatarResponseSchema = z.object({
   avatarUrl: z.string(),
@@ -98,15 +96,15 @@ export const PatientProfilesResponseSchema = z.object({
 export const CreatePatientProfileSchema = z.object({
   firstName: z.string().min(1, 'Tên không được để trống'),
   lastName: z.string().min(1, 'Họ không được để trống'),
-  dateOfBirth: z.string().datetime('Ngày sinh không hợp lệ'),
+  dateOfBirth: z.iso.datetime('Ngày sinh không hợp lệ'),
   gender: z.enum(Gender, {
     message: 'Giới tính không hợp lệ',
   }),
   phone: z.string().regex(/^[0-9]{10,11}$/, 'Số điện thoại không hợp lệ'),
-  relationship: z.nativeEnum(Relationship, {
+  relationship: z.enum(Relationship, {
     message: 'Mối quan hệ không hợp lệ',
   }),
-  avatar: z.string().url('URL avatar không hợp lệ').optional(),
+  avatar: z.url('URL avatar không hợp lệ').optional(),
   idCardNumber: z.string().optional(),
   occupation: z.string().optional(),
   nationality: z.string().optional(),
@@ -118,14 +116,14 @@ export const CreatePatientProfileSchema = z.object({
 export const UpdatePatientProfileSchema = z.object({
   firstName: z.string().min(1, 'Tên không được để trống').optional(),
   lastName: z.string().min(1, 'Họ không được để trống').optional(),
-  dateOfBirth: z.string().datetime('Ngày sinh không hợp lệ').optional(),
-  gender: z.nativeEnum(Gender).optional(),
+  dateOfBirth: z.iso.datetime('Ngày sinh không hợp lệ').optional(),
+  gender: z.enum(Gender).optional(),
   phone: z
     .string()
     .regex(/^[0-9]{10,11}$/, 'Số điện thoại không hợp lệ')
     .optional(),
-  relationship: z.nativeEnum(Relationship).optional(),
-  avatar: z.string().url('URL avatar không hợp lệ').optional(),
+  relationship: z.enum(Relationship).optional(),
+  avatar: z.url('URL avatar không hợp lệ').optional(),
   idCardNumber: z.string().optional(),
   occupation: z.string().optional(),
   nationality: z.string().optional(),
@@ -149,9 +147,6 @@ export const DeletePatientProfileResponseSchema = z.object({});
 // Export classes for Swagger
 export class UpdateUserProfileResponseDto extends createZodDto(
   UpdateUserProfileResponseSchema,
-) {}
-export class ChangePasswordResponseDto extends createZodDto(
-  ChangePasswordResponseSchema,
 ) {}
 export class UploadAvatarResponseDto extends createZodDto(
   UploadAvatarResponseSchema,
@@ -189,9 +184,6 @@ export type UserProfileWithPatientProfilesResponseDtoType = z.infer<
 >;
 export type UpdateUserProfileResponseDtoType = z.infer<
   typeof UpdateUserProfileResponseSchema
->;
-export type ChangePasswordResponseDtoType = z.infer<
-  typeof ChangePasswordResponseSchema
 >;
 export type UploadAvatarResponseDtoType = z.infer<
   typeof UploadAvatarResponseSchema
