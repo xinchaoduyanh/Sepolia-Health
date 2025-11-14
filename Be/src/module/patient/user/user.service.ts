@@ -6,7 +6,6 @@ import {
 import { UserRepository } from './user.repository';
 import {
   UpdateUserProfileDtoType,
-  ChangePasswordDtoType,
   UserProfileWithPatientProfilesResponseDtoType,
   UpdateUserProfileResponseDtoType,
   ChangePasswordResponseDtoType,
@@ -170,28 +169,6 @@ export class UserService {
         updatedAt: user.updatedAt.toISOString(),
       },
     };
-  }
-
-  /**
-   * Change password
-   */
-  async changePassword(
-    userId: number,
-    changePasswordData: ChangePasswordDtoType,
-  ): Promise<ChangePasswordResponseDtoType> {
-    const user = await this.userRepository.findUserByIdSimple(userId);
-
-    // Verify current password
-    if (user.password !== changePasswordData.currentPassword) {
-      throw new UnauthorizedException('Mật khẩu hiện tại không đúng');
-    }
-
-    // Update password
-    await this.userRepository.updateUser(userId, {
-      password: changePasswordData.newPassword,
-    });
-
-    return {};
   }
 
   /**

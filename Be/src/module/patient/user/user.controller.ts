@@ -24,10 +24,8 @@ import {
 import { UserService } from './user.service';
 import type {
   UpdateUserProfileDtoType,
-  ChangePasswordDtoType,
   UserProfileWithPatientProfilesResponseDtoType,
   UpdateUserProfileResponseDtoType,
-  ChangePasswordResponseDtoType,
   UploadAvatarResponseDtoType,
   PatientProfilesResponseDtoType,
   CreatePatientProfileDtoType,
@@ -38,12 +36,9 @@ import type {
 } from './user.dto';
 import {
   UpdateUserProfileDto,
-  ChangePasswordDto,
   UpdateUserProfileSchema,
-  ChangePasswordSchema,
   UserProfileWithPatientProfilesResponseDto,
   UpdateUserProfileResponseDto,
-  ChangePasswordResponseDto,
   PatientProfilesResponseDto,
   CreatePatientProfileDto,
   UpdatePatientProfileDto,
@@ -112,40 +107,6 @@ export class UserController {
     updateData: UpdateUserProfileDtoType,
   ): Promise<UpdateUserProfileResponseDtoType> {
     return this.userService.updateProfile(userId, updateData);
-  }
-
-  @Put('change-password')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Đổi mật khẩu' })
-  @ApiResponse({
-    status: 200,
-    description: 'Đổi mật khẩu thành công',
-    type: ChangePasswordResponseDto,
-  })
-  @ApiResponse({
-    status: 422,
-    description: 'Dữ liệu không hợp lệ',
-  })
-  @ApiBody({
-    type: ChangePasswordDto,
-    description: 'Thông tin đổi mật khẩu',
-    examples: {
-      example1: {
-        summary: 'Đổi mật khẩu',
-        value: {
-          currentPassword: 'oldpassword123',
-          newPassword: 'newpassword123',
-          confirmPassword: 'newpassword123',
-        },
-      },
-    },
-  })
-  async changePassword(
-    @CurrentUser('userId') userId: number,
-    @Body(new CustomZodValidationPipe(ChangePasswordSchema))
-    changePasswordData: ChangePasswordDtoType,
-  ): Promise<ChangePasswordResponseDtoType> {
-    return this.userService.changePassword(userId, changePasswordData);
   }
 
   @Post('upload-avatar')

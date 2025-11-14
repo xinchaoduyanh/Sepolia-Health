@@ -21,21 +21,6 @@ export class UpdateUserProfileDto extends createZodDto(
   UpdateUserProfileSchema,
 ) {}
 
-// Change Password DTO Schema
-export const ChangePasswordSchema = z
-  .object({
-    currentPassword: z.string().min(1, 'Mật khẩu hiện tại không được để trống'),
-    newPassword: z.string().min(6, 'Mật khẩu mới phải có ít nhất 6 ký tự'),
-    confirmPassword: z.string().min(1, 'Xác nhận mật khẩu không được để trống'),
-  })
-  .refine((data) => data.newPassword === data.confirmPassword, {
-    message: 'Mật khẩu xác nhận không khớp',
-    path: ['confirmPassword'],
-  });
-
-// Export class for Swagger
-export class ChangePasswordDto extends createZodDto(ChangePasswordSchema) {}
-
 // Upload Avatar DTO
 export const UploadAvatarDto = z.object({
   avatar: z.any(), // File will be handled by multer
@@ -195,7 +180,6 @@ export class DeletePatientProfileResponseDto extends createZodDto(
 
 // Export types
 export type UpdateUserProfileDtoType = z.infer<typeof UpdateUserProfileSchema>;
-export type ChangePasswordDtoType = z.infer<typeof ChangePasswordSchema>;
 export type UploadAvatarDtoType = z.infer<typeof UploadAvatarDto>;
 export type UserProfileResponseDtoType = z.infer<
   typeof UserProfileResponseSchema
