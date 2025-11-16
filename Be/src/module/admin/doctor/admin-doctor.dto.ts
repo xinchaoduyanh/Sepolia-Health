@@ -2,6 +2,15 @@ import { ApiProperty } from '@nestjs/swagger';
 import { z } from 'zod';
 import { UserStatus } from '@prisma/client';
 
+// Password regex: tối thiểu 6 ký tự, có chữ IN HOA, có số, có ký tự đặc biệt
+const PASSWORD_REGEX =
+  /^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{6,}$/;
+
+// Helper function để validate password với regex
+const passwordRefine = (password: string) => {
+  return PASSWORD_REGEX.test(password);
+};
+
 // Query schemas
 export const GetDoctorsQuerySchema = z.object({
   page: z.coerce.number().min(1).default(1),
@@ -16,7 +25,13 @@ export type GetDoctorsQueryDto = z.infer<typeof GetDoctorsQuerySchema>;
 // Zod schemas
 export const CreateDoctorSchema = z.object({
   email: z.string().email('Email không hợp lệ'),
-  password: z.string().min(6, 'Mật khẩu phải có ít nhất 6 ký tự'),
+  password: z
+    .string()
+    .min(6, 'Mật khẩu phải có ít nhất 6 ký tự')
+    .refine(
+      passwordRefine,
+      'Mật khẩu phải có ít nhất 6 ký tự, bao gồm chữ IN HOA, số và ký tự đặc biệt',
+    ),
   fullName: z.string().min(1, 'Họ tên không được để trống'),
   phone: z.string().min(1, 'Số điện thoại không được để trống'),
   experienceYears: z.number().min(0, 'Số năm kinh nghiệm phải >= 0'),

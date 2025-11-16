@@ -14,6 +14,9 @@ export const validateEmail = (email: string): { isValid: boolean; message?: stri
   return { isValid: true };
 };
 
+// Password regex: tối thiểu 6 ký tự, có chữ IN HOA, có số, có ký tự đặc biệt
+const PASSWORD_REGEX = /^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{6,}$/;
+
 export const validatePassword = (password: string): { isValid: boolean; message?: string } => {
   if (!password || password.trim().length === 0) {
     return { isValid: false, message: 'Mật khẩu không được để trống' };
@@ -21,6 +24,13 @@ export const validatePassword = (password: string): { isValid: boolean; message?
 
   if (password.length < 6) {
     return { isValid: false, message: 'Mật khẩu phải có ít nhất 6 ký tự' };
+  }
+
+  if (!PASSWORD_REGEX.test(password)) {
+    return {
+      isValid: false,
+      message: 'Mật khẩu phải có ít nhất 6 ký tự, bao gồm chữ IN HOA, số và ký tự đặc biệt',
+    };
   }
 
   return { isValid: true };

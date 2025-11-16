@@ -2,6 +2,15 @@ import { ApiProperty } from '@nestjs/swagger';
 import { z } from 'zod';
 import { Gender, Relationship, UserStatus } from '@prisma/client';
 
+// Password regex: tối thiểu 6 ký tự, có chữ IN HOA, có số, có ký tự đặc biệt
+const PASSWORD_REGEX =
+  /^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{6,}$/;
+
+// Helper function để validate password với regex
+const passwordRefine = (password: string) => {
+  return PASSWORD_REGEX.test(password);
+};
+
 const genderValues = Object.values(Gender) as [string, ...string[]];
 const relationshipValues = Object.values(Relationship) as [string, ...string[]];
 
@@ -61,7 +70,13 @@ export class GetPatientsQueryDtoClass {
 export const CreatePatientSchema = z.object({
   // User fields
   email: z.string().email('Email không hợp lệ'),
-  password: z.string().min(6, 'Mật khẩu phải có ít nhất 6 ký tự'),
+  password: z
+    .string()
+    .min(6, 'Mật khẩu phải có ít nhất 6 ký tự')
+    .refine(
+      passwordRefine,
+      'Mật khẩu phải có ít nhất 6 ký tự, bao gồm chữ IN HOA, số và ký tự đặc biệt',
+    ),
   phone: z.string().min(1, 'Số điện thoại đăng nhập không được để trống'),
 
   // PatientProfiles - bắt buộc có ít nhất 1 profile với relationship SELF
@@ -200,7 +215,14 @@ export class CreatePatientDtoClass {
 export const UpdatePatientSchema = z.object({
   // User fields
   email: z.string().email('Email không hợp lệ').optional(),
-  password: z.string().min(6, 'Mật khẩu phải có ít nhất 6 ký tự').optional(),
+  password: z
+    .string()
+    .min(6, 'Mật khẩu phải có ít nhất 6 ký tự')
+    .refine(
+      (val) => !val || passwordRefine(val),
+      'Mật khẩu phải có ít nhất 6 ký tự, bao gồm chữ IN HOA, số và ký tự đặc biệt',
+    )
+    .optional(),
   phone: z
     .string()
     .min(1, 'Số điện thoại đăng nhập không được để trống')

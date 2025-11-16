@@ -284,7 +284,7 @@ export default function ChangePasswordScreen() {
                     fontSize: 16,
                     color: '#1E293B',
                   }}
-                  placeholder="Nhập mật khẩu mới (tối thiểu 6 ký tự)"
+                  placeholder="Nhập mật khẩu mới (6+ ký tự, có IN HOA, số, ký tự đặc biệt)"
                   placeholderTextColor="#94A3B8"
                   value={newPassword}
                   onChangeText={(text) => {

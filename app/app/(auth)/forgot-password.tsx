@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState, useRef } from 'react';
 import { useForgotPasswordFlow } from '@/lib/hooks/useFogotPassword';
+import { validatePassword } from '@/lib/utils/validation';
 
 type ForgotPasswordStep = 'email' | 'otp' | 'password';
 
@@ -99,8 +100,9 @@ export default function ForgotPasswordScreen() {
       return;
     }
 
-    if (newPassword.length < 6) {
-      setPasswordError('Mật khẩu phải có ít nhất 6 ký tự');
+    const passwordValidation = validatePassword(newPassword);
+    if (!passwordValidation.isValid) {
+      setPasswordError(passwordValidation.message || 'Mật khẩu không hợp lệ');
       return;
     }
 
@@ -356,7 +358,7 @@ export default function ForgotPasswordScreen() {
                     />
                     <TextInput
                       className="ml-3 flex-1 text-base text-gray-800"
-                      placeholder="Mật khẩu mới (tối thiểu 6 ký tự)"
+                      placeholder="Mật khẩu mới (6+ ký tự, có IN HOA, số, ký tự đặc biệt)"
                       placeholderTextColor="#9CA3AF"
                       value={newPassword}
                       onChangeText={(text) => {

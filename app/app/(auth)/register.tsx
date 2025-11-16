@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Link, useRouter } from 'expo-router';
 import { useState, useRef } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { validatePassword } from '@/lib/utils/validation';
 import BirthDatePicker from '@/components/BirthDatePicker';
 import GenderSelector from '@/components/GenderSelector';
 
@@ -153,8 +154,9 @@ export default function RegisterScreen() {
       return;
     }
 
-    if (password.length < 6) {
-      setPasswordError('Mật khẩu phải có ít nhất 6 ký tự');
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.isValid) {
+      setPasswordError(passwordValidation.message || 'Mật khẩu không hợp lệ');
       return;
     }
 
@@ -517,7 +519,7 @@ export default function RegisterScreen() {
                     />
                     <TextInput
                       className="ml-3 flex-1 text-base text-gray-800"
-                      placeholder="Mật khẩu (tối thiểu 6 ký tự)"
+                      placeholder="Mật khẩu (6+ ký tự, có IN HOA, số, ký tự đặc biệt)"
                       placeholderTextColor="#9CA3AF"
                       value={password}
                       onChangeText={(text) => {
