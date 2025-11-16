@@ -116,22 +116,25 @@ export const CustomChannelPreview = ({
     <TouchableOpacity
       onPress={onPress}
       disabled={disabled}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: isActive ? '#EFF6FF' : hasUnread ? '#FEFCE8' : '#FFFFFF',
-        borderRadius: 16,
-        padding: 16,
-        marginBottom: 8,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: hasUnread ? 0.08 : 0.04,
-        shadowRadius: 4,
-        elevation: hasUnread ? 3 : 2,
-        borderWidth: isActive ? 2 : hasUnread ? 1 : 0,
-        borderColor: isActive ? '#2563EB' : hasUnread ? '#FDE047' : 'transparent',
-        opacity: disabled ? 0.5 : 1,
-      }}>
+      activeOpacity={0.9}
+      style={[
+        {
+          flexDirection: 'row',
+          alignItems: 'center',
+          backgroundColor: isActive ? '#EFF6FF' : hasUnread ? '#FEFCE8' : '#FFFFFF',
+          borderRadius: 16,
+          padding: 16,
+          marginBottom: 8,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: hasUnread ? 0.08 : 0.04,
+          shadowRadius: 4,
+          elevation: hasUnread ? 3 : 2,
+          borderWidth: isActive ? 2 : hasUnread ? 1 : 0,
+          borderColor: isActive ? '#2563EB' : hasUnread ? '#FDE047' : 'transparent',
+        },
+        disabled && { opacity: 0.5 },
+      ]}>
       {/* Avatar Container */}
       <View style={{ marginRight: 12, position: 'relative' }}>
         <View
