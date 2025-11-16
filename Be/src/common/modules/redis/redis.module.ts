@@ -11,7 +11,9 @@ import IORedis from 'ioredis';
       inject: [appConfig.KEY],
       useFactory: async (redisConf: ConfigType<typeof appConfig>) => {
         const logger = new Logger('RedisModule');
-        const redisClient = new IORedis(redisConf.redisUrl);
+        const redisClient = new IORedis(redisConf.redisUrl, {
+          maxRetriesPerRequest: null,
+        });
 
         redisClient.on('error', (err) => {
           logger.error('Redis Client Error:', err);

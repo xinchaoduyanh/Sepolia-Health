@@ -24,10 +24,15 @@ import {
   NotificationPriority,
   NotificationType,
 } from '@/module/notification/notification.types';
+import { Queue } from 'bullmq';
+import { InjectQueue } from '@nestjs/bullmq';
 
 @Injectable()
 export class AppointmentService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @InjectQueue('appointment') private readonly appointmentQueue: Queue,
+  ) {}
 
   /**
    * Get all appointments with filters
@@ -1050,6 +1055,15 @@ export class AppointmentService {
       // Don't throw error, just log it
     }
 
+    await this.appointmentQueue.add(
+      'appointment',
+      {
+        appointmentId: appointment.id,
+      },
+      {
+        delay: appointment.date.getMilliseconds() - Date.now(),
+      },
+    );
     // Return appointment with billing included
     return this.formatAppointmentResponse({
       ...appointment,
