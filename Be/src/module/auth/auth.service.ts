@@ -13,8 +13,8 @@ import { appConfig } from '@/common/config';
 import { ConfigType } from '@nestjs/config';
 import { ERROR_MESSAGES } from '@/common/constants/error-messages';
 import {
-  getResetPasswordEmailTemplate,
   getVerifyEmailTemplate,
+  getForgotPasswordOtpTemplate,
 } from '@/common/modules/mail/templates';
 import { SuccessResponseDto } from '@/common/dto';
 import {
@@ -282,20 +282,42 @@ export class AuthService {
     // Check if user exists
     await this.authRepository.findByEmail(email);
 
-    const otp = StringUtil.random();
-    const expiresIn = 5 * 60;
+    // Generate 6-digit OTP (same as register)
+    const otp = StringUtil.random(6, '0123456789');
+    const expiresIn = 5 * 60; // 5 minutes
     await this.redisService.setOtp(email, otp, expiresIn, 'reset_password');
 
-    const resetLink = `${this.tokenConf.frontendUrl}/reset-password?email=${email}&otp=${otp}`;
-
+    // Send OTP via email
     await this.mailService.sendEmail(
-      getResetPasswordEmailTemplate({ resetLink, expiresIn, email }),
+      getForgotPasswordOtpTemplate({ email, otp }),
     );
 
     return new SuccessResponseDto();
   }
 
-  // async verifyResetPasswordLink() {}
+  /**
+   * Verify OTP for forgot password
+   */
+  async verifyForgotPasswordOtp(verifyEmailDto: VerifyEmailDto): Promise<void> {
+    const { email, otp } = verifyEmailDto;
+
+    // Verify OTP
+    const isOtpValid = await this.redisService.verifyOtp(
+      email,
+      otp,
+      'reset_password',
+    );
+
+    if (!isOtpValid) {
+      throw new BadRequestException(ERROR_MESSAGES.AUTH.INVALID_OTP);
+    }
+
+    // Check if user exists
+    const user = await this.authRepository.findByEmail(email);
+    if (!user) {
+      throw new BadRequestException(ERROR_MESSAGES.AUTH.USER_NOT_FOUND);
+    }
+  }
 
   async resetPassword(body: ResetPasswordBodyDto): Promise<SuccessResponseDto> {
     const { email, otp, newPassword } = body;

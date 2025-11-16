@@ -40,3 +40,7 @@ export interface ResetPasswordEmailData extends BaseEmailData {
 export interface EmailVerificationData extends BaseEmailData {
   otp: string;
 }
+
+export interface ForgotPasswordOtpEmailData extends BaseEmailData {
+  otp: string;
+}

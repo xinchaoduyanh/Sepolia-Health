@@ -1,22 +1,24 @@
-import { useMutation } from '@tanstack/react-query';
-import { useState } from 'react';
-import { authApi } from '../api';
+import { useForgotPassword, useVerifyForgotPasswordOtp, useResetPassword } from '../api/auth';
 
-export function useForgotPassword() {
-  const [email, setEmail] = useState('');
-  const mutation = useMutation({
-    mutationFn: async (email: string) => {
-      return authApi.forgotPassword(email);
-    },
-  });
-  const handleForgotPassword = (email: string) => {
-    mutation.mutate(email);
-  };
+export function useForgotPasswordFlow() {
+  const forgotPasswordMutation = useForgotPassword();
+  const verifyOtpMutation = useVerifyForgotPasswordOtp();
+  const resetPasswordMutation = useResetPassword();
+
   return {
-    email,
-    setEmail,
-    handleForgotPassword,
-    isLoading: mutation.isPending,
-    error: mutation.error,
+    // Step 1: Send OTP
+    sendOtp: forgotPasswordMutation.mutateAsync,
+    isSendingOtp: forgotPasswordMutation.isPending,
+    sendOtpError: forgotPasswordMutation.error,
+
+    // Step 2: Verify OTP
+    verifyOtp: verifyOtpMutation.mutateAsync,
+    isVerifyingOtp: verifyOtpMutation.isPending,
+    verifyOtpError: verifyOtpMutation.error,
+
+    // Step 3: Reset Password
+    resetPassword: resetPasswordMutation.mutateAsync,
+    isResettingPassword: resetPasswordMutation.isPending,
+    resetPasswordError: resetPasswordMutation.error,
   };
 }

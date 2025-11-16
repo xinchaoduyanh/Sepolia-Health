@@ -14,6 +14,9 @@ import type {
   VerifyEmailResponse,
   CompleteRegisterResponse,
   User,
+  ForgotPasswordRequest,
+  VerifyForgotPasswordOtpRequest,
+  ResetPasswordRequest,
 } from '@/types/auth';
 
 // Query Keys Factory (Đặt lên đầu để dễ sử dụng bên dưới)
@@ -75,8 +78,18 @@ export const authApi = {
     return response.data;
   },
 
-  forgotPassword: async (email: string) => {
-    const response = await apiClient.post(API_ENDPOINTS.AUTH.FORGOT_PASSWORD, { email });
+  forgotPassword: async (data: ForgotPasswordRequest) => {
+    const response = await apiClient.post(API_ENDPOINTS.AUTH.FORGOT_PASSWORD, data);
+    return response.data;
+  },
+
+  verifyForgotPasswordOtp: async (data: VerifyForgotPasswordOtpRequest) => {
+    const response = await apiClient.post(API_ENDPOINTS.AUTH.VERIFY_FORGOT_PASSWORD_OTP, data);
+    return response.data;
+  },
+
+  resetPassword: async (data: ResetPasswordRequest) => {
+    const response = await apiClient.post(API_ENDPOINTS.AUTH.RESET_PASSWORD, data);
     return response.data;
   },
 
@@ -168,6 +181,33 @@ export const useProfile = (enabled: boolean = false) => {
     retry: enabled ? 1 : false, // Don't retry when disabled
     // Only run when enabled
     enabled,
+  });
+};
+
+export const useForgotPassword = () => {
+  return useMutation({
+    mutationFn: authApi.forgotPassword,
+    onError: (error) => {
+      // Error is handled by UI
+    },
+  });
+};
+
+export const useVerifyForgotPasswordOtp = () => {
+  return useMutation({
+    mutationFn: authApi.verifyForgotPasswordOtp,
+    onError: (error) => {
+      // Error is handled by UI
+    },
+  });
+};
+
+export const useResetPassword = () => {
+  return useMutation({
+    mutationFn: authApi.resetPassword,
+    onError: (error) => {
+      // Error is handled by UI
+    },
   });
 };
 

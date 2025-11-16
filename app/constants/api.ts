@@ -17,6 +17,8 @@ export const API_ENDPOINTS = {
     REFRESH: '/auth/refresh-token',
     LOGOUT: '/auth/logout',
     FORGOT_PASSWORD: '/auth/forgot-password',
+    VERIFY_FORGOT_PASSWORD_OTP: '/auth/verify-forgot-password-otp',
+    RESET_PASSWORD: '/auth/reset-password',
     CHANGE_PASSWORD: '/auth/change-password',
     PROFILE: '/patient/user/profile', // User profile endpoint
   },

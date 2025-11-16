@@ -133,7 +133,8 @@ export class AuthController {
 
   @Public()
   @Post('forgot-password')
-  @ApiOperation({ summary: 'Quên mật khẩu' })
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Quên mật khẩu - Gửi OTP về email' })
   @ApiResponse({
     status: HttpStatus.OK,
     type: SuccessResponseDto,
@@ -145,8 +146,26 @@ export class AuthController {
   }
 
   @Public()
+  @Post('verify-forgot-password-otp')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Xác thực OTP cho quên mật khẩu' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Mã OTP không hợp lệ hoặc đã hết hạn',
+  })
+  async verifyForgotPasswordOtp(
+    @Body() verifyEmailDto: VerifyEmailDto,
+  ): Promise<void> {
+    return this.authService.verifyForgotPasswordOtp(verifyEmailDto);
+  }
+
+  @Public()
   @Post('reset-password')
-  @ApiOperation({ summary: 'Đặt lại mật khẩu' })
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Đặt lại mật khẩu sau khi xác thực OTP' })
   @ApiResponse({
     status: HttpStatus.OK,
     type: SuccessResponseDto,
