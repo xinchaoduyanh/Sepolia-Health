@@ -73,7 +73,7 @@ enum Relationship {
 model User {
   id       Int     @id @default(autoincrement())
   email    String  @unique
-  phone    String? @unique // SĐT đăng nhập/khôi phục
+  // phone    String? @unique // SĐT đăng nhập/khôi phục
   password String
   role     Role
 
@@ -87,8 +87,6 @@ model User {
 
   // Quan hệ với giao dịch
   transactions Transaction[]
-
-  // Quan hệ với chat system
 
   // Quan hệ với Q&A
   questions           Question[]            @relation("QuestionAuthor")
@@ -250,21 +248,13 @@ model AvailabilityOverride {
 /// Lịch hẹn khám bệnh: Linh hoạt cho cả khách có hồ sơ và khách vãng lai.
 model Appointment {
   id        Int               @id @default(autoincrement())
-  date      DateTime          @db.Date
-  startTime String
-  endTime   String
+  startTime DateTime
   status    AppointmentStatus
   notes     String?
 
   // Liên kết tùy chọn với hồ sơ bệnh nhân
   patientProfileId Int?
   patientProfile   PatientProfile? @relation(fields: [patientProfileId], references: [id])
-
-  // Thông tin bắt buộc cho mọi cuộc hẹn (kể cả khách vãng lai)
-  patientName   String
-  patientDob    DateTime @db.Date
-  patientPhone  String
-  patientGender String
 
   // Quan hệ
   doctorId  Int
