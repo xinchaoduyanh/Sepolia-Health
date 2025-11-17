@@ -1,7 +1,6 @@
 import {
   Controller,
   Get,
-  Post,
   Put,
   Delete,
   Body,
@@ -24,13 +23,7 @@ import {
   UpdateAppointmentDto,
   AppointmentDetailResponseDto,
   GetAppointmentsQueryDto,
-  GetAvailableDateQueryDto,
-  GetDoctorServicesQueryDto,
   AppointmentsListResponseDto,
-  GetDoctorAvailabilityQueryDto,
-  CreateAppointmentFromDoctorServiceBodyDto,
-  GetDoctorAvailabilityResponseDto,
-  GetAvailabilityDateResponseDto,
 } from './dto';
 
 @ApiBearerAuth()
@@ -94,83 +87,5 @@ export class AppointmentController {
     @Param('id', ParseIntPipe) id: number,
   ): Promise<AppointmentDetailResponseDto> {
     return this.appointmentService.findOne(id);
-  }
-
-  // ========== BOOKING APIS ==========
-  @Get('booking/locations')
-  @ApiOperation({ summary: 'Lấy danh sách cơ sở phòng khám (locations)' })
-  @ApiResponse({ status: 200, description: 'Lấy danh sách cơ sở thành công' })
-  async getLocations() {
-    return this.appointmentService.getLocations();
-  }
-
-  @Get('booking/services')
-  @ApiOperation({ summary: 'Lấy danh sách dịch vụ khám' })
-  @ApiResponse({ status: 200, description: 'Lấy danh sách dịch vụ thành công' })
-  async getServices() {
-    return this.appointmentService.getServices();
-  }
-
-  @Get('booking/doctor-services')
-  @ApiOperation({
-    summary: 'Lấy danh sách bác sĩ cung cấp dịch vụ theo location và service',
-  })
-  @ApiResponse({ status: 200, description: 'Lấy danh sách bác sĩ thành công' })
-  async getDoctorServices(@Query() query: GetDoctorServicesQueryDto) {
-    return this.appointmentService.getDoctorServices(query);
-  }
-
-  @Get('booking/available-dates')
-  @ApiOperation({
-    summary:
-      'Lấy danh sách các ngày bác sĩ có thể làm việc trong khoảng thời gian',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Lấy danh sách ngày khả dụng thành công',
-  })
-  @ApiResponse({ status: 400, description: 'Dữ liệu không hợp lệ' })
-  @ApiResponse({
-    status: 404,
-    description: 'Dịch vụ bác sĩ không tồn tại',
-  })
-  async getAvailableDates(
-    @Query() query: GetAvailableDateQueryDto,
-  ): Promise<GetAvailabilityDateResponseDto> {
-    return this.appointmentService.getAvailableDates(query);
-  }
-
-  @Get('booking/doctor-availability')
-  @ApiOperation({
-    summary: 'Kiểm tra lịch bận của bác sĩ trong một ngày cụ thể',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Lấy lịch bận thành công',
-  })
-  @ApiResponse({ status: 400, description: 'Dữ liệu không hợp lệ' })
-  @ApiResponse({
-    status: 404,
-    description: 'Bác sĩ không làm việc vào ngày này',
-  })
-  async getDoctorAvailability(
-    @Query() query: GetDoctorAvailabilityQueryDto,
-  ): Promise<GetDoctorAvailabilityResponseDto> {
-    return this.appointmentService.getDoctorAvailability(query);
-  }
-
-  @Post('booking/create')
-  @ApiOperation({ summary: 'Tạo lịch hẹn từ DoctorService' })
-  @ApiResponse({ status: 201, description: 'Tạo lịch hẹn thành công' })
-  @ApiResponse({ status: 400, description: 'Dữ liệu không hợp lệ' })
-  @ApiResponse({ status: 401, description: 'Không có quyền truy cập' })
-  async createFromDoctorService(
-    @Body() createAppointmentDto: CreateAppointmentFromDoctorServiceBodyDto,
-    @CurrentUser('userId') userId: number,
-  ): Promise<AppointmentDetailResponseDto> {
-    return this.appointmentService.createFromDoctorService(
-      createAppointmentDto,
-      userId,
-    );
   }
 }

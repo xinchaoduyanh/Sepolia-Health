@@ -26,6 +26,8 @@ import {
 } from '@/module/notification/notification.types';
 import { Queue } from 'bullmq';
 import { InjectQueue } from '@nestjs/bullmq';
+import { DateUtil } from '@/common/utils';
+import { TimeUtil } from '@/common/utils/time';
 
 @Injectable()
 export class AppointmentService {
@@ -519,6 +521,7 @@ export class AppointmentService {
   /**
    * Get closest upcoming appointment for current user
    */
+  // TODO refactor this func
   async getClosestAppointment(
     userId: number,
   ): Promise<AppointmentDetailResponseDto | null> {
@@ -567,12 +570,12 @@ export class AppointmentService {
     const appointments = await this.prisma.appointment.findMany({
       where: {
         patientProfileId: { in: patientProfileIds },
-        date: { gte: todayUTC },
+        startTime: { gte: todayUTC },
         status: {
           in: [AppointmentStatus.UPCOMING, AppointmentStatus.ON_GOING],
         },
       },
-      orderBy: [{ date: 'asc' }, { startTime: 'asc' }],
+      orderBy: [{ startTime: 'asc' }],
       include: {
         patientProfile: {
           select: {
@@ -612,7 +615,7 @@ export class AppointmentService {
     // Filter appointments: if date is today, only include those with startTime > currentTime
     const validAppointments = appointments.filter((appointment) => {
       // Convert appointment date (UTC from DB) to UTC+7
-      const appointmentDateUTC = new Date(appointment.date);
+      const appointmentDateUTC = new Date(appointment.startTime.getUTCDate());
       const appointmentDateUTC7 = new Date(
         appointmentDateUTC.getTime() + 7 * 60 * 60 * 1000,
       );
@@ -648,7 +651,7 @@ export class AppointmentService {
 
       // If appointment is today, check if startTime is in the future
       if (isToday) {
-        return appointment.startTime > currentTime;
+        return appointment.startTime > new Date();
       }
 
       // If appointment is in the future (after today), include it
@@ -800,31 +803,18 @@ export class AppointmentService {
   /**
    * Create appointment from DoctorService
    */
+  //TODO refactor this func
   async createFromDoctorService(
     createAppointmentDto: CreateAppointmentFromDoctorServiceBodyDto,
     userId: number,
   ): Promise<AppointmentDetailResponseDto> {
-    const {
-      doctorServiceId,
-      date,
-      startTime,
-      notes,
-      patientProfileId,
-      patientName,
-      patientDob,
-      patientPhone,
-      patientGender,
-    } = createAppointmentDto;
+    const { doctorServiceId, startTime, endTime, notes, patientProfileId } =
+      createAppointmentDto;
 
-    // Get DoctorService with all related data
     const doctorService = await this.prisma.doctorService.findUnique({
       where: { id: doctorServiceId },
       include: {
-        doctor: {
-          include: {
-            user: true,
-          },
-        },
+        doctor: true,
         service: true,
       },
     });
@@ -834,12 +824,9 @@ export class AppointmentService {
         MESSAGES.APPOINTMENT.DOCTOR_SERVICE_NOT_FOUND,
       );
     }
-
-    // Check if clinic exists and is active
     if (!doctorService.doctor.clinicId) {
       throw new BadRequestException(MESSAGES.APPOINTMENT.DOCTOR_NO_CLINIC);
     }
-
     const clinic = await this.prisma.clinic.findUnique({
       where: { id: doctorService.doctor.clinicId },
     });
@@ -848,42 +835,24 @@ export class AppointmentService {
       throw new NotFoundException(MESSAGES.APPOINTMENT.CLINIC_NOT_FOUND);
     }
 
-    // Validate patientProfileId if provided
-    let validatedPatientProfileId: number | null = null;
-    if (patientProfileId) {
-      const patientProfile = await this.prisma.patientProfile.findUnique({
-        where: { id: patientProfileId },
-        select: { id: true, managerId: true },
-      });
+    const patientProfile = await this.prisma.patientProfile.findUnique({
+      where: { id: patientProfileId },
+    });
 
-      if (!patientProfile) {
-        throw new NotFoundException(
-          MESSAGES.APPOINTMENT.PATIENT_PROFILE_NOT_FOUND,
-        );
-      }
-
-      if (patientProfile.managerId !== userId) {
-        throw new ForbiddenException(
-          MESSAGES.APPOINTMENT.PATIENT_PROFILE_NOT_OWNED,
-        );
-      }
-
-      validatedPatientProfileId = patientProfile.id;
+    if (!patientProfile) {
+      throw new NotFoundException(
+        MESSAGES.APPOINTMENT.PATIENT_PROFILE_NOT_FOUND,
+      );
     }
-
-    // Calculate end time based on service duration
-    const [startHour, startMinute] = startTime.split(':').map(Number);
-    const startMinutes = startHour * 60 + startMinute;
-    const endMinutes = startMinutes + doctorService.service.duration;
-    const endHour = Math.floor(endMinutes / 60);
-    const endMinute = endMinutes % 60;
-    const endTime = `${endHour.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}`;
+    if (patientProfile.managerId !== userId) {
+      throw new ForbiddenException(
+        MESSAGES.APPOINTMENT.PATIENT_PROFILE_NOT_OWNED,
+      );
+    }
+    const validatedPatientProfileId = patientProfile.id;
 
     // Check doctor availability
-    const appointmentDate = new Date(date);
-    const dayOfWeek = this.getDayOfWeek(appointmentDate);
-
-    // Get doctor's working hours for the day
+    const dayOfWeek = DateUtil.getDayOfWeek(startTime);
     const workingHours = await this.prisma.doctorAvailability.findUnique({
       where: {
         doctorId_dayOfWeek: {
@@ -900,8 +869,9 @@ export class AppointmentService {
     }
 
     // Check if requested time is within working hours
-    const workingStart = this.timeToMinutes(workingHours.startTime);
-    const workingEnd = this.timeToMinutes(workingHours.endTime);
+    const startMinutes = startTime.getHours() * 60 + startTime.getMinutes();
+    const workingStart = TimeUtil.timeToMinutes(workingHours.startTime);
+    const workingEnd = TimeUtil.timeToMinutes(workingHours.endTime);
 
     if (
       startMinutes < workingStart ||
@@ -913,30 +883,15 @@ export class AppointmentService {
     }
 
     // Check for conflicts with existing appointments
-    const existingAppointments = await this.prisma.appointment.findMany({
+    const hasConflict = await this.prisma.appointment.findFirst({
       where: {
         doctorId: doctorService.doctor.id,
-        date: appointmentDate,
+        startTime: { lt: endTime },
+        endTime: { gt: startTime },
         status: {
           in: ['UPCOMING', 'ON_GOING'],
         },
       },
-      select: {
-        startTime: true,
-        endTime: true,
-      },
-    });
-
-    // Check if new appointment conflicts with existing ones
-    const hasConflict = existingAppointments.some((apt) => {
-      const aptStart = this.timeToMinutes(apt.startTime);
-      const aptEnd = this.timeToMinutes(apt.endTime);
-
-      // Check for overlap - new appointment must not overlap with any existing appointment
-      return (
-        startMinutes < aptEnd &&
-        startMinutes + doctorService.service.duration > aptStart
-      );
     });
 
     if (hasConflict) {
@@ -948,38 +903,14 @@ export class AppointmentService {
     // Create appointment using data from DoctorService
     const appointment = await this.prisma.appointment.create({
       data: {
-        date: new Date(date),
         startTime,
         endTime,
         status: 'UPCOMING',
         notes,
         patientProfileId: validatedPatientProfileId,
-        patientName,
-        patientDob: new Date(patientDob + 'T00:00:00.000Z'),
-        patientPhone,
-        patientGender,
         doctorId: doctorService.doctorId,
         serviceId: doctorService.serviceId,
         clinicId: doctorService.doctor.clinicId,
-      },
-      include: {
-        patientProfile: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            phone: true,
-            managerId: true, // Cần managerId để gửi notification
-          },
-        },
-        doctor: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-          },
-        },
-        service: true,
       },
     });
 
@@ -1002,8 +933,7 @@ export class AppointmentService {
 
     // Send notification to patient
     try {
-      // Lấy userId từ managerId của patientProfile (không phải patientProfileId)
-      const patientUserId = appointment.patientProfile?.managerId?.toString();
+      const patientUserId = patientProfile.managerId.toString();
       if (!patientUserId) {
         console.warn(
           '⚠️ [AppointmentService] Cannot send notification: patientProfile.managerId is missing',
@@ -1015,11 +945,10 @@ export class AppointmentService {
           patientUserId,
           'system',
           'Đặt lịch hẹn thành công',
-          `Bạn đã đặt lịch vào ${appointment.date.toLocaleDateString('vi-VN')} lúc ${appointment.startTime}. Dịch vụ: ${doctorService.service.name}.`,
+          `Bạn đã đặt lịch vào ${appointment.startTime.toLocaleDateString('vi-VN')}. Dịch vụ: ${doctorService.service.name}.`,
           {
             appointmentId: appointment.id,
-            appointmentDate: appointment.date.toLocaleDateString('vi-VN'),
-            appointmentTime: appointment.startTime,
+            appointmentDate: appointment.startTime.toLocaleDateString('vi-VN'),
             doctorName: `${doctorService.doctor.firstName} ${doctorService.doctor.lastName}`,
             serviceName: doctorService.service.name,
             clinicName: clinic.name,
@@ -1039,12 +968,10 @@ export class AppointmentService {
         doctorService.doctor.userId.toString(),
         'system',
         'Lịch hẹn mới',
-        `Bạn có lịch hẹn mới với bệnh nhân ${patientName} vào ${appointment.date.toLocaleDateString('vi-VN')} lúc ${appointment.startTime} tại ${clinic.name}. Dịch vụ: ${doctorService.service.name}.`,
+        `Bạn có lịch hẹn mới với bệnh nhân ${patientProfile.firstName + ' ' + patientProfile.lastName} vào ${appointment.startTime.toLocaleDateString('vi-VN')} tại ${clinic.name}. Dịch vụ: ${doctorService.service.name}.`,
         {
           appointmentId: appointment.id,
-          appointmentDate: appointment.date.toLocaleDateString('vi-VN'),
-          appointmentTime: appointment.startTime,
-          patientName: patientName,
+          appointmentDate: appointment.startTime.toLocaleDateString('vi-VN'),
           serviceName: doctorService.service.name,
           clinicName: clinic.name,
           notes: notes,
@@ -1061,7 +988,7 @@ export class AppointmentService {
         appointmentId: appointment.id,
       },
       {
-        delay: appointment.date.getMilliseconds() - Date.now(),
+        delay: appointment.endTime.getMilliseconds() - Date.now(),
       },
     );
     // Return appointment with billing included
@@ -1079,9 +1006,7 @@ export class AppointmentService {
   ): AppointmentDetailResponseDto {
     return {
       id: appointment.id,
-      date: appointment.date.toISOString(),
       startTime: appointment.startTime,
-      endTime: appointment.endTime,
       status: appointment.status,
       notes: appointment.notes,
       patient: appointment.patientProfile
@@ -1093,10 +1018,6 @@ export class AppointmentService {
             email: appointment.patientProfile.email,
           }
         : undefined,
-      patientName: appointment.patientName,
-      patientDob: appointment.patientDob.toISOString(),
-      patientPhone: appointment.patientPhone,
-      patientGender: appointment.patientGender,
       doctor: {
         id: appointment.doctor.id,
         firstName: appointment.doctor.firstName,
@@ -1132,6 +1053,7 @@ export class AppointmentService {
   /**
    * Get doctor availability for a specific date (simple version)
    */
+  // refactor this func
   async getDoctorAvailability(
     query: GetDoctorAvailabilityQueryDto,
   ): Promise<GetDoctorAvailabilityResponseDto> {
@@ -1177,7 +1099,7 @@ export class AppointmentService {
     }
 
     // Get doctor's working hours for the day of week
-    const dayOfWeek = this.getDayOfWeek(targetDate);
+    const dayOfWeek = DateUtil.getDayOfWeek(targetDate);
     const workingHours = await this.prisma.doctorAvailability.findUnique({
       where: {
         doctorId_dayOfWeek: {
@@ -1207,7 +1129,10 @@ export class AppointmentService {
     const bookedAppointments = await this.prisma.appointment.findMany({
       where: {
         doctorId: doctorService.doctor.id,
-        date: targetDate,
+        startTime: {
+          gte: targetDate,
+          lt: new Date(targetDate.getTime() + 24 * 60 * 60 * 1000),
+        },
         status: {
           in: ['UPCOMING', 'ON_GOING'],
         },
@@ -1215,8 +1140,6 @@ export class AppointmentService {
       select: {
         startTime: true,
         endTime: true,
-        patientName: true,
-        status: true,
       },
       orderBy: {
         startTime: 'asc',
@@ -1334,7 +1257,7 @@ export class AppointmentService {
     const currentDate = new Date(start);
 
     while (currentDate <= end) {
-      const dayOfWeek = this.getDayOfWeek(currentDate);
+      const dayOfWeek = DateUtil.getDayOfWeek(currentDate);
       const workingHour = workingHoursMap.get(dayOfWeek);
 
       if (workingHour) {
@@ -1369,10 +1292,8 @@ export class AppointmentService {
     endTime: string,
     serviceDuration: number,
     bookedAppointments: Array<{
-      startTime: string;
-      endTime: string;
-      patientName: string;
-      status: string;
+      startTime: Date;
+      endTime: Date;
     }>,
   ) {
     const slots: Array<{
@@ -1381,19 +1302,19 @@ export class AppointmentService {
       displayTime: string;
       period: 'morning' | 'afternoon';
     }> = [];
-    const start = this.timeToMinutes(startTime);
-    const end = this.timeToMinutes(endTime);
+    const start = TimeUtil.timeToMinutes(startTime);
+    const end = TimeUtil.timeToMinutes(endTime);
     const duration = serviceDuration;
 
     // Generate time slots every 30 minutes, but each slot has the full service duration
     for (let time = start; time + duration <= end; time += 30) {
-      const slotStartTime = this.minutesToTime(time);
-      const slotEndTime = this.minutesToTime(time + duration);
+      const slotStartTime = TimeUtil.minutesToTime(time);
+      const slotEndTime = TimeUtil.minutesToTime(time + duration);
 
       // Check if this slot conflicts with any booked appointment
       const isAvailable = !bookedAppointments.some((apt) => {
-        const aptStart = this.timeToMinutes(apt.startTime);
-        const aptEnd = this.timeToMinutes(apt.endTime);
+        const aptStart = TimeUtil.dateToMinutes(apt.startTime);
+        const aptEnd = TimeUtil.dateToMinutes(apt.endTime);
 
         // Check for overlap - slot must not overlap with any existing appointment
         return time < aptEnd && time + duration > aptStart;
@@ -1410,29 +1331,5 @@ export class AppointmentService {
     }
 
     return slots;
-  }
-
-  /**
-   * Convert time string (HH:mm) to minutes since midnight
-   */
-  private timeToMinutes(time: string): number {
-    const [hours, minutes] = time.split(':').map(Number);
-    return hours * 60 + minutes;
-  }
-
-  /**
-   * Convert minutes since midnight to time string (HH:mm)
-   */
-  private minutesToTime(minutes: number): string {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
-  }
-
-  /**
-   * Get day of week from date (returns 0-6, where 0=Sunday, 6=Saturday)
-   */
-  private getDayOfWeek(date: Date): number {
-    return date.getDay();
   }
 }

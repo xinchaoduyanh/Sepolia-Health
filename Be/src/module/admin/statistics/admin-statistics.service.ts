@@ -107,7 +107,7 @@ export class AdminStatisticsService {
 
     const appointmentsToday = await this.prisma.appointment.count({
       where: {
-        date: {
+        startTime: {
           gte: today,
           lt: tomorrow,
         },
@@ -244,7 +244,7 @@ export class AdminStatisticsService {
       where: {
         status: 'PAID',
         appointment: {
-          date: {
+          startTime: {
             gte: today,
             lt: tomorrow,
           },

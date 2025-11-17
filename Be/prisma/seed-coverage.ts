@@ -1,7 +1,7 @@
-import { PrismaClient, Role, UserStatus, Gender } from '@prisma/client';
+import { PrismaClient, Role, UserStatus } from '@prisma/client';
 import { fakerVI as faker } from '@faker-js/faker';
 import * as bcrypt from 'bcrypt';
-import { AppointmentStatus, PaymentStatus } from '@prisma/client'; // Thêm import
+import { AppointmentStatus } from '@prisma/client'; // Thêm import
 const prisma = new PrismaClient();
 
 // --- CẤU HÌNH ---
@@ -588,44 +588,25 @@ async function main() {
         appointmentStart.getTime() + service.duration * 60000,
       );
 
-      const startTime = `${appointmentStart
-        .getHours()
-        .toString()
-        .padStart(2, '0')}:${appointmentStart
-        .getMinutes()
-        .toString()
-        .padStart(2, '0')}`;
-      const endTime = `${appointmentEnd
-        .getHours()
-        .toString()
-        .padStart(2, '0')}:${appointmentEnd
-        .getMinutes()
-        .toString()
-        .padStart(2, '0')}`;
-
       // 6. Xác định trạng thái
       let status: AppointmentStatus;
-      if (appointmentDate < today) {
+      if (appointmentEnd < today) {
         status = 'COMPLETED';
+      } else if (appointmentStart <= today && appointmentEnd > today) {
+        status = 'ON_GOING';
       } else {
         status = 'UPCOMING';
       }
 
-      // 7. Tạo Appointment
+      // 7. Tạo Appointment (schema mới: startTime và endTime là DateTime)
       const appointment = await prisma.appointment.create({
         data: {
-          date: appointmentDate,
-          startTime,
-          endTime,
+          startTime: appointmentStart,
+          endTime: appointmentEnd,
           status: status,
           notes: 'Lịch hẹn được tạo tự động (seed)',
 
           patientProfileId: patient.id,
-          // Dữ liệu bắt buộc
-          patientName: `${patient.firstName} ${patient.lastName}`,
-          patientDob: patient.dateOfBirth,
-          patientPhone: patient.phone,
-          patientGender: patient.gender,
 
           doctorId: doctor.id,
           serviceId: service.id,

@@ -46,24 +46,11 @@ export const UpdateAppointmentSchema = z.object({
 
 // Create Appointment from DoctorService DTO
 export const CreateAppointmentFromDoctorServiceSchema = z.object({
-  doctorServiceId: z.coerce
-    .number()
-    .min(1, 'Dịch vụ bác sĩ không được để trống'),
-  date: z.iso.date('Ngày hẹn không hợp lệ'),
-  startTime: z
-    .string()
-    .regex(
-      /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/,
-      'Thời gian bắt đầu không hợp lệ (HH:mm)',
-    ),
+  doctorServiceId: z.coerce.number(),
+  patientProfileId: z.coerce.number(),
+  startTime: z.iso.date().transform((val) => new Date(val)),
+  endTime: z.iso.date().transform((val) => new Date(val)),
   notes: z.string().optional(),
-  // Patient profile ID (optional - if not provided, will use null)
-  patientProfileId: z.coerce.number().optional(),
-  // Patient information (required for all appointments)
-  patientName: z.string().min(1, 'Họ tên không được để trống'),
-  patientDob: z.iso.date('Ngày sinh không hợp lệ'),
-  patientPhone: z.string().min(10, 'Số điện thoại không hợp lệ'),
-  patientGender: z.enum(Gender, 'Giới tính không hợp lệ'),
 });
 
 export class UpdateAppointmentDto extends createZodDto(
