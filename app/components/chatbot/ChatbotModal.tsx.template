@@ -1,0 +1,190 @@
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  View,
+  Modal,
+  KeyboardAvoidingView,
+  Platform,
+  FlatList,
+  ActivityIndicator,
+} from 'react-native';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { chatbotService } from '@/services/chatbot.service';
+import { ChatbotHeader } from './ChatbotHeader';
+import { MessageBubble } from './MessageBubble';
+import { MessageInput } from './MessageInput';
+import { TypingIndicator } from './TypingIndicator';
+import { QuickReplies } from './QuickReplies';
+
+interface ChatbotModalProps {
+  visible: boolean;
+  onClose: () => void;
+  userId: number;
+}
+
+interface Message {
+  id: number;
+  role: 'user' | 'assistant';
+  content: string;
+  createdAt: string;
+}
+
+export function ChatbotModal({ visible, onClose, userId }: ChatbotModalProps) {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isTyping, setIsTyping] = useState(false);
+  const flatListRef = useRef<FlatList>(null);
+  const queryClient = useQueryClient();
+
+  // Get or create conversation
+  const { data: conversation, isLoading: conversationLoading } = useQuery({
+    queryKey: ['chatbot-conversation', userId],
+    queryFn: () => chatbotService.getOrCreateConversation(userId),
+    enabled: visible,
+  });
+
+  // Load messages
+  const { data: loadedMessages, isLoading: messagesLoading } = useQuery({
+    queryKey: ['chatbot-messages', conversation?.id],
+    queryFn: () => chatbotService.getMessages(conversation!.id),
+    enabled: !!conversation?.id,
+  });
+
+  useEffect(() => {
+    if (loadedMessages) {
+      setMessages(loadedMessages);
+    }
+  }, [loadedMessages]);
+
+  // Send message mutation
+  const sendMessageMutation = useMutation({
+    mutationFn: (message: string) =>
+      chatbotService.sendMessage(conversation!.id, message),
+    onMutate: async (message) => {
+      // Optimistic update - add user message immediately
+      const tempMessage: Message = {
+        id: Date.now(),
+        role: 'user',
+        content: message,
+        createdAt: new Date().toISOString(),
+      };
+      setMessages((prev) => [...prev, tempMessage]);
+      setIsTyping(true);
+
+      // Scroll to bottom
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+    },
+    onSuccess: (response) => {
+      // Add bot response
+      setMessages((prev) => {
+        // Remove temp user message and add real messages
+        const filtered = prev.filter(m => m.id !== prev[prev.length - 1].id);
+        return [...filtered, response.userMessage, response.botMessage];
+      });
+      setIsTyping(false);
+
+      // Invalidate messages query
+      queryClient.invalidateQueries({
+        queryKey: ['chatbot-messages', conversation?.id]
+      });
+
+      // Scroll to bottom
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+    },
+    onError: (error) => {
+      console.error('Send message error:', error);
+      setIsTyping(false);
+
+      // Add error message
+      const errorMessage: Message = {
+        id: Date.now(),
+        role: 'assistant',
+        content: 'Xin lỗi, có lỗi xảy ra. Vui lòng thử lại.',
+        createdAt: new Date().toISOString(),
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    },
+  });
+
+  const handleSendMessage = (message: string) => {
+    if (!message.trim() || !conversation) return;
+    sendMessageMutation.mutate(message.trim());
+  };
+
+  const handleQuickReply = (text: string) => {
+    handleSendMessage(text);
+  };
+
+  if (conversationLoading || messagesLoading) {
+    return (
+      <Modal visible={visible} animationType="slide">
+        <View className="flex-1 bg-white items-center justify-center">
+          <ActivityIndicator size="large" color="#4F46E5" />
+        </View>
+      </Modal>
+    );
+  }
+
+  return (
+    <Modal
+      visible={visible}
+      animationType="slide"
+      onRequestClose={onClose}
+    >
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        className="flex-1 bg-gray-50"
+        keyboardVerticalOffset={0}
+      >
+        <ChatbotHeader onClose={onClose} />
+
+        <FlatList
+          ref={flatListRef}
+          data={messages}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={({ item }) => (
+            <MessageBubble
+              message={item.content}
+              isUser={item.role === 'user'}
+              timestamp={item.createdAt}
+            />
+          )}
+          contentContainerStyle={{
+            paddingHorizontal: 16,
+            paddingVertical: 16,
+            paddingBottom: 24,
+          }}
+          ListEmptyComponent={
+            <View className="flex-1 items-center justify-center py-20">
+              <Text className="text-gray-500 text-center px-8">
+                Xin chào! 👋{'\n\n'}
+                Tôi là trợ lý ảo của Sepolia Health.{'\n'}
+                Tôi có thể giúp bạn:{'\n\n'}
+                • Xem lịch bác sĩ{'\n'}
+                • Tư vấn sức khỏe{'\n'}
+                • Đặt lịch khám{'\n\n'}
+                Bạn cần hỗ trợ gì?
+              </Text>
+            </View>
+          }
+          onContentSizeChange={() => {
+            flatListRef.current?.scrollToEnd({ animated: true });
+          }}
+        />
+
+        {isTyping && <TypingIndicator />}
+
+        {messages.length === 0 && (
+          <QuickReplies onSelect={handleQuickReply} />
+        )}
+
+        <MessageInput
+          onSend={handleSendMessage}
+          disabled={sendMessageMutation.isPending}
+        />
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
