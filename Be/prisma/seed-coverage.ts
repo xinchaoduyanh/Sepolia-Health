@@ -230,19 +230,19 @@ async function main() {
   await prisma.clinic.deleteMany({});
   console.log('✅ Đã xóa dữ liệu cũ');
 
-  // ---- BƯỚC 2: TẠO DỊCH VỤ (SERVICE) ----
-  console.log('\n--- Bước 2: Tạo dịch vụ...');
-  await prisma.service.createMany({
-    data: services,
-  });
-  console.log(`✅ Đã tạo ${services.length} dịch vụ`);
-
-  // ---- BƯỚC 3: TẠO PHÒNG KHÁM (CLINIC) ----
-  console.log('\n--- Bước 3: Tạo phòng khám...');
+  // ---- BƯỚC 2: TẠO PHÒNG KHÁM (CLINIC) - TRƯỚC DỊCH VỤ ----
+  console.log('\n--- Bước 2: Tạo phòng khám...');
   await prisma.clinic.createMany({
     data: clinics,
   });
   console.log(`✅ Đã tạo ${clinics.length} phòng khám`);
+
+  // ---- BƯỚC 3: TẠO DỊCH VỤ (SERVICE) ----
+  console.log('\n--- Bước 3: Tạo dịch vụ...');
+  await prisma.service.createMany({
+    data: services,
+  });
+  console.log(`✅ Đã tạo ${services.length} dịch vụ`);
 
   // ---- BƯỚC 4: TẠO BÁC SĨ ----
   console.log('\n--- Bước 4: Tạo bác sĩ...');
@@ -315,11 +315,10 @@ async function main() {
             gender,
             // YÊU CẦU MỚI: Chỉ lưu năm
             experience: experienceYear.toString(),
-            // YÊU CẦU MỚI: SĐT ngẫu nhiên
             contactInfo: contactInfo,
             avatar: faker.image.avatar(),
             userId: user.id,
-            clinicId: clinicId, // Gán bác sĩ vào clinic hiện tại
+            clinicId: clinicId || null, // Có thể null nếu không có
           },
         });
 
@@ -427,10 +426,7 @@ async function main() {
   for (let i = 0; i < NUMBER_OF_PATIENT_USERS; i++) {
     const managerFirstName = faker.person.firstName();
     const managerLastName = faker.person.lastName();
-    const email = `patient${faker.number.int({
-      min: 1000,
-      max: 99999,
-    })}@gmail.com`;
+    const email = `patient${faker.number.int({ min: 10000, max: 99999 })}@gmail.com`;
     const phone = faker.helpers.fromRegExp(/0[3-9][0-9]{8}/);
 
     const user = await prisma.user.create({
@@ -538,7 +534,13 @@ async function main() {
       const combo = faker.helpers.arrayElement(validDoctorServices);
       const { doctor, service } = combo;
       const clinicId = doctor.clinicId;
-      if (!clinicId) continue; // Bỏ qua nếu bác sĩ không thuộc clinic nào
+      if (
+        !clinicId ||
+        !doctor.availabilities ||
+        doctor.availabilities.length === 0
+      ) {
+        continue; // Bỏ qua nếu bác sĩ không có clinic hoặc lịch làm việc
+      }
 
       // 3. Tạo ngày hẹn ngẫu nhiên
       const appointmentDate = faker.date.between({
