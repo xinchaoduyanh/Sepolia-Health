@@ -73,7 +73,7 @@ enum Relationship {
 model User {
   id       Int     @id @default(autoincrement())
   email    String  @unique
-  // phone    String? @unique // SĐT đăng nhập/khôi phục
+  phone    String? @unique // SĐT đăng nhập/khôi phục
   password String
   role     Role
 
