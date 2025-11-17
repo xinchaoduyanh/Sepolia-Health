@@ -70,7 +70,7 @@ export class BillingDto {
   createdAt: Date;
 }
 
-export class AppointmentResponseDto {
+export class AppointmentDetailResponseDto {
   @ApiProperty()
   id: number;
 
@@ -124,8 +124,8 @@ export class AppointmentResponseDto {
 }
 
 export class AppointmentsListResponseDto {
-  @ApiProperty({ type: [AppointmentResponseDto] })
-  data: AppointmentResponseDto[];
+  @ApiProperty({ type: [AppointmentDetailResponseDto] })
+  data: AppointmentDetailResponseDto[];
 
   @ApiProperty()
   total: number;

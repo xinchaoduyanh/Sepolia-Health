@@ -9,7 +9,6 @@ import { PrismaService } from '@/common/prisma/prisma.service';
 import { AppointmentStatus } from '@prisma/client';
 import {
   UpdateAppointmentDto,
-  AppointmentResponseDto,
   GetAppointmentsQueryDto,
   GetAvailableDateQueryDto,
   GetDoctorServicesQueryDto,
@@ -18,6 +17,7 @@ import {
   CreateAppointmentFromDoctorServiceBodyDto,
   GetDoctorAvailabilityResponseDto,
   GetAvailabilityDateResponseDto,
+  AppointmentDetailResponseDto,
 } from './dto';
 import { NotificationUtils } from '@/module/notification/notification.utils';
 import {
@@ -131,7 +131,7 @@ export class AppointmentService {
   /**
    * Get appointment by ID
    */
-  async findOne(id: number): Promise<AppointmentResponseDto> {
+  async findOne(id: number): Promise<AppointmentDetailResponseDto> {
     const appointment = await this.prisma.appointment.findUnique({
       where: { id },
       include: {
@@ -185,7 +185,7 @@ export class AppointmentService {
     id: number,
     updateAppointmentDto: UpdateAppointmentDto,
     userId: number,
-  ): Promise<AppointmentResponseDto> {
+  ): Promise<AppointmentDetailResponseDto> {
     const appointment = await this.prisma.appointment.findUnique({
       where: { id },
       include: {
@@ -521,7 +521,7 @@ export class AppointmentService {
    */
   async getClosestAppointment(
     userId: number,
-  ): Promise<AppointmentResponseDto | null> {
+  ): Promise<AppointmentDetailResponseDto | null> {
     // Find patient profiles managed by this user
     const patientProfiles = await this.prisma.patientProfile.findMany({
       where: { managerId: userId },
@@ -803,7 +803,7 @@ export class AppointmentService {
   async createFromDoctorService(
     createAppointmentDto: CreateAppointmentFromDoctorServiceBodyDto,
     userId: number,
-  ): Promise<AppointmentResponseDto> {
+  ): Promise<AppointmentDetailResponseDto> {
     const {
       doctorServiceId,
       date,
@@ -1074,7 +1074,9 @@ export class AppointmentService {
   /**
    * Format appointment response
    */
-  private formatAppointmentResponse(appointment: any): AppointmentResponseDto {
+  private formatAppointmentResponse(
+    appointment: any,
+  ): AppointmentDetailResponseDto {
     return {
       id: appointment.id,
       date: appointment.date.toISOString(),

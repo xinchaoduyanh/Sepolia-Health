@@ -14,7 +14,7 @@ import {
 import { ReceptionistAppointmentService } from './receptionist-appointment.service';
 import { Roles } from '@/common/decorators';
 import { Role } from '@prisma/client';
-import { GetAppointmentDetailResponseDto } from './dto/response';
+import { AppointmentDetailResponseDto } from '@/module/patient/appointment/dto';
 
 @ApiBearerAuth()
 @Roles(Role.RECEPTIONIST)
@@ -30,11 +30,11 @@ export class ReceptionistAppointmentController {
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Lấy thông tin cuộc hẹn thành công',
-    type: GetAppointmentDetailResponseDto,
+    type: AppointmentDetailResponseDto,
   })
   async getAppointmentDetail(
     @Param('id', ParseIntPipe) id: number,
-  ): Promise<GetAppointmentDetailResponseDto> {
+  ): Promise<AppointmentDetailResponseDto> {
     return this.receptionistAppointmentService.getAppointmentDetail(id);
   }
 }
