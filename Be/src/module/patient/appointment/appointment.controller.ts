@@ -22,7 +22,7 @@ import { Roles } from '@/common/decorators';
 import { Role } from '@prisma/client';
 import {
   UpdateAppointmentDto,
-  AppointmentResponseDto,
+  AppointmentDetailResponseDto,
   GetAppointmentsQueryDto,
   GetAvailableDateQueryDto,
   GetDoctorServicesQueryDto,
@@ -49,7 +49,7 @@ export class AppointmentController {
     @Param('id', ParseIntPipe) id: number,
     @Body() updateAppointmentDto: UpdateAppointmentDto,
     @CurrentUser('userId') userId: number,
-  ): Promise<AppointmentResponseDto> {
+  ): Promise<AppointmentDetailResponseDto> {
     return this.appointmentService.update(id, updateAppointmentDto, userId);
   }
 
@@ -81,7 +81,7 @@ export class AppointmentController {
   @ApiResponse({ status: 404, description: 'Không tìm thấy lịch hẹn' })
   async getClosestAppointment(
     @CurrentUser('userId') userId: number,
-  ): Promise<AppointmentResponseDto | null> {
+  ): Promise<AppointmentDetailResponseDto | null> {
     return this.appointmentService.getClosestAppointment(userId);
   }
 
@@ -92,7 +92,7 @@ export class AppointmentController {
   @ApiResponse({ status: 404, description: 'Không tìm thấy lịch hẹn' })
   async findOne(
     @Param('id', ParseIntPipe) id: number,
-  ): Promise<AppointmentResponseDto> {
+  ): Promise<AppointmentDetailResponseDto> {
     return this.appointmentService.findOne(id);
   }
 
@@ -167,7 +167,7 @@ export class AppointmentController {
   async createFromDoctorService(
     @Body() createAppointmentDto: CreateAppointmentFromDoctorServiceBodyDto,
     @CurrentUser('userId') userId: number,
-  ): Promise<AppointmentResponseDto> {
+  ): Promise<AppointmentDetailResponseDto> {
     return this.appointmentService.createFromDoctorService(
       createAppointmentDto,
       userId,

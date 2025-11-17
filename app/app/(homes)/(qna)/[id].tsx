@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   TextInput,
   Alert,
   Modal,
+  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -33,8 +34,10 @@ export default function QuestionDetailScreen() {
   const [answerContent, setAnswerContent] = useState('');
   const [showAnswerInput, setShowAnswerInput] = useState(false);
   const [showEditHistory, setShowEditHistory] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const rotateAnim = useRef(new Animated.Value(0)).current;
 
-  const { data: question, isLoading } = useQuestion(questionId);
+  const { data: question, isLoading, refetch, isFetching } = useQuestion(questionId);
   const createAnswer = useCreateAnswer();
   const voteQuestion = useVoteQuestion();
   const voteAnswer = useVoteAnswer();
@@ -132,6 +135,47 @@ export default function QuestionDetailScreen() {
       },
     ]);
   };
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    // Start rotation animation
+    Animated.loop(
+      Animated.timing(rotateAnim, {
+        toValue: 1,
+        duration: 1000,
+        useNativeDriver: true,
+      })
+    ).start();
+
+    try {
+      await refetch();
+    } catch {
+      Alert.alert('Lỗi', 'Không thể tải lại dữ liệu');
+    } finally {
+      setIsRefreshing(false);
+      rotateAnim.setValue(0);
+    }
+  };
+
+  // Effect to handle rotation animation
+  useEffect(() => {
+    if (isRefreshing || isFetching) {
+      Animated.loop(
+        Animated.timing(rotateAnim, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        })
+      ).start();
+    } else {
+      rotateAnim.setValue(0);
+    }
+  }, [isRefreshing, isFetching]);
+
+  const spin = rotateAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -244,6 +288,14 @@ export default function QuestionDetailScreen() {
               }}>
               Chi tiết câu hỏi
             </Text>
+            <TouchableOpacity
+              onPress={handleRefresh}
+              disabled={isRefreshing || isFetching}
+              style={{ padding: 8, marginRight: 4 }}>
+              <Animated.View style={{ transform: [{ rotate: spin }] }}>
+                <Ionicons name="refresh" size={24} color="#FFFFFF" />
+              </Animated.View>
+            </TouchableOpacity>
             {(isAuthor || isAdmin) && (
               <TouchableOpacity onPress={handleDeleteQuestion} style={{ padding: 8 }}>
                 <Ionicons name="trash-outline" size={24} color="#FFFFFF" />
