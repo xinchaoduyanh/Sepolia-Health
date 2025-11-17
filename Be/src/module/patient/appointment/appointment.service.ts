@@ -355,10 +355,10 @@ export class AppointmentService {
     } else if (finalSortBy === 'billingStatus') {
       // For billingStatus, we need to sort in memory
       shouldSortInMemory = true;
-      orderBy = { date: 'asc' }; // Temporary orderBy, will be overridden
+      orderBy = { startTime: 'asc' }; // Temporary orderBy, will be overridden
     } else {
       // Default: sort by date
-      orderBy = { date: finalSortOrder };
+      orderBy = { startTime: finalSortOrder };
     }
 
     // If sorting by billingStatus, fetch all then sort in memory
