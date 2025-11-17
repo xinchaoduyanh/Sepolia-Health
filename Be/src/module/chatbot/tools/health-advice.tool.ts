@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/common/prisma/prisma.service';
 
-interface HealthAdviceParams {
+export interface HealthAdviceParams {
   symptoms?: string[];
   condition?: string;
   age?: number;
@@ -9,7 +9,7 @@ interface HealthAdviceParams {
   medicalHistory?: string[];
 }
 
-interface MedicationAdvice {
+export interface MedicationAdvice {
   name: string;
   dosage: string;
   instructions: string;
@@ -17,7 +17,7 @@ interface MedicationAdvice {
   availableInClinic?: boolean;
 }
 
-interface LifestyleAdvice {
+export interface LifestyleAdvice {
   category: string;
   recommendations: string[];
 }

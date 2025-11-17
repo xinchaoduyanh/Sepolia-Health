@@ -6,11 +6,16 @@ import {
   DoctorScheduleQueryDto,
   HealthAdviceDto,
 } from './dto/process-message.dto';
-
+import { DoctorScheduleTool } from './tools/doctor-schedule.tool';
+import { HealthAdviceTool } from './tools/health-advice.tool';
 @ApiTags('Chatbot')
 @Controller('chatbot')
 export class ChatbotController {
-  constructor(private readonly chatbotService: ChatbotService) {}
+  constructor(
+    private readonly chatbotService: ChatbotService,
+    private readonly doctorScheduleTool: DoctorScheduleTool,
+    private readonly healthAdviceTool: HealthAdviceTool,
+  ) {}
 
   /**
    * Webhook endpoint từ Stream Chat
@@ -89,9 +94,7 @@ export class ChatbotController {
   @ApiOperation({ summary: 'Get doctor schedule (direct tool access)' })
   @ApiResponse({ status: 200, description: 'Schedule retrieved' })
   async getDoctorSchedule(@Query() query: DoctorScheduleQueryDto) {
-    const { default: tool } = await import('./tools/doctor-schedule.tool');
-    const doctorScheduleTool = new tool.DoctorScheduleTool(null as any); // Will be injected properly via service
-    return await doctorScheduleTool.execute(query);
+    return await this.doctorScheduleTool.execute(query);
   }
 
   /**
@@ -101,8 +104,6 @@ export class ChatbotController {
   @ApiOperation({ summary: 'Get health advice (direct tool access)' })
   @ApiResponse({ status: 200, description: 'Advice retrieved' })
   async getHealthAdvice(@Body() dto: HealthAdviceDto) {
-    const { default: tool } = await import('./tools/health-advice.tool');
-    const healthAdviceTool = new tool.HealthAdviceTool(null as any); // Will be injected properly via service
-    return await healthAdviceTool.execute(dto);
+    return await this.healthAdviceTool.execute(dto);
   }
 }
