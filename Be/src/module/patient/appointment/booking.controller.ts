@@ -48,7 +48,7 @@ export class BookingController {
 
   @Get('doctor-services')
   @ApiOperation({
-    summary: 'Lấy danh sách bác sĩ cung cấp dịch vụ theo location và service',
+    summary: 'Lấy danh sách bác sĩ cung cấp dịch vụ theo service',
   })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -67,14 +67,6 @@ export class BookingController {
     status: HttpStatus.OK,
     description: 'Lấy danh sách ngày khả dụng thành công',
   })
-  @ApiResponse({
-    status: HttpStatus.BAD_REQUEST,
-    description: 'Dữ liệu không hợp lệ',
-  })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'Dịch vụ bác sĩ không tồn tại',
-  })
   async getAvailableDates(
     @Query() query: GetAvailableDateQueryDto,
   ): Promise<GetAvailabilityDateResponseDto> {
@@ -88,14 +80,6 @@ export class BookingController {
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Lấy lịch bận thành công',
-  })
-  @ApiResponse({
-    status: HttpStatus.BAD_REQUEST,
-    description: 'Dữ liệu không hợp lệ',
-  })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'Bác sĩ không làm việc vào ngày này',
   })
   async getDoctorAvailability(
     @Query() query: GetDoctorAvailabilityQueryDto,

@@ -6,7 +6,11 @@ import {
 } from '@nestjs/common';
 import { MESSAGES } from '@/common/constants/messages';
 import { PrismaService } from '@/common/prisma/prisma.service';
-import { AppointmentStatus } from '@prisma/client';
+import {
+  AppointmentStatus,
+  AppointmentType,
+  PaymentStatus,
+} from '@prisma/client';
 import {
   UpdateAppointmentDto,
   GetAppointmentsQueryDto,
@@ -405,8 +409,8 @@ export class AppointmentService {
       // asc: PENDING -> PAID -> REFUNDED (Chưa thanh toán trước)
       // desc: PAID -> PENDING -> REFUNDED (Đã thanh toán trước)
       allAppointments.sort((a, b) => {
-        const aStatus = a.billing?.status || 'PENDING';
-        const bStatus = b.billing?.status || 'PENDING';
+        const aStatus = a.billing?.status || PaymentStatus.PENDING;
+        const bStatus = b.billing?.status || PaymentStatus.PENDING;
 
         if (finalSortOrder === 'asc') {
           // PENDING (1) -> PAID (2) -> REFUNDED (3)
@@ -720,16 +724,7 @@ export class AppointmentService {
    * Get doctor services by location and service
    */
   async getDoctorServices(query: GetDoctorServicesQueryDto) {
-    const { locationId, serviceId } = query;
-    // First check if location exists
-    const location = await this.prisma.clinic.findUnique({
-      where: { id: locationId },
-    });
-
-    if (!location) {
-      throw new NotFoundException(MESSAGES.APPOINTMENT.LOCATION_NOT_FOUND);
-    }
-
+    const { serviceId } = query;
     // Check if service exists
     const service = await this.prisma.service.findUnique({
       where: { id: serviceId },
@@ -743,9 +738,6 @@ export class AppointmentService {
     const doctorServices = await this.prisma.doctorService.findMany({
       where: {
         serviceId: serviceId,
-        doctor: {
-          clinicId: locationId,
-        },
       },
       include: {
         doctor: {
@@ -757,14 +749,6 @@ export class AppointmentService {
             contactInfo: true,
             avatar: true,
             clinicId: true,
-          },
-        },
-        service: {
-          select: {
-            id: true,
-            name: true,
-            price: true,
-            duration: true,
           },
         },
       },
@@ -784,14 +768,6 @@ export class AppointmentService {
         contactInfo: ds.doctor.contactInfo,
         avatar: ds.doctor.avatar,
       },
-      service: ds.service,
-      location: {
-        id: location.id,
-        name: location.name,
-        address: location.address,
-        phone: location.phone,
-        email: location.email,
-      },
     }));
 
     return {
@@ -803,7 +779,6 @@ export class AppointmentService {
   /**
    * Create appointment from DoctorService
    */
-  //TODO refactor this func
   async createFromDoctorService(
     createAppointmentDto: CreateAppointmentFromDoctorServiceBodyDto,
     userId: number,
@@ -851,63 +826,21 @@ export class AppointmentService {
     }
     const validatedPatientProfileId = patientProfile.id;
 
-    // Check doctor availability
-    const dayOfWeek = DateUtil.getDayOfWeek(startTime);
-    const workingHours = await this.prisma.doctorAvailability.findUnique({
-      where: {
-        doctorId_dayOfWeek: {
-          doctorId: doctorService.doctor.id,
-          dayOfWeek: dayOfWeek,
-        },
-      },
-    });
-
-    if (!workingHours) {
-      throw new BadRequestException(
-        MESSAGES.APPOINTMENT.DOCTOR_NOT_AVAILABLE_ON_DATE,
-      );
-    }
-
-    // Check if requested time is within working hours
-    const startMinutes = startTime.getHours() * 60 + startTime.getMinutes();
-    const workingStart = TimeUtil.timeToMinutes(workingHours.startTime);
-    const workingEnd = TimeUtil.timeToMinutes(workingHours.endTime);
-
-    if (
-      startMinutes < workingStart ||
-      startMinutes + doctorService.service.duration > workingEnd
-    ) {
-      throw new BadRequestException(
-        MESSAGES.APPOINTMENT.APPOINTMENT_OUTSIDE_WORKING_HOURS,
-      );
-    }
-
-    // Check for conflicts with existing appointments
-    const hasConflict = await this.prisma.appointment.findFirst({
-      where: {
-        doctorId: doctorService.doctor.id,
-        startTime: { lt: endTime },
-        endTime: { gt: startTime },
-        status: {
-          in: ['UPCOMING', 'ON_GOING'],
-        },
-      },
-    });
-
-    if (hasConflict) {
-      throw new BadRequestException(
-        MESSAGES.APPOINTMENT.TIME_SLOT_ALREADY_BOOKED,
-      );
-    }
+    await this.checkConflict(
+      startTime,
+      endTime,
+      doctorService.doctorId,
+      doctorService.service.duration,
+    );
 
     // Create appointment using data from DoctorService
     const appointment = await this.prisma.appointment.create({
       data: {
         startTime,
         endTime,
-        status: 'UPCOMING',
+        status: AppointmentStatus.UPCOMING,
         notes,
-        type: 'ONLINE',
+        type: AppointmentType.OFFLINE,
         patientProfileId: validatedPatientProfileId,
         doctorId: doctorService.doctorId,
         serviceId: doctorService.serviceId,
@@ -919,7 +852,7 @@ export class AppointmentService {
     const billing = await this.prisma.billing.create({
       data: {
         amount: doctorService.service.price,
-        status: 'PENDING',
+        status: PaymentStatus.PENDING,
         appointmentId: appointment.id,
       },
       select: {
@@ -1054,7 +987,6 @@ export class AppointmentService {
   /**
    * Get doctor availability for a specific date (simple version)
    */
-  // refactor this func
   async getDoctorAvailability(
     query: GetDoctorAvailabilityQueryDto,
   ): Promise<GetDoctorAvailabilityResponseDto> {
@@ -1135,7 +1067,7 @@ export class AppointmentService {
           lt: new Date(targetDate.getTime() + 24 * 60 * 60 * 1000),
         },
         status: {
-          in: ['UPCOMING', 'ON_GOING'],
+          in: [AppointmentStatus.UPCOMING, AppointmentStatus.ON_GOING],
         },
       },
       select: {
@@ -1175,24 +1107,15 @@ export class AppointmentService {
   async getAvailableDates(
     query: GetAvailableDateQueryDto,
   ): Promise<GetAvailabilityDateResponseDto> {
-    const { doctorServiceId, startDate, endDate } = query;
-    // Validate date formats
-    if (isNaN(Date.parse(startDate)) || isNaN(Date.parse(endDate))) {
-      throw new BadRequestException(MESSAGES.APPOINTMENT.INVALID_DATE);
-    }
-
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+    const { doctorServiceId, startTime, endTime } = query;
 
     // Check if dates are valid
-    if (start >= end) {
+    if (startTime >= endTime) {
       throw new BadRequestException('Ngày bắt đầu phải nhỏ hơn ngày kết thúc');
     }
 
     // Check if start date is not in the past
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    if (start < today) {
+    if (startTime < new Date()) {
       throw new BadRequestException(MESSAGES.APPOINTMENT.PAST_DATE);
     }
 
@@ -1226,7 +1149,7 @@ export class AppointmentService {
     // Get all working hours for the doctor
     const workingHours = await this.prisma.doctorAvailability.findMany({
       where: {
-        doctorId: doctorService.doctor.id,
+        doctorId: doctorService.doctorId,
       },
     });
 
@@ -1255,9 +1178,9 @@ export class AppointmentService {
         endTime: string;
       };
     }> = [];
-    const currentDate = new Date(start);
+    const currentDate = new Date(startTime);
 
-    while (currentDate <= end) {
+    while (currentDate <= endTime) {
       const dayOfWeek = DateUtil.getDayOfWeek(currentDate);
       const workingHour = workingHoursMap.get(dayOfWeek);
 
@@ -1277,7 +1200,7 @@ export class AppointmentService {
     }
 
     return {
-      doctorId: doctorService.doctor.id,
+      doctorId: doctorService.doctorId,
       doctorName: `${doctorService.doctor.firstName} ${doctorService.doctor.lastName}`,
       serviceName: doctorService.service.name,
       serviceDuration: doctorService.service.duration,
@@ -1332,5 +1255,58 @@ export class AppointmentService {
     }
 
     return slots;
+  }
+
+  private async checkConflict(
+    startTime: Date,
+    endTime: Date,
+    doctorId: number,
+    duration: number,
+  ) {
+    // Check doctor availability
+    const dayOfWeek = DateUtil.getDayOfWeek(startTime);
+    const workingHours = await this.prisma.doctorAvailability.findUnique({
+      where: {
+        doctorId_dayOfWeek: {
+          doctorId: doctorId,
+          dayOfWeek: dayOfWeek,
+        },
+      },
+    });
+
+    if (!workingHours) {
+      throw new BadRequestException(
+        MESSAGES.APPOINTMENT.DOCTOR_NOT_AVAILABLE_ON_DATE,
+      );
+    }
+
+    // Check if requested time is within working hours
+    const startMinutes = startTime.getHours() * 60 + startTime.getMinutes();
+    const workingStart = TimeUtil.timeToMinutes(workingHours.startTime);
+    const workingEnd = TimeUtil.timeToMinutes(workingHours.endTime);
+
+    if (startMinutes < workingStart || startMinutes + duration > workingEnd) {
+      throw new BadRequestException(
+        MESSAGES.APPOINTMENT.APPOINTMENT_OUTSIDE_WORKING_HOURS,
+      );
+    }
+
+    // Check for conflicts with existing appointments
+    const hasConflict = await this.prisma.appointment.findFirst({
+      where: {
+        doctorId: doctorId,
+        startTime: { lt: endTime },
+        endTime: { gt: startTime },
+        status: {
+          in: [AppointmentStatus.UPCOMING, AppointmentStatus.ON_GOING],
+        },
+      },
+    });
+
+    if (hasConflict) {
+      throw new BadRequestException(
+        MESSAGES.APPOINTMENT.TIME_SLOT_ALREADY_BOOKED,
+      );
+    }
   }
 }

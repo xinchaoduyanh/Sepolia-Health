@@ -71,14 +71,14 @@ export class CreateAppointmentFromDoctorServiceBodyDto extends createZodDto(
 
 // Booking dto
 const GetDoctorServicesSchema = z.object({
-  locationId: z.coerce.number(),
+  // locationId: z.coerce.number(),
   serviceId: z.coerce.number(),
 });
 
 const GetAvailableDatesSchema = z.object({
   doctorServiceId: z.coerce.number(),
-  startDate: z.iso.date(),
-  endDate: z.iso.date(),
+  startTime: z.iso.date().transform((val) => new Date(val)),
+  endTime: z.iso.date().transform((val) => new Date(val)),
 });
 
 const GetDoctorAvailabilitySchema = z.object({
