@@ -15,7 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 // import { Relationship } from '@/types/auth';
-import { userApi } from '@/lib/api';
+import { useUpdatePatientProfile, useUploadPatientProfileAvatar } from '@/lib/api/user';
 import BirthDatePicker from '@/components/BirthDatePicker';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/lib/hooks/useAuth';
@@ -33,12 +33,14 @@ interface EditProfileFormData {
 }
 
 export default function EditProfileScreen() {
-  const { refreshProfile } = useAuth();
   const param = useLocalSearchParams();
   const profile = JSON.parse(param.profile as string);
 
-  const [isUploading, setIsUploading] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const updateProfileMutation = useUpdatePatientProfile();
+  const uploadAvatarMutation = useUploadPatientProfileAvatar();
+
+  const isUploading = uploadAvatarMutation.isPending;
+  const isSubmitting = updateProfileMutation.isPending;
 
   // Initialize react-hook-form with default values from profile
   const {
@@ -120,8 +122,6 @@ export default function EditProfileScreen() {
     }
 
     try {
-      setIsSubmitting(true);
-
       // Update patient profile
       const profileData = {
         firstName: data.firstName.trim(),
@@ -134,11 +134,10 @@ export default function EditProfileScreen() {
         address: profile.address || '',
       };
 
-      await userApi.updatePatientProfile(profile.id, profileData);
+      await updateProfileMutation.mutateAsync({ profileId: profile.id, data: profileData });
 
       // Upload avatar if changed
       if (data.avatar && data.avatar !== profile.avatar) {
-        setIsUploading(true);
         const formDataUpload = new FormData();
         formDataUpload.append('avatar', {
           uri: data.avatar,
@@ -147,15 +146,12 @@ export default function EditProfileScreen() {
         } as any);
 
         try {
-          await userApi.uploadPatientProfileAvatar(profile.id, formDataUpload);
+          await uploadAvatarMutation.mutateAsync({ profileId: profile.id, file: formDataUpload });
         } catch (uploadError) {
           console.error('Avatar upload error:', uploadError);
           // Don't fail the entire process if avatar upload fails
         }
       }
-
-      // Refresh user data to get updated profiles
-      refreshProfile();
 
       Alert.alert('Thành công', 'Hồ sơ bệnh nhân đã được cập nhật thành công', [
         {
@@ -166,9 +162,6 @@ export default function EditProfileScreen() {
     } catch (error) {
       console.error('Update profile error:', error);
       Alert.alert('Lỗi', 'Không thể cập nhật hồ sơ. Vui lòng thử lại.');
-    } finally {
-      setIsSubmitting(false);
-      setIsUploading(false);
     }
   };
 

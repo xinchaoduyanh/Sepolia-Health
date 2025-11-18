@@ -7,9 +7,8 @@ import Svg, { Path } from 'react-native-svg';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { router } from 'expo-router';
 import { PatientProfile, Relationship } from '@/types/auth';
-import { useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
-import { userApi } from '@/lib/api';
+import { useUploadPatientProfileAvatar, useUploadUserAvatar } from '@/lib/api/user';
 
 // Helper function để chuyển đổi relationship enum sang text tiếng Việt
 const getRelationshipText = (relationship: Relationship): string => {
@@ -29,8 +28,9 @@ const getRelationshipText = (relationship: Relationship): string => {
 // ================== Main Screen Component ==================
 
 const ProfileScreen = () => {
-  const { user, refreshProfile } = useAuth();
-  const [isUploading, setIsUploading] = useState(false);
+  const { user } = useAuth();
+  const uploadPatientAvatarMutation = useUploadPatientProfileAvatar();
+  const uploadUserAvatarMutation = useUploadUserAvatar();
 
   // Lấy patientProfiles từ user data
   const patientProfiles = user?.patientProfiles || [];
@@ -44,6 +44,8 @@ const ProfileScreen = () => {
   const otherProfiles = patientProfiles.filter(
     (profile: PatientProfile) => profile.relationship !== 'SELF'
   );
+
+  const isUploading = uploadPatientAvatarMutation.isPending || uploadUserAvatarMutation.isPending;
 
   // Function để chọn và upload avatar
   const handleUploadAvatar = async (profileId?: number) => {
@@ -65,8 +67,6 @@ const ProfileScreen = () => {
       });
 
       if (!result.canceled && result.assets[0]) {
-        setIsUploading(true);
-
         // Create FormData
         const formData = new FormData();
         formData.append('avatar', {
@@ -75,31 +75,29 @@ const ProfileScreen = () => {
           name: 'avatar.jpg',
         } as any);
 
-        // Upload avatar
+        // Upload avatar using React Query hooks with automatic cache updates
         if (profileId) {
           // Upload for specific patient profile
-          await userApi.uploadPatientProfileAvatar(profileId, formData);
+          await uploadPatientAvatarMutation.mutateAsync({ profileId, file: formData });
         } else {
           // Upload for primary profile - find primary profile ID
           const primaryProfileId = primaryProfile?.id;
           if (primaryProfileId) {
-            await userApi.uploadPatientProfileAvatar(primaryProfileId, formData);
+            await uploadPatientAvatarMutation.mutateAsync({
+              profileId: primaryProfileId,
+              file: formData,
+            });
           } else {
             // Fallback to user avatar upload if no primary profile found
-            await userApi.uploadUserAvatar(formData);
+            await uploadUserAvatarMutation.mutateAsync(formData);
           }
         }
-
-        // Refresh user data to get updated profiles
-        refreshProfile();
 
         Alert.alert('Thành công', 'Avatar đã được cập nhật');
       }
     } catch (error) {
       console.error('Upload avatar error:', error);
       Alert.alert('Lỗi', 'Không thể upload avatar. Vui lòng thử lại.');
-    } finally {
-      setIsUploading(false);
     }
   };
 

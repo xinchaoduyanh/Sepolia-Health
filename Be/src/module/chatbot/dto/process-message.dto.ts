@@ -70,3 +70,13 @@ export const StreamChatWebhookSchema = z.object({
 export class StreamChatWebhookDto extends createZodDto(
   StreamChatWebhookSchema,
 ) {}
+
+// Process Message Response Schema
+export const ProcessMessageResponseSchema = z.object({
+  response: z.string().describe('AI response message'),
+  timestamp: z.string().describe('Response timestamp in ISO format'),
+});
+
+export class ProcessMessageResponseDto extends createZodDto(
+  ProcessMessageResponseSchema,
+) {}

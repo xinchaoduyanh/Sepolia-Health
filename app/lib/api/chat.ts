@@ -65,7 +65,9 @@ export class ChatService {
       { last_message_at: -1 }, // Sort by last message
       {
         state: true, // Load channel state including members
+        watch: true, // Watch for realtime updates
         limit: 20,
+        message_limit: 30, // Load last 30 messages with user info
       }
     );
 

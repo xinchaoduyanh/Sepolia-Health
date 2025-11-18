@@ -147,13 +147,63 @@ export class ChatbotController {
   /**
    * Alternative: Direct API call (không dùng webhook)
    * Frontend gọi trực tiếp khi user gửi message
+   * Nếu có channelId, tự động gửi response vào channel
    */
   @ApiBearerAuth()
   @Post('process')
-  @ApiOperation({ summary: 'Process message and return AI response' })
-  @ApiResponse({ status: 200, description: 'Message processed successfully' })
-  async processMessage(@Body() dto: ProcessMessageDto) {
-    return await this.chatbotService.processMessage(dto.message, dto.userId);
+  @ApiOperation({
+    summary: 'Process message and return AI response',
+    description:
+      'Nếu có channelId, sẽ tự động gửi response vào channel. Nếu không, chỉ trả về response.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Message processed successfully',
+  })
+  async processMessage(@Body() dto: ProcessMessageDto, @Request() req) {
+    const userId = req.user?.userId || dto.userId;
+
+    console.log('📨 [Controller] Process message request:', {
+      hasChannelId: !!dto.channelId,
+      channelId: dto.channelId,
+      messageLength: dto.message?.length || 0,
+      userId,
+    });
+
+    // Nếu có channelId, gửi response vào channel và trả về response
+    if (dto.channelId) {
+      const result = await this.chatbotService.processMessageAndReply(
+        dto.channelId,
+        dto.message,
+        userId?.toString(),
+      );
+
+      console.log('📤 [Controller] Response (with channelId):', {
+        hasResponse: !!result.response,
+        responseLength: result.response?.length || 0,
+        responsePreview: result.response?.substring(0, 100) || '',
+        timestamp: result.timestamp,
+      });
+
+      // ResponseInterceptor sẽ tự động wrap thành { data: result, message: 'Success', statusCode: 200 }
+      return result;
+    }
+
+    // Nếu không có channelId, chỉ trả về response
+    const result = await this.chatbotService.processMessage(
+      dto.message,
+      userId?.toString(),
+    );
+
+    console.log('📤 [Controller] Response (no channelId):', {
+      hasResponse: !!result.response,
+      responseLength: result.response?.length || 0,
+      responsePreview: result.response?.substring(0, 100) || '',
+      timestamp: result.timestamp,
+    });
+
+    // ResponseInterceptor sẽ tự động wrap thành { data: result, message: 'Success', statusCode: 200 }
+    return result;
   }
 
   /**

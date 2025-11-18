@@ -1,10 +1,12 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Pressable, Image } from 'react-native';
-import { useMessageContext, MessageSimple } from 'stream-chat-expo';
+import { useMessageContext, useChannelContext, MessageSimple } from 'stream-chat-expo';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { format, isToday, isYesterday } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import Markdown from 'react-native-markdown-display';
+import { ChatbotAPI } from '@/lib/api/chatbot';
 
 // Format timestamp for better readability
 const formatMessageTime = (date: Date) => {
@@ -17,8 +19,63 @@ const formatMessageTime = (date: Date) => {
   }
 };
 
+// Markdown styles for messages
+const getMarkdownStyles = (isMyMessage: boolean) => ({
+  body: {
+    fontSize: 15,
+    lineHeight: 20,
+    color: isMyMessage ? '#FFFFFF' : '#1F2937',
+  },
+  paragraph: {
+    marginTop: 0,
+    marginBottom: 4,
+    fontSize: 15,
+    lineHeight: 20,
+    color: isMyMessage ? '#FFFFFF' : '#1F2937',
+  },
+  strong: {
+    fontWeight: '700',
+    color: isMyMessage ? '#FFFFFF' : '#1F2937',
+  },
+  bullet_list: {
+    marginTop: 4,
+    marginBottom: 4,
+  },
+  ordered_list: {
+    marginTop: 4,
+    marginBottom: 4,
+  },
+  list_item: {
+    marginTop: 2,
+    marginBottom: 2,
+    flexDirection: 'row',
+    fontSize: 15,
+    lineHeight: 20,
+    color: isMyMessage ? '#FFFFFF' : '#1F2937',
+  },
+  bullet_list_icon: {
+    marginLeft: 8,
+    marginRight: 8,
+    color: isMyMessage ? '#FFFFFF' : '#1F2937',
+  },
+  code_inline: {
+    backgroundColor: isMyMessage ? 'rgba(255,255,255,0.2)' : '#F1F5F9',
+    borderRadius: 4,
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+    fontFamily: 'monospace',
+    fontSize: 14,
+    color: isMyMessage ? '#FFFFFF' : '#1F2937',
+  },
+  link: {
+    color: isMyMessage ? '#BFDBFE' : '#2563EB',
+    textDecorationLine: 'underline',
+  },
+});
+
 export const CustomMessage = () => {
   const { message, isMyMessage } = useMessageContext();
+  const { channel } = useChannelContext();
   const [showActions, setShowActions] = React.useState(false);
 
   const handleCopyMessage = async () => {
@@ -32,9 +89,51 @@ export const CustomMessage = () => {
     setShowActions(true);
   };
 
-  // Get user info early for use in all render paths
-  const userName = message.user?.name || 'Unknown';
-  const userImage = message.user?.image;
+  // Get user info with fallback from channel members
+  const getUserInfo = () => {
+    const userId = message.user?.id;
+    const botUserId = ChatbotAPI.getAIBotUserId();
+    const isBotMessage = userId === botUserId;
+
+    // First try to get from message.user
+    if (message.user?.name && message.user?.image) {
+      return {
+        name: message.user.name,
+        image: message.user.image,
+      };
+    }
+
+    // Fallback to channel members if available
+    if (userId && channel?.state?.members) {
+      const member = channel.state.members[userId];
+      if (member?.user) {
+        return {
+          name: member.user.name || message.user?.name || 'Unknown',
+          image: member.user.image || message.user?.image,
+        };
+      }
+    }
+
+    // For bot messages, try to query members if not found
+    if (isBotMessage && channel) {
+      // Try to get from channel data or query members
+      const botMember = channel.state?.members?.[botUserId];
+      if (botMember?.user?.image) {
+        return {
+          name: botMember.user.name || 'Trợ lý Y tế Thông minh',
+          image: botMember.user.image,
+        };
+      }
+    }
+
+    // Final fallback
+    return {
+      name: message.user?.name || (isBotMessage ? 'Trợ lý Y tế Thông minh' : 'Unknown'),
+      image: message.user?.image,
+    };
+  };
+
+  const { name: userName, image: userImage } = getUserInfo();
 
   // Handle attachments
   if (message.attachments?.length) {
@@ -134,14 +233,7 @@ export const CustomMessage = () => {
               borderColor: '#E2E8F0',
             }}>
             {displayText && (
-              <Text
-                style={{
-                  fontSize: 15,
-                  lineHeight: 20,
-                  color: isMyMessage ? '#FFFFFF' : '#1F2937',
-                }}>
-                {displayText}
-              </Text>
+              <Markdown style={getMarkdownStyles(isMyMessage)}>{displayText}</Markdown>
             )}
           </View>
 
@@ -305,14 +397,7 @@ export const CustomMessage = () => {
             borderWidth: isMyMessage ? 0 : 1,
             borderColor: '#E2E8F0',
           }}>
-          <Text
-            style={{
-              fontSize: 15,
-              lineHeight: 20,
-              color: isMyMessage ? '#FFFFFF' : '#1F2937',
-            }}>
-            {message.text}
-          </Text>
+          <Markdown style={getMarkdownStyles(isMyMessage)}>{message.text}</Markdown>
         </View>
 
         {/* Timestamp and Status */}

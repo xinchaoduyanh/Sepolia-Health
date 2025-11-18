@@ -186,7 +186,52 @@ export class ChatService {
   /**
    * Tạo Stream Chat token cho user
    */
-  generateStreamToken(userId: number): string {
+  async generateStreamToken(userId: number): Promise<string> {
+    // Lấy thông tin user từ database
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        doctorProfile: true,
+        receptionistProfile: true,
+        adminProfile: true,
+        patientProfiles: {
+          where: { relationship: 'SELF' },
+          take: 1,
+        },
+      },
+    });
+
+    if (!user) {
+      throw new Error(`User ${userId} not found`);
+    }
+
+    // Lấy tên và avatar dựa trên role
+    let name = `User ${userId}`;
+    let avatar: string | undefined = undefined;
+
+    if (user.doctorProfile) {
+      name = `${user.doctorProfile.firstName} ${user.doctorProfile.lastName}`;
+      avatar = user.doctorProfile.avatar || undefined;
+    } else if (user.receptionistProfile) {
+      name = `${user.receptionistProfile.firstName} ${user.receptionistProfile.lastName}`;
+      avatar = user.receptionistProfile.avatar || undefined;
+    } else if (user.adminProfile) {
+      name = `${user.adminProfile.firstName} ${user.adminProfile.lastName}`;
+      avatar = user.adminProfile.avatar || undefined;
+    } else if (user.patientProfiles.length > 0) {
+      const patientProfile = user.patientProfiles[0];
+      name = `${patientProfile.firstName} ${patientProfile.lastName}`;
+      avatar = patientProfile.avatar || undefined;
+    }
+
+    // Upsert user vào Stream Chat với thông tin đầy đủ
+    await this.streamClient.upsertUser({
+      id: userId.toString(),
+      name,
+      role: 'user',
+      image: avatar,
+    });
+
     return this.streamClient.createToken(userId.toString());
   }
 

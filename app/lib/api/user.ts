@@ -1,10 +1,18 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../api-client';
 import { API_ENDPOINTS } from '@/constants/api';
 import type { PatientProfile } from '@/types/auth';
+import { authKeys } from './auth';
 
 export interface UploadAvatarResponse {
   avatarUrl: string;
 }
+
+// Query Keys Factory
+export const userKeys = {
+  all: ['user'] as const,
+  patientProfiles: () => [...userKeys.all, 'patientProfiles'] as const,
+} as const;
 
 export const userApi = {
   // Get all patient profiles
@@ -59,4 +67,89 @@ export const userApi = {
     });
     return response.data;
   },
+};
+
+// React Query Hooks
+export const useUploadPatientProfileAvatar = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ profileId, file }: { profileId: number; file: FormData }) =>
+      userApi.uploadPatientProfileAvatar(profileId, file),
+    onSuccess: async (data, variables) => {
+      // Optimistically update the profile in cache
+      queryClient.setQueryData(authKeys.profile(), (oldData: any) => {
+        if (!oldData) return oldData;
+
+        const updatedProfiles = oldData.patientProfiles?.map((profile: PatientProfile) =>
+          profile.id === variables.profileId ? { ...profile, avatar: data.avatarUrl } : profile
+        );
+
+        return {
+          ...oldData,
+          patientProfiles: updatedProfiles,
+        };
+      });
+
+      // Invalidate and refetch profile immediately to ensure consistency
+      await queryClient.invalidateQueries({ queryKey: authKeys.profile() });
+      await queryClient.refetchQueries({ queryKey: authKeys.profile() });
+    },
+  });
+};
+
+export const useUploadUserAvatar = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (file: FormData) => userApi.uploadUserAvatar(file),
+    onSuccess: async (data) => {
+      // Optimistically update the profile in cache
+      queryClient.setQueryData(authKeys.profile(), (oldData: any) => {
+        if (!oldData) return oldData;
+
+        // Update primary patient profile avatar
+        const updatedProfiles = oldData.patientProfiles?.map((profile: PatientProfile) =>
+          profile.relationship === 'SELF' ? { ...profile, avatar: data.avatarUrl } : profile
+        );
+
+        return {
+          ...oldData,
+          patientProfiles: updatedProfiles,
+        };
+      });
+
+      // Invalidate and refetch profile immediately to ensure consistency
+      await queryClient.invalidateQueries({ queryKey: authKeys.profile() });
+      await queryClient.refetchQueries({ queryKey: authKeys.profile() });
+    },
+  });
+};
+
+export const useUpdatePatientProfile = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ profileId, data }: { profileId: number; data: Partial<PatientProfile> }) =>
+      userApi.updatePatientProfile(profileId, data),
+    onSuccess: async (data, variables) => {
+      // Optimistically update the profile in cache
+      queryClient.setQueryData(authKeys.profile(), (oldData: any) => {
+        if (!oldData) return oldData;
+
+        const updatedProfiles = oldData.patientProfiles?.map((profile: PatientProfile) =>
+          profile.id === variables.profileId ? { ...profile, ...data.profile } : profile
+        );
+
+        return {
+          ...oldData,
+          patientProfiles: updatedProfiles,
+        };
+      });
+
+      // Invalidate and refetch profile immediately to ensure consistency
+      await queryClient.invalidateQueries({ queryKey: authKeys.profile() });
+      await queryClient.refetchQueries({ queryKey: authKeys.profile() });
+    },
+  });
 };

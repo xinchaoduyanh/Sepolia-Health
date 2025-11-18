@@ -38,9 +38,10 @@ const ChannelItem = ({ channel }: { channel: Channel }) => {
 };
 
 export default function ChannelsScreen() {
-  const { isChatReady, chatClient } = useChatContext();
+  const { isChatReady, chatClient, createOrGetAIChannel, isAIChannel } = useChatContext();
   const [channels, setChannels] = React.useState<any[]>([]);
   const [isLoading, setIsLoading] = React.useState(false);
+  const [isCreatingAIChannel, setIsCreatingAIChannel] = React.useState(false);
   const router = useRouter();
   const navigation = useNavigation();
   const channelsLoadedRef = React.useRef(false);
@@ -75,9 +76,24 @@ export default function ChannelsScreen() {
       try {
         console.log('📥 Loading channels...');
         const userChannels = await ChatService.fetchUserChannels();
-        setChannels(userChannels);
+
+        // Sắp xếp: AI channel luôn đứng đầu
+        const sortedChannels = [...userChannels].sort((a, b) => {
+          const aIsAI = isAIChannel(a);
+          const bIsAI = isAIChannel(b);
+
+          if (aIsAI && !bIsAI) return -1; // AI channel lên đầu
+          if (!aIsAI && bIsAI) return 1; // AI channel lên đầu
+
+          // Nếu cùng loại, sắp xếp theo last_message_at
+          const aTime = a.state?.last_message_at?.getTime() || 0;
+          const bTime = b.state?.last_message_at?.getTime() || 0;
+          return bTime - aTime; // Mới nhất lên đầu
+        });
+
+        setChannels(sortedChannels);
         channelsLoadedRef.current = true;
-        console.log('✅ Channels loaded:', userChannels.length);
+        console.log('✅ Channels loaded:', sortedChannels.length);
       } catch (error) {
         console.error('❌ Error loading channels:', error);
       } finally {
@@ -109,15 +125,30 @@ export default function ChannelsScreen() {
         if (updatedChannel) {
           setChannels((prevChannels) => {
             const channelIndex = prevChannels.findIndex((ch) => ch.cid === updatedChannel.cid);
+            let updated: Channel[];
+
             if (channelIndex >= 0) {
-              // Update existing channel and move to top
-              const updated = [...prevChannels];
+              // Update existing channel
+              updated = [...prevChannels];
               updated.splice(channelIndex, 1);
-              return [updatedChannel, ...updated];
+              updated.push(updatedChannel);
             } else {
-              // New channel, add to top
-              return [updatedChannel, ...prevChannels];
+              // New channel
+              updated = [...prevChannels, updatedChannel];
             }
+
+            // Sắp xếp lại: AI channel luôn đứng đầu
+            return updated.sort((a, b) => {
+              const aIsAI = isAIChannel(a);
+              const bIsAI = isAIChannel(b);
+
+              if (aIsAI && !bIsAI) return -1;
+              if (!aIsAI && bIsAI) return 1;
+
+              const aTime = a.state?.last_message_at?.getTime() || 0;
+              const bTime = b.state?.last_message_at?.getTime() || 0;
+              return bTime - aTime;
+            });
           });
         }
       }
@@ -211,7 +242,49 @@ export default function ChannelsScreen() {
         </View>
       </View>
 
-      <View style={{ paddingHorizontal: 24, marginTop: -80, marginBottom: 24 }}>
+      <View style={{ paddingHorizontal: 24, marginTop: -80, marginBottom: 24, gap: 12 }}>
+        {/* AI Assistant Button - Luôn đứng đầu */}
+        <Pressable
+          onPress={async () => {
+            if (isCreatingAIChannel || !isChatReady) return;
+
+            setIsCreatingAIChannel(true);
+            try {
+              const aiChannel = await createOrGetAIChannel();
+              if (aiChannel) {
+                router.push({
+                  pathname: '/(homes)/(chat)/[cid]',
+                  params: { cid: aiChannel.cid },
+                });
+              }
+            } catch (error) {
+              console.error('Error creating AI channel:', error);
+            } finally {
+              setIsCreatingAIChannel(false);
+            }
+          }}
+          disabled={isCreatingAIChannel || !isChatReady}
+          className="flex-row items-center justify-center rounded-xl bg-gradient-to-r from-purple-500 to-indigo-600 p-4 shadow-sm"
+          style={{
+            shadowColor: '#7C3AED',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.2,
+            shadowRadius: 4,
+            elevation: 3,
+            backgroundColor: '#7C3AED',
+            opacity: isCreatingAIChannel || !isChatReady ? 0.6 : 1,
+          }}>
+          {isCreatingAIChannel ? (
+            <ActivityIndicator size="small" color="white" />
+          ) : (
+            <Ionicons name="sparkles" size={24} color="#FFFFFF" />
+          )}
+          <Text className="ml-3 text-base font-bold text-white">
+            {isCreatingAIChannel ? 'Đang tải...' : 'Chat với trợ lý ảo'}
+          </Text>
+          <Ionicons name="chevron-forward" size={20} color="#FFFFFF" className="ml-auto" />
+        </Pressable>
+
         {/* New Consultation Button */}
         <Pressable
           onPress={() => router.push('/(homes)/(chat)/clinics')}

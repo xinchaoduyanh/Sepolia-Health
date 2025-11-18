@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/common/prisma/prisma.service';
-import { addDays, format, parse, isBefore } from 'date-fns';
+import { addDays, format, parse, isBefore, isValid } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import Fuse from 'fuse.js';
 
 interface DoctorScheduleParams {
   doctorId?: number;
   doctorName?: string;
-  date?: string; // YYYY-MM-DD
+  date?: string; // YYYY-MM-DD hoặc text tiếng Việt (ví dụ: "Thứ 4 tuần này", "ngày mai")
   serviceId?: number;
 }
 
@@ -36,30 +36,23 @@ export class DoctorScheduleTool {
         };
       }
 
-      // 3. Parse date
-      let targetDate: Date;
+      // 3. XỬ LÝ NGÀY: Bây giờ tin tưởng AI gửi xuống YYYY-MM-DD
+      let targetDate = new Date();
+
       if (params.date) {
-        // Thử parse với format yyyy-MM-dd trước
+        // AI hứa gửi YYYY-MM-DD, mình parse thẳng luôn
         const parsedDate = parse(params.date, 'yyyy-MM-dd', new Date());
 
-        // Kiểm tra nếu parse thành công (không phải Invalid Date)
-        if (isNaN(parsedDate.getTime())) {
-          // Nếu không parse được, thử xử lý các trường hợp ngày tháng bằng tiếng Việt
-          targetDate = this.parseVietnameseDate(params.date);
-        } else {
+        if (isValid(parsedDate)) {
           targetDate = parsedDate;
+        } else {
+          // Phòng hờ AI vẫn ngoan cố gửi text, lúc này mới báo lỗi trả về bắt nó làm lại
+          return {
+            error: 'Định dạng ngày không hợp lệ.',
+            suggestion:
+              'AI vui lòng tính toán ngày cụ thể ra định dạng YYYY-MM-DD (ví dụ 2025-11-19) rồi gọi lại tool.',
+          };
         }
-      } else {
-        targetDate = new Date();
-      }
-
-      // Validate targetDate
-      if (isNaN(targetDate.getTime())) {
-        return {
-          error: 'Ngày không hợp lệ',
-          suggestion:
-            'Vui lòng cung cấp ngày theo định dạng YYYY-MM-DD hoặc mô tả rõ ràng (ví dụ: "ngày mai", "Thứ 5 tuần này")',
-        };
       }
 
       // 4. Check if date is in the past
@@ -197,6 +190,10 @@ export class DoctorScheduleTool {
           price: ds.service.price,
           duration: ds.service.duration,
         })),
+        message:
+          availableSlots.length > 0
+            ? `Đã tìm thấy ${availableSlots.length} khung giờ trống vào ${format(targetDate, 'EEEE, dd/MM/yyyy', { locale: vi })}.`
+            : 'Rất tiếc, đã kín lịch ngày này.',
         bookingInstructions:
           availableSlots.length > 0
             ? 'Có thể đặt lịch các khung giờ trên. Vui lòng liên hệ để đặt lịch.'
@@ -215,7 +212,7 @@ export class DoctorScheduleTool {
     // Ưu tiên doctorId (chính xác 100%)
     if (params.doctorId) {
       return this.prisma.doctorProfile.findUnique({
-        where: { id: params.doctorId },
+        where: { id: Number(params.doctorId) },
         include: {
           user: true,
           clinic: true,
@@ -354,83 +351,6 @@ export class DoctorScheduleTool {
       afternoon: afternoon.length > 0 ? afternoon : null,
       evening: evening.length > 0 ? evening : null,
     };
-  }
-
-  private parseVietnameseDate(dateStr: string): Date {
-    const lowerStr = dateStr.toLowerCase().trim();
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    // Map thứ trong tuần (tiếng Việt -> số)
-    const dayMap: { [key: string]: number } = {
-      'chủ nhật': 0,
-      cn: 0,
-      'thứ 2': 1,
-      'thứ hai': 1,
-      'thứ 3': 2,
-      'thứ ba': 2,
-      'thứ 4': 3,
-      'thứ tư': 3,
-      'thứ 5': 4,
-      'thứ năm': 4,
-      'thứ 6': 5,
-      'thứ sáu': 5,
-      'thứ 7': 6,
-      'thứ bảy': 6,
-    };
-
-    // Xử lý "ngày mai"
-    if (lowerStr.includes('ngày mai') || lowerStr.includes('mai')) {
-      return addDays(today, 1);
-    }
-
-    // Xử lý "hôm nay"
-    if (lowerStr.includes('hôm nay') || lowerStr.includes('hôm nay')) {
-      return today;
-    }
-
-    // Xử lý "Thứ X tuần này"
-    if (lowerStr.includes('tuần này')) {
-      for (const [key, dayNum] of Object.entries(dayMap)) {
-        if (lowerStr.includes(key)) {
-          const currentDay = today.getDay();
-          let daysToAdd = dayNum - currentDay;
-          if (daysToAdd < 0) {
-            daysToAdd += 7; // Nếu đã qua thứ đó trong tuần, lấy thứ đó tuần sau
-          } else if (daysToAdd === 0) {
-            // Nếu hôm nay đúng là thứ đó, trả về hôm nay
-            return today;
-          }
-          return addDays(today, daysToAdd);
-        }
-      }
-    }
-
-    // Xử lý "Thứ X tuần sau"
-    if (lowerStr.includes('tuần sau')) {
-      for (const [key, dayNum] of Object.entries(dayMap)) {
-        if (lowerStr.includes(key)) {
-          const currentDay = today.getDay();
-          const daysToAdd = dayNum - currentDay + 7; // Tuần sau
-          return addDays(today, daysToAdd);
-        }
-      }
-    }
-
-    // Xử lý chỉ có "Thứ X" (không có "tuần này/sau")
-    for (const [key, dayNum] of Object.entries(dayMap)) {
-      if (lowerStr.includes(key) && !lowerStr.includes('tuần')) {
-        const currentDay = today.getDay();
-        let daysToAdd = dayNum - currentDay;
-        if (daysToAdd <= 0) {
-          daysToAdd += 7; // Nếu đã qua, lấy tuần sau
-        }
-        return addDays(today, daysToAdd);
-      }
-    }
-
-    // Nếu không match được, trả về Invalid Date
-    return new Date(NaN);
   }
 
   private async findNextAvailableDay(doctorId: number): Promise<Date | null> {

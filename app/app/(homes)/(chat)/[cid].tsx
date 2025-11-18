@@ -11,6 +11,8 @@ import { CustomTypingIndicator } from '@/components/CustomTypingIndicator';
 import { CustomMessageInput } from '@/components/CustomMessageInput';
 import Constants from 'expo-constants';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { AIThinkingProvider } from '@/contexts/AIThinkingContext';
+import { ChatbotAPI } from '@/lib/api/chatbot';
 
 // Lazy import useVideoContext
 const isExpoGo = Constants.appOwnership === 'expo';
@@ -51,6 +53,8 @@ export default function ChannelScreen() {
   const [replyingTo, setReplyingTo] = useState<any>(null);
   const [retryCount, setRetryCount] = useState(0);
   const [otherUserAvatar, setOtherUserAvatar] = useState<string | null>(null);
+  const [otherUserName, setOtherUserName] = useState<string | null>(null);
+  const [isAIChannel, setIsAIChannel] = useState(false);
 
   // Hide tab bar when entering individual chat
   React.useEffect(() => {
@@ -66,6 +70,37 @@ export default function ChannelScreen() {
       // This cleanup will be handled by channels screen
     };
   }, [navigation]);
+
+  // Auto mark as read when new messages arrive while viewing the channel
+  useEffect(() => {
+    if (!channel) return;
+
+    const handleNewMessage = async (event: any) => {
+      // Only mark as read if it's a new message (not from current user)
+      if (event.type === 'message.new' && event.user?.id !== user?.id) {
+        try {
+          await channel.markRead();
+          console.log('Auto-marked channel as read after new message');
+        } catch (err) {
+          console.error('Failed to auto-mark channel as read:', err);
+        }
+      }
+    };
+
+    // Listen for new messages
+    channel.on('message.new', handleNewMessage);
+
+    // Cleanup: mark as read when leaving the channel
+    return () => {
+      channel.off('message.new', handleNewMessage);
+
+      // Mark as read when component unmounts (user leaves the channel)
+      channel.markRead().catch((err) => {
+        console.error('Failed to mark channel as read on unmount:', err);
+      });
+      console.log('Marked channel as read on unmount');
+    };
+  }, [channel, user?.id]);
 
   const handleRetryChat = useCallback(async () => {
     try {
@@ -111,11 +146,23 @@ export default function ChannelScreen() {
 
           // Ensure channel is ready before setting
           try {
-            await channel.watch();
+            await channel.watch({ state: true, watchers: { limit: 100 } });
             console.log('Channel watched successfully, cid:', channel.cid);
 
-            // Get other user's avatar
+            // Mark all messages as read when entering the channel
+            await channel.markRead();
+            console.log('Channel marked as read:', channel.cid);
+
+            // Check if this is AI channel
+            const channelIsAI =
+              channel.id?.startsWith('ai-consult-') ||
+              channel.data?.ai_channel === true ||
+              channel.data?.consultation_type === 'ai_assistant';
+            setIsAIChannel(channelIsAI);
+
+            // Get other user's avatar and name
             try {
+              const botUserId = ChatbotAPI.getAIBotUserId();
               const members = await channel.queryMembers({});
               console.log(
                 'Channel members:',
@@ -126,23 +173,47 @@ export default function ChannelScreen() {
                 }))
               );
               console.log('Current user ID:', user?.id, 'type:', typeof user?.id);
+              console.log('Bot user ID:', botUserId);
 
               if (members.members && members.members.length > 0) {
                 // Convert user ID to string for comparison
                 const currentUserId = String(user?.id);
-                const otherMember = members.members.find((m) => m.user_id !== currentUserId);
-                console.log(
-                  'Other member found:',
-                  otherMember?.user?.name,
-                  'image:',
-                  otherMember?.user?.image
-                );
 
-                if (otherMember?.user?.image) {
-                  setOtherUserAvatar(otherMember.user.image as string);
+                // For AI channels, find bot user
+                if (channelIsAI) {
+                  const botMember = members.members.find((m) => m.user_id === botUserId);
+                  console.log(
+                    'AI Bot member found:',
+                    botMember?.user?.name,
+                    'image:',
+                    botMember?.user?.image
+                  );
+
+                  if (botMember?.user?.image) {
+                    setOtherUserAvatar(botMember.user.image as string);
+                  }
+                  if (botMember?.user?.name) {
+                    setOtherUserName(botMember.user.name as string);
+                  }
+                } else {
+                  // For regular channels, find other member
+                  const otherMember = members.members.find((m) => m.user_id !== currentUserId);
+                  console.log(
+                    'Other member found:',
+                    otherMember?.user?.name,
+                    'image:',
+                    otherMember?.user?.image
+                  );
+
+                  if (otherMember?.user?.image) {
+                    setOtherUserAvatar(otherMember.user.image as string);
+                  }
+                  if (otherMember?.user?.name) {
+                    setOtherUserName(otherMember.user.name as string);
+                  }
                 }
               }
-            } catch (err) {
+            } catch (err: any) {
               console.error('Failed to get channel members:', err);
             }
 
@@ -171,11 +242,23 @@ export default function ChannelScreen() {
           console.log('Fallback: creating channel object directly');
           const channel = chatClient.channel(channelType, channelId);
           try {
-            await channel.watch();
+            await channel.watch({ state: true, watchers: { limit: 100 } });
             console.log('Fallback channel created and watched:', channel.id, channel.cid);
 
-            // Get other user's avatar
+            // Mark all messages as read when entering the channel
+            await channel.markRead();
+            console.log('Fallback channel marked as read:', channel.cid);
+
+            // Check if this is AI channel
+            const channelIsAI =
+              channel.id?.startsWith('ai-consult-') ||
+              channel.data?.ai_channel === true ||
+              channel.data?.consultation_type === 'ai_assistant';
+            setIsAIChannel(channelIsAI);
+
+            // Get other user's avatar and name
             try {
+              const botUserId = ChatbotAPI.getAIBotUserId();
               const members = await channel.queryMembers({});
               console.log(
                 'Fallback - Channel members:',
@@ -186,23 +269,47 @@ export default function ChannelScreen() {
                 }))
               );
               console.log('Fallback - Current user ID:', user?.id, 'type:', typeof user?.id);
+              console.log('Fallback - Bot user ID:', botUserId);
 
               if (members.members && members.members.length > 0) {
                 // Convert user ID to string for comparison
                 const currentUserId = String(user?.id);
-                const otherMember = members.members.find((m) => m.user_id !== currentUserId);
-                console.log(
-                  'Fallback - Other member found:',
-                  otherMember?.user?.name,
-                  'image:',
-                  otherMember?.user?.image
-                );
 
-                if (otherMember?.user?.image) {
-                  setOtherUserAvatar(otherMember.user.image as string);
+                // For AI channels, find bot user
+                if (channelIsAI) {
+                  const botMember = members.members.find((m) => m.user_id === botUserId);
+                  console.log(
+                    'Fallback - AI Bot member found:',
+                    botMember?.user?.name,
+                    'image:',
+                    botMember?.user?.image
+                  );
+
+                  if (botMember?.user?.image) {
+                    setOtherUserAvatar(botMember.user.image as string);
+                  }
+                  if (botMember?.user?.name) {
+                    setOtherUserName(botMember.user.name as string);
+                  }
+                } else {
+                  // For regular channels, find other member
+                  const otherMember = members.members.find((m) => m.user_id !== currentUserId);
+                  console.log(
+                    'Fallback - Other member found:',
+                    otherMember?.user?.name,
+                    'image:',
+                    otherMember?.user?.image
+                  );
+
+                  if (otherMember?.user?.image) {
+                    setOtherUserAvatar(otherMember.user.image as string);
+                  }
+                  if (otherMember?.user?.name) {
+                    setOtherUserName(otherMember.user.name as string);
+                  }
                 }
               }
-            } catch (err) {
+            } catch (err: any) {
               console.error('Failed to get channel members:', err);
             }
 
@@ -366,6 +473,10 @@ export default function ChannelScreen() {
     startVideoCall(channel.id);
   };
 
+  // Get display name with fallback
+  const displayName =
+    otherUserName || channel.data?.name || (isAIChannel ? 'Trợ lý Y tế Thông minh' : 'Tư vấn y tế');
+
   return (
     <SafeAreaView className="flex-1 bg-slate-50">
       <Stack.Screen
@@ -374,7 +485,7 @@ export default function ChannelScreen() {
           headerBackTitle: 'Quay lại',
           headerBackVisible: true,
           headerStyle: {
-            backgroundColor: '#2563EB',
+            backgroundColor: isAIChannel ? '#7C3AED' : '#2563EB',
           },
           headerTintColor: '#ffffff',
           headerTitleStyle: {
@@ -388,11 +499,12 @@ export default function ChannelScreen() {
                   width: 36,
                   height: 36,
                   borderRadius: 18,
-                  backgroundColor: '#DBEAFE',
+                  backgroundColor: isAIChannel ? '#F3E8FF' : '#DBEAFE',
                   alignItems: 'center',
                   justifyContent: 'center',
                   borderWidth: 2,
                   borderColor: '#FFFFFF',
+                  position: 'relative',
                 }}>
                 {otherUserAvatar ? (
                   <Image
@@ -404,8 +516,29 @@ export default function ChannelScreen() {
                     }}
                     resizeMode="cover"
                   />
+                ) : isAIChannel ? (
+                  <Ionicons name="sparkles" size={20} color="#A855F7" />
                 ) : (
                   <Ionicons name="person" size={20} color="#2563EB" />
+                )}
+                {/* AI indicator badge */}
+                {isAIChannel && (
+                  <View
+                    style={{
+                      position: 'absolute',
+                      right: -4,
+                      bottom: -4,
+                      width: 14,
+                      height: 14,
+                      borderRadius: 7,
+                      backgroundColor: '#A855F7',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      borderWidth: 2,
+                      borderColor: '#FFFFFF',
+                    }}>
+                    <Ionicons name="sparkles" size={8} color="#FFFFFF" />
+                  </View>
                 )}
               </View>
               {/* User Name */}
@@ -416,59 +549,122 @@ export default function ChannelScreen() {
                   color: '#FFFFFF',
                 }}
                 numberOfLines={1}>
-                {channel.data?.name || 'Tư vấn y tế'}
+                {displayName}
               </Text>
             </View>
           ),
-          headerRight: () => (
-            <View style={{ flexDirection: 'row', marginRight: 8, gap: 12 }}>
-              {/* Audio Call Button */}
-              <TouchableOpacity
-                onPress={handleAudioCall}
-                style={{
-                  padding: 8,
-                  borderRadius: 20,
-                  backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                }}>
-                <Ionicons name="call" size={22} color="white" />
-              </TouchableOpacity>
+          headerRight: () =>
+            isAIChannel ? (
+              // For AI channels, show a small AI badge instead of call buttons
+              <View style={{ flexDirection: 'row', marginRight: 8, gap: 8, alignItems: 'center' }}>
+                <View
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                    paddingHorizontal: 10,
+                    paddingVertical: 5,
+                    borderRadius: 12,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 4,
+                  }}>
+                  <Ionicons name="sparkles" size={16} color="white" />
+                  <Text style={{ color: 'white', fontSize: 12, fontWeight: '600' }}>AI</Text>
+                </View>
+              </View>
+            ) : (
+              <View style={{ flexDirection: 'row', marginRight: 8, gap: 12 }}>
+                {/* Audio Call Button */}
+                <TouchableOpacity
+                  onPress={handleAudioCall}
+                  style={{
+                    padding: 8,
+                    borderRadius: 20,
+                    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                  }}>
+                  <Ionicons name="call" size={22} color="white" />
+                </TouchableOpacity>
 
-              {/* Video Call Button */}
-              <TouchableOpacity
-                onPress={handleVideoCall}
-                style={{
-                  padding: 8,
-                  borderRadius: 20,
-                  backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                }}>
-                <Ionicons name="videocam" size={22} color="white" />
-              </TouchableOpacity>
-            </View>
-          ),
+                {/* Video Call Button */}
+                <TouchableOpacity
+                  onPress={handleVideoCall}
+                  style={{
+                    padding: 8,
+                    borderRadius: 20,
+                    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                  }}>
+                  <Ionicons name="videocam" size={22} color="white" />
+                </TouchableOpacity>
+              </View>
+            ),
         }}
       />
 
-      <ReplyContext.Provider value={{ replyingTo, setReplyingTo }}>
-        <Channel channel={channel} MessageSimple={CustomMessage} DateHeader={CustomDateSeparator}>
-          {/* Message List Container */}
-          <View className="flex-1">
-            <MessageList
-              additionalFlatListProps={{
-                contentContainerStyle: {
-                  paddingTop: 16,
-                  paddingBottom: 8,
-                },
-              }}
-            />
-          </View>
+      <AIThinkingProvider>
+        <ReplyContext.Provider value={{ replyingTo, setReplyingTo }}>
+          <Channel channel={channel} MessageSimple={CustomMessage} DateHeader={CustomDateSeparator}>
+            {/* AI Channel Notice Banner */}
+            {isAIChannel && (
+              <View
+                style={{
+                  backgroundColor: '#F3E8FF',
+                  paddingHorizontal: 16,
+                  paddingVertical: 12,
+                  borderBottomWidth: 1,
+                  borderBottomColor: '#E9D5FF',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 10,
+                }}>
+                <View
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 16,
+                    backgroundColor: '#A855F7',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}>
+                  <Ionicons name="sparkles" size={18} color="white" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      fontWeight: '600',
+                      color: '#7C3AED',
+                      marginBottom: 2,
+                    }}>
+                    Trò chuyện với Trợ lý AI
+                  </Text>
+                  <Text style={{ fontSize: 11, color: '#9333EA' }}>
+                    Được hỗ trợ bởi trí tuệ nhân tạo tiên tiến
+                  </Text>
+                </View>
+              </View>
+            )}
 
-          {/* Typing Indicator - render manually outside MessageList */}
-          <CustomTypingIndicator />
+            {/* Message List Container */}
+            <View
+              className="flex-1"
+              style={{ backgroundColor: isAIChannel ? '#FAF5FF' : '#F8FAFC' }}>
+              <MessageList
+                additionalFlatListProps={{
+                  contentContainerStyle: {
+                    paddingTop: 16,
+                    paddingBottom: 8,
+                  },
+                }}
+              />
+            </View>
 
-          {/* Custom Message Input with proper typing indicator */}
-          <CustomMessageInput />
-        </Channel>
-      </ReplyContext.Provider>
+            {/* Typing Indicator - render manually outside MessageList */}
+            <CustomTypingIndicator />
+
+            {/* Custom Message Input with proper typing indicator */}
+            <CustomMessageInput />
+          </Channel>
+        </ReplyContext.Provider>
+      </AIThinkingProvider>
     </SafeAreaView>
   );
 }

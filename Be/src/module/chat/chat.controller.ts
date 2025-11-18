@@ -43,7 +43,7 @@ export class ChatController {
       patientUserId,
       dto.clinicId,
     );
-    const token = this.chatService.generateStreamToken(patientUserId);
+    const token = await this.chatService.generateStreamToken(patientUserId);
     return {
       ...result,
       streamToken: token,
@@ -69,15 +69,14 @@ export class ChatController {
     description: 'Token generated successfully',
     type: StreamTokenResponseDto,
   })
-  getToken(@Request() req) {
+  async getToken(@Request() req) {
     const userId = req.user.userId;
-    const token = this.chatService.generateStreamToken(userId);
+    const token = await this.chatService.generateStreamToken(userId);
     return {
       token,
       userId: userId.toString(),
     };
   }
-
 
   @Get('clinics')
   @ApiOperation({ summary: 'Lấy danh sách clinics có thể chat' })
@@ -138,7 +137,7 @@ export class ChatController {
       currentUserId,
       dto.email,
     );
-    const token = this.chatService.generateStreamToken(currentUserId);
+    const token = await this.chatService.generateStreamToken(currentUserId);
     return {
       ...result,
       streamToken: token,

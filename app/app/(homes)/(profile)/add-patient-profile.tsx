@@ -16,12 +16,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Relationship } from '@/types/auth';
 import { userApi } from '@/lib/api';
+import { useUploadPatientProfileAvatar } from '@/lib/api/user';
 import BirthDatePicker from '@/components/BirthDatePicker';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/lib/hooks/useAuth';
 
 const AddPatientProfileScreen = () => {
   const { refreshProfile } = useAuth();
+  const uploadAvatarMutation = useUploadPatientProfileAvatar();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -31,8 +33,9 @@ const AddPatientProfileScreen = () => {
   const [dateOfBirth, setDateOfBirth] = useState<Date | null>(null);
   const [gender, setGender] = useState<'MALE' | 'FEMALE' | 'OTHER' | null>(null);
   const [avatar, setAvatar] = useState<string | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const isUploading = uploadAvatarMutation.isPending;
 
   // Validation errors
   const [firstNameError, setFirstNameError] = useState('');
@@ -148,9 +151,8 @@ const AddPatientProfileScreen = () => {
       const response = await userApi.createPatientProfile(profileData);
       const profileId = response.profile.id;
 
-      // Upload avatar if selected
+      // Upload avatar if selected using React Query hook with automatic cache updates
       if (avatar && profileId) {
-        setIsUploading(true);
         const formDataUpload = new FormData();
         formDataUpload.append('avatar', {
           uri: avatar,
@@ -159,15 +161,15 @@ const AddPatientProfileScreen = () => {
         } as any);
 
         try {
-          await userApi.uploadPatientProfileAvatar(profileId, formDataUpload);
+          await uploadAvatarMutation.mutateAsync({ profileId, file: formDataUpload });
         } catch (uploadError) {
           console.error('Avatar upload error:', uploadError);
           // Don't fail the entire process if avatar upload fails
         }
       }
 
-      // Refresh user data to get updated profiles
-      refreshProfile();
+      // Refresh user data to get updated profiles (hook already handles cache, but refresh to be safe)
+      await refreshProfile();
 
       Alert.alert('Thành công', 'Hồ sơ bệnh nhân đã được tạo thành công', [
         {
@@ -180,7 +182,6 @@ const AddPatientProfileScreen = () => {
       Alert.alert('Lỗi', 'Không thể tạo hồ sơ. Vui lòng thử lại.');
     } finally {
       setIsSubmitting(false);
-      setIsUploading(false);
     }
   };
 

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -14,6 +14,10 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useChannelContext } from 'stream-chat-expo';
+import { useChatContext } from '@/contexts/ChatContext';
+import { ChatbotAPI } from '@/lib/api/chatbot';
+import { useAuth } from '@/lib/hooks/useAuth';
+import { useAIThinking } from '@/contexts/AIThinkingContext';
 
 interface CustomMessageInputProps {
   replyingTo?: any;
@@ -23,100 +27,77 @@ interface CustomMessageInputProps {
 export const CustomMessageInput = ({ replyingTo, onCancelReply }: CustomMessageInputProps) => {
   // Get channel from Stream Chat context
   const { channel } = useChannelContext();
+  const { isAIChannel } = useChatContext();
+  const { user } = useAuth();
+  const { setIsAIThinking } = useAIThinking();
   const [messageText, setMessageText] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isProcessingAI, setIsProcessingAI] = useState(false);
   const inputHeight = useRef(new Animated.Value(40)).current;
-  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const isTypingRef = useRef(false);
 
-  // Handle text change and typing indicator
+  // Kiểm tra xem channel hiện tại có phải là AI channel không
+  const isCurrentChannelAI = channel ? isAIChannel(channel) : false;
+
+  // Handle text change
   const handleTextChange = (text: string) => {
     setMessageText(text);
-
-    if (!channel || !isFocused) return;
-
-    if (text.trim()) {
-      // Start typing indicator immediately if not already typing
-      if (!isTypingRef.current) {
-        console.log('🔵 Starting typing indicator (IMMEDIATE)');
-        channel.keystroke();
-        isTypingRef.current = true;
-      } else {
-        // Continue typing - send keystroke to keep alive
-        channel.keystroke();
-      }
-
-      // Clear existing timeout
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
-
-      // Set new timeout to stop typing after 3 seconds of inactivity
-      typingTimeoutRef.current = setTimeout(() => {
-        console.log('⏸️ Auto-stopping typing indicator (3s timeout)');
-        if (channel) {
-          channel.stopTyping();
-        }
-        isTypingRef.current = false;
-      }, 3000);
-    } else {
-      // Stop typing when text is cleared
-      if (isTypingRef.current) {
-        console.log('⏹️ Stopping typing indicator (text cleared)');
-        channel.stopTyping();
-        isTypingRef.current = false;
-      }
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
-    }
   };
-
-  // Stop typing when component unmounts or loses focus
-  useEffect(() => {
-    return () => {
-      if (channel && isTypingRef.current) {
-        console.log('🔴 Cleanup: stopping typing indicator');
-        channel.stopTyping();
-        isTypingRef.current = false;
-      }
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
-    };
-  }, [channel]);
 
   const sendMessage = async () => {
     if (!messageText.trim() || !channel) return;
 
+    const messageToSend = messageText.trim();
+    setMessageText('');
+    onCancelReply?.();
+    Keyboard.dismiss();
+
     try {
-      const messageData: any = {
-        text: messageText.trim(),
-      };
+      // Nếu là AI channel, xử lý đặc biệt
+      if (isCurrentChannelAI) {
+        setIsProcessingAI(true);
+        setIsAIThinking(true);
 
-      // If replying to a message
-      if (replyingTo) {
-        messageData.parent_id = replyingTo.id;
-        messageData.show_in_channel = true;
-      }
+        // 1. Gửi message của user vào channel để lưu lịch sử
+        const userMessageData: any = {
+          text: messageToSend,
+        };
 
-      // Stop typing and clear state before sending
-      if (isTypingRef.current) {
-        console.log('✉️ Sending message, stopping typing indicator');
-        channel.stopTyping();
-        isTypingRef.current = false;
-      }
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
+        if (replyingTo) {
+          userMessageData.parent_id = replyingTo.id;
+          userMessageData.show_in_channel = true;
+        }
 
-      await channel.sendMessage(messageData);
-      setMessageText('');
-      onCancelReply?.();
-      Keyboard.dismiss();
-    } catch (error) {
-      console.error('Error sending message:', error);
+        await channel.sendMessage(userMessageData);
+
+        // 2. Gọi API chatbot để xử lý và tự động gửi response vào channel
+        try {
+          // Gọi API với channelId, backend sẽ tự động gửi response vào channel
+          await ChatbotAPI.processMessage(messageToSend, user?.id, channel.id);
+        } catch {
+          // Silently handle AI processing errors - message already sent
+          // Backend will handle the response
+        } finally {
+          setIsProcessingAI(false);
+          setIsAIThinking(false);
+        }
+      } else {
+        // Nếu không phải AI channel, xử lý bình thường
+        const messageData: any = {
+          text: messageToSend,
+        };
+
+        if (replyingTo) {
+          messageData.parent_id = replyingTo.id;
+          messageData.show_in_channel = true;
+        }
+
+        await channel.sendMessage(messageData);
+      }
+    } catch {
+      // Only show alert for actual send failures, not AI processing
+      Alert.alert('Lỗi', 'Không thể gửi tin nhắn. Vui lòng thử lại.');
+      setIsProcessingAI(false);
     }
   };
 
@@ -172,8 +153,7 @@ export const CustomMessageInput = ({ replyingTo, onCancelReply }: CustomMessageI
       if (!result.canceled && result.assets && result.assets.length > 0) {
         await uploadAndSendFile(result.assets[0]);
       }
-    } catch (error) {
-      console.error('Error picking image:', error);
+    } catch {
       Alert.alert('Lỗi', 'Không thể chọn ảnh');
     }
   };
@@ -207,8 +187,7 @@ export const CustomMessageInput = ({ replyingTo, onCancelReply }: CustomMessageI
 
         await uploadAndSendFile(video);
       }
-    } catch (error) {
-      console.error('Error picking video:', error);
+    } catch {
       Alert.alert('Lỗi', 'Không thể chọn video');
     }
   };
@@ -220,28 +199,20 @@ export const CustomMessageInput = ({ replyingTo, onCancelReply }: CustomMessageI
     try {
       const isVideo = asset.type === 'video' || asset.mimeType?.includes('video');
 
-      console.log('Asset details:', JSON.stringify(asset, null, 2));
-
       // Ensure URI is a string
       const fileUri = String(asset.uri);
       const fileName =
         asset.fileName || `${isVideo ? 'video' : 'image'}_${Date.now()}.${isVideo ? 'mp4' : 'jpg'}`;
       const fileType = asset.mimeType || (isVideo ? 'video/mp4' : 'image/jpeg');
 
-      console.log('Uploading file:', { uri: fileUri, name: fileName, type: fileType });
-
       // Upload the file first using Stream's upload API
       // For React Native, we need to pass the file URI string
       let uploadResponse;
       if (isVideo) {
-        console.log('Uploading video...');
         uploadResponse = await channel.sendFile(fileUri, fileName, fileType);
       } else {
-        console.log('Uploading image...');
         uploadResponse = await channel.sendImage(fileUri, fileName, fileType);
       }
-
-      console.log('Upload response:', uploadResponse);
 
       // Now send message with the uploaded file URL
       const messageData: any = {
@@ -266,15 +237,10 @@ export const CustomMessageInput = ({ replyingTo, onCancelReply }: CustomMessageI
       // Send message with uploaded attachment
       await channel.sendMessage(messageData);
 
-      console.log('Message sent successfully with attachment');
-
       setMessageText('');
       onCancelReply?.();
-    } catch (error: any) {
-      console.error('Error uploading file:', error);
-      console.error('Error stack:', error?.stack);
-      console.error('Error details:', JSON.stringify(error, null, 2));
-      Alert.alert('Lỗi', `Không thể gửi file: ${error?.message || 'Vui lòng thử lại'}`);
+    } catch {
+      Alert.alert('Lỗi', 'Không thể gửi file. Vui lòng thử lại.');
     } finally {
       setIsUploading(false);
     }
@@ -399,20 +365,10 @@ export const CustomMessageInput = ({ replyingTo, onCancelReply }: CustomMessageI
             value={messageText}
             onChangeText={handleTextChange}
             onFocus={() => {
-              console.log('📝 Input focused');
               setIsFocused(true);
             }}
             onBlur={() => {
-              console.log('🔍 Input blurred');
               setIsFocused(false);
-              // Stop typing when input loses focus
-              if (channel && isTypingRef.current) {
-                channel.stopTyping();
-                isTypingRef.current = false;
-              }
-              if (typingTimeoutRef.current) {
-                clearTimeout(typingTimeoutRef.current);
-              }
             }}
             onContentSizeChange={handleContentSizeChange}
             placeholder="Nhập tin nhắn..."
@@ -435,22 +391,26 @@ export const CustomMessageInput = ({ replyingTo, onCancelReply }: CustomMessageI
         {/* Send button */}
         <TouchableOpacity
           onPress={sendMessage}
-          disabled={!messageText.trim()}
+          disabled={!messageText.trim() || isProcessingAI}
           style={{
             width: 40,
             height: 40,
             alignItems: 'center',
             justifyContent: 'center',
             borderRadius: 20,
-            backgroundColor: messageText.trim() ? '#2563EB' : '#E2E8F0',
-            shadowColor: messageText.trim() ? '#2563EB' : 'transparent',
+            backgroundColor: messageText.trim() && !isProcessingAI ? '#2563EB' : '#E2E8F0',
+            shadowColor: messageText.trim() && !isProcessingAI ? '#2563EB' : 'transparent',
             shadowOffset: { width: 0, height: 2 },
             shadowOpacity: 0.3,
             shadowRadius: 4,
-            elevation: messageText.trim() ? 3 : 0,
-            transform: [{ scale: messageText.trim() ? 1 : 0.95 }],
+            elevation: messageText.trim() && !isProcessingAI ? 3 : 0,
+            transform: [{ scale: messageText.trim() && !isProcessingAI ? 1 : 0.95 }],
           }}>
-          <Ionicons name="send" size={20} color={messageText.trim() ? '#FFFFFF' : '#94A3B8'} />
+          {isProcessingAI ? (
+            <ActivityIndicator size="small" color="#94A3B8" />
+          ) : (
+            <Ionicons name="send" size={20} color={messageText.trim() ? '#FFFFFF' : '#94A3B8'} />
+          )}
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
