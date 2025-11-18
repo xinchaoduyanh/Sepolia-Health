@@ -18,6 +18,7 @@ import { NotificationModule } from '@/module/notification/notification.module';
 import { QnaModule } from '@/module/qna/qna.module';
 import { BullModule } from '@nestjs/bullmq';
 import IORedis from 'ioredis';
+import { ChatbotModule } from '@/module/chatbot/chatbot.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import IORedis from 'ioredis';
     ChatModule,
     NotificationModule,
     QnaModule,
+    ChatbotModule,
   ],
   controllers: [AppController],
   providers: [

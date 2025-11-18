@@ -121,26 +121,38 @@ export class ChatService {
     await channel.create();
     await channel.update({ name: clinic.name } as any);
 
-    // 7. Add members vào channel
+    // 7. Add members vào channel (bao gồm AI bot)
+    const aiBotUserId = this.streamChatConf.aiBotUserId;
+
+    // Đảm bảo AI bot user tồn tại
+    await this.streamClient.upsertUser({
+      id: aiBotUserId,
+      name: 'Trợ lý AI Sepolia',
+      role: 'user',
+      image: 'https://api.dicebear.com/7.x/bottts/svg?seed=ai-assistant',
+    });
+
+    // Add AI bot vào channel
+    const allMemberIds = [patientUserId.toString(), aiBotUserId];
     if (receptionistUserIds.length > 0) {
-      await channel.addMembers(receptionistUserIds);
+      allMemberIds.push(...receptionistUserIds);
     }
 
-    // 8. Gửi tin nhắn chào mừng từ hệ thống
+    await channel.addMembers(allMemberIds);
+
+    // 8. Gửi tin nhắn chào mừng từ AI bot
     const welcomeMessage =
-      receptionists.length > 0
-        ? `Chào bạn! Lễ tân của ${clinic.name} sẽ trả lời bạn trong giây lát.`
-        : `Chào bạn! Hiện tại cơ sở ${clinic.name} chưa có lễ tân trực tuyến. Vui lòng chờ hoặc liên hệ hotline để được hỗ trợ.`;
+      'Xin chào bạn! Tôi là Chatbot Assistants của Sepolia. Xin hỏi bạn cần giúp đỡ gì nhỉ?';
 
     await channel.sendMessage({
       text: welcomeMessage,
-      user_id: 'system',
+      user_id: aiBotUserId,
     });
 
     return {
       channelId,
       clinicName: clinic.name,
-      members: 1 + receptionistUserIds.length,
+      members: 1 + receptionistUserIds.length + 1, // +1 for AI bot
     };
   }
 

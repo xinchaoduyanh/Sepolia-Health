@@ -38,3 +38,35 @@ export const HealthAdviceSchema = z.object({
 });
 
 export class HealthAdviceDto extends createZodDto(HealthAdviceSchema) {}
+
+// Search Doctors Schema
+export const SearchDoctorsSchema = z.object({
+  doctorName: z.string().min(1, 'Tên bác sĩ không được để trống'),
+  locationName: z.string().optional(), // Đổi từ clinicId sang locationName
+  serviceId: z.coerce.number().positive().optional(),
+  specialtyName: z.string().optional(), // Tên chuyên khoa để kiểm tra mâu thuẫn
+});
+
+export class SearchDoctorsDto extends createZodDto(SearchDoctorsSchema) {}
+
+// Stream Chat Webhook Payload Schema
+export const StreamChatWebhookSchema = z.object({
+  type: z.string().describe('Event type, e.g., "message.new"'),
+  channel_id: z.string().describe('Channel ID where message was sent'),
+  message: z
+    .object({
+      id: z.string().describe('Message ID'),
+      text: z.string().describe('Message text content'),
+      user: z
+        .object({
+          id: z.string().describe('User ID who sent the message'),
+          name: z.string().optional().describe('User name'),
+        })
+        .describe('User information'),
+    })
+    .describe('Message object'),
+});
+
+export class StreamChatWebhookDto extends createZodDto(
+  StreamChatWebhookSchema,
+) {}

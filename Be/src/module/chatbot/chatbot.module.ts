@@ -2,11 +2,21 @@ import { Module } from '@nestjs/common';
 import { ChatbotController } from './chatbot.controller';
 import { ChatbotService } from './chatbot.service';
 import { DoctorScheduleTool } from './tools/doctor-schedule.tool';
-import { HealthAdviceTool } from './tools/health-advice.tool';
+import { SearchDoctorsTool } from './tools/search-doctors.tool';
+import { SearchClinicsTool } from './tools/search-clinics.tool';
+import { SearchServicesTool } from './tools/search-services.tool';
+import { PrismaModule } from '@/common/prisma/prisma.module';
 
 @Module({
+  imports: [PrismaModule],
   controllers: [ChatbotController],
-  providers: [ChatbotService, DoctorScheduleTool, HealthAdviceTool],
+  providers: [
+    ChatbotService,
+    DoctorScheduleTool,
+    SearchDoctorsTool,
+    SearchClinicsTool,
+    SearchServicesTool,
+  ],
   exports: [ChatbotService],
 })
 export class ChatbotModule {}
