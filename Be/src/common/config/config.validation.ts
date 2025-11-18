@@ -35,4 +35,9 @@ export const configSchema = z.object({
   ZOOM_ACCOUNT_ID: z.string().nonempty(),
   ZOOM_CLIENT_ID: z.string().nonempty(),
   ZOOM_CLIENT_SECRET: z.string().nonempty(),
+
+  DIGITALOCEAN_AGENT_ENDPOINT: z.string().nonempty(),
+  DIGITALOCEAN_AGENT_ACCESS_KEY: z.string().nonempty(),
+  //ai bot user id
+  AI_BOT_USER_ID: z.string().nonempty() || 'ai-assistant',
 });
