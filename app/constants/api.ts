@@ -1,7 +1,6 @@
 // API Configuration Constants
 export const API_CONFIG = {
   BASE_URL: process.env.EXPO_PUBLIC_API_URL || 'http://10.2.50.196:8000/api',
-
   TIMEOUT: 10000, // 10 seconds
   RETRY_ATTEMPTS: 3,
 } as const;
@@ -38,11 +37,11 @@ export const API_ENDPOINTS = {
     MY_APPOINTMENTS: '/patient/appointments/my-appointments',
     CLOSEST: '/patient/appointments/closest',
     DOCTOR_APPOINTMENTS: '/patient/appointments/doctor/my-appointments',
-    LOCATIONS: '/patient/appointments/booking/locations',
-    SERVICES: '/patient/appointments/booking/services',
-    DOCTOR_SERVICES: '/patient/appointments/booking/doctor-services',
-    AVAILABLE_DATES: '/patient/appointments/booking/available-dates',
-    DOCTOR_AVAILABILITY: '/patient/appointments/booking/doctor-availability',
+    LOCATIONS: '/patient/appointment/booking/locations',
+    SERVICES: '/patient/appointment/booking/services',
+    DOCTOR_SERVICES: '/patient/appointment/booking/doctor-services',
+    AVAILABLE_DATES: '/patient/appointment/booking/available-dates',
+    DOCTOR_AVAILABILITY: '/patient/appointment/booking/doctor-availability',
   },
 
   // Doctors

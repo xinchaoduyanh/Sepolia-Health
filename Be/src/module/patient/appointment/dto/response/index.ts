@@ -93,7 +93,7 @@ export class AppointmentDetailResponseDto {
   service: ServiceDto;
 
   @ApiProperty({ type: ClinicDto })
-  clinic?: ClinicDto;
+  clinic?: ClinicDto | null;
 
   @ApiProperty({ type: BillingDto })
   billing?: BillingDto | null;

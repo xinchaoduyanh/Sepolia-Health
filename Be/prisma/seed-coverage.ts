@@ -607,7 +607,7 @@ async function main() {
           endTime: appointmentEnd,
           status: status,
           notes: 'Lịch hẹn được tạo tự động (seed)',
-
+          type: 'OFFLINE',
           patientProfileId: patient.id,
 
           doctorId: doctor.id,

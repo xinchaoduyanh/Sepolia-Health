@@ -25,6 +25,11 @@ enum AppointmentStatus {
   CANCELLED
 }
 
+enum AppointmentType {
+  ONLINE
+  OFFLINE
+}
+
 enum PaymentStatus {
   PENDING
   PAID
@@ -252,6 +257,8 @@ model Appointment {
   endTime   DateTime
   status    AppointmentStatus
   notes     String?
+  meetingUrl String?
+  type      AppointmentType 
 
   // Liên kết tùy chọn với hồ sơ bệnh nhân
   patientProfileId Int?
@@ -262,8 +269,8 @@ model Appointment {
   doctor    DoctorProfile @relation("DoctorAppointments", fields: [doctorId], references: [id])
   serviceId Int
   service   Service       @relation(fields: [serviceId], references: [id])
-  clinicId  Int
-  clinic    Clinic        @relation("ClinicAppointments", fields: [clinicId], references: [id])
+  clinicId  Int?
+  clinic    Clinic?        @relation("ClinicAppointments", fields: [clinicId], references: [id])
   billing   Billing?
 
   createdAt DateTime @default(now())

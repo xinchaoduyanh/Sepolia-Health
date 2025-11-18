@@ -907,6 +907,7 @@ export class AppointmentService {
         endTime,
         status: 'UPCOMING',
         notes,
+        type: 'ONLINE',
         patientProfileId: validatedPatientProfileId,
         doctorId: doctorService.doctorId,
         serviceId: doctorService.serviceId,
