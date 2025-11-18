@@ -258,7 +258,7 @@ model Appointment {
   status    AppointmentStatus
   notes     String?
   meetingUrl String?
-  type      AppointmentType 
+  type      AppointmentType @default(OFFLINE)
 
   // Liên kết tùy chọn với hồ sơ bệnh nhân
   patientProfileId Int?
