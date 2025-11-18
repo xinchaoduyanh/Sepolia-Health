@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode, useRef } fro
 import { Channel, StreamChat } from 'stream-chat';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { ChatAPI, ChatService } from '@/lib/api/chat';
+import { ChatbotAPI } from '@/lib/api/chatbot';
 import { Chat, OverlayProvider } from 'stream-chat-expo';
 import { getUserProfile } from '@/lib/utils';
 
@@ -11,6 +12,8 @@ interface ChatContextType {
   initChat: () => Promise<void>;
   disconnectChat: () => void;
   createChannel: (clinicId: number) => Promise<Channel | null>;
+  createOrGetAIChannel: () => Promise<Channel | null>;
+  isAIChannel: (channel: Channel) => boolean;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -214,7 +217,6 @@ const ChatProvider = ({ children }: { children: ReactNode }) => {
 
     const initChat = async () => {
       try {
-        console.log('🔄 Initializing StreamChat client...');
         const apiKey = process.env.EXPO_PUBLIC_STREAM_API_KEY;
         if (!apiKey) {
           throw new Error('Stream API key not found');
@@ -222,7 +224,6 @@ const ChatProvider = ({ children }: { children: ReactNode }) => {
         const client = StreamChat.getInstance(apiKey);
 
         const userProfile = getUserProfile(user);
-        console.log('👤 Connecting user:', userProfile.name);
 
         // Use tokenProvider for automatic token refresh
         await client.connectUser(
@@ -232,7 +233,6 @@ const ChatProvider = ({ children }: { children: ReactNode }) => {
             image: userProfile.image,
           },
           async () => {
-            console.log('🔑 Fetching token...');
             return await ChatAPI.getToken();
           }
         );
@@ -241,10 +241,8 @@ const ChatProvider = ({ children }: { children: ReactNode }) => {
           setChatClient(client);
           ChatService.setClient(client);
           setIsChatReady(true);
-          console.log('✅ Chat initialized successfully');
         }
-      } catch (error) {
-        console.error('❌ Failed to initialize chat:', error);
+      } catch {
         if (isMounted) {
           setChatClient(undefined);
           setIsChatReady(false);
@@ -262,7 +260,6 @@ const ChatProvider = ({ children }: { children: ReactNode }) => {
   // Handle user logout
   useEffect(() => {
     if (!user && chatClient) {
-      console.log('👋 User logged out, disconnecting chat...');
       chatClient.disconnectUser();
       setChatClient(undefined);
       setIsChatReady(false);
@@ -274,9 +271,8 @@ const ChatProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       // Use ref to get the latest chatClient on unmount
       if (chatClientRef.current) {
-        console.log('ChatProvider unmounting, disconnecting chat...');
-        chatClientRef.current.disconnectUser().catch((err) => {
-          console.error('Error disconnecting chat:', err);
+        chatClientRef.current.disconnectUser().catch(() => {
+          // Silently handle disconnection errors
         });
       }
     };
@@ -304,7 +300,6 @@ const ChatProvider = ({ children }: { children: ReactNode }) => {
       ChatService.setClient(client); // Set client in service
       setIsChatReady(true);
     } catch (error) {
-      console.error('Failed to initialize chat:', error);
       throw error;
     }
   };
@@ -319,34 +314,90 @@ const ChatProvider = ({ children }: { children: ReactNode }) => {
 
   const createChannel = async (clinicId: number): Promise<Channel | null> => {
     if (!chatClient || !user) {
-      console.error('Chat client not ready or user not logged in.');
       return null;
     }
 
     try {
-      console.log('Creating channel for clinic:', clinicId);
       const { channelId } = await ChatAPI.startChat(clinicId);
-      console.log('Channel ID from backend:', channelId);
 
       const channel = chatClient.channel('messaging', channelId);
-      console.log('Channel object created:', channel.id, channel.cid);
 
       await channel.create();
-      console.log('Channel created successfully');
 
       await channel.watch(); // Automatically watch the channel after creating
-      console.log('Channel watched successfully, cid:', channel.cid);
 
       return channel;
-    } catch (error) {
-      console.error('Error creating channel:', error);
+    } catch {
       return null;
     }
   };
 
+  const createOrGetAIChannel = async (): Promise<Channel | null> => {
+    if (!chatClient || !user) {
+      return null;
+    }
+
+    try {
+      // Kiểm tra xem đã có AI channel chưa
+      const aiChannelId = `ai-consult-${user.id}`;
+      const existingChannels = await chatClient.queryChannels({
+        cid: { $eq: `messaging:${aiChannelId}` },
+      });
+
+      if (existingChannels.length > 0) {
+        const channel = existingChannels[0];
+        await channel.watch();
+        return channel;
+      }
+
+      // Nếu chưa có, tạo mới
+      const response = await ChatbotAPI.createAIChannel();
+
+      const channel = chatClient.channel('messaging', response.channelId);
+      await channel.watch();
+
+      return channel;
+    } catch {
+      return null;
+    }
+  };
+
+  const isAIChannel = (channel: Channel): boolean => {
+    // Kiểm tra xem channel có phải là AI channel không
+    const channelId = channel.id || '';
+    const channelData = channel.data || {};
+
+    // Check by channel ID pattern
+    if (channelId.startsWith('ai-consult-')) {
+      return true;
+    }
+
+    // Check by channel custom data
+    if (channelData.ai_channel === true || channelData.consultation_type === 'ai_assistant') {
+      return true;
+    }
+
+    // Check by members (nếu có AI bot user)
+    const botUserId = ChatbotAPI.getAIBotUserId();
+    const members = channel.state?.members || {};
+    if (members[botUserId]) {
+      return true;
+    }
+
+    return false;
+  };
+
   return (
     <ChatContext.Provider
-      value={{ chatClient, isChatReady, initChat, disconnectChat, createChannel }}>
+      value={{
+        chatClient,
+        isChatReady,
+        initChat,
+        disconnectChat,
+        createChannel,
+        createOrGetAIChannel,
+        isAIChannel,
+      }}>
       <OverlayProvider>
         {isChatReady && chatClient ? (
           <Chat client={chatClient} style={myChatTheme}>
@@ -370,6 +421,8 @@ const useChatContext = () => {
       initChat: async () => {},
       disconnectChat: () => {},
       createChannel: async () => null,
+      createOrGetAIChannel: async () => null,
+      isAIChannel: () => false,
     };
   }
   return context;

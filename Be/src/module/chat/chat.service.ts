@@ -121,26 +121,38 @@ export class ChatService {
     await channel.create();
     await channel.update({ name: clinic.name } as any);
 
-    // 7. Add members vào channel
+    // 7. Add members vào channel (bao gồm AI bot)
+    const aiBotUserId = this.streamChatConf.aiBotUserId;
+
+    // Đảm bảo AI bot user tồn tại
+    await this.streamClient.upsertUser({
+      id: aiBotUserId,
+      name: 'Trợ lý AI Sepolia',
+      role: 'user',
+      image: 'https://api.dicebear.com/7.x/bottts/svg?seed=ai-assistant',
+    });
+
+    // Add AI bot vào channel
+    const allMemberIds = [patientUserId.toString(), aiBotUserId];
     if (receptionistUserIds.length > 0) {
-      await channel.addMembers(receptionistUserIds);
+      allMemberIds.push(...receptionistUserIds);
     }
 
-    // 8. Gửi tin nhắn chào mừng từ hệ thống
+    await channel.addMembers(allMemberIds);
+
+    // 8. Gửi tin nhắn chào mừng từ AI bot
     const welcomeMessage =
-      receptionists.length > 0
-        ? `Chào bạn! Lễ tân của ${clinic.name} sẽ trả lời bạn trong giây lát.`
-        : `Chào bạn! Hiện tại cơ sở ${clinic.name} chưa có lễ tân trực tuyến. Vui lòng chờ hoặc liên hệ hotline để được hỗ trợ.`;
+      'Xin chào bạn! Tôi là Chatbot Assistants của Sepolia. Xin hỏi bạn cần giúp đỡ gì nhỉ?';
 
     await channel.sendMessage({
       text: welcomeMessage,
-      user_id: 'system',
+      user_id: aiBotUserId,
     });
 
     return {
       channelId,
       clinicName: clinic.name,
-      members: 1 + receptionistUserIds.length,
+      members: 1 + receptionistUserIds.length + 1, // +1 for AI bot
     };
   }
 
@@ -174,7 +186,52 @@ export class ChatService {
   /**
    * Tạo Stream Chat token cho user
    */
-  generateStreamToken(userId: number): string {
+  async generateStreamToken(userId: number): Promise<string> {
+    // Lấy thông tin user từ database
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        doctorProfile: true,
+        receptionistProfile: true,
+        adminProfile: true,
+        patientProfiles: {
+          where: { relationship: 'SELF' },
+          take: 1,
+        },
+      },
+    });
+
+    if (!user) {
+      throw new Error(`User ${userId} not found`);
+    }
+
+    // Lấy tên và avatar dựa trên role
+    let name = `User ${userId}`;
+    let avatar: string | undefined = undefined;
+
+    if (user.doctorProfile) {
+      name = `${user.doctorProfile.firstName} ${user.doctorProfile.lastName}`;
+      avatar = user.doctorProfile.avatar || undefined;
+    } else if (user.receptionistProfile) {
+      name = `${user.receptionistProfile.firstName} ${user.receptionistProfile.lastName}`;
+      avatar = user.receptionistProfile.avatar || undefined;
+    } else if (user.adminProfile) {
+      name = `${user.adminProfile.firstName} ${user.adminProfile.lastName}`;
+      avatar = user.adminProfile.avatar || undefined;
+    } else if (user.patientProfiles.length > 0) {
+      const patientProfile = user.patientProfiles[0];
+      name = `${patientProfile.firstName} ${patientProfile.lastName}`;
+      avatar = patientProfile.avatar || undefined;
+    }
+
+    // Upsert user vào Stream Chat với thông tin đầy đủ
+    await this.streamClient.upsertUser({
+      id: userId.toString(),
+      name,
+      role: 'user',
+      image: avatar,
+    });
+
     return this.streamClient.createToken(userId.toString());
   }
 

@@ -1,0 +1,53 @@
+import React, { useState } from 'react';
+import { View, TextInput, TouchableOpacity } from 'react-native';
+import { Send } from 'lucide-react-native';
+
+interface MessageInputProps {
+  onSend: (message: string) => void;
+  disabled?: boolean;
+}
+
+export function MessageInput({ onSend, disabled = false }: MessageInputProps) {
+  const [message, setMessage] = useState('');
+
+  const handleSend = () => {
+    if (message.trim() && !disabled) {
+      onSend(message);
+      setMessage('');
+    }
+  };
+
+  return (
+    <View className="bg-white border-t border-gray-200 px-4 py-3">
+      <View className="flex-row items-center">
+        <TextInput
+          value={message}
+          onChangeText={setMessage}
+          placeholder="Nhập tin nhắn..."
+          placeholderTextColor="#9CA3AF"
+          className="flex-1 bg-gray-100 rounded-full px-4 py-3 mr-2 text-base"
+          multiline
+          maxLength={2000}
+          editable={!disabled}
+          onSubmitEditing={handleSend}
+        />
+
+        <TouchableOpacity
+          onPress={handleSend}
+          disabled={!message.trim() || disabled}
+          className={`w-12 h-12 rounded-full items-center justify-center ${
+            message.trim() && !disabled
+              ? 'bg-indigo-600'
+              : 'bg-gray-300'
+          }`}
+          activeOpacity={0.7}
+        >
+          <Send
+            size={20}
+            color="white"
+          />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}

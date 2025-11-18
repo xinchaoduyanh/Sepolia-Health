@@ -1,0 +1,28 @@
+import React from 'react';
+import { TouchableOpacity, View, Text } from 'react-native';
+import { MessageCircle } from 'lucide-react-native';
+
+interface ChatbotButtonProps {
+  onPress: () => void;
+  unreadCount?: number;
+}
+
+export function ChatbotButton({ onPress, unreadCount = 0 }: ChatbotButtonProps) {
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      className="absolute bottom-6 right-6 bg-indigo-600 rounded-full w-16 h-16 shadow-lg flex items-center justify-center"
+      activeOpacity={0.8}
+    >
+      <MessageCircle size={28} color="white" />
+
+      {unreadCount > 0 && (
+        <View className="absolute -top-1 -right-1 bg-red-500 rounded-full w-6 h-6 flex items-center justify-center">
+          <Text className="text-white text-xs font-bold">
+            {unreadCount > 9 ? '9+' : unreadCount}
+          </Text>
+        </View>
+      )}
+    </TouchableOpacity>
+  );
+}

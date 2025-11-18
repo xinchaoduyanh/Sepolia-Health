@@ -332,29 +332,45 @@ export default function RegisterScreen() {
                       className="h-16 flex-1 rounded-lg border-2 border-gray-200 bg-white text-center text-2xl font-bold text-gray-800"
                       value={digit}
                       onChangeText={(text) => {
-                        const newOtp = [...otp];
-                        const chars = text.replace(/\D/g, '').split('');
+                        // Chỉ lấy số
+                        const digit = text.replace(/\D/g, '').slice(-1);
 
-                        chars.forEach((c, i) => {
-                          if (index + i < 6) newOtp[index + i] = c;
-                        });
-                        setOtp(newOtp);
+                        if (digit) {
+                          const newOtp = [...otp];
+                          const isUpdating = newOtp[index] !== digit;
 
-                        // Focus ô trống tiếp theo
-                        if (text && index < 5) {
-                          setTimeout(() => {
-                            otpRefs.current[index + 1]?.focus();
-                          }, 0);
+                          // Cập nhật ô hiện tại
+                          newOtp[index] = digit;
+                          setOtp(newOtp);
+
+                          // Tự động chuyển sang ô tiếp theo nếu có thay đổi hoặc ô đã có giá trị
+                          if (index < 5 && (isUpdating || otp[index])) {
+                            setTimeout(() => {
+                              otpRefs.current[index + 1]?.focus();
+                            }, 10);
+                          }
+                        } else if (text === '' && otp[index] !== '') {
+                          // Xử lý khi xóa text bằng cách select all + delete
+                          const newOtp = [...otp];
+                          newOtp[index] = '';
+                          setOtp(newOtp);
                         }
                       }}
                       onKeyPress={({ nativeEvent }) => {
                         if (nativeEvent.key === 'Backspace') {
+                          const newOtp = [...otp];
+
                           if (otp[index]) {
-                            const newOtp = [...otp];
+                            // Nếu ô hiện tại có giá trị, xóa nó
                             newOtp[index] = '';
                             setOtp(newOtp);
                           } else if (index > 0) {
-                            otpRefs.current[index - 1]?.focus();
+                            // Nếu ô hiện tại trống, xóa ô trước đó và quay lại
+                            newOtp[index - 1] = '';
+                            setOtp(newOtp);
+                            setTimeout(() => {
+                              otpRefs.current[index - 1]?.focus();
+                            }, 10);
                           }
                         }
                       }}

@@ -1,0 +1,68 @@
+import React from 'react';
+import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { Calendar, Heart, Phone, MessageSquare } from 'lucide-react-native';
+
+interface QuickRepliesProps {
+  onSelect: (text: string) => void;
+}
+
+const QUICK_REPLIES = [
+  {
+    icon: Calendar,
+    text: 'Xem lịch bác sĩ',
+    color: '#4F46E5',
+  },
+  {
+    icon: Heart,
+    text: 'Tư vấn sức khỏe',
+    color: '#EF4444',
+  },
+  {
+    icon: MessageSquare,
+    text: 'Đặt lịch khám',
+    color: '#10B981',
+  },
+  {
+    icon: Phone,
+    text: 'Liên hệ hỗ trợ',
+    color: '#F59E0B',
+  },
+];
+
+export function QuickReplies({ onSelect }: QuickRepliesProps) {
+  return (
+    <View className="px-4 pb-4">
+      <Text className="text-gray-500 text-sm mb-3">Gợi ý câu hỏi:</Text>
+
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ paddingRight: 16 }}
+      >
+        {QUICK_REPLIES.map((reply, index) => {
+          const Icon = reply.icon;
+          return (
+            <TouchableOpacity
+              key={index}
+              onPress={() => onSelect(reply.text)}
+              className="bg-white border border-gray-200 rounded-full px-4 py-3 mr-2 flex-row items-center"
+              activeOpacity={0.7}
+              style={{
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: 0.05,
+                shadowRadius: 2,
+                elevation: 1,
+              }}
+            >
+              <Icon size={16} color={reply.color} />
+              <Text className="text-gray-700 ml-2 font-medium">
+                {reply.text}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
+    </View>
+  );
+}

@@ -1,0 +1,55 @@
+import React, { useEffect, useRef } from 'react';
+import { View, Animated } from 'react-native';
+
+export function TypingIndicator() {
+  const dot1 = useRef(new Animated.Value(0)).current;
+  const dot2 = useRef(new Animated.Value(0)).current;
+  const dot3 = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const animate = (dot: Animated.Value, delay: number) => {
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay(delay),
+          Animated.timing(dot, {
+            toValue: -8,
+            duration: 400,
+            useNativeDriver: true,
+          }),
+          Animated.timing(dot, {
+            toValue: 0,
+            duration: 400,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    };
+
+    animate(dot1, 0);
+    animate(dot2, 200);
+    animate(dot3, 400);
+  }, []);
+
+  return (
+    <View className="flex-row items-center px-4 pb-2">
+      <View className="w-8 h-8 bg-indigo-100 rounded-full items-center justify-center mr-2">
+        <View className="text-indigo-600 font-bold">🤖</View>
+      </View>
+
+      <View className="bg-white border border-gray-200 rounded-2xl px-4 py-3 rounded-bl-sm flex-row items-center">
+        <Animated.View
+          className="w-2 h-2 bg-gray-400 rounded-full mr-1"
+          style={{ transform: [{ translateY: dot1 }] }}
+        />
+        <Animated.View
+          className="w-2 h-2 bg-gray-400 rounded-full mr-1"
+          style={{ transform: [{ translateY: dot2 }] }}
+        />
+        <Animated.View
+          className="w-2 h-2 bg-gray-400 rounded-full"
+          style={{ transform: [{ translateY: dot3 }] }}
+        />
+      </View>
+    </View>
+  );
+}

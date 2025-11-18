@@ -49,6 +49,43 @@ const getReceptionistAvatar = async (channel: Channel): Promise<string | null> =
   }
 };
 
+const getAIBotInfo = async (channel: Channel): Promise<{ name: string; avatar: string } | null> => {
+  try {
+    // Bot user ID
+    const botUserId = 'sepolia-health-ai-assistant';
+
+    // First try to get from channel state members (faster)
+    if (channel.state?.members?.[botUserId]?.user) {
+      const botUser = channel.state.members[botUserId].user;
+      if (botUser.image) {
+        return {
+          name: (botUser.name as string) || 'Trợ lý Y tế Thông minh',
+          avatar: (botUser.image as string) || '',
+        };
+      }
+    }
+
+    // Fallback: Query members để lấy thông tin bot
+    const membersResponse = await channel.queryMembers({});
+
+    if (membersResponse.members && membersResponse.members.length > 0) {
+      const botMember = membersResponse.members.find((member) => member.user_id === botUserId);
+
+      if (botMember?.user) {
+        return {
+          name: (botMember.user.name as string) || 'Trợ lý Y tế Thông minh',
+          avatar: (botMember.user.image as string) || '',
+        };
+      }
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Error getting AI bot info:', error);
+    return null;
+  }
+};
+
 export const CustomChannelPreview = ({
   channel,
   onPress,
@@ -57,6 +94,7 @@ export const CustomChannelPreview = ({
 }: CustomChannelPreviewProps) => {
   const { user } = useAuth();
   const [receptionistAvatar, setReceptionistAvatar] = React.useState<string | null>(null);
+  const [aiBotInfo, setAiBotInfo] = React.useState<{ name: string; avatar: string } | null>(null);
 
   // Safely get last message and time
   const lastMessage =
@@ -93,24 +131,36 @@ export const CustomChannelPreview = ({
     ? formatLastMessageTime(new Date(lastMessage.created_at))
     : '';
 
+  // Check if this is AI channel
+  const isAI =
+    channel.id?.startsWith('ai-consult-') ||
+    channel.data?.ai_channel === true ||
+    channel.data?.consultation_type === 'ai_assistant';
+
   // Check if this is receptionist channel
   const isReceptionist = channel.id?.includes('patient_') || false;
 
-  // Use channel name set by backend
-  const displayName = channel.data?.name || 'Đang tải...';
+  // Use channel name set by backend or AI bot name
+  const displayName =
+    isAI && aiBotInfo?.name
+      ? aiBotInfo.name
+      : channel.data?.name || (isAI ? 'Trợ lý Y tế Thông minh' : 'Đang tải...');
 
   // Get unread count
   const unreadCount = channel.state?.unreadCount ?? 0;
   const hasUnread = unreadCount > 0;
 
-  // Load receptionist avatar when component mounts and is receptionist channel
+  // Load AI bot info or receptionist avatar when component mounts
   React.useEffect(() => {
-    if (isReceptionist && channel) {
+    if (isAI && channel) {
+      getAIBotInfo(channel).then(setAiBotInfo);
+    } else if (isReceptionist && channel) {
       getReceptionistAvatar(channel).then(setReceptionistAvatar);
     } else {
       setReceptionistAvatar(null);
+      setAiBotInfo(null);
     }
-  }, [channel, isReceptionist]);
+  }, [channel, isReceptionist, isAI]);
 
   return (
     <TouchableOpacity
@@ -142,18 +192,30 @@ export const CustomChannelPreview = ({
             width: 52,
             height: 52,
             borderRadius: 26,
-            backgroundColor: isReceptionist ? '#DBEAFE' : '#E0F2FE',
+            backgroundColor: isAI ? '#F3E8FF' : isReceptionist ? '#DBEAFE' : '#E0F2FE',
             alignItems: 'center',
             justifyContent: 'center',
             borderWidth: hasUnread ? 3 : 2,
             borderColor: hasUnread ? '#EAB308' : '#FFFFFF',
-            shadowColor: isReceptionist ? '#2563EB' : '#0EA5E9',
+            shadowColor: isAI ? '#A855F7' : isReceptionist ? '#2563EB' : '#0EA5E9',
             shadowOffset: { width: 0, height: 2 },
             shadowOpacity: 0.2,
             shadowRadius: 4,
             elevation: 2,
           }}>
-          {receptionistAvatar ? (
+          {isAI && aiBotInfo?.avatar ? (
+            <Image
+              source={{ uri: aiBotInfo.avatar }}
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: 24,
+              }}
+              resizeMode="cover"
+            />
+          ) : isAI ? (
+            <Ionicons name="sparkles" size={26} color="#A855F7" />
+          ) : receptionistAvatar ? (
             <Image
               source={{ uri: receptionistAvatar }}
               style={{
@@ -170,8 +232,33 @@ export const CustomChannelPreview = ({
           )}
         </View>
 
+        {/* AI indicator - sparkling effect */}
+        {isAI && (
+          <View
+            style={{
+              position: 'absolute',
+              right: -2,
+              bottom: -2,
+              width: 18,
+              height: 18,
+              borderRadius: 9,
+              backgroundColor: '#A855F7',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderWidth: 2,
+              borderColor: '#FFFFFF',
+              shadowColor: '#A855F7',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.5,
+              shadowRadius: 4,
+              elevation: 3,
+            }}>
+            <Ionicons name="sparkles" size={10} color="#FFFFFF" />
+          </View>
+        )}
+
         {/* Online indicator (optional - for future use) */}
-        {isReceptionist && (
+        {isReceptionist && !isAI && (
           <View
             style={{
               position: 'absolute',
@@ -276,7 +363,36 @@ export const CustomChannelPreview = ({
         </View>
 
         {/* Channel type indicator */}
-        {isReceptionist && (
+        {isAI && (
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              marginTop: 6,
+            }}>
+            <View
+              style={{
+                backgroundColor: '#F3E8FF',
+                paddingHorizontal: 8,
+                paddingVertical: 3,
+                borderRadius: 8,
+                flexDirection: 'row',
+                alignItems: 'center',
+              }}>
+              <Ionicons name="sparkles" size={12} color="#A855F7" />
+              <Text
+                style={{
+                  fontSize: 11,
+                  color: '#A855F7',
+                  fontWeight: '600',
+                  marginLeft: 4,
+                }}>
+                Trợ lý AI
+              </Text>
+            </View>
+          </View>
+        )}
+        {isReceptionist && !isAI && (
           <View
             style={{
               flexDirection: 'row',

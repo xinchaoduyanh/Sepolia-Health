@@ -142,10 +142,22 @@ export const useAuth = () => {
     }
   };
 
-  // Refresh profile function
-  const refreshProfile = () => {
-    // IMPROVEMENT: Dùng query key factory
-    queryClient.invalidateQueries({ queryKey: authKeys.profile() });
+  // Refresh profile function - improved to refetch immediately
+  const refreshProfile = async () => {
+    // IMPROVEMENT: Dùng query key factory và refetch ngay lập tức
+    await queryClient.invalidateQueries({ queryKey: authKeys.profile() });
+    await queryClient.refetchQueries({ queryKey: authKeys.profile() });
+
+    // Also update cached user data in AsyncStorage
+    try {
+      const profileData = queryClient.getQueryData(authKeys.profile());
+      if (profileData) {
+        await AsyncStorage.setItem('user_data', JSON.stringify(profileData));
+        setCachedUser(profileData as User);
+      }
+    } catch (error) {
+      console.log('Failed to update cached user data:', error);
+    }
   };
 
   // Check if user has valid tokens

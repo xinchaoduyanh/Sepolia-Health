@@ -1,57 +1,32 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, Animated } from 'react-native';
-import { useTypingContext, useChatContext } from 'stream-chat-expo';
+import { useAIThinking } from '@/contexts/AIThinkingContext';
 
 export const CustomTypingIndicator = () => {
-  const { typing } = useTypingContext();
-  const { client } = useChatContext();
+  const { isAIThinking } = useAIThinking();
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
-  // Debug: Log typing state
   useEffect(() => {
-    if (Object.keys(typing).length > 0) {
-      console.log('👀 Typing context:', {
-        typingCount: Object.keys(typing).length,
-        typingUsers: Object.keys(typing),
-        currentUser: client?.userID,
-        fullTyping: typing,
-      });
-    }
-  }, [typing, client]);
-
-  // Filter out current user from typing users
-  const otherUsersTyping = Object.entries(typing).filter(([userId]) => userId !== client?.userID);
-
-  console.log('👥 Other users typing:', otherUsersTyping.length);
-
-  useEffect(() => {
-    if (otherUsersTyping.length > 0) {
-      console.log('✅ Showing typing indicator');
+    if (isAIThinking) {
       Animated.timing(fadeAnim, {
         toValue: 1,
         duration: 200,
         useNativeDriver: true,
       }).start();
     } else {
-      console.log('❌ Hiding typing indicator');
       Animated.timing(fadeAnim, {
         toValue: 0,
         duration: 200,
         useNativeDriver: true,
       }).start();
     }
-  }, [otherUsersTyping.length, fadeAnim]);
+  }, [isAIThinking, fadeAnim]);
 
-  if (otherUsersTyping.length === 0) {
-    console.log('🚫 No other users typing, returning null');
+  if (!isAIThinking) {
     return null;
   }
 
-  const typingUsers = otherUsersTyping
-    .map(([_, data]: any) => data.user?.name || 'Someone')
-    .join(', ');
-
-  console.log('🎨 RENDERING typing indicator for:', typingUsers);
+  const displayMessage = 'Trợ lý Y tế Thông minh đang suy nghĩ câu trả lời...';
 
   return (
     <View
@@ -62,9 +37,6 @@ export const CustomTypingIndicator = () => {
         paddingVertical: 12,
         marginTop: 8, // Tách với message bên trên
         backgroundColor: '#F8FAFC',
-      }}
-      onLayout={(e) => {
-        console.log('📐 Typing indicator layout:', e.nativeEvent.layout);
       }}>
       <Animated.View
         style={{
@@ -101,7 +73,7 @@ export const CustomTypingIndicator = () => {
               fontWeight: '500',
               fontStyle: 'italic',
             }}>
-            {typingUsers} đang nhắn gì đó...
+            {displayMessage}
           </Text>
         </View>
       </Animated.View>

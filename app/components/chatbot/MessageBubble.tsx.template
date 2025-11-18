@@ -1,0 +1,63 @@
+import React from 'react';
+import { View, Text } from 'react-native';
+import { format } from 'date-fns';
+import { vi } from 'date-fns/locale';
+
+interface MessageBubbleProps {
+  message: string;
+  isUser: boolean;
+  timestamp: string;
+}
+
+export function MessageBubble({ message, isUser, timestamp }: MessageBubbleProps) {
+  return (
+    <View
+      className={`flex-row ${isUser ? 'justify-end' : 'justify-start'} mb-3`}
+    >
+      {!isUser && (
+        <View className="w-8 h-8 bg-indigo-100 rounded-full items-center justify-center mr-2">
+          <Text className="text-indigo-600 font-bold">🤖</Text>
+        </View>
+      )}
+
+      <View className={`max-w-[75%] ${isUser ? 'ml-4' : 'mr-4'}`}>
+        <View
+          className={`rounded-2xl px-4 py-3 ${
+            isUser
+              ? 'bg-indigo-600 rounded-br-sm'
+              : 'bg-white border border-gray-200 rounded-bl-sm'
+          }`}
+          style={{
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.05,
+            shadowRadius: 2,
+            elevation: 1,
+          }}
+        >
+          <Text
+            className={`text-base leading-5 ${
+              isUser ? 'text-white' : 'text-gray-800'
+            }`}
+          >
+            {message}
+          </Text>
+        </View>
+
+        <Text
+          className={`text-xs text-gray-400 mt-1 ${
+            isUser ? 'text-right' : 'text-left'
+          }`}
+        >
+          {format(new Date(timestamp), 'HH:mm', { locale: vi })}
+        </Text>
+      </View>
+
+      {isUser && (
+        <View className="w-8 h-8 bg-gray-200 rounded-full items-center justify-center ml-2">
+          <Text className="text-gray-600 font-bold">👤</Text>
+        </View>
+      )}
+    </View>
+  );
+}
