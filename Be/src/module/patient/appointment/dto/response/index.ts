@@ -75,13 +75,7 @@ export class AppointmentDetailResponseDto {
   id: number;
 
   @ApiProperty()
-  date: Date;
-
-  @ApiProperty()
-  startTime: string;
-
-  @ApiProperty()
-  endTime: string;
+  startTime: Date;
 
   @ApiProperty()
   status: string;
@@ -91,18 +85,6 @@ export class AppointmentDetailResponseDto {
 
   @ApiProperty({ type: PatientDto })
   patient?: PatientDto;
-
-  @ApiProperty()
-  patientName?: string;
-
-  @ApiProperty()
-  patientDob?: Date;
-
-  @ApiProperty()
-  patientPhone?: string;
-
-  @ApiProperty()
-  patientGender?: string;
 
   @ApiProperty({ type: DoctorDto })
   doctor: DoctorDto;

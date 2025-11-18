@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Modal,
   Pressable,
+  RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -24,6 +25,7 @@ export default function AppointmentsListScreen() {
   const [page, setPage] = useState(1);
   const [dateSortOrder, setDateSortOrder] = useState<'asc' | 'desc'>('desc');
   const [paymentFilter, setPaymentFilter] = useState<'all' | 'PENDING' | 'PAID'>('all');
+  const [refreshing, setRefreshing] = useState(false);
 
   // Always sort by date (default: Sớm nhất)
   const sortBy = 'date';
@@ -121,6 +123,12 @@ export default function AppointmentsListScreen() {
     return '#E5E7EB';
   };
 
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    setPage(1);
+    setRefreshing(false);
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: '#E0F2FE' }}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
@@ -133,7 +141,8 @@ export default function AppointmentsListScreen() {
         contentContainerStyle={{ paddingBottom: 100 }}
         scrollEventThrottle={16}
         contentInsetAdjustmentBehavior="never"
-        automaticallyAdjustContentInsets={false}>
+        automaticallyAdjustContentInsets={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}>
         {/* Background Gradient - now scrollable and extends to top */}
         <View style={{ height: 320, position: 'relative', marginTop: -60 }}>
           <LinearGradient
@@ -326,7 +335,7 @@ export default function AppointmentsListScreen() {
             </View>
           ) : (
             appointments.map((appointment) => {
-              const { day, month, year } = formatDate(appointment.date);
+              const { day, month, year } = formatDate(appointment.startTime);
               const timeRange = formatTimeRange(appointment.startTime, appointment.endTime);
               const billingStatus = appointment.billing?.status as PaymentStatus | undefined;
               const statusInfo = getStatusInfo(

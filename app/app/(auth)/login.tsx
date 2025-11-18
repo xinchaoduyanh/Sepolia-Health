@@ -38,12 +38,12 @@ export default function LoginScreen() {
       return;
     }
 
-    // Validate password
-    const passwordValidation = validatePassword(password);
-    if (!passwordValidation.isValid) {
-      setPasswordError(passwordValidation.message || '');
-      return;
-    }
+    // Validate password cc
+    // const passwordValidation = validatePassword(password);
+    // if (!passwordValidation.isValid) {
+    //   setPasswordError(passwordValidation.message || '');
+    //   return;
+    // }
 
     try {
       await login(email, password);

@@ -137,4 +137,11 @@ export class DateUtil {
     }
     return days;
   }
+
+  /**
+   * Get day of week from date (returns 0-6, where 0=Sunday, 6=Saturday)
+   */
+  static getDayOfWeek(date: Date): number {
+    return date.getDay();
+  }
 }

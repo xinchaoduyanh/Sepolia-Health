@@ -1,0 +1,10 @@
+import { Module } from '@nestjs/common';
+import { MeetingService } from './meeting.service';
+
+@Module({
+  imports: [],
+  controllers: [],
+  providers: [MeetingService],
+  exports: [MeetingService],
+})
+export class MeetingModule {}

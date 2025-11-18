@@ -33,9 +33,9 @@ export default registerAs('app', () => {
     // stream video
     streamVideoApiKey: parsed.STREAM_VIDEO_API_KEY,
     streamVideoSecret: parsed.STREAM_VIDEO_SECRET,
-    // digitalocean ai agent (chatbot)
-    digitalOceanAgentEndpoint: parsed.DIGITALOCEAN_AGENT_ENDPOINT,
-    digitalOceanAgentAccessKey: parsed.DIGITALOCEAN_AGENT_ACCESS_KEY,
-    aiBotUserId: parsed.AI_BOT_USER_ID || 'sepolia-health-ai-assistant',
+    // zoom
+    zoomAccountId: parsed.ZOOM_ACCOUNT_ID,
+    zoomClientId: parsed.ZOOM_CLIENT_ID,
+    zoomClientSecret: parsed.ZOOM_CLIENT_SECRET,
   };
 });

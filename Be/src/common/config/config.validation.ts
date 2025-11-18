@@ -31,17 +31,8 @@ export const configSchema = z.object({
   //stream video
   STREAM_VIDEO_API_KEY: z.string().nonempty(),
   STREAM_VIDEO_SECRET: z.string().nonempty(),
-  //digitalocean ai agent (chatbot)
-  DIGITALOCEAN_AGENT_ENDPOINT: z
-    .string()
-    .nonempty()
-    .transform((val) => val.trim()), // Agent endpoint URL (e.g., https://agent-xxx.ondigitalocean.app)
-  DIGITALOCEAN_AGENT_ACCESS_KEY: z
-    .string()
-    .nonempty()
-    .transform((val) => val.trim()), // Agent Access Key (not Personal Access Token)
-  AI_BOT_USER_ID: z
-    .string()
-    .default('ai-assistant')
-    .transform((val) => val.trim().replace(/[^a-z0-9@_-]/g, '')),
+  //ZOOM
+  ZOOM_ACCOUNT_ID: z.string().nonempty(),
+  ZOOM_CLIENT_ID: z.string().nonempty(),
+  ZOOM_CLIENT_SECRET: z.string().nonempty(),
 });
