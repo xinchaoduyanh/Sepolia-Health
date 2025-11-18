@@ -33,5 +33,9 @@ export default registerAs('app', () => {
     // stream video
     streamVideoApiKey: parsed.STREAM_VIDEO_API_KEY,
     streamVideoSecret: parsed.STREAM_VIDEO_SECRET,
+    // zoom
+    zoomAccountId: parsed.ZOOM_ACCOUNT_ID,
+    zoomClientId: parsed.ZOOM_CLIENT_ID,
+    zoomClientSecret: parsed.ZOOM_CLIENT_SECRET,
   };
 });

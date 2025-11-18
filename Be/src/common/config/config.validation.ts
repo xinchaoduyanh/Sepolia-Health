@@ -31,4 +31,8 @@ export const configSchema = z.object({
   //stream video
   STREAM_VIDEO_API_KEY: z.string().nonempty(),
   STREAM_VIDEO_SECRET: z.string().nonempty(),
+  //ZOOM
+  ZOOM_ACCOUNT_ID: z.string().nonempty(),
+  ZOOM_CLIENT_ID: z.string().nonempty(),
+  ZOOM_CLIENT_SECRET: z.string().nonempty(),
 });
