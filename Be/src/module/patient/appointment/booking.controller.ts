@@ -48,7 +48,7 @@ export class BookingController {
 
   @Get('doctor-services')
   @ApiOperation({
-    summary: 'Lấy danh sách bác sĩ cung cấp dịch vụ theo service',
+    summary: 'Lấy danh sách bác sĩ cung cấp dịch vụ theo service và location',
   })
   @ApiResponse({
     status: HttpStatus.OK,

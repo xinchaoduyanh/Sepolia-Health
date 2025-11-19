@@ -71,7 +71,7 @@ export class CreateAppointmentFromDoctorServiceBodyDto extends createZodDto(
 
 // Booking dto
 const GetDoctorServicesSchema = z.object({
-  // locationId: z.coerce.number(),
+  locationId: z.coerce.number(),
   serviceId: z.coerce.number(),
 });
 

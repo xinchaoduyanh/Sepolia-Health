@@ -724,7 +724,7 @@ export class AppointmentService {
    * Get doctor services by location and service
    */
   async getDoctorServices(query: GetDoctorServicesQueryDto) {
-    const { serviceId } = query;
+    const { serviceId, locationId } = query;
     // Check if service exists
     const service = await this.prisma.service.findUnique({
       where: { id: serviceId },
@@ -734,10 +734,21 @@ export class AppointmentService {
       throw new NotFoundException(MESSAGES.APPOINTMENT.SERVICE_NOT_FOUND);
     }
 
+    const location = await this.prisma.clinic.findUnique({
+      where: { id: locationId },
+    });
+
+    if (!location) {
+      throw new NotFoundException(MESSAGES.APPOINTMENT.LOCATION_NOT_FOUND);
+    }
+
     // Get doctor services that match both location and service
     const doctorServices = await this.prisma.doctorService.findMany({
       where: {
         serviceId: serviceId,
+        doctor: {
+          clinicId: locationId,
+        },
       },
       include: {
         doctor: {
@@ -748,7 +759,6 @@ export class AppointmentService {
             experience: true,
             contactInfo: true,
             avatar: true,
-            clinicId: true,
           },
         },
       },
@@ -759,7 +769,6 @@ export class AppointmentService {
       id: ds.id,
       doctorId: ds.doctorId,
       serviceId: ds.serviceId,
-      clinicId: ds.doctor.clinicId,
       doctor: {
         id: ds.doctor.id,
         firstName: ds.doctor.firstName,
