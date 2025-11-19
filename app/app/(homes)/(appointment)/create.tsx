@@ -44,17 +44,12 @@ export default function AppointmentScreen() {
     selectedTimeSlot,
     setSelectedTimeSlot,
     selectedDoctorServiceId,
-    selectedDate,
   } = useAppointment();
 
   // Get patient profiles
   const patientProfiles = user?.patientProfiles || [];
   const primaryProfile = patientProfiles.find((profile) => profile.relationship === 'SELF');
   const otherProfiles = patientProfiles.filter((profile) => profile.relationship !== 'SELF');
-
-  const handleBackToAppointments = () => {
-    router.push('/(homes)/(appointment)/' as any);
-  };
 
   // Auto-fill user info when component mounts (default to "Bản thân")
   useEffect(() => {
@@ -241,11 +236,6 @@ export default function AppointmentScreen() {
       // Lưu appointment ID để sử dụng trong modal
       setCreatedAppointmentId(result.id);
 
-      // Hiển thị toast notification
-      // Alert.alert('✅ Đặt lịch thành công', `Đã tạo lịch hẹn #${result.id} thành công!`, [
-      //   { text: 'OK' },
-      // ]);
-
       // Hiển thị success modal
       setShowSuccessModal(true);
     } catch (error: any) {
@@ -268,7 +258,7 @@ export default function AppointmentScreen() {
 
       {/* Header */}
       <View className="flex-row items-center px-4 py-3">
-        <TouchableOpacity onPress={handleBackToAppointments}>
+        <TouchableOpacity onPress={() => router.push('/(homes)/(appointment)')}>
           <Ionicons name="arrow-back" size={24} color="#0284C7" />
         </TouchableOpacity>
       </View>
@@ -432,7 +422,7 @@ export default function AppointmentScreen() {
               Thông tin người đặt lịch
             </Text>
 
-            <View className="space-y-6">
+            <View className="gap-3">
               <View>
                 <View
                   className="flex-row items-center rounded-xl border px-5 py-4"
