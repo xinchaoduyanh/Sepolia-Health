@@ -2,11 +2,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../api-client';
 import { API_ENDPOINTS } from '@/constants/api';
 import type { PatientProfile } from '@/types/auth';
+import { UploadAvatarResponse } from '@/types/user';
 import { authKeys } from './auth';
-
-export interface UploadAvatarResponse {
-  avatarUrl: string;
-}
 
 // Query Keys Factory
 export const userKeys = {

@@ -279,10 +279,10 @@ export default function ChannelsScreen() {
           ) : (
             <Ionicons name="sparkles" size={24} color="#FFFFFF" />
           )}
-          <Text className="ml-3 text-base font-bold text-white">
+          <Text className="ml-3 flex-1 text-base font-bold text-white">
             {isCreatingAIChannel ? 'Đang tải...' : 'Chat với trợ lý ảo'}
           </Text>
-          <Ionicons name="chevron-forward" size={20} color="#FFFFFF" className="ml-auto" />
+          <Ionicons name="chevron-forward" size={20} color="#FFFFFF" />
         </Pressable>
 
         {/* New Consultation Button */}
@@ -297,8 +297,8 @@ export default function ChannelsScreen() {
             elevation: 3,
           }}>
           <Ionicons name="add-circle" size={24} color="#0284C7" />
-          <Text className="ml-3 text-base font-bold text-slate-900">Bắt đầu tư vấn mới</Text>
-          <Ionicons name="chevron-forward" size={20} color="#0284C7" className="ml-auto" />
+          <Text className="ml-3 flex-1 text-base font-bold text-slate-900">Bắt đầu tư vấn mới</Text>
+          <Ionicons name="chevron-forward" size={20} color="#0284C7" />
         </Pressable>
       </View>
 

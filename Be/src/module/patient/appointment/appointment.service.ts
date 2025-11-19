@@ -4,7 +4,6 @@ import {
   ForbiddenException,
   BadRequestException,
 } from '@nestjs/common';
-import { MESSAGES } from '@/common/constants/messages';
 import { PrismaService } from '@/common/prisma/prisma.service';
 import {
   AppointmentStatus,
@@ -22,6 +21,7 @@ import {
   GetDoctorAvailabilityResponseDto,
   GetAvailabilityDateResponseDto,
   AppointmentDetailResponseDto,
+  AvailableDateDto,
 } from './dto';
 import { NotificationUtils } from '@/module/notification/notification.utils';
 import {
@@ -30,8 +30,9 @@ import {
 } from '@/module/notification/notification.types';
 import { Queue } from 'bullmq';
 import { InjectQueue } from '@nestjs/bullmq';
-import { DateUtil } from '@/common/utils';
-import { TimeUtil } from '@/common/utils/time';
+import { DateUtil, TimeUtil } from '@/common/utils';
+import { SortOrder } from '@/common/enum/sort.enum';
+import { ERROR_MESSAGES, MESSAGES } from '@/common/constants';
 
 @Injectable()
 export class AppointmentService {
@@ -55,7 +56,7 @@ export class AppointmentService {
       dateFrom,
       dateTo,
       sortBy = 'date',
-      sortOrder = 'desc',
+      sortOrder = SortOrder.DESC,
     } = query;
     const skip = (Number(page) - 1) * Number(limit);
 
@@ -322,7 +323,7 @@ export class AppointmentService {
       dateFrom,
       dateTo,
       sortBy = 'date',
-      sortOrder = 'desc',
+      sortOrder = SortOrder.DESC,
     } = query;
 
     // Ensure sortBy and sortOrder are properly set
@@ -359,7 +360,7 @@ export class AppointmentService {
     } else if (finalSortBy === 'billingStatus') {
       // For billingStatus, we need to sort in memory
       shouldSortInMemory = true;
-      orderBy = { startTime: 'asc' }; // Temporary orderBy, will be overridden
+      orderBy = { startTime: SortOrder.ASC }; // Temporary orderBy, will be overridden
     } else {
       // Default: sort by date
       orderBy = { startTime: finalSortOrder };
@@ -525,10 +526,9 @@ export class AppointmentService {
   /**
    * Get closest upcoming appointment for current user
    */
-  // TODO refactor this func
   async getClosestAppointment(
     userId: number,
-  ): Promise<AppointmentDetailResponseDto | null> {
+  ): Promise<AppointmentDetailResponseDto> {
     // Find patient profiles managed by this user
     const patientProfiles = await this.prisma.patientProfile.findMany({
       where: { managerId: userId },
@@ -536,50 +536,21 @@ export class AppointmentService {
     });
 
     const patientProfileIds = patientProfiles.map((p) => p.id);
-
     if (patientProfileIds.length === 0) {
-      return null;
+      throw new NotFoundException(
+        MESSAGES.APPOINTMENT.PATIENT_PROFILE_NOT_FOUND,
+      );
     }
 
-    // Get current date and time
-    const nowUTC = new Date();
-
-    // Calculate current time in UTC+7 (Vietnam timezone)
-    // UTC+7 = UTC + 7 hours
-    const nowUTC7 = new Date(nowUTC.getTime() + 7 * 60 * 60 * 1000);
-    const currentTime = `${nowUTC7.getUTCHours().toString().padStart(2, '0')}:${nowUTC7.getUTCMinutes().toString().padStart(2, '0')}`;
-
-    // Calculate start of today in UTC+7 (00:00:00 UTC+7)
-    // Get the date components in UTC+7
-    const yearUTC7 = nowUTC7.getUTCFullYear();
-    const monthUTC7 = nowUTC7.getUTCMonth();
-    const dateUTC7 = nowUTC7.getUTCDate();
-
-    // Start of day UTC+7 = 00:00:00 UTC+7
-    // To convert to UTC: 00:00 UTC+7 = 17:00 UTC (previous day)
-    // Example: 14-11 00:00 UTC+7 = 13-11 17:00 UTC
-    // Create UTC timestamp for 00:00 of the UTC+7 date, then subtract 7 hours
-    const todayUTC7StartUTC = new Date(
-      Date.UTC(yearUTC7, monthUTC7, dateUTC7, 0, 0, 0, 0),
-    );
-    // Subtract 7 hours to get the UTC equivalent of 00:00 UTC+7
-    const todayUTC = new Date(todayUTC7StartUTC.getTime() - 7 * 60 * 60 * 1000);
-
-    // For comparison in filter, we use the same UTC timestamp (todayUTC7StartUTC)
-    // This represents 00:00 UTC+7 in UTC format, which is what we need for comparison
-    const todayUTC7StartDateOnly = todayUTC7StartUTC;
-
-    // Get all upcoming appointments (date >= today, status = UPCOMING or ON_GOING)
-    // Note: DB stores dates in UTC, so we use todayUTC for comparison
     const appointments = await this.prisma.appointment.findMany({
       where: {
         patientProfileId: { in: patientProfileIds },
-        startTime: { gte: todayUTC },
+        startTime: { gte: new Date() },
         status: {
           in: [AppointmentStatus.UPCOMING, AppointmentStatus.ON_GOING],
         },
       },
-      orderBy: [{ startTime: 'asc' }],
+      orderBy: { startTime: SortOrder.ASC },
       include: {
         patientProfile: {
           select: {
@@ -616,58 +587,8 @@ export class AppointmentService {
       },
     });
 
-    // Filter appointments: if date is today, only include those with startTime > currentTime
-    const validAppointments = appointments.filter((appointment) => {
-      // Convert appointment date (UTC from DB) to UTC+7
-      const appointmentDateUTC = new Date(appointment.startTime.getUTCDate());
-      const appointmentDateUTC7 = new Date(
-        appointmentDateUTC.getTime() + 7 * 60 * 60 * 1000,
-      );
-
-      // Get date-only components in UTC+7
-      const appointmentYear = appointmentDateUTC7.getUTCFullYear();
-      const appointmentMonth = appointmentDateUTC7.getUTCMonth();
-      const appointmentDate = appointmentDateUTC7.getUTCDate();
-
-      // Create date-only object in UTC+7 for comparison
-      const appointmentDateOnly = new Date(
-        Date.UTC(
-          appointmentYear,
-          appointmentMonth,
-          appointmentDate,
-          0,
-          0,
-          0,
-          0,
-        ),
-      );
-
-      // Compare dates (date only, no time) - both in UTC
-      const appointmentDateOnlyTime = appointmentDateOnly.getTime();
-      const todayTime = todayUTC7StartDateOnly.getTime();
-      const isToday = appointmentDateOnlyTime === todayTime;
-      const isPastDate = appointmentDateOnlyTime < todayTime;
-
-      // If appointment date is in the past (before today), exclude it immediately
-      if (isPastDate) {
-        return false;
-      }
-
-      // If appointment is today, check if startTime is in the future
-      if (isToday) {
-        return appointment.startTime > new Date();
-      }
-
-      // If appointment is in the future (after today), include it
-      return true;
-    });
-
-    if (validAppointments.length === 0) {
-      return null;
-    }
-
     // Return the closest appointment (already sorted by date and startTime)
-    return this.formatAppointmentResponse(validAppointments[0]);
+    return this.formatAppointmentResponse(appointments[0]);
   }
 
   /**
@@ -687,7 +608,7 @@ export class AppointmentService {
         description: true,
       },
       orderBy: {
-        name: 'asc',
+        name: SortOrder.ASC,
       },
     });
 
@@ -710,7 +631,7 @@ export class AppointmentService {
         description: true,
       },
       orderBy: {
-        name: 'asc',
+        name: SortOrder.ASC,
       },
     });
 
@@ -770,7 +691,7 @@ export class AppointmentService {
       doctorId: ds.doctorId,
       serviceId: ds.serviceId,
       doctor: {
-        id: ds.doctor.id,
+        id: ds.doctorId,
         firstName: ds.doctor.firstName,
         lastName: ds.doctor.lastName,
         experience: ds.doctor.experience,
@@ -931,14 +852,49 @@ export class AppointmentService {
         appointmentId: appointment.id,
       },
       {
-        delay: appointment.endTime.getMilliseconds() - Date.now(),
+        delay: appointment.endTime.getTime() - Date.now(),
       },
     );
-    // Return appointment with billing included
-    return this.formatAppointmentResponse({
-      ...appointment,
-      billing,
-    });
+    
+    // Return appointment response with all required data
+    return {
+      id: appointment.id,
+      startTime: appointment.startTime,
+      status: appointment.status,
+      notes: appointment.notes,
+      patient: {
+        id: patientProfile.id,
+        firstName: patientProfile.firstName,
+        lastName: patientProfile.lastName,
+        phone: patientProfile.phone,
+        email: '', // PatientProfile doesn't have email field
+      },
+      doctor: {
+        id: doctorService.doctorId,
+        firstName: doctorService.doctor.firstName,
+        lastName: doctorService.doctor.lastName,
+      },
+      service: {
+        id: doctorService.serviceId,
+        name: doctorService.service.name,
+        price: doctorService.service.price,
+        duration: doctorService.service.duration,
+      },
+      clinic: {
+        id: clinic.id,
+        name: clinic.name,
+      },
+      billing: {
+        id: billing.id,
+        amount: billing.amount,
+        status: billing.status,
+        paymentMethod: billing.paymentMethod,
+        notes: billing.notes,
+        createdAt: billing.createdAt,
+      },
+      createdAt: appointment.createdAt,
+      updatedAt: appointment.updatedAt,
+    };
   }
 
   /**
@@ -954,7 +910,7 @@ export class AppointmentService {
       notes: appointment.notes,
       patient: appointment.patientProfile
         ? {
-            id: appointment.patientProfile.id,
+            id: appointment.patientId,
             firstName: appointment.patientProfile.firstName,
             lastName: appointment.patientProfile.lastName,
             phone: appointment.patientProfile.phone,
@@ -962,25 +918,25 @@ export class AppointmentService {
           }
         : undefined,
       doctor: {
-        id: appointment.doctor.id,
+        id: appointment.doctorId,
         firstName: appointment.doctor.firstName,
         lastName: appointment.doctor.lastName,
       },
       service: {
-        id: appointment.service.id,
+        id: appointment.serviceId,
         name: appointment.service.name,
         price: appointment.service.price,
         duration: appointment.service.duration,
       },
       clinic: appointment.clinic
         ? {
-            id: appointment.clinic.id,
+            id: appointment.clinicId,
             name: appointment.clinic.name,
           }
         : undefined,
       billing: appointment.billing
         ? {
-            id: appointment.billing.id,
+            id: appointment.billingId,
             amount: appointment.billing.amount,
             status: appointment.billing.status,
             paymentMethod: appointment.billing.paymentMethod,
@@ -1000,18 +956,6 @@ export class AppointmentService {
     query: GetDoctorAvailabilityQueryDto,
   ): Promise<GetDoctorAvailabilityResponseDto> {
     const { doctorServiceId, date } = query;
-    // Validate date format (like dateOfBirth in complete-register)
-    if (isNaN(Date.parse(date))) {
-      throw new BadRequestException(MESSAGES.APPOINTMENT.INVALID_DATE);
-    }
-    const targetDate = new Date(date);
-
-    // Check if date is in the past
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    if (targetDate < today) {
-      throw new BadRequestException(MESSAGES.APPOINTMENT.PAST_DATE);
-    }
 
     // Get doctor service info
     const doctorService = await this.prisma.doctorService.findUnique({
@@ -1041,11 +985,11 @@ export class AppointmentService {
     }
 
     // Get doctor's working hours for the day of week
-    const dayOfWeek = DateUtil.getDayOfWeek(targetDate);
+    const dayOfWeek = DateUtil.getDayOfWeek(date);
     const workingHours = await this.prisma.doctorAvailability.findUnique({
       where: {
         doctorId_dayOfWeek: {
-          doctorId: doctorService.doctor.id,
+          doctorId: doctorService.doctorId,
           dayOfWeek: dayOfWeek,
         },
       },
@@ -1054,11 +998,11 @@ export class AppointmentService {
     // If doctor doesn't work on this day, return empty time slots
     if (!workingHours) {
       return {
-        doctorId: doctorService.doctor.id,
+        doctorId: doctorService.doctorId,
         doctorName: `${doctorService.doctor.firstName} ${doctorService.doctor.lastName}`,
         serviceName: doctorService.service.name,
         serviceDuration: doctorService.service.duration,
-        date: date,
+        date,
         workingHours: {
           startTime: '08:00',
           endTime: '17:00',
@@ -1070,10 +1014,10 @@ export class AppointmentService {
     // Get existing appointments for the date
     const bookedAppointments = await this.prisma.appointment.findMany({
       where: {
-        doctorId: doctorService.doctor.id,
+        doctorId: doctorService.doctorId,
         startTime: {
-          gte: targetDate,
-          lt: new Date(targetDate.getTime() + 24 * 60 * 60 * 1000),
+          gte: date,
+          lt: new Date(date.getTime() + 24 * 60 * 60 * 1000),
         },
         status: {
           in: [AppointmentStatus.UPCOMING, AppointmentStatus.ON_GOING],
@@ -1084,7 +1028,7 @@ export class AppointmentService {
         endTime: true,
       },
       orderBy: {
-        startTime: 'asc',
+        startTime: SortOrder.ASC,
       },
     });
 
@@ -1097,11 +1041,11 @@ export class AppointmentService {
     );
 
     return {
-      doctorId: doctorService.doctor.id,
+      doctorId: doctorService.doctorId,
       doctorName: `${doctorService.doctor.firstName} ${doctorService.doctor.lastName}`,
       serviceName: doctorService.service.name,
       serviceDuration: doctorService.service.duration,
-      date: date,
+      date,
       workingHours: {
         startTime: workingHours.startTime,
         endTime: workingHours.endTime,
@@ -1117,16 +1061,6 @@ export class AppointmentService {
     query: GetAvailableDateQueryDto,
   ): Promise<GetAvailabilityDateResponseDto> {
     const { doctorServiceId, startTime, endTime } = query;
-
-    // Check if dates are valid
-    if (startTime >= endTime) {
-      throw new BadRequestException('Ngày bắt đầu phải nhỏ hơn ngày kết thúc');
-    }
-
-    // Check if start date is not in the past
-    if (startTime < new Date()) {
-      throw new BadRequestException(MESSAGES.APPOINTMENT.PAST_DATE);
-    }
 
     // Get doctor service info
     const doctorService = await this.prisma.doctorService.findUnique({
@@ -1163,7 +1097,9 @@ export class AppointmentService {
     });
 
     if (workingHours.length === 0) {
-      throw new NotFoundException('Bác sĩ chưa có lịch làm việc');
+      throw new NotFoundException(
+        ERROR_MESSAGES.DOCTOR.DOCTOR_DOES_NOT_HAVE_SCHEDULE,
+      );
     }
 
     // Create a map of day of week to working hours
@@ -1179,14 +1115,7 @@ export class AppointmentService {
     });
 
     // Generate available dates
-    const availableDates: Array<{
-      date: string;
-      dayOfWeek: number;
-      workingHours: {
-        startTime: string;
-        endTime: string;
-      };
-    }> = [];
+    const availableDates: Array<AvailableDateDto> = [];
     const currentDate = new Date(startTime);
 
     while (currentDate <= endTime) {

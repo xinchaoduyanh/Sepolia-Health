@@ -1,3 +1,4 @@
+import { DateUtil } from '@/common/utils';
 import { AppointmentStatus, Gender, PaymentStatus } from '@prisma/client';
 import { createZodDto } from 'nestjs-zod';
 import z from 'zod';
@@ -48,8 +49,8 @@ export const UpdateAppointmentSchema = z.object({
 export const CreateAppointmentFromDoctorServiceSchema = z.object({
   doctorServiceId: z.coerce.number(),
   patientProfileId: z.coerce.number(),
-  startTime: z.iso.date().transform((val) => new Date(val)),
-  endTime: z.iso.date().transform((val) => new Date(val)),
+  startTime: z.iso.datetime().transform((val) => new Date(val)),
+  endTime: z.iso.datetime().transform((val) => new Date(val)),
   notes: z.string().optional(),
 });
 
@@ -75,16 +76,30 @@ const GetDoctorServicesSchema = z.object({
   serviceId: z.coerce.number(),
 });
 
-const GetAvailableDatesSchema = z.object({
-  doctorServiceId: z.coerce.number(),
-  startTime: z.iso.date().transform((val) => new Date(val)),
-  endTime: z.iso.date().transform((val) => new Date(val)),
-});
+const GetAvailableDatesSchema = z
+  .object({
+    doctorServiceId: z.coerce.number(),
+    startTime: z.iso.datetime().transform((val) => new Date(val)),
+    endTime: z.iso.datetime().transform((val) => new Date(val)),
+  })
+  .refine((data) => data.startTime < data.endTime, {
+    message: 'startTime must be earlier than endTime',
+    path: ['startTime'],
+  })
+  .refine((data) => data.startTime >= new Date(), {
+    message: 'startTime must not be in the past',
+    path: ['startTime'],
+  });
 
-const GetDoctorAvailabilitySchema = z.object({
-  doctorServiceId: z.coerce.number(),
-  date: z.iso.date(),
-});
+const GetDoctorAvailabilitySchema = z
+  .object({
+    doctorServiceId: z.coerce.number(),
+    date: z.iso.date().transform((val) => new Date(val)),
+  })
+  .refine((data) => DateUtil.startOfDay(data.date) >= DateUtil.startOfDay(new Date()), {
+    message: 'date must not be in the past',
+    path: ['date'],
+  });
 
 export class GetDoctorServicesQueryDto extends createZodDto(
   GetDoctorServicesSchema,

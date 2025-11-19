@@ -40,7 +40,16 @@ export interface Doctor {
   updatedAt: string;
 }
 
-// DoctorProfile is now exported from auth.ts to avoid duplication
+export interface DoctorProfile {
+  id: number;
+  specialty: string;
+  experience?: string;
+  contactInfo?: string;
+  workingHours?: string;
+  userId: number;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface Timeslot {
   id: number;

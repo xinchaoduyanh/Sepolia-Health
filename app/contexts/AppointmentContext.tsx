@@ -4,14 +4,14 @@ interface AppointmentContextType {
   selectedSpecialty: string;
   selectedDoctor: string;
   selectedFacility: { id: number; name: string } | null;
-  selectedService: { id: number; name: string; price: number } | null;
+  selectedService: { id: number; name: string; price: number; duration: number } | null;
   selectedDoctorServiceId: number | null;
   selectedDate: string | null;
   selectedTimeSlot: string | null;
   setSelectedSpecialty: (specialty: string) => void;
   setSelectedDoctor: (doctor: string) => void;
   setSelectedFacility: (facility: { id: number; name: string } | null) => void;
-  setSelectedService: (service: { id: number; name: string; price: number } | null) => void;
+  setSelectedService: (service: { id: number; name: string; price: number; duration: number } | null) => void;
   setSelectedDoctorServiceId: (id: number | null) => void;
   setSelectedDate: (date: string | null) => void;
   setSelectedTimeSlot: (time: string | null) => void;
@@ -42,6 +42,7 @@ export const AppointmentProvider = ({ children }: AppointmentProviderProps) => {
     id: number;
     name: string;
     price: number;
+    duration: number;
   } | null>(null);
   const [selectedDoctorServiceId, setSelectedDoctorServiceId] = useState<number | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);

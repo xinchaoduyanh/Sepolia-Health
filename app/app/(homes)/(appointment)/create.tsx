@@ -20,6 +20,7 @@ import { useAuth } from '@/lib/hooks/useAuth';
 import { PatientProfile } from '@/types/auth';
 import { getRelationshipLabel } from '@/utils/relationshipTranslator';
 import { useDoctorAvailability, useCreateAppointment } from '@/lib/api/appointments';
+import { createISODateTime, getTodayDateString } from '@/utils/datetime';
 
 export default function AppointmentScreen() {
   const { user } = useAuth();
@@ -27,7 +28,7 @@ export default function AppointmentScreen() {
   const [selectedProfile, setSelectedProfile] = useState<PatientProfile | null>(null);
   const [fullName, setFullName] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState<Date | null>(null);
-  const [phoneNumber, setPhoneNumber] = useState('0988659126');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [gender, setGender] = useState<'MALE' | 'FEMALE' | null>(null);
   const [patientDescription, setPatientDescription] = useState<string>('');
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -209,31 +210,30 @@ export default function AppointmentScreen() {
       return;
     }
 
+    // Validate that a patient profile is selected
+    if (!selectedProfile?.id) {
+      alert('Vui lòng chọn hồ sơ bệnh nhân');
+      return;
+    }
+
     try {
-      // Tạo appointment data
-      const formatDateForAPI = (date: Date) => {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-      };
+      // Create ISO datetime strings using utility function
+      const appointmentDate = selectedDateForAPI || getTodayDateString();
+      const startTime = createISODateTime(appointmentDate, selectedTimeSlot);
+      
+      // Calculate end datetime based on service duration (in minutes)
+      const serviceDuration = selectedService?.duration || 30;
+      const startDateTime = new Date(startTime);
+      const endDateTime = new Date(startDateTime.getTime() + serviceDuration * 60 * 1000);
+      const endTime = endDateTime.toISOString();
 
-      const appointmentData: any = {
+      const appointmentData = {
         doctorServiceId: selectedDoctorServiceId || 0,
-        date: selectedDateForAPI || formatDateForAPI(new Date()),
-        startTime: selectedTimeSlot,
-        notes: patientDescription || '',
-        patientName: fullName || '',
-        patientDob: dateOfBirth ? formatDateForAPI(dateOfBirth) : '',
-        patientPhone: phoneNumber || '',
-        patientGender: gender || 'MALE',
-        clinicId: selectedFacility?.id || 1,
+        patientProfileId: selectedProfile.id,
+        startTime,
+        endTime,
+        notes: patientDescription || undefined,
       };
-
-      // Only include patientProfileId if it exists (when a profile is selected)
-      if (selectedProfile?.id) {
-        appointmentData.patientProfileId = selectedProfile.id;
-      }
 
       // Gọi API tạo appointment
       const result = await createAppointmentMutation.mutateAsync(appointmentData);
@@ -668,10 +668,6 @@ export default function AppointmentScreen() {
             {/* Chọn thời gian - chỉ hiển thị khi đã chọn ngày */}
             {selectedDateForAPI && (
               <View>
-                <Text className="mb-4 text-lg font-semibold" style={{ color: '#0F172A' }}>
-                  Giờ khám mong muốn*
-                </Text>
-
                 {/* Time Slots - chỉ hiển thị khi đã chọn đủ thông tin và có ngày */}
                 {showTimeSlots &&
                   selectedFacility &&
@@ -679,6 +675,10 @@ export default function AppointmentScreen() {
                   selectedDoctor &&
                   selectedDateForAPI && (
                     <View className="mb-4">
+                      <Text className="mb-4 text-lg font-semibold mt-4" style={{ color: '#0F172A' }}>
+                        Giờ khám mong muốn*
+                      </Text>
+                      
                       {isDoctorNotAvailable ? (
                         <View className="rounded-xl border border-blue-200 bg-blue-50 p-6">
                           <View className="mb-3 flex-row items-center justify-center space-x-3">

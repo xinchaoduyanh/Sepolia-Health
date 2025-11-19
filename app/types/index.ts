@@ -1,7 +1,27 @@
-// Export all types
-export * from './auth';
+// Re-export all types from type modules for convenient importing
 export * from './appointment';
-export * from './doctor';
+export * from './auth';
+export * from './qna';
+export * from './chat';
+export * from './payment';
+export * from './notification';
+export * from './user';
+export * from './video';
+export * from './chatbot';
+export * from './app-terms';
+
+// Re-export doctor types, but exclude DoctorProfile to avoid conflict with auth
+export type {
+  Service,
+  Doctor,
+  Facility,
+  Timeslot,
+  DoctorFilters,
+  ServiceFilters,
+  DoctorAvailability,
+  TimeSlot,
+} from './doctor';
+// DoctorProfile is exported from auth.ts
 
 // Additional types for components
 export interface DatePickerProps {
@@ -26,7 +46,7 @@ export interface TimePickerProps {
   availableTimes?: string[];
 }
 
-export interface TimeSlot {
+export interface ComponentTimeSlot {
   time: string;
   available: boolean;
 }

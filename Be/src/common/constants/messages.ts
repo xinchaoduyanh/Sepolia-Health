@@ -94,9 +94,3 @@ export const MESSAGES = {
     LIST_SUCCESS: 'Lấy danh sách thành công',
   },
 } as const;
-
-export type MessageKey = keyof typeof MESSAGES;
-export type AuthMessageKey = keyof typeof MESSAGES.AUTH;
-export type UserMessageKey = keyof typeof MESSAGES.USER;
-export type PaymentMessageKey = keyof typeof MESSAGES.PAYMENT;
-export type CommonMessageKey = keyof typeof MESSAGES.COMMON;

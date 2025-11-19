@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useAppointment } from '@/contexts/AppointmentContext';
 import { useDoctorServices } from '@/lib/api/appointments';
+import { getTodayDateString } from '@/utils/datetime';
 
 export default function DoctorSelectionScreen() {
   const [selectedDoctor, setSelectedDoctor] = useState<number | null>(null);
@@ -99,8 +100,7 @@ export default function DoctorSelectionScreen() {
         // Lưu doctorServiceId (id từ API response)
         setSelectedDoctorServiceId(doctor.id);
         // Set ngày mặc định là hôm nay (ISO date format)
-        const today = new Date().toISOString().split('T')[0];
-        setSelectedDate(today);
+        setSelectedDate(getTodayDateString());
         router.push('/(homes)/(appointment)/create');
       }
     }

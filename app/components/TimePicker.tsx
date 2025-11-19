@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Modal, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { TimePickerProps, TimeSlot } from '@/types';
+import { TimePickerProps, ComponentTimeSlot } from '@/types';
 
 export default function TimePicker({
   selectedTime,
@@ -12,8 +12,8 @@ export default function TimePicker({
   const [isVisible, setIsVisible] = useState(false);
 
   // Generate time slots from 8:00 to 17:00
-  const generateTimeSlots = (): TimeSlot[] => {
-    const slots: TimeSlot[] = [];
+  const generateTimeSlots = (): ComponentTimeSlot[] => {
+    const slots: ComponentTimeSlot[] = [];
 
     for (let hour = 8; hour <= 17; hour++) {
       for (let minute = 0; minute < 60; minute += 30) {
@@ -22,7 +22,6 @@ export default function TimePicker({
 
         slots.push({
           time: timeString,
-          label: timeString,
           available: isAvailable,
         });
       }
@@ -85,7 +84,7 @@ export default function TimePicker({
                               ? 'text-gray-600'
                               : 'text-gray-400'
                         }`}>
-                        {timeSlot.label}
+                        {timeSlot.time}
                       </Text>
                       {!timeSlot.available && (
                         <Text className="mt-1 text-center text-xs text-gray-400">Đã kín</Text>

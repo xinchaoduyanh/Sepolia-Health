@@ -2,73 +2,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 import { API_ENDPOINTS } from '@/constants/api';
 import { Facility, Service, DoctorAvailability } from '@/types/doctor';
-import { CreateAppointmentRequest } from '@/types/appointment';
-
-// Types - Matching Backend DTOs
-export interface Billing {
-  id: number;
-  amount: number;
-  status: 'PENDING' | 'PAID' | 'REFUNDED';
-  paymentMethod: string | null;
-  notes: string | null;
-  createdAt: string;
-}
-
-export interface Appointment {
-  id: number;
-  date: string; // ISO datetime
-  startTime: string;
-  endTime: string;
-  status: 'UPCOMING' | 'ON_GOING' | 'COMPLETED' | 'CANCELLED';
-  notes: string | null;
-  patientProfile?: {
-    id: number;
-    firstName: string;
-    lastName: string;
-    phone: string | null;
-  };
-  patientName?: string;
-  patientDob?: string;
-  patientPhone?: string;
-  patientGender?: string;
-  doctor: {
-    id: number;
-    firstName: string;
-    lastName: string;
-  };
-  service: {
-    id: number;
-    name: string;
-    price: number;
-    duration: number;
-  };
-  clinic?: {
-    id: number;
-    name: string;
-  };
-  billing?: Billing;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface UpdateAppointmentRequest {
-  date?: string; // ISO datetime
-  status?: 'scheduled' | 'completed' | 'cancelled';
-  notes?: string;
-}
-
-export interface AppointmentFilters {
-  page?: number;
-  limit?: number;
-  status?: 'UPCOMING' | 'ON_GOING' | 'COMPLETED' | 'CANCELLED';
-  billingStatus?: 'PENDING' | 'PAID' | 'REFUNDED';
-  doctorId?: number;
-  patientId?: number;
-  dateFrom?: string; // ISO datetime
-  dateTo?: string; // ISO datetime
-  sortBy?: 'date' | 'status' | 'billingStatus';
-  sortOrder?: 'asc' | 'desc';
-}
+import {
+  Appointment,
+  CreateAppointmentRequest,
+  UpdateAppointmentRequest,
+  AppointmentFilters,
+} from '@/types/appointment';
 
 // API Functions
 export const appointmentApi = {
@@ -98,7 +37,7 @@ export const appointmentApi = {
 
   createAppointment: async (data: CreateAppointmentRequest) => {
     const response = await apiClient.post<Appointment>(
-      `${API_ENDPOINTS.APPOINTMENTS.BASE}/booking/create`,
+      `${API_ENDPOINTS.APPOINTMENTS.CREATE}`,
       data
     );
     return response.data;
@@ -140,7 +79,7 @@ export const appointmentApi = {
 
   getClosestAppointment: async () => {
     const response = await apiClient.get<Appointment | null>(
-      `${API_ENDPOINTS.APPOINTMENTS.BASE}/closest`
+      `${API_ENDPOINTS.APPOINTMENTS.CLOSEST}`
     );
     return response.data;
   },

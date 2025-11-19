@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useAppointment } from '@/lib/api/appointments';
+import { formatDate, formatTime } from '@/utils/datetime';
 
 export default function AppointmentDetailScreen() {
   const { id } = useLocalSearchParams();
@@ -31,15 +32,7 @@ export default function AppointmentDetailScreen() {
     );
   }
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('vi-VN', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  };
+
 
   return (
     <View style={{ flex: 1, backgroundColor: '#0ea5e9' }}>
@@ -85,7 +78,7 @@ export default function AppointmentDetailScreen() {
                 },
                 {
                   label: 'Thời gian khám',
-                  value: `${appointment.startTime} - ${appointment.endTime}, ${formatDate(appointment.date)}`,
+                  value: `${formatTime(appointment.startTime)}, ${formatDate(appointment.startTime)}`,
                 },
                 {
                   label: 'Địa điểm',

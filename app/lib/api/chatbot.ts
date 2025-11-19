@@ -1,16 +1,5 @@
 import { apiClient } from '@/lib/api-client';
-
-export interface ProcessMessageResponse {
-  response: string;
-  timestamp: string;
-  error?: string;
-}
-
-export interface CreateAIChannelResponse {
-  channelId: string;
-  cid: string;
-  message: string;
-}
+import { ProcessMessageResponse, CreateAIChannelResponse } from '@/types/chatbot';
 
 export class ChatbotAPI {
   /**

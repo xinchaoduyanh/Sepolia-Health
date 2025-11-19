@@ -42,6 +42,7 @@ export default function ServiceSelectionScreen() {
           id: service.id,
           name: service.name,
           price: service.price,
+          duration: service.duration,
         });
         router.push('./doctor-selection');
       }

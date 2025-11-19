@@ -141,7 +141,7 @@ export class GetDoctorAvailabilityResponseDto {
   serviceDuration: number;
 
   @ApiProperty()
-  date: string;
+  date: Date;
 
   @ApiProperty({ type: WorkingHoursDto })
   workingHours: WorkingHoursDto;

@@ -1,80 +1,65 @@
 // Appointment Types
+
+// Billing information for appointments
+export interface Billing {
+  id: number;
+  amount: number;
+  status: 'PENDING' | 'PAID' | 'REFUNDED';
+  paymentMethod?: string | null;
+  notes?: string | null;
+  createdAt: string;
+}
+
+// Main Appointment interface matching backend response
 export interface Appointment {
   id: number;
-  date: string; // ISO date
-  startTime: string;
-  endTime: string;
+  startTime: string; // ISO datetime
   status: 'UPCOMING' | 'ON_GOING' | 'COMPLETED' | 'CANCELLED';
-  notes?: string;
-  patientProfileId?: number;
+  notes: string | null;
   patientProfile?: {
     id: number;
     firstName: string;
     lastName: string;
-    phone: string;
-    relationship: string;
+    email: string;
+    phone: string | null;
   };
-  patientName: string;
-  patientDob: string;
-  patientPhone: string;
-  patientGender: string;
-  doctorId: number;
   doctor: {
     id: number;
     firstName: string;
     lastName: string;
-    specialty: string;
-    user: {
-      id: number;
-      firstName: string;
-      lastName: string;
-    };
   };
-  serviceId: number;
   service: {
     id: number;
     name: string;
     price: number;
     duration: number;
   };
-  clinicId?: number;
   clinic?: {
     id: number;
     name: string;
-  };
-  billing?: {
-    id: number;
-    amount: number;
-    status: 'PENDING' | 'PAID' | 'REFUNDED';
-    paymentMethod?: 'CASH' | 'BANK_TRANSFER' | 'CARD' | 'ONLINE';
-    notes?: string;
-  };
+  } | null;
+  billing?: Billing | null;
   createdAt: string;
   updatedAt: string;
 }
 
+// Request to create a new appointment
 export interface CreateAppointmentRequest {
   doctorServiceId: number;
-  date: string; // ISO date
-  startTime: string;
+  patientProfileId: number;
+  startTime: string; // ISO datetime
+  endTime: string; // ISO datetime
   notes?: string;
-  // Patient information (required for all appointments)
-  patientName: string;
-  patientDob: string; // ISO date
-  patientPhone: string;
-  patientGender: 'MALE' | 'FEMALE' | 'OTHER';
-  clinicId: number;
-  patientProfileId?: number; // Optional if patient has profile
 }
 
+// Request to update an existing appointment
 export interface UpdateAppointmentRequest {
-  date?: string; // ISO date
-  startTime?: string;
-  endTime?: string;
+  date?: string; // ISO datetime
   status?: 'UPCOMING' | 'ON_GOING' | 'COMPLETED' | 'CANCELLED';
   notes?: string;
 }
 
+// Filters for querying appointments
 export interface AppointmentFilters {
   page?: number;
   limit?: number;

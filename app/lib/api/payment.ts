@@ -1,30 +1,11 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { apiClient } from '../api-client';
-
-// Types
-export interface CreateQrScanPayload {
-  appointmentId: number;
-  amount: number;
-}
-
-export interface QrScanResponse {
-  qrCodeUrl: string;
-  transactionId: string;
-  amount: number;
-  appointmentId: number;
-  paymentCode: string;
-  expiresAt: string;
-}
-
-export interface CheckPaymentStatusResponse {
-  isPaid: boolean;
-  paymentStatus: 'PENDING' | 'PAID' | 'REFUNDED';
-}
-
-export interface CancelPaymentResponse {
-  success: boolean;
-  message: string;
-}
+import {
+  CreateQrScanPayload,
+  QrScanResponse,
+  CheckPaymentStatusResponse,
+  CancelPaymentResponse,
+} from '@/types/payment';
 
 // API Functions
 export const createQrScan = async (payload: CreateQrScanPayload): Promise<QrScanResponse> => {

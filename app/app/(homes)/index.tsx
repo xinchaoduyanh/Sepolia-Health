@@ -8,6 +8,7 @@ import { useAuth } from '@/lib/hooks/useAuth';
 import { useNotificationContext } from '@/contexts/NotificationContext';
 import { useClosestAppointment } from '@/lib/api/appointments';
 import Svg, { Path } from 'react-native-svg';
+import { formatTime } from '@/utils/datetime';
 
 export default function HomeScreen() {
   const { user } = useAuth();
@@ -20,17 +21,12 @@ export default function HomeScreen() {
   // Lấy primary profile (hồ sơ chính)
   const primaryProfile = patientProfiles.find((profile) => profile.relationship === 'SELF');
 
-  // Format date helper
-  const formatAppointmentDate = (dateString: string) => {
-    const date = new Date(dateString);
+  // Format date helper for appointment card
+  const formatAppointmentDate = (isoDateString: string) => {
+    const date = new Date(isoDateString);
     const day = date.getDate();
     const month = date.toLocaleDateString('vi-VN', { month: 'short' });
     return { day, month };
-  };
-
-  // Format time helper
-  const formatTime = (timeString: string) => {
-    return timeString.substring(0, 5); // Get HH:mm format
   };
 
   return (
@@ -312,7 +308,7 @@ export default function HomeScreen() {
                       backgroundColor: '#E0F2FE',
                     }}>
                     <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#0284C7' }}>
-                      {formatAppointmentDate(closestAppointment.date).day}
+                      {formatAppointmentDate(closestAppointment.startTime).day}
                     </Text>
                     <Text
                       style={{
@@ -321,7 +317,7 @@ export default function HomeScreen() {
                         color: '#0284C7',
                         marginTop: 2,
                       }}>
-                      {formatAppointmentDate(closestAppointment.date).month}
+                      {formatAppointmentDate(closestAppointment.startTime).month}
                     </Text>
                   </View>
                 </View>
@@ -338,7 +334,11 @@ export default function HomeScreen() {
                     />
                     <Text style={{ fontSize: 13, fontWeight: '600', color: '#10B981' }}>
                       {formatTime(closestAppointment.startTime)} -{' '}
-                      {formatTime(closestAppointment.endTime)}
+                      {(() => {
+                        const startDate = new Date(closestAppointment.startTime);
+                        const endDate = new Date(startDate.getTime() + closestAppointment.service.duration * 60 * 1000);
+                        return formatTime(endDate.toISOString());
+                      })()}
                     </Text>
                   </View>
                   <Text
@@ -361,17 +361,6 @@ export default function HomeScreen() {
                     </View>
                   )}
                 </View>
-                <TouchableOpacity
-                  style={{
-                    height: 40,
-                    width: 40,
-                    borderRadius: 20,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    backgroundColor: '#E0F2FE',
-                  }}>
-                  <Ionicons name="chevron-forward" size={20} color="#0284C7" />
-                </TouchableOpacity>
               </View>
             </TouchableOpacity>
           ) : (

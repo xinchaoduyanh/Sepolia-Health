@@ -8,12 +8,13 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
-import { ChatAPI, Clinic } from '@/lib/api/chat';
+import { ChatAPI } from '@/lib/api/chat';
 import { Stack, useRouter, useNavigation } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useChatContext } from '@/contexts/ChatContext';
 import React, { useState } from 'react';
+import { Clinic } from '@/types';
 
 const ClinicItem = ({
   item,

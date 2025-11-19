@@ -15,8 +15,10 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useAppointment } from '@/lib/api/appointments';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCreateQrScan, useCancelPayment, checkPaymentStatus } from '@/lib/api/payment';
-import type { QrScanResponse } from '@/lib/api/payment';
 import { usePayment } from '@/contexts/PaymentContext';
+import { QrScanResponse } from '@/types';
+import { formatDate, formatTime } from '@/lib/utils';
+import { getAppointmentEndTime } from '@/utils/datetime';
 
 const COUNTDOWN_DURATION = 300; // 5 minutes
 const POLLING_INTERVAL = 3000; // 3 seconds
@@ -271,7 +273,7 @@ export default function PaymentScreen() {
     ]);
   };
 
-  const formatTime = (seconds: number) => {
+  const formatCountdownTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
@@ -282,7 +284,7 @@ export default function PaymentScreen() {
     return (
       <View className="items-center">
         <Text className="text-sm text-gray-500">Thời gian còn lại</Text>
-        <Text className="text-4xl font-bold text-orange-600">{formatTime(countdown)}</Text>
+        <Text className="text-4xl font-bold text-orange-600">{formatCountdownTime(countdown)}</Text>
       </View>
     );
   };
@@ -346,10 +348,10 @@ export default function PaymentScreen() {
                     Bác sĩ: BS. {appointment.doctor.firstName} {appointment.doctor.lastName}
                   </Text>
                   <Text className="text-gray-600">
-                    Ngày: {new Date(appointment.date).toLocaleDateString('vi-VN')}
+                    Ngày: {formatDate(appointment.startTime)}
                   </Text>
                   <Text className="text-gray-600">
-                    Thời gian: {appointment.startTime} - {appointment.endTime}
+                    Thời gian: {formatTime(appointment.startTime)} - {formatTime(getAppointmentEndTime(appointment.startTime, appointment.service.duration))}
                   </Text>
                 </View>
 

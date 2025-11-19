@@ -38,9 +38,10 @@ export default function GenderSelector({
         <Text className="text-lg font-bold text-slate-900">Giới tính *</Text>
       </View>
 
-      <View className="flex-row space-x-4">
+      <View className="flex-row gap-3">
         {genderOptions.map((option) => (
           <TouchableOpacity
+            activeOpacity={1}
             key={option.value}
             onPress={() => !disabled && onGenderSelect(option.value)}
             disabled={disabled}

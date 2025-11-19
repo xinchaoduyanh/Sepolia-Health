@@ -1,10 +1,5 @@
 import apiClient from '../api-client';
-
-export interface VideoTokenResponse {
-  token: string;
-  apiKey: string;
-  userId: string;
-}
+import { VideoTokenResponse } from '@/types/video';
 
 export const VideoAPI = {
   /**

@@ -56,12 +56,12 @@ export default function TimeSlotPicker({
   const filteredSlots = availableTimeSlots.filter((slot) => slot.period === selectedPeriod);
 
   return (
-    <View className="space-y-4">
-      <Text className="text-lg font-semibold text-gray-900">Chọn khung giờ khám</Text>
+    <View className="gap-4">
 
       {/* Period Selection */}
-      <View className="flex-row space-x-4">
+      <View className="flex-row gap-4">
         <TouchableOpacity
+          activeOpacity={1}
           onPress={() => setSelectedPeriod('morning')}
           className={`flex-1 rounded-xl border-2 px-5 py-4 ${
             selectedPeriod === 'morning' ? 'border-blue-500' : 'border-slate-200'
@@ -85,6 +85,7 @@ export default function TimeSlotPicker({
         </TouchableOpacity>
 
         <TouchableOpacity
+          activeOpacity={1}
           onPress={() => setSelectedPeriod('afternoon')}
           className={`flex-1 rounded-xl border-2 px-5 py-4 ${
             selectedPeriod === 'afternoon' ? 'border-blue-500' : 'border-slate-200'
@@ -110,9 +111,9 @@ export default function TimeSlotPicker({
 
       {/* Time Slots */}
       {filteredSlots.length === 0 ? (
-        <View className="rounded-xl border border-blue-200 bg-blue-50 p-6">
-          <View className="mb-3 flex-row items-center justify-center space-x-3">
-            <Ionicons name="time-outline" size={24} color="#3B82F6" />
+        <View className="rounded-xl border border-blue-200 bg-blue-50 p-1" >
+          <View className="flex-row items-center justify-center mb-1">
+            <Ionicons name="time-outline" size={20} color="#3B82F6" />
             <Text className="text-lg font-semibold text-blue-800">Không có lịch trống</Text>
           </View>
           <Text className="text-center text-blue-700">
@@ -124,7 +125,7 @@ export default function TimeSlotPicker({
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          className="space-x-3"
+          className="gap-3"
           contentContainerStyle={{ paddingHorizontal: 4 }}>
           {filteredSlots.map((slot, index) => (
             <TouchableOpacity

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -14,11 +14,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-// import { Relationship } from '@/types/auth';
 import { useUpdatePatientProfile, useUploadPatientProfileAvatar } from '@/lib/api/user';
 import BirthDatePicker from '@/components/BirthDatePicker';
 import * as ImagePicker from 'expo-image-picker';
-import { useAuth } from '@/lib/hooks/useAuth';
 import { useForm, Controller } from 'react-hook-form';
 import { Relationship } from '@/constants/enum';
 

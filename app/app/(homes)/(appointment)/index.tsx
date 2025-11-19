@@ -17,6 +17,7 @@ import { router } from 'expo-router';
 import { useMyAppointments } from '@/lib/api/appointments';
 import { usePayment } from '@/contexts/PaymentContext';
 import QRCode from 'react-native-qrcode-svg';
+import { formatTime } from '@/utils/datetime';
 
 type AppointmentStatus = 'UPCOMING' | 'ON_GOING' | 'COMPLETED' | 'CANCELLED';
 type PaymentStatus = 'pending' | 'paid' | 'refunded' | 'PENDING' | 'PAID' | 'REFUNDED';
@@ -64,16 +65,12 @@ export default function AppointmentsListScreen() {
     setPage(1);
   }, [sortOrder, paymentFilter]);
 
-  const formatDate = (dateString: string) => {
+  const getDateParts = (dateString: string) => {
     const date = new Date(dateString);
     const day = date.getDate();
     const month = date.getMonth() + 1;
     const year = date.getFullYear();
     return { day, month, year };
-  };
-
-  const formatTimeRange = (startTime: string, endTime: string) => {
-    return `${startTime} - ${endTime}`;
   };
 
   const getStatusInfo = (
@@ -335,8 +332,10 @@ export default function AppointmentsListScreen() {
             </View>
           ) : (
             appointments.map((appointment) => {
-              const { day, month, year } = formatDate(appointment.startTime);
-              const timeRange = formatTimeRange(appointment.startTime, appointment.endTime);
+              const { day, month, year } = getDateParts(appointment.startTime);
+              const startDate = new Date(appointment.startTime);
+              const endDate = new Date(startDate.getTime() + (appointment.service.duration * 60 * 1000));
+              const timeRange = `${formatTime(appointment.startTime)} - ${formatTime(endDate.toISOString())}`;
               const billingStatus = appointment.billing?.status as PaymentStatus | undefined;
               const statusInfo = getStatusInfo(
                 appointment.status as AppointmentStatus,
