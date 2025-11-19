@@ -45,6 +45,16 @@ export {
     type VoteType,
     type SetBestAnswerRequest,
 } from './qna.service'
+export {
+    appTermsService,
+    type AppTerms,
+    type AppTermsType,
+    type AppTermsListParams,
+    type AppTermsListResponse,
+    type AppTermsDetailResponse,
+    type CreateAppTermsRequest,
+    type UpdateAppTermsRequest,
+} from './app-terms.service'
 
 // Re-export API client
 export { apiClient } from '../api-client'

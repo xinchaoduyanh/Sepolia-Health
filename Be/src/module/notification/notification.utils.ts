@@ -30,10 +30,18 @@ export class NotificationUtils {
   }
 
   private static async ensureSystemUserExists() {
-    await this.streamClient.upsertUser({
-      id: 'system',
-      role: 'admin',
-    });
+    try {
+      await this.streamClient.upsertUser({
+        id: 'system',
+        role: 'admin',
+      });
+      console.log('[NotificationUtils] System user initialized successfully');
+    } catch (error) {
+      console.warn(
+        '[NotificationUtils] Failed to initialize system user in Stream.io. The application will continue but notification features may not work properly.',
+        error instanceof Error ? error.message : String(error),
+      );
+    }
   }
 
   private static async getOrCreateNotificationChannel(userId: string) {

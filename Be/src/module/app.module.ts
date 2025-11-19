@@ -21,6 +21,7 @@ import { BullModule } from '@nestjs/bullmq';
 import IORedis from 'ioredis';
 import { MeetingModule } from './meeting/meeting.module';
 import { DoctorModule } from './doctor/doctor.module';
+import { AppTermsModule } from './app-terms/app-terms.module';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { DoctorModule } from './doctor/doctor.module';
     QnaModule,
     ChatbotModule,
     MeetingModule,
+    AppTermsModule,
   ],
   controllers: [AppController],
   providers: [

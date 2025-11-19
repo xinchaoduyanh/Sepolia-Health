@@ -1,4 +1,10 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+  OnModuleInit,
+} from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { StreamChat } from 'stream-chat';
 import { PrismaService } from '@/common/prisma/prisma.service';
@@ -6,8 +12,9 @@ import { appConfig } from '@/common/config';
 import { ChatChannelDto, ClinicDto, UserSearchResultDto } from './chat.dto';
 import crypto from 'crypto';
 @Injectable()
-export class ChatService {
+export class ChatService implements OnModuleInit {
   private streamClient: StreamChat;
+  private readonly logger = new Logger(ChatService.name);
 
   constructor(
     @Inject(appConfig.KEY)
@@ -18,19 +25,29 @@ export class ChatService {
       this.streamChatConf.streamChatApiKey,
       this.streamChatConf.streamChatSecret,
     );
+  }
 
-    void this.ensureSystemUserExists();
+  async onModuleInit() {
+    await this.ensureSystemUserExists();
   }
 
   /**
    * Ensure system user exists for sending system messages
    */
   private async ensureSystemUserExists() {
-    await this.streamClient.upsertUser({
-      id: 'system',
-      name: 'Sepolia Health',
-      role: 'user',
-    });
+    try {
+      await this.streamClient.upsertUser({
+        id: 'system',
+        name: 'Sepolia Health',
+        role: 'user',
+      });
+      this.logger.log('System user initialized successfully');
+    } catch (error) {
+      this.logger.warn(
+        'Failed to initialize system user in Stream.io. The application will continue but chat features may not work properly.',
+        error instanceof Error ? error.message : String(error),
+      );
+    }
   }
 
   /**

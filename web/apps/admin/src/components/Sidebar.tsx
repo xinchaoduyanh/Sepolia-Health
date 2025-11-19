@@ -17,6 +17,7 @@ import {
     Wrench,
     Building2,
     MessageSquare,
+    Smartphone,
 } from 'lucide-react'
 import {
     Sidebar,
@@ -118,9 +119,32 @@ const adminManagementItems = [
         icon: Wrench,
     },
     {
-        title: 'Quản lý phòng khám',
+        title: 'Quản lý phòng khám1',
         url: '/dashboard/admin/clinic-management',
         icon: Building2,
+    },
+    {
+        title: 'Quản lý Ứng dụng',
+        url: '/dashboard/admin/app-management',
+        icon: Smartphone,
+        items: [
+            {
+                title: 'Quy định sử dụng',
+                url: '/dashboard/admin/app-management/usage-regulations',
+            },
+            {
+                title: 'Chính sách giải quyết',
+                url: '/dashboard/admin/app-management/dispute-resolution',
+            },
+            {
+                title: 'Chính sách bảo vệ dữ liệu',
+                url: '/dashboard/admin/app-management/privacy-policy',
+            },
+            {
+                title: 'Hỏi đáp về ứng dụng',
+                url: '/dashboard/admin/app-management/app-faq',
+            },
+        ],
     },
 ]
 

@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { StreamChat } from 'stream-chat';
 import { appConfig } from '@/common/config';
@@ -80,9 +80,10 @@ export interface NotificationResponse {
 }
 
 @Injectable()
-export class NotificationService {
+export class NotificationService implements OnModuleInit {
   private streamClient: StreamChat;
   private readonly NOTIFICATION_CHANNEL_PREFIX = 'notifications';
+  private readonly logger = new Logger(NotificationService.name);
 
   constructor(
     @Inject(appConfig.KEY)
@@ -93,14 +94,25 @@ export class NotificationService {
       this.streamChatConf.streamChatApiKey,
       this.streamChatConf.streamChatSecret,
     );
-    void this.ensureSystemUserExists();
+  }
+
+  async onModuleInit() {
+    await this.ensureSystemUserExists();
   }
 
   private async ensureSystemUserExists() {
-    await this.streamClient.upsertUser({
-      id: 'system',
-      role: 'admin',
-    });
+    try {
+      await this.streamClient.upsertUser({
+        id: 'system',
+        role: 'admin',
+      });
+      this.logger.log('System user initialized successfully');
+    } catch (error) {
+      this.logger.warn(
+        'Failed to initialize system user in Stream.io. The application will continue but notification features may not work properly.',
+        error instanceof Error ? error.message : String(error),
+      );
+    }
   }
 
   private async getOrCreateNotificationChannel(userId: string) {

@@ -110,11 +110,16 @@ function SidebarNavigationMenu({
                     }
 
                     // expanded
+                    // Check if any sub-item is active to determine if should be open by default
+                    const hasActiveSubItem = item.items?.some(
+                        subItem => currentPathname === subItem.url || currentPathname?.startsWith(subItem.url + '/'),
+                    )
+
                     return (
                         <Collapsible
                             asChild
                             key={`expanded-${item.title}`}
-                            defaultOpen={true}
+                            defaultOpen={hasActiveSubItem}
                             className="group/collapsible"
                         >
                             <SidebarMenuItem>

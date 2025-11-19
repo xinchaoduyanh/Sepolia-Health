@@ -33,6 +33,16 @@ export {
   useServices as useDoctorServiceList,
 } from './doctors';
 
+// App Terms exports
+export {
+  appTermsApi,
+  useAppTerms,
+  useAppTermsByType,
+  appTermsKeys,
+  AppTermsType,
+  type AppTerms,
+} from './app-terms';
+
 // Export API client
 export { default as apiClient } from '@/lib/api-client';
 

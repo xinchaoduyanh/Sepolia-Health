@@ -77,6 +77,14 @@ export const queryKeys = {
             dashboard: () => [...queryKeys.admin.statistics.all(), 'dashboard'] as const,
             overview: () => [...queryKeys.admin.statistics.all(), 'overview'] as const,
         },
+        appTerms: {
+            all: () => [...queryKeys.admin.all, 'appTerms'] as const,
+            lists: () => [...queryKeys.admin.appTerms.all(), 'list'] as const,
+            list: (filters: Record<string, any>) => [...queryKeys.admin.appTerms.lists(), { filters }] as const,
+            details: () => [...queryKeys.admin.appTerms.all(), 'detail'] as const,
+            detail: (id: number) => [...queryKeys.admin.appTerms.details(), id] as const,
+            byType: (type: string) => [...queryKeys.admin.appTerms.all(), 'type', type] as const,
+        },
     },
 
     // QnA related queries

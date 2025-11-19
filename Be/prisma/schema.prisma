@@ -606,3 +606,30 @@ model AnswerEditHistory {
   @@index([answerId])
   @@index([editedBy])
 }
+
+// ----------------- APP TERMS & REGULATIONS MODELS -----------------
+
+enum AppTermsType {
+  USAGE_REGULATIONS // Quy định sử dụng
+  DISPUTE_RESOLUTION // Chính sách giải quyết khiếu nại, tranh chấp
+  PRIVACY_POLICY // Chính sách bảo vệ dữ liệu cá nhân
+  APP_FAQ // Hỏi đáp về ứng dụng
+}
+
+/// Điều khoản và quy định của ứng dụng
+model AppTerms {
+  id        Int          @id @default(autoincrement())
+  type      AppTermsType // Loại điều khoản
+  title     String       // Tiêu đề
+  content   String       // Nội dung (HTML hoặc markdown)
+  version   Int          @default(1) // Phiên bản
+  isActive  Boolean      @default(true) // Bản đang được áp dụng
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  createdBy Int? // ID của admin tạo
+  updatedBy Int? // ID của admin cập nhật
+
+  @@unique([type, isActive]) // Mỗi loại chỉ có 1 bản active
+  @@index([type])
+  @@index([isActive])
+}

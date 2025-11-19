@@ -9,6 +9,7 @@ import { PaymentProvider } from '@/contexts/PaymentContext';
 import { QueryProvider } from '@/providers/QueryProvider';
 import { ChatProvider } from '@/contexts/ChatContext';
 import { NotificationProvider } from '@/contexts/NotificationContext';
+import { BackgroundPrefetch } from '@/components/BackgroundPrefetch';
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 
@@ -30,6 +31,7 @@ export default function Layout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryProvider>
+        <BackgroundPrefetch />
         <ChatProvider>
           <NotificationProvider>
             <VideoProvider>

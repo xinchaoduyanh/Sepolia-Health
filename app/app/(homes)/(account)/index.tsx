@@ -226,7 +226,9 @@ export default function AccountScreen() {
           <View className="mb-6">
             <Text className="mb-4 text-lg font-bold text-slate-900">Điều khoản & quy định</Text>
             <View className="overflow-hidden rounded-2xl bg-white shadow-lg shadow-sky-600/10">
-              <TouchableOpacity className="flex-row items-center border-b border-sky-50 p-4">
+              <TouchableOpacity
+                onPress={() => router.push('/(homes)/(account)/terms/usage-regulations')}
+                className="flex-row items-center border-b border-sky-50 p-4">
                 <View className="mr-4 h-10 w-10 items-center justify-center rounded-lg bg-sky-50">
                   <Ionicons name="document-text-outline" size={20} color="#0284C7" />
                 </View>
@@ -236,7 +238,9 @@ export default function AccountScreen() {
                 <Ionicons name="chevron-forward" size={18} color="#06B6D4" />
               </TouchableOpacity>
 
-              <TouchableOpacity className="flex-row items-center border-b border-sky-50 p-4">
+              <TouchableOpacity
+                onPress={() => router.push('/(homes)/(account)/terms/dispute-resolution')}
+                className="flex-row items-center border-b border-sky-50 p-4">
                 <View className="mr-4 h-10 w-10 items-center justify-center rounded-lg bg-green-100">
                   <Ionicons name="warning-outline" size={20} color="#10B981" />
                 </View>
@@ -246,7 +250,9 @@ export default function AccountScreen() {
                 <Ionicons name="chevron-forward" size={18} color="#06B6D4" />
               </TouchableOpacity>
 
-              <TouchableOpacity className="flex-row items-center border-b border-sky-50 p-4">
+              <TouchableOpacity
+                onPress={() => router.push('/(homes)/(account)/terms/privacy-policy')}
+                className="flex-row items-center border-b border-sky-50 p-4">
                 <View className="mr-4 h-10 w-10 items-center justify-center rounded-lg bg-sky-50">
                   <Ionicons name="shield-checkmark-outline" size={20} color="#0284C7" />
                 </View>
@@ -256,7 +262,9 @@ export default function AccountScreen() {
                 <Ionicons name="chevron-forward" size={18} color="#06B6D4" />
               </TouchableOpacity>
 
-              <TouchableOpacity className="flex-row items-center border-b border-sky-50 p-4">
+              <TouchableOpacity
+                onPress={() => router.push('/(homes)/(account)/terms/app-faq')}
+                className="flex-row items-center border-b border-sky-50 p-4">
                 <View className="mr-4 h-10 w-10 items-center justify-center rounded-lg bg-sky-50">
                   <Ionicons name="help-circle-outline" size={20} color="#0284C7" />
                 </View>

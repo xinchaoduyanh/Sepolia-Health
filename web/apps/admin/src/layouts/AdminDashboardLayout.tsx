@@ -30,6 +30,7 @@ import {
     FileText as ArticleIcon,
     Wrench,
     Building2,
+    Smartphone,
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
@@ -182,6 +183,29 @@ const ADMIN_MANAGEMENT_ITEMS: Array<SidebarNavigationMenuItem> = [
         title: 'Quản lý phòng khám',
         url: '/dashboard/admin/clinic-management',
         icon: Building2,
+    },
+    {
+        title: 'Quản lý Ứng dụng',
+        url: '/dashboard/admin/app-management',
+        icon: Smartphone,
+        items: [
+            {
+                title: 'Quy định sử dụng',
+                url: '/dashboard/admin/app-management/usage-regulations',
+            },
+            {
+                title: 'Chính sách giải quyết',
+                url: '/dashboard/admin/app-management/dispute-resolution',
+            },
+            {
+                title: 'Chính sách bảo vệ dữ liệu',
+                url: '/dashboard/admin/app-management/privacy-policy',
+            },
+            {
+                title: 'Hỏi đáp về ứng dụng',
+                url: '/dashboard/admin/app-management/app-faq',
+            },
+        ],
     },
 ]
 
