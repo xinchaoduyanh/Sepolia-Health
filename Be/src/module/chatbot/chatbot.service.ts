@@ -330,7 +330,7 @@ export class ChatbotService {
       }
 
       try {
-        // Ensure bot user exists with avatar before sending error message
+          // Ensure bot user exists with avatar before sending error message
         await this.streamClient.upsertUser({
           id: this.botUserId,
           name: 'Trợ lý Y tế Thông minh',

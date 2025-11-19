@@ -20,6 +20,7 @@ import { ChatbotModule } from '@/module/chatbot/chatbot.module';
 import { BullModule } from '@nestjs/bullmq';
 import IORedis from 'ioredis';
 import { MeetingModule } from './meeting/meeting.module';
+import { DoctorModule } from './doctor/doctor.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { MeetingModule } from './meeting/meeting.module';
     PatientModule,
     AdminModule,
     ReceptionistModule,
+    DoctorModule,
     PaymentModule,
     ChatModule,
     NotificationModule,

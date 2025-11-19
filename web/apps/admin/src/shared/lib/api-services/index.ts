@@ -19,6 +19,12 @@ export {
     type UpdatePatientRequest,
 } from './patients.service'
 export { doctorsService } from './doctors.service'
+export {
+    doctorScheduleService,
+    type WeeklyScheduleResponse,
+    type WeeklyScheduleDay,
+    type BookedTimeSlot,
+} from './doctor-schedule.service'
 export { receptionistsService } from './receptionists.service'
 export { articlesService } from './articles.service'
 export { servicesService } from './services.service'
