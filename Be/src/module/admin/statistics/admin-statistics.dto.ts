@@ -267,3 +267,172 @@ export class DashboardStatisticsResponseDto {
   })
   averageAppointmentsPerDay: number;
 }
+
+export class MonthComparisonDto {
+  @ApiProperty({
+    description: 'Giá trị tháng này',
+    example: 150,
+  })
+  currentMonth: number;
+
+  @ApiProperty({
+    description: 'Giá trị tháng trước',
+    example: 125,
+  })
+  previousMonth: number;
+
+  @ApiProperty({
+    description: 'Chênh lệch tuyệt đối',
+    example: 25,
+  })
+  difference: number;
+
+  @ApiProperty({
+    description: 'Phần trăm thay đổi',
+    example: 20.0,
+  })
+  percentageChange: number;
+}
+
+export class OverviewStatisticsResponseDto {
+  @ApiProperty({
+    description: 'Thống kê tổng bệnh nhân (so sánh tháng này vs tháng trước)',
+    type: MonthComparisonDto,
+  })
+  totalPatients: MonthComparisonDto;
+
+  @ApiProperty({
+    description: 'Thống kê lịch hẹn (so sánh tháng này vs tháng trước)',
+    type: MonthComparisonDto,
+  })
+  appointments: MonthComparisonDto;
+
+  @ApiProperty({
+    description: 'Thống kê bác sĩ (so sánh tháng này vs tháng trước)',
+    type: MonthComparisonDto,
+  })
+  doctors: MonthComparisonDto;
+
+  @ApiProperty({
+    description:
+      'Thống kê doanh thu từ lịch hẹn COMPLETED (so sánh tháng này vs tháng trước)',
+    type: MonthComparisonDto,
+  })
+  revenue: MonthComparisonDto;
+}
+
+export class ClinicStatisticsItemDto {
+  @ApiProperty({
+    description: 'ID của clinic',
+    example: 1,
+  })
+  clinicId: number;
+
+  @ApiProperty({
+    description: 'Tên clinic',
+    example: 'Phòng khám Đa khoa Hà Nội',
+  })
+  clinicName: string;
+
+  @ApiProperty({
+    description: 'Số bệnh nhân',
+    example: 150,
+  })
+  patients: number;
+
+  @ApiProperty({
+    description: 'Số lịch hẹn COMPLETED',
+    example: 45,
+  })
+  appointments: number;
+
+  @ApiProperty({
+    description: 'Số bác sĩ',
+    example: 12,
+  })
+  doctors: number;
+
+  @ApiProperty({
+    description: 'Doanh thu (từ COMPLETED appointments)',
+    example: 22500000,
+  })
+  revenue: number;
+}
+
+export class ClinicStatisticsResponseDto {
+  @ApiProperty({
+    description: 'Thống kê theo từng clinic',
+    type: [ClinicStatisticsItemDto],
+  })
+  clinics: ClinicStatisticsItemDto[];
+}
+
+export class RevenueChartDataPointDto {
+  @ApiProperty({
+    description: 'Label cho điểm dữ liệu (ngày/tuần/tháng)',
+    example: '2024-01-15',
+  })
+  label: string;
+
+  @ApiProperty({
+    description: 'Doanh thu theo từng clinic',
+    example: [
+      { clinicId: 1, clinicName: 'Clinic A', revenue: 1000000 },
+      { clinicId: 2, clinicName: 'Clinic B', revenue: 2000000 },
+    ],
+  })
+  clinics: Array<{
+    clinicId: number;
+    clinicName: string;
+    revenue: number;
+  }>;
+}
+
+export class RevenueChartResponseDto {
+  @ApiProperty({
+    description: 'Dữ liệu biểu đồ doanh thu',
+    type: [RevenueChartDataPointDto],
+  })
+  data: RevenueChartDataPointDto[];
+
+  @ApiProperty({
+    description: 'Danh sách clinic',
+    example: [
+      { clinicId: 1, clinicName: 'Clinic A' },
+      { clinicId: 2, clinicName: 'Clinic B' },
+    ],
+  })
+  clinics: Array<{
+    clinicId: number;
+    clinicName: string;
+  }>;
+}
+
+export class AppointmentsChartDataPointDto {
+  @ApiProperty({
+    description: 'Label cho điểm dữ liệu (tháng)',
+    example: '2024-01',
+  })
+  label: string;
+
+  @ApiProperty({
+    description: 'Số lịch hẹn theo từng clinic',
+    example: [
+      { clinicId: 1, clinicName: 'Clinic A', appointments: 10 },
+      { clinicId: 2, clinicName: 'Clinic B', appointments: 20 },
+    ],
+  })
+  clinics: Array<{
+    clinicId: number;
+    clinicName: string;
+    appointments: number;
+  }>;
+}
+
+export class AppointmentsChartResponseDto {
+  @ApiProperty({
+    description: 'Dữ liệu biểu đồ lịch hẹn',
+    type: [AppointmentsChartDataPointDto],
+  })
+  data: AppointmentsChartDataPointDto[];
+}

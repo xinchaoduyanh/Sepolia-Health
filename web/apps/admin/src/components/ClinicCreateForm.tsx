@@ -3,8 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@workspace/ui/components/Button'
-import { Input } from '@workspace/ui/components/Input'
-import { Textarea } from '@workspace/ui/components/Textarea'
+import { InputField, TextareaField } from '@workspace/ui/components/InputField'
 import { Label } from '@workspace/ui/components/Label'
 import { Checkbox } from '@workspace/ui/components/Checkbox'
 import { ArrowLeft, AlertCircle, Save } from 'lucide-react'
@@ -81,7 +80,7 @@ export function ClinicCreateForm() {
         setFormData(prev => ({ ...prev, [field]: value }))
 
         // Clear error when user starts typing
-        if (fieldErrors[field]) {
+        if (fieldErrors[field as keyof FieldErrors]) {
             setFieldErrors(prev => ({ ...prev, [field]: undefined }))
         }
     }
@@ -105,13 +104,15 @@ export function ClinicCreateForm() {
                 <form onSubmit={handleSubmit} className="p-6 space-y-6">
                     {/* Name */}
                     <div className="space-y-2">
-                        <Label htmlFor="name">Tên phòng khám <span className="text-red-500">*</span></Label>
-                        <Input
+                        <Label htmlFor="name">
+                            Tên phòng khám <span className="text-red-500">*</span>
+                        </Label>
+                        <InputField
                             id="name"
                             type="text"
                             placeholder="Nhập tên phòng khám"
                             value={formData.name}
-                            onChange={(e) => handleInputChange('name', e.target.value)}
+                            onChange={e => handleInputChange('name', e.target.value)}
                             className={fieldErrors.name ? 'border-red-500' : ''}
                         />
                         {fieldErrors.name && (
@@ -124,12 +125,14 @@ export function ClinicCreateForm() {
 
                     {/* Address */}
                     <div className="space-y-2">
-                        <Label htmlFor="address">Địa chỉ <span className="text-red-500">*</span></Label>
-                        <Textarea
+                        <Label htmlFor="address">
+                            Địa chỉ <span className="text-red-500">*</span>
+                        </Label>
+                        <TextareaField
                             id="address"
                             placeholder="Nhập địa chỉ phòng khám"
                             value={formData.address}
-                            onChange={(e) => handleInputChange('address', e.target.value)}
+                            onChange={e => handleInputChange('address', e.target.value)}
                             rows={3}
                             className={fieldErrors.address ? 'border-red-500' : ''}
                         />
@@ -145,23 +148,23 @@ export function ClinicCreateForm() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="phone">Số điện thoại</Label>
-                            <Input
+                            <InputField
                                 id="phone"
                                 type="tel"
                                 placeholder="Nhập số điện thoại"
                                 value={formData.phone}
-                                onChange={(e) => handleInputChange('phone', e.target.value)}
+                                onChange={e => handleInputChange('phone', e.target.value)}
                             />
                         </div>
 
                         <div className="space-y-2">
                             <Label htmlFor="email">Email</Label>
-                            <Input
+                            <InputField
                                 id="email"
                                 type="email"
                                 placeholder="Nhập email liên hệ"
                                 value={formData.email}
-                                onChange={(e) => handleInputChange('email', e.target.value)}
+                                onChange={e => handleInputChange('email', e.target.value)}
                                 className={fieldErrors.email ? 'border-red-500' : ''}
                             />
                             {fieldErrors.email && (
@@ -176,11 +179,11 @@ export function ClinicCreateForm() {
                     {/* Description */}
                     <div className="space-y-2">
                         <Label htmlFor="description">Mô tả phòng khám</Label>
-                        <Textarea
+                        <TextareaField
                             id="description"
                             placeholder="Nhập mô tả về phòng khám"
                             value={formData.description}
-                            onChange={(e) => handleInputChange('description', e.target.value)}
+                            onChange={e => handleInputChange('description', e.target.value)}
                             rows={4}
                         />
                     </div>
@@ -189,28 +192,19 @@ export function ClinicCreateForm() {
                     <div className="flex items-center space-x-2">
                         <Checkbox
                             id="isActive"
-                            checked={formData.isActive}
-                            onCheckedChange={(checked) => handleInputChange('isActive', checked as boolean)}
-                        />
-                        <Label htmlFor="isActive" className="text-sm font-medium">
+                            isSelected={formData.isActive}
+                            onChange={isSelected => handleInputChange('isActive', isSelected)}
+                        >
                             Phòng khám đang hoạt động
-                        </Label>
+                        </Checkbox>
                     </div>
 
                     {/* Actions */}
                     <div className="flex justify-end space-x-4 pt-6 border-t border-border">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => router.back()}
-                        >
+                        <Button type="button" variant="outline" onClick={() => router.back()}>
                             Hủy
                         </Button>
-                        <Button
-                            type="submit"
-                            disabled={createClinic.isPending}
-                            className="flex items-center space-x-2"
-                        >
+                        <Button type="submit" isDisabled={createClinic.isPending} className="flex items-center space-x-2">
                             <Save className="h-4 w-4" />
                             <span>{createClinic.isPending ? 'Đang tạo...' : 'Tạo phòng khám'}</span>
                         </Button>

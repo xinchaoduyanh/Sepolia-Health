@@ -109,9 +109,19 @@ const adminManagementItems = [
         icon: Percent,
     },
     {
-        title: 'Quản lý bài viết',
+        title: 'Quản lý cộng đồng hỏi đáp',
         url: '/dashboard/admin/article-management',
         icon: ArticleIcon,
+        items: [
+            {
+                title: 'Quản lý bài viết',
+                url: '/dashboard/admin/article-management/article-list',
+            },
+            {
+                title: 'Quản lý Tags',
+                url: '/dashboard/admin/tag-management/tag-list',
+            },
+        ],
     },
     {
         title: 'Quản lý dịch vụ',

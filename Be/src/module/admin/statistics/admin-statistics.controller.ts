@@ -20,6 +20,10 @@ import {
   DashboardStatisticsResponseDto,
   RevenueStatisticsResponseDto,
   MonthlyAppointmentsResponseDto,
+  OverviewStatisticsResponseDto,
+  ClinicStatisticsResponseDto,
+  RevenueChartResponseDto,
+  AppointmentsChartResponseDto,
 } from './admin-statistics.dto';
 import { JwtAuthGuard, RolesGuard } from '@/common/guards';
 import { Roles } from '@/common/decorators';
@@ -105,7 +109,9 @@ export class AdminStatisticsController {
 
   @Get('monthly-appointments')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Thống kê số lượng appointment trong tháng gần đây' })
+  @ApiOperation({
+    summary: 'Thống kê số lượng appointment trong tháng gần đây',
+  })
   @ApiResponse({
     status: 200,
     description: 'Lấy thống kê appointment tháng gần đây thành công',
@@ -113,5 +119,78 @@ export class AdminStatisticsController {
   })
   async getMonthlyAppointments(): Promise<MonthlyAppointmentsResponseDto> {
     return this.adminStatisticsService.getMonthlyAppointments();
+  }
+
+  @Get('overview')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Thống kê tổng quan so sánh tháng này vs tháng trước',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy thống kê tổng quan thành công',
+    type: OverviewStatisticsResponseDto,
+  })
+  async getOverviewStatistics(): Promise<OverviewStatisticsResponseDto> {
+    return this.adminStatisticsService.getOverviewStatistics();
+  }
+
+  @Get('clinics')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Thống kê các chỉ số theo từng cơ sở (clinic)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy thống kê theo clinic thành công',
+    type: ClinicStatisticsResponseDto,
+  })
+  async getClinicStatistics(): Promise<ClinicStatisticsResponseDto> {
+    return this.adminStatisticsService.getClinicStatistics();
+  }
+
+  @Get('revenue-chart-by-clinic')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Biểu đồ doanh thu theo cơ sở',
+  })
+  @ApiQuery({
+    name: 'period',
+    required: true,
+    enum: ['1month', '3months', 'year'],
+    description:
+      'Khoảng thời gian: 1month (theo ngày), 3months (theo tuần), year (theo tháng)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy dữ liệu biểu đồ doanh thu thành công',
+    type: RevenueChartResponseDto,
+  })
+  async getRevenueChartByClinic(
+    @Query('period') period: '1month' | '3months' | 'year',
+  ): Promise<RevenueChartResponseDto> {
+    return this.adminStatisticsService.getRevenueChartByClinic(period);
+  }
+
+  @Get('appointments-chart-by-clinic')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Biểu đồ lịch hẹn theo cơ sở (12 tháng gần nhất)',
+  })
+  @ApiQuery({
+    name: 'month',
+    required: false,
+    type: String,
+    description: 'Tháng mục tiêu (format: YYYY-MM), mặc định là tháng hiện tại',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy dữ liệu biểu đồ lịch hẹn thành công',
+    type: AppointmentsChartResponseDto,
+  })
+  async getAppointmentsChartByClinic(
+    @Query('month') month?: string,
+  ): Promise<AppointmentsChartResponseDto> {
+    return this.adminStatisticsService.getAppointmentsChartByClinic(month);
   }
 }

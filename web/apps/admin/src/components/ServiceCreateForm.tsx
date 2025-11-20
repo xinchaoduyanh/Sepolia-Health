@@ -3,8 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@workspace/ui/components/Button'
-import { Input } from '@workspace/ui/components/Input'
-import { Textarea } from '@workspace/ui/components/Textarea'
+import { InputField, TextareaField } from '@workspace/ui/components/InputField'
 import { Label } from '@workspace/ui/components/Label'
 import { ArrowLeft, AlertCircle, Save } from 'lucide-react'
 import { useCreateService } from '@/shared/hooks'
@@ -101,13 +100,15 @@ export function ServiceCreateForm() {
                 <form onSubmit={handleSubmit} className="p-6 space-y-6">
                     {/* Name */}
                     <div className="space-y-2">
-                        <Label htmlFor="name">Tên dịch vụ <span className="text-red-500">*</span></Label>
-                        <Input
+                        <Label htmlFor="name">
+                            Tên dịch vụ <span className="text-red-500">*</span>
+                        </Label>
+                        <InputField
                             id="name"
                             type="text"
                             placeholder="Nhập tên dịch vụ"
                             value={formData.name}
-                            onChange={(e) => handleInputChange('name', e.target.value)}
+                            onChange={e => handleInputChange('name', e.target.value)}
                             className={fieldErrors.name ? 'border-red-500' : ''}
                         />
                         {fieldErrors.name && (
@@ -121,13 +122,15 @@ export function ServiceCreateForm() {
                     {/* Price and Duration */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="price">Giá (VNĐ) <span className="text-red-500">*</span></Label>
-                            <Input
+                            <Label htmlFor="price">
+                                Giá (VNĐ) <span className="text-red-500">*</span>
+                            </Label>
+                            <InputField
                                 id="price"
                                 type="number"
                                 placeholder="Nhập giá dịch vụ"
                                 value={formData.price}
-                                onChange={(e) => handleInputChange('price', e.target.value)}
+                                onChange={e => handleInputChange('price', e.target.value)}
                                 className={fieldErrors.price ? 'border-red-500' : ''}
                                 min="0"
                                 step="1000"
@@ -141,13 +144,15 @@ export function ServiceCreateForm() {
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="duration">Thời lượng (phút) <span className="text-red-500">*</span></Label>
-                            <Input
+                            <Label htmlFor="duration">
+                                Thời lượng (phút) <span className="text-red-500">*</span>
+                            </Label>
+                            <InputField
                                 id="duration"
                                 type="number"
                                 placeholder="Nhập thời lượng"
                                 value={formData.duration}
-                                onChange={(e) => handleInputChange('duration', e.target.value)}
+                                onChange={e => handleInputChange('duration', e.target.value)}
                                 className={fieldErrors.duration ? 'border-red-500' : ''}
                                 min="1"
                             />
@@ -163,27 +168,25 @@ export function ServiceCreateForm() {
                     {/* Description */}
                     <div className="space-y-2">
                         <Label htmlFor="description">Mô tả dịch vụ</Label>
-                        <Textarea
+                        <TextareaField
                             id="description"
                             placeholder="Nhập mô tả dịch vụ (không bắt buộc)"
                             value={formData.description}
-                            onChange={(e) => handleInputChange('description', e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                                handleInputChange('description', e.target.value)
+                            }
                             rows={4}
                         />
                     </div>
 
                     {/* Actions */}
                     <div className="flex justify-end space-x-4 pt-6 border-t border-border">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => router.back()}
-                        >
+                        <Button type="button" variant="outline" onClick={() => router.back()}>
                             Hủy
                         </Button>
                         <Button
                             type="submit"
-                            disabled={createService.isPending}
+                            isDisabled={createService.isPending}
                             className="flex items-center space-x-2"
                         >
                             <Save className="h-4 w-4" />

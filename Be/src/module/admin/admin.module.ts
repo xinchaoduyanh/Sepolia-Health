@@ -10,6 +10,7 @@ import { AdminServiceModule } from './service/admin-service.module';
 import { AdminClinicModule } from './clinic/admin-clinic.module';
 import { AdminQnaModule } from './qna/admin-qna.module';
 import { AdminAppTermsModule } from './app-terms/admin-app-terms.module';
+import { AdminTagModule } from './tag/admin-tag.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { AdminAppTermsModule } from './app-terms/admin-app-terms.module';
     AdminClinicModule,
     AdminQnaModule,
     AdminAppTermsModule,
+    AdminTagModule,
   ],
   exports: [
     AdminPatientModule,
@@ -37,6 +39,7 @@ import { AdminAppTermsModule } from './app-terms/admin-app-terms.module';
     AdminClinicModule,
     AdminQnaModule,
     AdminAppTermsModule,
+    AdminTagModule,
   ],
 })
 export class AdminModule {}

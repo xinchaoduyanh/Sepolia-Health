@@ -12,22 +12,61 @@ export interface DashboardStats {
     cancelledAppointments: number
 }
 
+export interface MonthComparison {
+    currentMonth: number
+    previousMonth: number
+    difference: number
+    percentageChange: number
+}
+
 export interface OverviewStats {
-    usersGrowth: {
-        period: string
-        growth: number
-        percentage: number
-    }
-    appointmentsGrowth: {
-        period: string
-        growth: number
-        percentage: number
-    }
-    revenueGrowth?: {
-        period: string
-        growth: number
-        percentage: number
-    }
+    totalPatients: MonthComparison
+    appointments: MonthComparison
+    doctors: MonthComparison
+    revenue: MonthComparison
+}
+
+export interface ClinicStatisticsItem {
+    clinicId: number
+    clinicName: string
+    patients: number
+    appointments: number
+    doctors: number
+    revenue: number
+}
+
+export interface ClinicStatistics {
+    clinics: ClinicStatisticsItem[]
+}
+
+export interface RevenueChartDataPoint {
+    label: string
+    clinics: Array<{
+        clinicId: number
+        clinicName: string
+        revenue: number
+    }>
+}
+
+export interface RevenueChartData {
+    data: RevenueChartDataPoint[]
+    clinics: Array<{
+        clinicId: number
+        clinicName: string
+    }>
+}
+
+export interface AppointmentsChartDataPoint {
+    label: string
+    clinics: Array<{
+        clinicId: number
+        clinicName: string
+        appointments: number
+    }>
+}
+
+export interface AppointmentsChartData {
+    data: AppointmentsChartDataPoint[]
 }
 
 export interface ChartData {
@@ -59,10 +98,10 @@ export class StatisticsService {
     }
 
     /**
-     * Get overview statistics
+     * Get overview statistics (current month vs previous month)
      */
-    async getOverviewStats(params?: StatisticsParams): Promise<OverviewStats> {
-        return apiClient.get<OverviewStats>('/statistics/overview', { params })
+    async getOverviewStats(): Promise<OverviewStats> {
+        return apiClient.get<OverviewStats>('/admin/statistics/overview')
     }
 
     /**
@@ -84,6 +123,31 @@ export class StatisticsService {
      */
     async getRevenueChartData(params?: StatisticsParams): Promise<ChartData> {
         return apiClient.get<ChartData>('/admin/statistics/revenue-chart', { params })
+    }
+
+    /**
+     * Get statistics by clinic
+     */
+    async getClinicStatistics(): Promise<ClinicStatistics> {
+        return apiClient.get<ClinicStatistics>('/admin/statistics/clinics')
+    }
+
+    /**
+     * Get revenue chart data by clinic
+     */
+    async getRevenueChartByClinic(period: '1month' | '3months' | 'year'): Promise<RevenueChartData> {
+        return apiClient.get<RevenueChartData>('/admin/statistics/revenue-chart-by-clinic', {
+            params: { period },
+        })
+    }
+
+    /**
+     * Get appointments chart data by clinic
+     */
+    async getAppointmentsChartByClinic(month?: string): Promise<AppointmentsChartData> {
+        return apiClient.get<AppointmentsChartData>('/admin/statistics/appointments-chart-by-clinic', {
+            params: month ? { month } : undefined,
+        })
     }
 }
 

@@ -1,11 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/common/prisma/prisma.service';
+import { Role, AppointmentStatus, PaymentStatus } from '@prisma/client';
 import {
   UserStatisticsResponseDto,
   AppointmentStatisticsResponseDto,
   DashboardStatisticsResponseDto,
   RevenueStatisticsResponseDto,
   MonthlyAppointmentsResponseDto,
+  OverviewStatisticsResponseDto,
+  MonthComparisonDto,
+  ClinicStatisticsResponseDto,
+  RevenueChartResponseDto,
+  AppointmentsChartResponseDto,
 } from './admin-statistics.dto';
 
 @Injectable()
@@ -21,12 +27,18 @@ export class AdminStatisticsService {
     // Get total counts
     const [totalPatients, totalDoctors, totalReceptionists, totalAdmins] =
       await Promise.all([
-        this.prisma.user.count({ where: { role: 'PATIENT', ...dateFilter } }),
-        this.prisma.user.count({ where: { role: 'DOCTOR', ...dateFilter } }),
         this.prisma.user.count({
-          where: { role: 'RECEPTIONIST', ...dateFilter },
+          where: { role: Role.PATIENT, ...dateFilter },
         }),
-        this.prisma.user.count({ where: { role: 'ADMIN', ...dateFilter } }),
+        this.prisma.user.count({
+          where: { role: Role.DOCTOR, ...dateFilter },
+        }),
+        this.prisma.user.count({
+          where: { role: Role.RECEPTIONIST, ...dateFilter },
+        }),
+        this.prisma.user.count({
+          where: { role: Role.ADMIN, ...dateFilter },
+        }),
       ]);
 
     // Get new users this month
@@ -40,13 +52,13 @@ export class AdminStatisticsService {
       newReceptionistsThisMonth,
     ] = await Promise.all([
       this.prisma.user.count({
-        where: { role: 'PATIENT', createdAt: { gte: thisMonth } },
+        where: { role: Role.PATIENT, createdAt: { gte: thisMonth } },
       }),
       this.prisma.user.count({
-        where: { role: 'DOCTOR', createdAt: { gte: thisMonth } },
+        where: { role: Role.DOCTOR, createdAt: { gte: thisMonth } },
       }),
       this.prisma.user.count({
-        where: { role: 'RECEPTIONIST', createdAt: { gte: thisMonth } },
+        where: { role: Role.RECEPTIONIST, createdAt: { gte: thisMonth } },
       }),
     ]);
 
@@ -80,13 +92,13 @@ export class AdminStatisticsService {
     ] = await Promise.all([
       this.prisma.appointment.count({ where: dateFilter }),
       this.prisma.appointment.count({
-        where: { ...dateFilter, status: 'scheduled' },
+        where: { ...dateFilter, status: AppointmentStatus.UPCOMING },
       }),
       this.prisma.appointment.count({
-        where: { ...dateFilter, status: 'completed' },
+        where: { ...dateFilter, status: AppointmentStatus.COMPLETED },
       }),
       this.prisma.appointment.count({
-        where: { ...dateFilter, status: 'cancelled' },
+        where: { ...dateFilter, status: AppointmentStatus.CANCELLED },
       }),
     ]);
 
@@ -123,19 +135,19 @@ export class AdminStatisticsService {
         this.prisma.appointment.count({
           where: {
             ...dateFilter,
-            billing: { status: 'PENDING' },
+            billing: { status: PaymentStatus.PENDING },
           },
         }),
         this.prisma.appointment.count({
           where: {
             ...dateFilter,
-            billing: { status: 'PAID' },
+            billing: { status: PaymentStatus.PAID },
           },
         }),
         this.prisma.appointment.count({
           where: {
             ...dateFilter,
-            billing: { status: 'REFUNDED' },
+            billing: { status: PaymentStatus.REFUNDED },
           },
         }),
       ],
@@ -207,7 +219,7 @@ export class AdminStatisticsService {
     // Get total revenue from billing
     const totalRevenueResult = await this.prisma.billing.aggregate({
       where: {
-        status: 'PAID',
+        status: PaymentStatus.PAID,
         appointment: dateFilter,
       },
       _sum: {
@@ -223,7 +235,7 @@ export class AdminStatisticsService {
 
     const monthlyRevenueResult = await this.prisma.billing.aggregate({
       where: {
-        status: 'PAID',
+        status: PaymentStatus.PAID,
         appointment: {
           createdAt: { gte: thisMonth },
         },
@@ -242,7 +254,7 @@ export class AdminStatisticsService {
 
     const todayRevenueResult = await this.prisma.billing.aggregate({
       where: {
-        status: 'PAID',
+        status: PaymentStatus.PAID,
         appointment: {
           startTime: {
             gte: today,
@@ -262,7 +274,7 @@ export class AdminStatisticsService {
     // Get revenue by service using raw SQL approach or simpler aggregation
     const revenueByServiceData = await this.prisma.billing.findMany({
       where: {
-        status: 'PAID',
+        status: PaymentStatus.PAID,
         appointment: dateFilter,
       },
       select: {
@@ -307,7 +319,7 @@ export class AdminStatisticsService {
     // Get revenue by doctor
     const revenueByDoctorData = await this.prisma.billing.findMany({
       where: {
-        status: 'PAID',
+        status: PaymentStatus.PAID,
         appointment: dateFilter,
       },
       select: {
@@ -411,7 +423,7 @@ export class AdminStatisticsService {
     const [upcomingCount, completedCount, cancelledCount] = await Promise.all([
       this.prisma.appointment.count({
         where: {
-          status: 'UPCOMING',
+          status: AppointmentStatus.UPCOMING,
           createdAt: {
             gte: currentMonth,
             lt: nextMonth,
@@ -420,7 +432,7 @@ export class AdminStatisticsService {
       }),
       this.prisma.appointment.count({
         where: {
-          status: 'COMPLETED',
+          status: AppointmentStatus.COMPLETED,
           createdAt: {
             gte: currentMonth,
             lt: nextMonth,
@@ -429,7 +441,7 @@ export class AdminStatisticsService {
       }),
       this.prisma.appointment.count({
         where: {
-          status: 'CANCELLED',
+          status: AppointmentStatus.CANCELLED,
           createdAt: {
             gte: currentMonth,
             lt: nextMonth,
@@ -503,19 +515,19 @@ export class AdminStatisticsService {
       const [patients, doctors, receptionists] = await Promise.all([
         this.prisma.user.count({
           where: {
-            role: 'PATIENT',
+            role: Role.PATIENT,
             createdAt: { gte: date, lt: nextMonth },
           },
         }),
         this.prisma.user.count({
           where: {
-            role: 'DOCTOR',
+            role: Role.DOCTOR,
             createdAt: { gte: date, lt: nextMonth },
           },
         }),
         this.prisma.user.count({
           where: {
-            role: 'RECEPTIONIST',
+            role: Role.RECEPTIONIST,
             createdAt: { gte: date, lt: nextMonth },
           },
         }),
@@ -552,13 +564,13 @@ export class AdminStatisticsService {
         this.prisma.appointment.count({
           where: {
             createdAt: { gte: date, lt: nextMonth },
-            status: 'COMPLETED',
+            status: AppointmentStatus.COMPLETED,
           },
         }),
         this.prisma.appointment.count({
           where: {
             createdAt: { gte: date, lt: nextMonth },
-            status: 'CANCELLED',
+            status: AppointmentStatus.CANCELLED,
           },
         }),
       ]);
@@ -587,7 +599,7 @@ export class AdminStatisticsService {
 
       const result = await this.prisma.billing.aggregate({
         where: {
-          status: 'PAID',
+          status: PaymentStatus.PAID,
           appointment: {
             createdAt: { gte: date, lt: nextMonth },
           },
@@ -604,5 +616,568 @@ export class AdminStatisticsService {
     }
 
     return stats;
+  }
+
+  /**
+   * Calculate month comparison statistics
+   */
+  private calculateMonthComparison(
+    current: number,
+    previous: number,
+  ): MonthComparisonDto {
+    const difference = current - previous;
+    const percentageChange =
+      previous === 0
+        ? current > 0
+          ? 100
+          : 0
+        : Math.round((difference / previous) * 100 * 10) / 10;
+
+    return {
+      currentMonth: current,
+      previousMonth: previous,
+      difference,
+      percentageChange,
+    };
+  }
+
+  /**
+   * Get overview statistics comparing current month vs previous month
+   */
+  async getOverviewStatistics(): Promise<OverviewStatisticsResponseDto> {
+    const now = new Date();
+
+    // Current month range
+    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    currentMonthStart.setHours(0, 0, 0, 0);
+    const currentMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    currentMonthEnd.setHours(0, 0, 0, 0);
+
+    // Previous month range
+    const previousMonthStart = new Date(
+      now.getFullYear(),
+      now.getMonth() - 1,
+      1,
+    );
+    previousMonthStart.setHours(0, 0, 0, 0);
+    const previousMonthEnd = new Date(now.getFullYear(), now.getMonth(), 1);
+    previousMonthEnd.setHours(0, 0, 0, 0);
+
+    // 1. Total Patients: Số bệnh nhân mới được tạo trong tháng này vs tháng trước
+    const [patientsCurrentMonth, patientsPreviousMonth] = await Promise.all([
+      this.prisma.user.count({
+        where: {
+          role: Role.PATIENT,
+          createdAt: {
+            gte: currentMonthStart,
+            lt: currentMonthEnd,
+          },
+        },
+      }),
+      this.prisma.user.count({
+        where: {
+          role: Role.PATIENT,
+          createdAt: {
+            gte: previousMonthStart,
+            lt: previousMonthEnd,
+          },
+        },
+      }),
+    ]);
+
+    // 2. Appointments: Số appointment COMPLETED trong tháng này vs tháng trước
+    // Lấy theo thời điểm appointment được completed (updatedAt khi status = COMPLETED)
+    const [appointmentsCurrentMonth, appointmentsPreviousMonth] =
+      await Promise.all([
+        this.prisma.appointment.count({
+          where: {
+            status: AppointmentStatus.COMPLETED,
+            updatedAt: {
+              gte: currentMonthStart,
+              lt: currentMonthEnd,
+            },
+          },
+        }),
+        this.prisma.appointment.count({
+          where: {
+            status: AppointmentStatus.COMPLETED,
+            updatedAt: {
+              gte: previousMonthStart,
+              lt: previousMonthEnd,
+            },
+          },
+        }),
+      ]);
+
+    // 3. Doctors: Số bác sĩ mới được tạo trong tháng này vs tháng trước
+    const [doctorsCurrentMonth, doctorsPreviousMonth] = await Promise.all([
+      this.prisma.user.count({
+        where: {
+          role: Role.DOCTOR,
+          createdAt: {
+            gte: currentMonthStart,
+            lt: currentMonthEnd,
+          },
+        },
+      }),
+      this.prisma.user.count({
+        where: {
+          role: Role.DOCTOR,
+          createdAt: {
+            gte: previousMonthStart,
+            lt: previousMonthEnd,
+          },
+        },
+      }),
+    ]);
+
+    // 4. Revenue: Doanh thu từ các appointment COMPLETED trong tháng này vs tháng trước
+    // Lấy theo thời điểm appointment được completed (updatedAt khi status = COMPLETED)
+    const [revenueCurrentMonthResult, revenuePreviousMonthResult] =
+      await Promise.all([
+        this.prisma.billing.aggregate({
+          where: {
+            status: PaymentStatus.PAID,
+            appointment: {
+              status: AppointmentStatus.COMPLETED,
+              updatedAt: {
+                gte: currentMonthStart,
+                lt: currentMonthEnd,
+              },
+            },
+          },
+          _sum: {
+            amount: true,
+          },
+        }),
+        this.prisma.billing.aggregate({
+          where: {
+            status: PaymentStatus.PAID,
+            appointment: {
+              status: AppointmentStatus.COMPLETED,
+              updatedAt: {
+                gte: previousMonthStart,
+                lt: previousMonthEnd,
+              },
+            },
+          },
+          _sum: {
+            amount: true,
+          },
+        }),
+      ]);
+
+    const revenueCurrentMonth = revenueCurrentMonthResult._sum.amount || 0;
+    const revenuePreviousMonth = revenuePreviousMonthResult._sum.amount || 0;
+
+    return {
+      totalPatients: this.calculateMonthComparison(
+        patientsCurrentMonth,
+        patientsPreviousMonth,
+      ),
+      appointments: this.calculateMonthComparison(
+        appointmentsCurrentMonth,
+        appointmentsPreviousMonth,
+      ),
+      doctors: this.calculateMonthComparison(
+        doctorsCurrentMonth,
+        doctorsPreviousMonth,
+      ),
+      revenue: this.calculateMonthComparison(
+        revenueCurrentMonth,
+        revenuePreviousMonth,
+      ),
+    };
+  }
+
+  /**
+   * Get statistics by clinic
+   */
+  async getClinicStatistics(): Promise<ClinicStatisticsResponseDto> {
+    const now = new Date();
+    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    currentMonthStart.setHours(0, 0, 0, 0);
+    const currentMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    currentMonthEnd.setHours(0, 0, 0, 0);
+
+    // Get all active clinics
+    const clinics = await this.prisma.clinic.findMany({
+      where: {
+        isActive: true,
+      },
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+
+    // Get statistics for each clinic
+    const clinicStats = await Promise.all(
+      clinics.map(async (clinic) => {
+        // Count patients (users with role PATIENT who have appointments at this clinic)
+        const patients = await this.prisma.user.count({
+          where: {
+            role: Role.PATIENT,
+            patientProfiles: {
+              some: {
+                appointments: {
+                  some: {
+                    clinicId: clinic.id,
+                  },
+                },
+              },
+            },
+          },
+        });
+
+        // Count COMPLETED appointments in current month
+        const appointments = await this.prisma.appointment.count({
+          where: {
+            clinicId: clinic.id,
+            status: AppointmentStatus.COMPLETED,
+            updatedAt: {
+              gte: currentMonthStart,
+              lt: currentMonthEnd,
+            },
+          },
+        });
+
+        // Count doctors at this clinic
+        const doctors = await this.prisma.doctorProfile.count({
+          where: {
+            clinicId: clinic.id,
+          },
+        });
+
+        // Calculate revenue from COMPLETED appointments in current month
+        const revenueResult = await this.prisma.billing.aggregate({
+          where: {
+            status: PaymentStatus.PAID,
+            appointment: {
+              clinicId: clinic.id,
+              status: AppointmentStatus.COMPLETED,
+              updatedAt: {
+                gte: currentMonthStart,
+                lt: currentMonthEnd,
+              },
+            },
+          },
+          _sum: {
+            amount: true,
+          },
+        });
+
+        return {
+          clinicId: clinic.id,
+          clinicName: clinic.name,
+          patients,
+          appointments,
+          doctors,
+          revenue: revenueResult._sum.amount || 0,
+        };
+      }),
+    );
+
+    return {
+      clinics: clinicStats,
+    };
+  }
+
+  /**
+   * Get revenue chart data by clinic with different periods
+   * @param period - '1month' (by day), '3months' (by week), 'year' (by month)
+   */
+  async getRevenueChartByClinic(
+    period: '1month' | '3months' | 'year',
+  ): Promise<RevenueChartResponseDto> {
+    const now = new Date();
+    let startDate: Date;
+    const endDate: Date = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+    );
+    endDate.setHours(23, 59, 59, 999);
+
+    // Calculate start date based on period
+    if (period === '1month') {
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    } else if (period === '3months') {
+      startDate = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+    } else {
+      // year
+      startDate = new Date(now.getFullYear(), 0, 1);
+    }
+    startDate.setHours(0, 0, 0, 0);
+
+    // Get all active clinics
+    const clinics = await this.prisma.clinic.findMany({
+      where: {
+        isActive: true,
+      },
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+
+    const data: Array<{
+      label: string;
+      clinics: Array<{
+        clinicId: number;
+        clinicName: string;
+        revenue: number;
+      }>;
+    }> = [];
+
+    if (period === '1month') {
+      // Group by day
+      const currentDate = new Date(startDate);
+      while (currentDate <= endDate) {
+        const dayStart = new Date(currentDate);
+        dayStart.setHours(0, 0, 0, 0);
+        const dayEnd = new Date(currentDate);
+        dayEnd.setHours(23, 59, 59, 999);
+
+        const clinicRevenues = await Promise.all(
+          clinics.map(async (clinic) => {
+            const result = await this.prisma.billing.aggregate({
+              where: {
+                status: PaymentStatus.PAID,
+                appointment: {
+                  clinicId: clinic.id,
+                  status: AppointmentStatus.COMPLETED,
+                  updatedAt: {
+                    gte: dayStart,
+                    lte: dayEnd,
+                  },
+                },
+              },
+              _sum: {
+                amount: true,
+              },
+            });
+            return {
+              clinicId: clinic.id,
+              clinicName: clinic.name,
+              revenue: result._sum.amount || 0,
+            };
+          }),
+        );
+
+        data.push({
+          label: dayStart.toISOString().split('T')[0],
+          clinics: clinicRevenues,
+        });
+
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+    } else if (period === '3months') {
+      // Group by week
+      const currentDate = new Date(startDate);
+      // Set to Monday of the first week
+      const dayOfWeek = currentDate.getDay();
+      const diff =
+        currentDate.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+      currentDate.setDate(diff);
+      currentDate.setHours(0, 0, 0, 0);
+
+      while (currentDate <= endDate) {
+        const weekStart = new Date(currentDate);
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekEnd.getDate() + 6);
+        weekEnd.setHours(23, 59, 59, 999);
+
+        if (weekStart > endDate) {
+          break;
+        }
+
+        if (weekEnd > endDate) {
+          weekEnd.setTime(endDate.getTime());
+        }
+
+        const clinicRevenues = await Promise.all(
+          clinics.map(async (clinic) => {
+            const result = await this.prisma.billing.aggregate({
+              where: {
+                status: PaymentStatus.PAID,
+                appointment: {
+                  clinicId: clinic.id,
+                  status: AppointmentStatus.COMPLETED,
+                  updatedAt: {
+                    gte: weekStart,
+                    lte: weekEnd,
+                  },
+                },
+              },
+              _sum: {
+                amount: true,
+              },
+            });
+            return {
+              clinicId: clinic.id,
+              clinicName: clinic.name,
+              revenue: result._sum.amount || 0,
+            };
+          }),
+        );
+
+        data.push({
+          label: `${weekStart.toISOString().split('T')[0]} - ${weekEnd.toISOString().split('T')[0]}`,
+          clinics: clinicRevenues,
+        });
+
+        // Move to next week (Monday)
+        currentDate.setDate(currentDate.getDate() + 7);
+      }
+    } else {
+      // year - Group by month
+      const currentDate = new Date(startDate);
+      while (currentDate <= endDate) {
+        const monthStart = new Date(
+          currentDate.getFullYear(),
+          currentDate.getMonth(),
+          1,
+        );
+        monthStart.setHours(0, 0, 0, 0);
+        const monthEnd = new Date(
+          currentDate.getFullYear(),
+          currentDate.getMonth() + 1,
+          0,
+        );
+        monthEnd.setHours(23, 59, 59, 999);
+
+        if (monthEnd > endDate) {
+          monthEnd.setTime(endDate.getTime());
+        }
+
+        const clinicRevenues = await Promise.all(
+          clinics.map(async (clinic) => {
+            const result = await this.prisma.billing.aggregate({
+              where: {
+                status: PaymentStatus.PAID,
+                appointment: {
+                  clinicId: clinic.id,
+                  status: AppointmentStatus.COMPLETED,
+                  updatedAt: {
+                    gte: monthStart,
+                    lte: monthEnd,
+                  },
+                },
+              },
+              _sum: {
+                amount: true,
+              },
+            });
+            return {
+              clinicId: clinic.id,
+              clinicName: clinic.name,
+              revenue: result._sum.amount || 0,
+            };
+          }),
+        );
+
+        data.push({
+          label: monthStart.toISOString().substring(0, 7), // YYYY-MM
+          clinics: clinicRevenues,
+        });
+
+        currentDate.setMonth(currentDate.getMonth() + 1);
+        currentDate.setDate(1);
+      }
+    }
+
+    return {
+      data,
+      clinics: clinics.map((c) => ({ clinicId: c.id, clinicName: c.name })),
+    };
+  }
+
+  /**
+   * Get appointments chart data by clinic for a specific month
+   * @param month - Format: 'YYYY-MM' (e.g., '2024-01')
+   */
+  async getAppointmentsChartByClinic(
+    month?: string,
+  ): Promise<AppointmentsChartResponseDto> {
+    const now = new Date();
+    let targetMonth: Date;
+
+    if (month) {
+      const [year, monthNum] = month.split('-').map(Number);
+      targetMonth = new Date(year, monthNum - 1, 1);
+    } else {
+      targetMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    }
+
+    // Get data for 12 months ending with target month
+    const data: Array<{
+      label: string;
+      clinics: Array<{
+        clinicId: number;
+        clinicName: string;
+        appointments: number;
+      }>;
+    }> = [];
+
+    // Get all active clinics
+    const clinics = await this.prisma.clinic.findMany({
+      where: {
+        isActive: true,
+      },
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+
+    for (let i = 11; i >= 0; i--) {
+      const monthDate = new Date(
+        targetMonth.getFullYear(),
+        targetMonth.getMonth() - i,
+        1,
+      );
+      const monthStart = new Date(
+        monthDate.getFullYear(),
+        monthDate.getMonth(),
+        1,
+      );
+      monthStart.setHours(0, 0, 0, 0);
+      const monthEnd = new Date(
+        monthDate.getFullYear(),
+        monthDate.getMonth() + 1,
+        0,
+      );
+      monthEnd.setHours(23, 59, 59, 999);
+
+      const clinicAppointments = await Promise.all(
+        clinics.map(async (clinic) => {
+          const count = await this.prisma.appointment.count({
+            where: {
+              clinicId: clinic.id,
+              status: AppointmentStatus.COMPLETED,
+              updatedAt: {
+                gte: monthStart,
+                lte: monthEnd,
+              },
+            },
+          });
+          return {
+            clinicId: clinic.id,
+            clinicName: clinic.name,
+            appointments: count,
+          };
+        }),
+      );
+
+      data.push({
+        label: monthStart.toISOString().substring(0, 7), // YYYY-MM
+        clinics: clinicAppointments,
+      });
+    }
+
+    return {
+      data,
+    };
   }
 }

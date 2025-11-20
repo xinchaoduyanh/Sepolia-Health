@@ -1,7 +1,79 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@workspace/ui/components/Card'
-import { Button } from '@workspace/ui/components/Button'
+'use client'
+
+import { useQuery } from '@tanstack/react-query'
+import { Card, CardContent, CardHeader, CardTitle } from '@workspace/ui/components/Card'
+import { statisticsService } from '@/shared/lib/api-services/statistics.service'
+import { queryKeys } from '@/shared/lib/query-keys'
+import { ClinicStatisticsChart } from './ClinicStatisticsChart'
+
+function formatNumber(num: number): string {
+    return new Intl.NumberFormat('vi-VN').format(num)
+}
+
+function formatCurrency(num: number): string {
+    return new Intl.NumberFormat('vi-VN', {
+        style: 'currency',
+        currency: 'VND',
+    }).format(num)
+}
+
+function formatPercentageChange(percentageChange: number): string {
+    const sign = percentageChange >= 0 ? '+' : ''
+    return `${sign}${percentageChange.toFixed(1)}%`
+}
 
 export default function OverviewPage() {
+    const {
+        data: overviewStats,
+        isLoading,
+        error,
+    } = useQuery({
+        queryKey: queryKeys.admin.statistics.overview(),
+        queryFn: () => statisticsService.getOverviewStats(),
+        staleTime: 5 * 60 * 1000, // 5 minutes
+    })
+
+    if (isLoading) {
+        return (
+            <div>
+                <h1 className="text-2xl font-bold mb-6">Tổng quan</h1>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    {[1, 2, 3, 4].map(i => (
+                        <Card key={i}>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Đang tải...</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">...</div>
+                                <p className="text-xs text-muted-foreground">...</p>
+                            </CardContent>
+                        </Card>
+                    ))}
+                </div>
+            </div>
+        )
+    }
+
+    if (error) {
+        return (
+            <div>
+                <h1 className="text-2xl font-bold mb-6">Tổng quan</h1>
+                <Card>
+                    <CardContent className="pt-6">
+                        <p className="text-destructive">Lỗi khi tải dữ liệu thống kê</p>
+                    </CardContent>
+                </Card>
+            </div>
+        )
+    }
+
+    const stats = overviewStats || {
+        totalPatients: { currentMonth: 0, previousMonth: 0, difference: 0, percentageChange: 0 },
+        appointments: { currentMonth: 0, previousMonth: 0, difference: 0, percentageChange: 0 },
+        doctors: { currentMonth: 0, previousMonth: 0, difference: 0, percentageChange: 0 },
+        revenue: { currentMonth: 0, previousMonth: 0, difference: 0, percentageChange: 0 },
+    }
+
     return (
         <div>
             <h1 className="text-2xl font-bold mb-6">Tổng quan</h1>
@@ -13,8 +85,20 @@ export default function OverviewPage() {
                         <CardTitle className="text-sm font-medium">Tổng bệnh nhân</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">1,234</div>
-                        <p className="text-xs text-muted-foreground">+20.1% so với tháng trước</p>
+                        <div className="text-2xl font-bold">{formatNumber(stats.totalPatients.currentMonth)}</div>
+                        <p
+                            className={`text-xs ${
+                                stats.totalPatients.percentageChange >= 0 ? 'text-green-600' : 'text-red-600'
+                            }`}
+                        >
+                            Thêm {formatNumber(stats.totalPatients.currentMonth)} bệnh nhân trong tháng này
+                            {stats.totalPatients.percentageChange !== 0 && (
+                                <span>
+                                    {' '}
+                                    ({formatPercentageChange(stats.totalPatients.percentageChange)} so với tháng trước)
+                                </span>
+                            )}
+                        </p>
                     </CardContent>
                 </Card>
 
@@ -23,8 +107,20 @@ export default function OverviewPage() {
                         <CardTitle className="text-sm font-medium">Lịch hẹn</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">567</div>
-                        <p className="text-xs text-muted-foreground">+12.5% so với tháng trước</p>
+                        <div className="text-2xl font-bold">{formatNumber(stats.appointments.currentMonth)}</div>
+                        <p
+                            className={`text-xs ${
+                                stats.appointments.percentageChange >= 0 ? 'text-green-600' : 'text-red-600'
+                            }`}
+                        >
+                            {formatNumber(stats.appointments.currentMonth)} lịch hẹn đã hoàn thành trong tháng này
+                            {stats.appointments.percentageChange !== 0 && (
+                                <span>
+                                    {' '}
+                                    ({formatPercentageChange(stats.appointments.percentageChange)} so với tháng trước)
+                                </span>
+                            )}
+                        </p>
                     </CardContent>
                 </Card>
 
@@ -33,8 +129,20 @@ export default function OverviewPage() {
                         <CardTitle className="text-sm font-medium">Bác sĩ</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">45</div>
-                        <p className="text-xs text-muted-foreground">+2 bác sĩ mới tháng này</p>
+                        <div className="text-2xl font-bold">{formatNumber(stats.doctors.currentMonth)}</div>
+                        <p
+                            className={`text-xs ${
+                                stats.doctors.percentageChange >= 0 ? 'text-green-600' : 'text-red-600'
+                            }`}
+                        >
+                            Thêm {formatNumber(stats.doctors.currentMonth)} bác sĩ trong tháng này
+                            {stats.doctors.percentageChange !== 0 && (
+                                <span>
+                                    {' '}
+                                    ({formatPercentageChange(stats.doctors.percentageChange)} so với tháng trước)
+                                </span>
+                            )}
+                        </p>
                     </CardContent>
                 </Card>
 
@@ -43,35 +151,26 @@ export default function OverviewPage() {
                         <CardTitle className="text-sm font-medium">Doanh thu</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">$12,345</div>
-                        <p className="text-xs text-muted-foreground">+8.2% so với tháng trước</p>
+                        <div className="text-2xl font-bold">{formatCurrency(stats.revenue.currentMonth)}</div>
+                        <p
+                            className={`text-xs ${
+                                stats.revenue.percentageChange >= 0 ? 'text-green-600' : 'text-red-600'
+                            }`}
+                        >
+                            Doanh thu từ lịch hẹn đã hoàn thành trong tháng này
+                            {stats.revenue.percentageChange !== 0 && (
+                                <span>
+                                    {' '}
+                                    ({formatPercentageChange(stats.revenue.percentageChange)} so với tháng trước)
+                                </span>
+                            )}
+                        </p>
                     </CardContent>
                 </Card>
             </div>
 
-            {/* Quick Actions */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>Thao tác nhanh</CardTitle>
-                    <CardDescription>Các tác vụ quản trị thường dùng</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <Button className="h-20 flex flex-col items-center justify-center">
-                            <span className="text-lg">👥</span>
-                            <span>Quản lý bệnh nhân</span>
-                        </Button>
-                        <Button className="h-20 flex flex-col items-center justify-center">
-                            <span className="text-lg">📅</span>
-                            <span>Xem lịch hẹn</span>
-                        </Button>
-                        <Button className="h-20 flex flex-col items-center justify-center">
-                            <span className="text-lg">👨‍⚕️</span>
-                            <span>Quản lý bác sĩ</span>
-                        </Button>
-                    </div>
-                </CardContent>
-            </Card>
+            {/* Clinic Statistics */}
+            <ClinicStatisticsChart />
         </div>
     )
 }
