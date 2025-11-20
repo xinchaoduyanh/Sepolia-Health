@@ -1,15 +1,4 @@
-// Relationship Translator Utils
-// Maps English relationship values to Vietnamese display text
-
-export type Relationship =
-  | 'SELF'
-  | 'SPOUSE'
-  | 'CHILD'
-  | 'PARENT'
-  | 'SIBLING'
-  | 'RELATIVE'
-  | 'FRIEND'
-  | 'OTHER';
+import { Relationship } from "@/constants/enum";
 
 /**
  * Translate relationship from English to Vietnamese

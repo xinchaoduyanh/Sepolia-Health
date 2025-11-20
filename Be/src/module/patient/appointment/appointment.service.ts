@@ -190,7 +190,7 @@ export class AppointmentService {
    */
   async update(
     id: number,
-    updateAppointmentDto: UpdateAppointmentDto,
+    body: UpdateAppointmentDto,
     userId: number,
   ): Promise<AppointmentDetailResponseDto> {
     const appointment = await this.prisma.appointment.findUnique({
@@ -216,18 +216,16 @@ export class AppointmentService {
     const updatedAppointment = await this.prisma.appointment.update({
       where: { id },
       data: {
-        ...(updateAppointmentDto.date && {
-          date: new Date(updateAppointmentDto.date + 'T00:00:00.000Z'),
-        }),
-        ...(updateAppointmentDto.startTime && {
-          startTime: updateAppointmentDto.startTime,
-        }),
-        ...(updateAppointmentDto.status && {
-          status: updateAppointmentDto.status as AppointmentStatus,
-        }),
-        ...(updateAppointmentDto.notes !== undefined && {
-          notes: updateAppointmentDto.notes,
-        }),
+        // startTime,
+        // endTime,
+        // status: AppointmentStatus.UPCOMING,
+        // notes,
+        // type: AppointmentType.OFFLINE,
+        // patientProfileId: validatedPatientProfileId,
+        // doctorId: doctorService.doctorId,
+        // serviceId: doctorService.serviceId,
+        // clinicId: doctorService.doctor.clinicId,
+        ...body,
       },
       include: {
         patientProfile: {
@@ -745,27 +743,13 @@ export class AppointmentService {
       throw new NotFoundException(MESSAGES.APPOINTMENT.CLINIC_NOT_FOUND);
     }
 
-    const patientProfile = await this.prisma.patientProfile.findUnique({
-      where: { id: patientProfileId },
-    });
-
-    if (!patientProfile) {
-      throw new NotFoundException(
-        MESSAGES.APPOINTMENT.PATIENT_PROFILE_NOT_FOUND,
-      );
-    }
-    if (patientProfile.managerId !== userId) {
-      throw new ForbiddenException(
-        MESSAGES.APPOINTMENT.PATIENT_PROFILE_NOT_OWNED,
-      );
-    }
-    const validatedPatientProfileId = patientProfile.id;
-
     await this.checkConflict(
       startTime,
       endTime,
       doctorService.doctorId,
       doctorService.service.duration,
+      patientProfileId,
+      userId,
     );
 
     // Create appointment using data from DoctorService
@@ -776,10 +760,13 @@ export class AppointmentService {
         status: AppointmentStatus.UPCOMING,
         notes,
         type: AppointmentType.OFFLINE,
-        patientProfileId: validatedPatientProfileId,
+        patientProfileId: patientProfileId,
         doctorId: doctorService.doctorId,
         serviceId: doctorService.serviceId,
         clinicId: doctorService.doctor.clinicId,
+      },
+      include: {
+        patientProfile: true,
       },
     });
 
@@ -790,19 +777,11 @@ export class AppointmentService {
         status: PaymentStatus.PENDING,
         appointmentId: appointment.id,
       },
-      select: {
-        id: true,
-        amount: true,
-        status: true,
-        paymentMethod: true,
-        notes: true,
-        createdAt: true,
-      },
     });
 
     // Send notification to patient
     try {
-      const patientUserId = patientProfile.managerId.toString();
+      const patientUserId = appointment.patientProfile?.managerId.toString();
       if (!patientUserId) {
         console.warn(
           '⚠️ [AppointmentService] Cannot send notification: patientProfile.managerId is missing',
@@ -837,7 +816,7 @@ export class AppointmentService {
         doctorService.doctor.userId.toString(),
         'system',
         'Lịch hẹn mới',
-        `Bạn có lịch hẹn mới với bệnh nhân ${patientProfile.firstName + ' ' + patientProfile.lastName} vào ${appointment.startTime.toLocaleDateString('vi-VN')} tại ${clinic.name}. Dịch vụ: ${doctorService.service.name}.`,
+        `Bạn có lịch hẹn mới với bệnh nhân ${appointment.patientProfile?.firstName + ' ' + appointment.patientProfile?.lastName} vào ${appointment.startTime.toLocaleDateString('vi-VN')} tại ${clinic.name}. Dịch vụ: ${doctorService.service.name}.`,
         {
           appointmentId: appointment.id,
           appointmentDate: appointment.startTime.toLocaleDateString('vi-VN'),
@@ -862,44 +841,10 @@ export class AppointmentService {
     );
 
     // Return appointment response with all required data
-    return {
-      id: appointment.id,
-      startTime: appointment.startTime,
-      status: appointment.status,
-      notes: appointment.notes,
-      patient: {
-        id: patientProfile.id,
-        firstName: patientProfile.firstName,
-        lastName: patientProfile.lastName,
-        phone: patientProfile.phone,
-        email: '', // PatientProfile doesn't have email field
-      },
-      doctor: {
-        id: doctorService.doctorId,
-        firstName: doctorService.doctor.firstName,
-        lastName: doctorService.doctor.lastName,
-      },
-      service: {
-        id: doctorService.serviceId,
-        name: doctorService.service.name,
-        price: doctorService.service.price,
-        duration: doctorService.service.duration,
-      },
-      clinic: {
-        id: clinic.id,
-        name: clinic.name,
-      },
-      billing: {
-        id: billing.id,
-        amount: billing.amount,
-        status: billing.status,
-        paymentMethod: billing.paymentMethod,
-        notes: billing.notes,
-        createdAt: billing.createdAt,
-      },
-      createdAt: appointment.createdAt,
-      updatedAt: appointment.updatedAt,
-    };
+    return this.formatAppointmentResponse({
+      ...appointment,
+      billing,
+    });
   }
 
   /**
@@ -917,48 +862,44 @@ export class AppointmentService {
       startTime: appointment.startTime,
       status: appointment.status,
       notes: appointment.notes,
-      patient: appointment.patientProfile
-        ? {
+      patient: (appointment.patientProfile
+        ?? {
             id: appointment.patientId,
             firstName: appointment.patientProfile.firstName,
             lastName: appointment.patientProfile.lastName,
             phone: appointment.patientProfile.phone,
             email: appointment.patientProfile.email,
           }
-        : undefined,
-      doctor: appointment.doctor
-        ? {
+        ),
+      doctor: (appointment.doctor
+        ?? {
             id: appointment.doctorId,
             firstName: appointment.doctor.firstName,
             lastName: appointment.doctor.lastName,
-          }
-        : undefined,
-      service: appointment.service
-        ? {
+          }),
+      service: (appointment.service
+        ?? {
             id: appointment.serviceId,
             name: appointment.service.name,
             price: appointment.service.price,
             duration: appointment.service.duration,
-          }
-        : undefined,
-      clinic: appointment.clinic
-        ? {
+          }),
+      clinic: (appointment.clinic
+        ?? {
             id: appointment.clinicId,
             name: appointment.clinic.name,
-          }
-        : undefined,
-      billing: appointment.billing
-        ? {
+          }),
+      billing: (appointment.billing
+        ?? {
             id: appointment.billingId,
             amount: appointment.billing.amount,
             status: appointment.billing.status,
             paymentMethod: appointment.billing.paymentMethod,
             notes: appointment.billing.notes,
-            createdAt: appointment.billing.createdAt.toISOString(),
-          }
-        : undefined,
-      createdAt: appointment.createdAt.toISOString(),
-      updatedAt: appointment.updatedAt.toISOString(),
+            createdAt: appointment.billing.createdAt,
+          }),
+      createdAt: appointment.createdAt,
+      updatedAt: appointment.updatedAt,
     };
   }
 
@@ -1213,7 +1154,25 @@ export class AppointmentService {
     endTime: Date,
     doctorId: number,
     duration: number,
+    patientProfileId: number,
+    userId: number,
   ) {
+    // Check patient profile
+    const patientProfile = await this.prisma.patientProfile.findUnique({
+      where: { id: patientProfileId },
+    });
+
+    if (!patientProfile) {
+      throw new NotFoundException(
+        MESSAGES.APPOINTMENT.PATIENT_PROFILE_NOT_FOUND,
+      );
+    }
+    if (patientProfile.managerId !== userId) {
+      throw new ForbiddenException(
+        MESSAGES.APPOINTMENT.PATIENT_PROFILE_NOT_OWNED,
+      );
+    }
+
     // Check doctor availability
     const dayOfWeek = DateUtil.getDayOfWeek(startTime);
     const workingHours = await this.prisma.doctorAvailability.findUnique({

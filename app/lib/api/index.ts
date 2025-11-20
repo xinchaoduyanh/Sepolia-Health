@@ -1,50 +1,10 @@
-// Export all API functions and hooks
 export * from './auth';
 export * from './user';
-export * from './payment';
 export * from './chat';
-export * from './notification';
-
-// Appointments exports (excluding conflicting useServices)
-export {
-  appointmentApi,
-  useAppointments,
-  useAppointment,
-  useCreateAppointment,
-  useUpdateAppointment,
-  useDeleteAppointment,
-  useMyAppointments,
-  useDoctorAppointments,
-  useLocations,
-  useDoctorServices,
-  useAvailableDates,
-  useDoctorAvailability,
-  appointmentKeys,
-  useServices as useAppointmentServices,
-} from './appointments';
-
-// Doctors exports (excluding conflicting useServices)
-export {
-  doctorApi,
-  useDoctorsByService,
-  useDoctorTimeslots,
-  doctorKeys,
-  serviceKeys,
-  useServices as useDoctorServiceList,
-} from './doctors';
-
-// App Terms exports
-export {
-  appTermsApi,
-  useAppTerms,
-  useAppTermsByType,
-  appTermsKeys,
-  AppTermsType,
-  type AppTerms,
-} from './app-terms';
-
-// Export API client
-export { default as apiClient } from '@/lib/api-client';
-
-// Export config
+export * from './doctors';
+export * from './payment';
+export * from './app-terms';
 export * from '@/lib/config';
+export * from './appointments';
+export * from './notification';
+export { default as apiClient } from '@/lib/api-client';

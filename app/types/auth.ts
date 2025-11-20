@@ -1,3 +1,5 @@
+import { Relationship } from "@/constants/enum";
+
 // Auth Types
 export interface LoginRequest {
   email: string;
@@ -79,6 +81,7 @@ export interface User {
   firstName: string;
   lastName: string;
   phone?: string;
+  avatar?: string;
   role: 'PATIENT' | 'DOCTOR' | 'RECEPTIONIST' | 'ADMIN';
   isVerified: boolean;
   verifiedAt?: string;
@@ -94,17 +97,6 @@ export type Gender = 'MALE' | 'FEMALE' | 'OTHER';
 
 // Role enum to match Prisma
 export type Role = 'PATIENT' | 'DOCTOR' | 'RECEPTIONIST' | 'ADMIN';
-
-// Relationship enum to match Prisma
-export type Relationship =
-  | 'SELF'
-  | 'SPOUSE'
-  | 'CHILD'
-  | 'PARENT'
-  | 'SIBLING'
-  | 'RELATIVE'
-  | 'FRIEND'
-  | 'OTHER';
 
 // Patient Profile interface
 export interface PatientProfile {

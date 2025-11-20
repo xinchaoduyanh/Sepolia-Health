@@ -10,25 +10,6 @@ import {
 
 // API Functions
 export const doctorApi = {
-  getServices: async (filters?: ServiceFilters) => {
-    const params = new URLSearchParams();
-    if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined) {
-          params.append(key, value.toString());
-        }
-      });
-    }
-
-    const response = await apiClient.get<{
-      data: Service[];
-      total: number;
-      page: number;
-      limit: number;
-    }>(`${API_ENDPOINTS.DOCTORS.SERVICES}?${params.toString()}`);
-    return response.data;
-  },
-
   getDoctorsByService: async (serviceId: number) => {
     const response = await apiClient.get<Doctor[]>(
       `${API_ENDPOINTS.DOCTORS.BY_SERVICE}?serviceId=${serviceId}`
@@ -42,15 +23,6 @@ export const doctorApi = {
     );
     return response.data;
   },
-};
-
-// React Query Hooks
-export const useServices = (filters?: ServiceFilters) => {
-  return useQuery({
-    queryKey: ['services', 'list', filters],
-    queryFn: () => doctorApi.getServices(filters),
-    staleTime: 30 * 60 * 1000, // 30 minutes (rarely changes)
-  });
 };
 
 export const useDoctorsByService = (serviceId: number) => {

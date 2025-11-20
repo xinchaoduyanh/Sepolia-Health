@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '@/common/prisma/prisma.service';
 import { UserStatus } from '@prisma/client';
-import { StringUtil } from '@/common/utils';
+import { DateUtil, StringUtil } from '@/common/utils';
 import { AuthRepository } from './auth.repository';
 import { CustomJwtService, MailService, RedisService } from '@/common/modules';
 import { appConfig } from '@/common/config';
@@ -35,30 +35,6 @@ import {
   RegisterResponseDto,
 } from './dto/response';
 import { ChatService } from '../chat/chat.service';
-
-// Helper function to parse date string safely
-function parseDate(dateString: string): Date {
-  // Try different date formats
-  const formats = [
-    dateString, // Original format
-    dateString.replace(/(\d{2})\/(\d{2})\/(\d{4})/, '$3-$2-$1'), // dd/mm/yyyy -> yyyy-mm-dd
-    dateString.replace(/(\d{2})\/(\d{2})\/(\d{4})/, '$2/$1/$3'), // dd/mm/yyyy -> mm/dd/yyyy
-  ];
-
-  for (const format of formats) {
-    const date = new Date(format);
-    if (
-      !isNaN(date.getTime()) &&
-      date.getFullYear() > 1900 &&
-      date.getFullYear() < 2100
-    ) {
-      return date;
-    }
-  }
-
-  // Fallback to original string
-  return new Date(dateString);
-}
 
 @Injectable()
 export class AuthService {
@@ -206,7 +182,7 @@ export class AuthService {
       status: UserStatus.ACTIVE,
       firstName,
       lastName,
-      dateOfBirth: parseDate(dateOfBirth),
+      dateOfBirth: DateUtil.parseDate(dateOfBirth),
       gender,
       patientPhone: phone, // Use phone for patient profile
     };
