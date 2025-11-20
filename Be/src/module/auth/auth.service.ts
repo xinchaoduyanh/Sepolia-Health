@@ -2,6 +2,7 @@ import {
   Injectable,
   UnauthorizedException,
   BadRequestException,
+  ForbiddenException,
   Inject,
   Logger,
 } from '@nestjs/common';
@@ -235,6 +236,12 @@ export class AuthService {
     if (!user) {
       throw new UnauthorizedException(ERROR_MESSAGES.AUTH.USER_NOT_FOUND);
     }
+
+    // Check if user is DEACTIVE
+    if (user.status === UserStatus.DEACTIVE) {
+      throw new ForbiddenException(ERROR_MESSAGES.AUTH.USER_DEACTIVE);
+    }
+
     const tokens = this.jwtAuthService.generateTokens({
       userId: user.id,
       role: user.role,

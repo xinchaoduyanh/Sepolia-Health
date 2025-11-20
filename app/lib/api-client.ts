@@ -44,6 +44,15 @@ class ApiClient {
       async (error: any) => {
         const originalRequest = error.config;
 
+        // Check for DEACTIVE status (403 with specific message)
+        if (error.response?.status === 403) {
+          const errorMessage = error.response?.data?.message || '';
+          if (errorMessage.includes('Tài khoản bạn bị khóa')) {
+            // Store DEACTIVE flag in AsyncStorage
+            await AsyncStorage.setItem('user_deactive', 'true');
+          }
+        }
+
         // Handle 401 Unauthorized
         if (error.response?.status === 401 && !originalRequest._retry) {
           originalRequest._retry = true;
@@ -51,7 +60,14 @@ class ApiClient {
           try {
             await this.refreshToken();
             return this.client(originalRequest);
-          } catch (refreshError) {
+          } catch (refreshError: any) {
+            // Check if refresh token failed due to DEACTIVE
+            if (refreshError.response?.status === 403) {
+              const errorMessage = refreshError.response?.data?.message || '';
+              if (errorMessage.includes('Tài khoản bạn bị khóa')) {
+                await AsyncStorage.setItem('user_deactive', 'true');
+              }
+            }
             await this.logout();
             return Promise.reject(refreshError);
           }

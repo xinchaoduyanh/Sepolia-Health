@@ -1,6 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { router } from 'expo-router';
+import { Alert } from 'react-native';
 import {
   useLogin,
   useRegister,
@@ -27,6 +28,7 @@ export const useAuth = () => {
   const [hasToken, setHasToken] = useState(false);
   const [cachedUser, setCachedUser] = useState<User | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+  const hasCheckedDeactiveRef = useRef(false);
 
   // Load token and user data on mount
   useEffect(() => {
@@ -113,8 +115,29 @@ export const useAuth = () => {
     }
   };
 
+  // Clear all auth data
+  const clearAuth = useCallback(async () => {
+    // Cancel all ongoing queries first
+    queryClient.cancelQueries({ queryKey: authKeys.all });
+
+    await AsyncStorage.removeItem('auth_token');
+    await AsyncStorage.removeItem('refresh_token');
+    await AsyncStorage.removeItem('user_data');
+
+    // Clear token from apiClient memory
+    await apiClient.clearToken();
+
+    // Clear cached user data
+    setCachedUser(null);
+
+    // Set profile data về null để UI cập nhật ngay lập tức
+    queryClient.setQueryData(authKeys.profile(), null);
+    // Remove all auth-related queries
+    queryClient.removeQueries({ queryKey: authKeys.all });
+  }, [queryClient]);
+
   // Logout function
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
       // Set hasToken to false FIRST to stop any ongoing profile queries
       setHasToken(false);
@@ -140,7 +163,7 @@ export const useAuth = () => {
       router.replace('/(auth)/login');
       throw error;
     }
-  };
+  }, [logoutMutation, queryClient, clearAuth]);
 
   // Refresh profile function - improved to refetch immediately
   const refreshProfile = async () => {
@@ -178,26 +201,80 @@ export const useAuth = () => {
     }
   };
 
-  // Clear all auth data
-  const clearAuth = async () => {
-    // Cancel all ongoing queries first
-    queryClient.cancelQueries({ queryKey: authKeys.all });
+  // Check DEACTIVE status after profile is fetched
+  useEffect(() => {
+    const currentUser = profileQuery.data || cachedUser;
 
-    await AsyncStorage.removeItem('auth_token');
-    await AsyncStorage.removeItem('refresh_token');
-    await AsyncStorage.removeItem('user_data');
+    // Only check if we have user data and haven't checked yet for this user
+    if (currentUser && currentUser.status === 'DEACTIVE' && !hasCheckedDeactiveRef.current) {
+      hasCheckedDeactiveRef.current = true;
 
-    // Clear token from apiClient memory
-    await apiClient.clearToken();
+      // Show alert and logout when user clicks OK
+      Alert.alert(
+        'Tài khoản bị khóa',
+        'Tài khoản bạn bị khóa. Vui lòng liên hệ quản trị viên để được hỗ trợ.',
+        [
+          {
+            text: 'Ok tôi hiểu',
+            onPress: async () => {
+              // Reset the ref so it can check again if user logs in again
+              hasCheckedDeactiveRef.current = false;
+              // Clear DEACTIVE flag
+              await AsyncStorage.removeItem('user_deactive');
+              // Logout and redirect to login
+              await logout();
+            },
+          },
+        ],
+        { cancelable: false }
+      );
+    }
 
-    // Clear cached user data
-    setCachedUser(null);
+    // Reset the ref when user changes (e.g., after logout/login)
+    if (!currentUser) {
+      hasCheckedDeactiveRef.current = false;
+    }
+  }, [profileQuery.data, cachedUser, logout]);
 
-    // Set profile data về null để UI cập nhật ngay lập tức
-    queryClient.setQueryData(authKeys.profile(), null);
-    // Remove all auth-related queries
-    queryClient.removeQueries({ queryKey: authKeys.all });
-  };
+  // Check for DEACTIVE flag from API errors
+  useEffect(() => {
+    const checkDeactiveFlag = async () => {
+      try {
+        const deactiveFlag = await AsyncStorage.getItem('user_deactive');
+        if (deactiveFlag === 'true' && !hasCheckedDeactiveRef.current) {
+          hasCheckedDeactiveRef.current = true;
+
+          // Show alert and logout when user clicks OK
+          Alert.alert(
+            'Tài khoản bị khóa',
+            'Tài khoản bạn bị khóa. Vui lòng liên hệ quản trị viên để được hỗ trợ.',
+            [
+              {
+                text: 'Ok tôi hiểu',
+                onPress: async () => {
+                  // Reset the ref so it can check again if user logs in again
+                  hasCheckedDeactiveRef.current = false;
+                  // Clear DEACTIVE flag
+                  await AsyncStorage.removeItem('user_deactive');
+                  // Logout and redirect to login
+                  await logout();
+                },
+              },
+            ],
+            { cancelable: false }
+          );
+        }
+      } catch (error) {
+        console.log('Failed to check DEACTIVE flag:', error);
+      }
+    };
+
+    // Check immediately and then periodically
+    checkDeactiveFlag();
+    const interval = setInterval(checkDeactiveFlag, 2000); // Check every 2 seconds
+
+    return () => clearInterval(interval);
+  }, [logout]);
 
   // Auto redirect on logout - removed to prevent navigation before mount
 

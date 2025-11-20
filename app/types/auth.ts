@@ -1,4 +1,4 @@
-import { Relationship } from "@/constants/enum";
+import { Relationship } from '@/constants/enum';
 
 // Auth Types
 export interface LoginRequest {
@@ -83,6 +83,7 @@ export interface User {
   phone?: string;
   avatar?: string;
   role: 'PATIENT' | 'DOCTOR' | 'RECEPTIONIST' | 'ADMIN';
+  status?: UserStatus;
   isVerified: boolean;
   verifiedAt?: string;
   lastLoginAt?: string;
@@ -97,6 +98,9 @@ export type Gender = 'MALE' | 'FEMALE' | 'OTHER';
 
 // Role enum to match Prisma
 export type Role = 'PATIENT' | 'DOCTOR' | 'RECEPTIONIST' | 'ADMIN';
+
+// UserStatus enum to match Prisma
+export type UserStatus = 'UNVERIFIED' | 'ACTIVE' | 'DEACTIVE';
 
 // Patient Profile interface
 export interface PatientProfile {

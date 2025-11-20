@@ -7,6 +7,7 @@ export const ERROR_MESSAGES = {
     EMAIL_ALREADY_EXISTS: 'Email đã được sử dụng',
     INVALID_OTP: 'Mã OTP không hợp lệ hoặc đã hết hạn',
     COMPLETE_REGISTER_SUCCESS: 'Đăng ký hoàn tất thành công',
+    USER_DEACTIVE: 'Tài khoản bạn bị khóa',
   },
   USER: {
     USER_NOT_FOUND: 'Không tìm thấy người dùng',
