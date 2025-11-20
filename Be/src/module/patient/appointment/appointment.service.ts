@@ -525,10 +525,11 @@ export class AppointmentService {
 
   /**
    * Get closest upcoming appointment for current user
+   * Returns null if no appointment found
    */
   async getClosestAppointment(
     userId: number,
-  ): Promise<AppointmentDetailResponseDto> {
+  ): Promise<AppointmentDetailResponseDto | null> {
     // Find patient profiles managed by this user
     const patientProfiles = await this.prisma.patientProfile.findMany({
       where: { managerId: userId },
@@ -537,9 +538,8 @@ export class AppointmentService {
 
     const patientProfileIds = patientProfiles.map((p) => p.id);
     if (patientProfileIds.length === 0) {
-      throw new NotFoundException(
-        MESSAGES.APPOINTMENT.PATIENT_PROFILE_NOT_FOUND,
-      );
+      // No patient profiles, return null
+      return null;
     }
 
     const appointments = await this.prisma.appointment.findMany({
@@ -586,6 +586,11 @@ export class AppointmentService {
         },
       },
     });
+
+    // If no appointments found, return null (frontend will handle display)
+    if (!appointments || appointments.length === 0) {
+      return null;
+    }
 
     // Return the closest appointment (already sorted by date and startTime)
     return this.formatAppointmentResponse(appointments[0]);
@@ -855,7 +860,7 @@ export class AppointmentService {
         delay: appointment.endTime.getTime() - Date.now(),
       },
     );
-    
+
     // Return appointment response with all required data
     return {
       id: appointment.id,
@@ -903,6 +908,10 @@ export class AppointmentService {
   private formatAppointmentResponse(
     appointment: any,
   ): AppointmentDetailResponseDto {
+    if (!appointment) {
+      throw new NotFoundException(MESSAGES.APPOINTMENT.APPOINTMENT_NOT_FOUND);
+    }
+
     return {
       id: appointment.id,
       startTime: appointment.startTime,
@@ -917,17 +926,21 @@ export class AppointmentService {
             email: appointment.patientProfile.email,
           }
         : undefined,
-      doctor: {
-        id: appointment.doctorId,
-        firstName: appointment.doctor.firstName,
-        lastName: appointment.doctor.lastName,
-      },
-      service: {
-        id: appointment.serviceId,
-        name: appointment.service.name,
-        price: appointment.service.price,
-        duration: appointment.service.duration,
-      },
+      doctor: appointment.doctor
+        ? {
+            id: appointment.doctorId,
+            firstName: appointment.doctor.firstName,
+            lastName: appointment.doctor.lastName,
+          }
+        : undefined,
+      service: appointment.service
+        ? {
+            id: appointment.serviceId,
+            name: appointment.service.name,
+            price: appointment.service.price,
+            duration: appointment.service.duration,
+          }
+        : undefined,
       clinic: appointment.clinic
         ? {
             id: appointment.clinicId,

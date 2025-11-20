@@ -106,8 +106,13 @@ export const useLogin = () => {
   return useMutation({
     mutationFn: authApi.login,
     onSuccess: async (data) => {
-      // Store token
+      // Store access token
       await apiClient.setToken(data.accessToken);
+
+      // Store refresh token
+      if (data.refreshToken) {
+        await AsyncStorage.setItem('refresh_token', data.refreshToken);
+      }
 
       // IMPROVEMENT: Dùng query key factory để đảm bảo tính nhất quán
       queryClient.invalidateQueries({ queryKey: authKeys.profile() });

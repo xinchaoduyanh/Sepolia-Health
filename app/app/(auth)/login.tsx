@@ -17,6 +17,7 @@ import { Link, router } from 'expo-router';
 import { useState } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { validateEmail, validatePassword } from '@/lib/utils/validation';
+import { getErrorMessage } from '@/lib/utils/error';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -170,9 +171,7 @@ export default function LoginScreen() {
             {loginError && (
               <View className="mb-4 rounded-lg bg-red-50 p-3">
                 <Text className="text-center text-sm text-red-600">
-                  {typeof loginError === 'string'
-                    ? loginError
-                    : loginError?.message || 'Đăng nhập thất bại'}
+                  {getErrorMessage(loginError)}
                 </Text>
               </View>
             )}

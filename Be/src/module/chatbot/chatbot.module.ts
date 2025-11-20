@@ -5,6 +5,7 @@ import { DoctorScheduleTool } from './tools/doctor-schedule.tool';
 import { SearchDoctorsTool } from './tools/search-doctors.tool';
 import { SearchClinicsTool } from './tools/search-clinics.tool';
 import { SearchServicesTool } from './tools/search-services.tool';
+import { FindAvailableDoctorsTool } from './tools/find-available-doctors.tool';
 import { PrismaModule } from '@/common/prisma/prisma.module';
 
 @Module({
@@ -16,6 +17,7 @@ import { PrismaModule } from '@/common/prisma/prisma.module';
     SearchDoctorsTool,
     SearchClinicsTool,
     SearchServicesTool,
+    FindAvailableDoctorsTool,
   ],
   exports: [ChatbotService],
 })

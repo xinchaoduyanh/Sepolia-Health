@@ -201,9 +201,10 @@ export class ChatService implements OnModuleInit {
   }
 
   /**
-   * Tạo Stream Chat token cho user
+   * Upsert user vào Stream Chat
+   * Tách riêng để có thể dùng ở nhiều nơi (register, login, update profile...)
    */
-  async generateStreamToken(userId: number): Promise<string> {
+  async upsertUserToStreamChat(userId: number): Promise<void> {
     // Lấy thông tin user từ database
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
@@ -248,6 +249,14 @@ export class ChatService implements OnModuleInit {
       role: 'user',
       image: avatar,
     });
+  }
+
+  /**
+   * Tạo Stream Chat token cho user
+   */
+  async generateStreamToken(userId: number): Promise<string> {
+    // Đảm bảo user đã được upsert vào Stream Chat trước khi tạo token
+    await this.upsertUserToStreamChat(userId);
 
     return this.streamClient.createToken(userId.toString());
   }

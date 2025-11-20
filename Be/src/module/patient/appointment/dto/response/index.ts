@@ -86,11 +86,11 @@ export class AppointmentDetailResponseDto {
   @ApiProperty({ type: PatientDto })
   patient?: PatientDto;
 
-  @ApiProperty({ type: DoctorDto })
-  doctor: DoctorDto;
+  @ApiProperty({ type: DoctorDto, required: false })
+  doctor?: DoctorDto;
 
-  @ApiProperty({ type: ServiceDto })
-  service: ServiceDto;
+  @ApiProperty({ type: ServiceDto, required: false })
+  service?: ServiceDto;
 
   @ApiProperty({ type: ClinicDto })
   clinic?: ClinicDto | null;

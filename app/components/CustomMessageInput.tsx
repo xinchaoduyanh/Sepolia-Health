@@ -17,7 +17,6 @@ import { useChannelContext } from 'stream-chat-expo';
 import { useChatContext } from '@/contexts/ChatContext';
 import { ChatbotAPI } from '@/lib/api/chatbot';
 import { useAuth } from '@/lib/hooks/useAuth';
-import { useAIThinking } from '@/contexts/AIThinkingContext';
 
 interface CustomMessageInputProps {
   replyingTo?: any;
@@ -29,7 +28,6 @@ export const CustomMessageInput = ({ replyingTo, onCancelReply }: CustomMessageI
   const { channel } = useChannelContext();
   const { isAIChannel } = useChatContext();
   const { user } = useAuth();
-  const { setIsAIThinking } = useAIThinking();
   const [messageText, setMessageText] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -56,7 +54,6 @@ export const CustomMessageInput = ({ replyingTo, onCancelReply }: CustomMessageI
       // Nếu là AI channel, xử lý đặc biệt
       if (isCurrentChannelAI) {
         setIsProcessingAI(true);
-        setIsAIThinking(true);
 
         // 1. Gửi message của user vào channel để lưu lịch sử
         const userMessageData: any = {
@@ -79,7 +76,6 @@ export const CustomMessageInput = ({ replyingTo, onCancelReply }: CustomMessageI
           // Backend will handle the response
         } finally {
           setIsProcessingAI(false);
-          setIsAIThinking(false);
         }
       } else {
         // Nếu không phải AI channel, xử lý bình thường

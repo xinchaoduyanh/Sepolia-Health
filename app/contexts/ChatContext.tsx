@@ -168,14 +168,6 @@ const myChatTheme = {
       },
     },
   },
-  // Typing Indicator
-  typingIndicator: {
-    text: {
-      color: '#64748B',
-      fontSize: 13,
-      fontStyle: 'italic' as any,
-    },
-  },
   // Reply (Thread)
   reply: {
     container: {
@@ -198,6 +190,7 @@ const ChatProvider = ({ children }: { children: ReactNode }) => {
   const [chatClient, setChatClient] = useState<StreamChat>();
   const [isChatReady, setIsChatReady] = useState(false);
   const chatClientRef = useRef<StreamChat | undefined>(undefined);
+  const currentUserIdRef = useRef<number | undefined>(undefined);
 
   // Update ref when chatClient changes
   useEffect(() => {
@@ -206,29 +199,94 @@ const ChatProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [chatClient]);
 
-  // Initialize chat client once when user is available
+  // Initialize chat client when user is available or when user changes
   useEffect(() => {
-    // Skip if already initialized or no user
-    if (chatClient || !user || !process.env.EXPO_PUBLIC_STREAM_API_KEY) {
-      return;
-    }
-
     let isMounted = true;
 
     const initChat = async () => {
+      // If no user or no API key, disconnect and clear
+      if (!user || !process.env.EXPO_PUBLIC_STREAM_API_KEY) {
+        if (chatClient) {
+          console.log('No user or API key, disconnecting...');
+          try {
+            await chatClient.disconnectUser();
+          } catch (err) {
+            console.error('Error disconnecting:', err);
+          }
+          if (isMounted) {
+            setChatClient(undefined);
+            setIsChatReady(false);
+            ChatService.setClient(null);
+            currentUserIdRef.current = undefined;
+          }
+        }
+        return;
+      }
+
+      // Check if user has changed
+      const userIdChanged = currentUserIdRef.current !== user.id;
+      const currentUserIdString = user.id.toString();
+
+      // If chatClient exists and user changed, disconnect first and wait
+      if (chatClient && userIdChanged) {
+        console.log('User changed, disconnecting old user...', {
+          oldUserId: currentUserIdRef.current,
+          newUserId: user.id,
+        });
+        try {
+          await chatClient.disconnectUser();
+          console.log('Old user disconnected successfully');
+        } catch (err) {
+          console.error('Error disconnecting old user:', err);
+        }
+
+        if (isMounted) {
+          setChatClient(undefined);
+          setIsChatReady(false);
+          ChatService.setClient(null);
+        }
+      }
+
+      // Skip if already connected with the same user
+      if (chatClient && !userIdChanged && chatClient.userID === currentUserIdString) {
+        console.log('Already connected with same user, skipping...');
+        return;
+      }
+
       try {
         const apiKey = process.env.EXPO_PUBLIC_STREAM_API_KEY;
         if (!apiKey) {
           throw new Error('Stream API key not found');
         }
+
+        // Get or create client instance
         const client = StreamChat.getInstance(apiKey);
 
+        // Double check: If client is already connected to a different user, disconnect first
+        if (client.userID && client.userID !== currentUserIdString) {
+          console.log('Client instance has different user, disconnecting...', {
+            currentClientUserId: client.userID,
+            targetUserId: currentUserIdString,
+          });
+          try {
+            await client.disconnectUser();
+            console.log('Previous user disconnected from client instance');
+          } catch (err) {
+            console.error('Error disconnecting from client instance:', err);
+          }
+        }
+
         const userProfile = getUserProfile(user);
+
+        console.log('Connecting new user to StreamChat...', {
+          userId: currentUserIdString,
+          userName: userProfile.name,
+        });
 
         // Use tokenProvider for automatic token refresh
         await client.connectUser(
           {
-            id: user.id.toString(),
+            id: currentUserIdString,
             name: userProfile.name,
             image: userProfile.image,
           },
@@ -241,11 +299,15 @@ const ChatProvider = ({ children }: { children: ReactNode }) => {
           setChatClient(client);
           ChatService.setClient(client);
           setIsChatReady(true);
+          currentUserIdRef.current = user.id;
+          console.log('✅ Chat client connected successfully for user:', user.id);
         }
-      } catch {
+      } catch (error) {
+        console.error('❌ Failed to initialize chat:', error);
         if (isMounted) {
           setChatClient(undefined);
           setIsChatReady(false);
+          currentUserIdRef.current = undefined;
         }
       }
     };
@@ -255,16 +317,8 @@ const ChatProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       isMounted = false;
     };
-  }, [user, chatClient]);
-
-  // Handle user logout
-  useEffect(() => {
-    if (!user && chatClient) {
-      chatClient.disconnectUser();
-      setChatClient(undefined);
-      setIsChatReady(false);
-    }
-  }, [user, chatClient]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]); // Only depend on user.id to detect user changes
 
   // Cleanup only on component unmount
   useEffect(() => {
@@ -278,13 +332,30 @@ const ChatProvider = ({ children }: { children: ReactNode }) => {
     };
   }, []); // Empty deps - cleanup only runs on unmount
 
+  // Manual initChat function for retry purposes
   const initChat = async () => {
-    if (!user || chatClient || !process.env.EXPO_PUBLIC_STREAM_API_KEY) return;
+    if (!user || !process.env.EXPO_PUBLIC_STREAM_API_KEY) {
+      console.log('Cannot init chat: no user or API key');
+      return;
+    }
+
+    // If already connected with same user, skip
+    if (chatClient && chatClient.userID === user.id.toString()) {
+      console.log('Already connected, skipping manual init');
+      return;
+    }
 
     try {
-      const client = StreamChat.getInstance(process.env.EXPO_PUBLIC_STREAM_API_KEY);
-      const token = await ChatAPI.getToken();
+      const apiKey = process.env.EXPO_PUBLIC_STREAM_API_KEY;
+      const client = StreamChat.getInstance(apiKey);
 
+      // Disconnect if connected to different user
+      if (client.userID && client.userID !== user.id.toString()) {
+        console.log('Manual init: disconnecting previous user');
+        await client.disconnectUser();
+      }
+
+      const token = await ChatAPI.getToken();
       const userProfile = getUserProfile(user);
 
       await client.connectUser(
@@ -297,9 +368,12 @@ const ChatProvider = ({ children }: { children: ReactNode }) => {
       );
 
       setChatClient(client);
-      ChatService.setClient(client); // Set client in service
+      ChatService.setClient(client);
       setIsChatReady(true);
+      currentUserIdRef.current = user.id;
+      console.log('Manual init: Chat client connected');
     } catch (error) {
+      console.error('Manual init failed:', error);
       throw error;
     }
   };

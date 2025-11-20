@@ -3,6 +3,7 @@ import {
   UnauthorizedException,
   BadRequestException,
   Inject,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '@/common/prisma/prisma.service';
 import { UserStatus } from '@prisma/client';
@@ -33,6 +34,7 @@ import {
   MeResponseDto,
   RegisterResponseDto,
 } from './dto/response';
+import { ChatService } from '../chat/chat.service';
 
 // Helper function to parse date string safely
 function parseDate(dateString: string): Date {
@@ -60,12 +62,15 @@ function parseDate(dateString: string): Date {
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtAuthService: CustomJwtService,
     private readonly mailService: MailService,
     private readonly authRepository: AuthRepository,
     private readonly redisService: RedisService,
+    private readonly chatService: ChatService,
     @Inject(appConfig.KEY)
     private readonly tokenConf: ConfigType<typeof appConfig>,
   ) {}
@@ -208,6 +213,21 @@ export class AuthService {
 
     const { user, patientProfile } =
       await this.authRepository.createUserWithPatientProfile(userData);
+
+    // Upsert user vào StreamChat ngay sau khi register thành công
+    // Để đảm bảo user có quyền truy cập chat ngay từ đầu
+    try {
+      await this.chatService.upsertUserToStreamChat(user.id);
+      this.logger.log(
+        `User ${user.id} successfully initialized in StreamChat after registration`,
+      );
+    } catch (error) {
+      // Log error nhưng không throw để không ảnh hưởng đến flow register
+      // User vẫn có thể login và được upsert lại khi generate token
+      this.logger.warn(
+        `Failed to initialize user ${user.id} in StreamChat after registration: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
 
     return {
       user: {

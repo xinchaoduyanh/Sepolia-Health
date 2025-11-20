@@ -367,15 +367,81 @@ export default function HomeScreen() {
             <View
               style={{
                 borderRadius: 20,
-                padding: 20,
+                padding: 32,
                 backgroundColor: '#FFFFFF',
                 alignItems: 'center',
                 justifyContent: 'center',
-                minHeight: 120,
+                minHeight: 180,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.08,
+                shadowRadius: 8,
+                elevation: 3,
               }}>
-              <Text style={{ fontSize: 14, color: '#475569', textAlign: 'center' }}>
-                Bạn không có Lịch khám mới nhất
+              <View
+                style={{
+                  height: 80,
+                  width: 80,
+                  borderRadius: 40,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: '#E0F2FE',
+                  marginBottom: 16,
+                  shadowColor: '#0284C7',
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.15,
+                  shadowRadius: 8,
+                  elevation: 4,
+                }}>
+                <Ionicons name="calendar-outline" size={40} color="#0284C7" />
+              </View>
+              <Text
+                style={{
+                  fontSize: 18,
+                  fontWeight: '600',
+                  color: '#0F172A',
+                  marginBottom: 8,
+                  textAlign: 'center',
+                }}>
+                Chưa có lịch khám sắp tới
               </Text>
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: '#64748B',
+                  textAlign: 'center',
+                  marginBottom: 20,
+                  lineHeight: 20,
+                  paddingHorizontal: 8,
+                }}>
+                Hãy đặt lịch khám để chăm sóc sức khỏe của bạn
+              </Text>
+              <TouchableOpacity
+                onPress={() => router.push('/(homes)/(appointment)/create')}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  borderRadius: 12,
+                  paddingHorizontal: 20,
+                  paddingVertical: 12,
+                  backgroundColor: '#0284C7',
+                  shadowColor: '#0284C7',
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 8,
+                  elevation: 4,
+                }}>
+                <Ionicons name="add-circle-outline" size={20} color="#FFFFFF" />
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: '600',
+                    color: '#FFFFFF',
+                    marginLeft: 8,
+                  }}>
+                  Đặt lịch ngay
+                </Text>
+              </TouchableOpacity>
             </View>
           )}
         </View>

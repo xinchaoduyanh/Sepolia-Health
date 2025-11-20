@@ -8,6 +8,7 @@ import { DoctorScheduleTool } from './tools/doctor-schedule.tool';
 import { SearchDoctorsTool } from './tools/search-doctors.tool';
 import { SearchClinicsTool } from './tools/search-clinics.tool';
 import { SearchServicesTool } from './tools/search-services.tool';
+import { FindAvailableDoctorsTool } from './tools/find-available-doctors.tool';
 
 interface AgentMessage {
   role: 'user' | 'assistant' | 'system' | 'tool';
@@ -37,6 +38,7 @@ export class ChatbotService {
     private readonly searchDoctorsTool: SearchDoctorsTool,
     private readonly searchClinicsTool: SearchClinicsTool,
     private readonly searchServicesTool: SearchServicesTool,
+    private readonly findAvailableDoctorsTool: FindAvailableDoctorsTool,
     private readonly prisma: PrismaService,
   ) {
     // Initialize Stream Chat
@@ -55,7 +57,55 @@ export class ChatbotService {
     this.botUserId = this.config.aiBotUserId || 'sepolia-health-ai-assistant';
 
     if (!this.agentEndpoint || !this.agentAccessKey) {
-      console.warn('DigitalOcean Agent credentials not configured');
+      this.log(
+        'constructor',
+        'warn',
+        'DigitalOcean Agent credentials not configured',
+      );
+    }
+  }
+
+  /**
+   * Helper method để format logs với prefix rõ ràng
+   */
+  private log(
+    section: string,
+    level: 'info' | 'warn' | 'error' | 'debug',
+    message: string,
+    data?: any,
+  ): void {
+    const prefix = `[ChatbotService::${section}]`;
+    const logMessage = `${prefix} ${message}`;
+
+    switch (level) {
+      case 'info':
+        if (data) {
+          console.log(`📘 ${logMessage}`, data);
+        } else {
+          console.log(`📘 ${logMessage}`);
+        }
+        break;
+      case 'warn':
+        if (data) {
+          console.warn(`⚠️  ${logMessage}`, data);
+        } else {
+          console.warn(`⚠️  ${logMessage}`);
+        }
+        break;
+      case 'error':
+        if (data) {
+          console.error(`❌ ${logMessage}`, data);
+        } else {
+          console.error(`❌ ${logMessage}`);
+        }
+        break;
+      case 'debug':
+        if (data) {
+          console.log(`🔍 ${logMessage}`, data);
+        } else {
+          console.log(`🔍 ${logMessage}`);
+        }
+        break;
     }
   }
 
@@ -72,13 +122,22 @@ export class ChatbotService {
           'https://do-an-tot-nghiep-ptit.s3.ap-southeast-1.amazonaws.com/patient-avatars/612-727-1763463617117.jpg',
       });
 
+      this.log('createAIBotUser', 'info', 'AI bot user created successfully', {
+        botUserId: this.botUserId,
+      });
+
       return {
         success: true,
         message: 'AI bot user created successfully',
         botUserId: this.botUserId,
       };
     } catch (error) {
-      console.error('Create bot user error:', error);
+      this.log(
+        'createAIBotUser',
+        'error',
+        'Failed to create AI bot user',
+        error,
+      );
       throw error;
     }
   }
@@ -168,13 +227,22 @@ export class ChatbotService {
         });
       }
 
+      this.log('createAIChannel', 'info', 'AI channel created successfully', {
+        channelId,
+        cid: channel.cid,
+        userId,
+      });
+
       return {
         channelId,
         cid: channel.cid,
         message: 'Channel created and welcome message sent',
       };
     } catch (error) {
-      console.error('Create AI channel error:', error);
+      this.log('createAIChannel', 'error', 'Failed to create AI channel', {
+        userId,
+        error: error.message,
+      });
       throw error;
     }
   }
@@ -209,11 +277,16 @@ export class ChatbotService {
 
       // Get conversation history from Stream Chat (last 4 messages for faster response)
       const history = await this.getChannelHistory(channelId, 4);
-      console.log('📥 [Chatbot] Processing message:', {
-        channelId,
-        messageText,
-        historyLength: history.length,
-      });
+      this.log(
+        'processMessageAndReply',
+        'info',
+        'Processing incoming message',
+        {
+          channelId,
+          messageText: messageText.substring(0, 100),
+          historyLength: history.length,
+        },
+      );
 
       // Process with DigitalOcean Agent
       const agentResponse = await this.callAgent([
@@ -221,7 +294,7 @@ export class ChatbotService {
         { role: 'user', content: messageText },
       ]);
 
-      console.log('🤖 [Chatbot] Agent response:', {
+      this.log('processMessageAndReply', 'info', 'Received agent response', {
         hasContent: !!agentResponse.content,
         contentLength: agentResponse.content?.length || 0,
         contentPreview: agentResponse.content?.substring(0, 100) || '',
@@ -229,73 +302,39 @@ export class ChatbotService {
         toolCallsCount: agentResponse.toolCalls?.length || 0,
       });
 
-      // Execute tools if needed
-      let finalResponse = agentResponse.content || '';
-
-      if (
-        agentResponse.toolCalls &&
-        Array.isArray(agentResponse.toolCalls) &&
-        agentResponse.toolCalls.length > 0
-      ) {
-        console.log('🔧 [Chatbot] Executing tools:', {
-          toolCalls: agentResponse.toolCalls.map((tc) => ({
-            name: tc.name,
-            parameters: tc.parameters,
-          })),
-        });
-
-        const toolResults = await this.executeTools(agentResponse.toolCalls);
-
-        console.log('✅ [Chatbot] Tool results:', {
-          resultsCount: toolResults.length,
-          results: toolResults.map((r) => ({
-            id: r.id,
-            hasOutput: !!r.output,
-            outputStatus: r.output?.status,
-          })),
-        });
-
-        // Kiểm tra xem tool có cần "hỏi lại" không (disambiguation)
-        const disambiguation = toolResults.find(
-          (r) => r.output?.status === 'disambiguation_needed',
-        );
-
-        if (disambiguation) {
-          // Nếu cần hỏi lại, trả về câu hỏi của Tool (không gọi AI lại)
-          const data = disambiguation.output;
-          finalResponse = `${data.message} ${data.question}`;
-          console.log('❓ [Chatbot] Disambiguation needed:', finalResponse);
-        } else {
-          // Nếu không cần hỏi lại, tiếp tục như cũ
-          console.log('🔄 [Chatbot] Calling agent with tool results...');
-          const finalAgentResponse = await this.callAgentWithToolResults(
-            [...history, { role: 'user', content: messageText }],
-            agentResponse.toolCalls,
-            toolResults,
-          );
-
-          finalResponse = finalAgentResponse.content || '';
-          console.log('✅ [Chatbot] Final agent response:', {
-            hasContent: !!finalResponse,
-            contentLength: finalResponse.length,
-            contentPreview: finalResponse.substring(0, 100),
-          });
-        }
-      }
+      // Execute tools if needed - với recursive handling
+      const finalResponse = await this.processAgentResponseWithTools(
+        agentResponse,
+        [...history, { role: 'user', content: messageText }],
+        0, // iteration count
+        5, // max iterations để tránh infinite loop
+      );
 
       // Log suy nghĩ của AI (nếu có) để debug - giữ lại để xem cách Bot suy nghĩ
       this.extractAndLogAIThought(finalResponse);
 
       // Làm sạch response trước khi gửi cho user (loại bỏ <think>...</think>)
-      console.log('🧠 [AI Thought Process2.1]:', finalResponse);
+      this.log(
+        'processMessageAndReply',
+        'debug',
+        'Raw final response before cleaning',
+        {
+          contentLength: finalResponse.length,
+          preview: finalResponse.substring(0, 200),
+        },
+      );
       const cleanedResponse = this.cleanResponse(finalResponse);
-      console.log('🧠 [AI Thought Process3]:', cleanedResponse);
-      console.log('📤 [Chatbot] Final response (cleaned):', {
-        hasContent: !!cleanedResponse,
-        contentLength: cleanedResponse.length,
-        isEmpty: cleanedResponse.trim().length === 0,
-        content: cleanedResponse,
-      });
+      this.log(
+        'processMessageAndReply',
+        'info',
+        'Final cleaned response ready',
+        {
+          hasContent: !!cleanedResponse,
+          contentLength: cleanedResponse.length,
+          isEmpty: cleanedResponse.trim().length === 0,
+          preview: cleanedResponse.substring(0, 200),
+        },
+      );
 
       // Stop typing
       await channel.sendEvent({
@@ -309,12 +348,23 @@ export class ChatbotService {
         user_id: this.botUserId,
       });
 
+      this.log(
+        'processMessageAndReply',
+        'info',
+        'Message processed and sent successfully',
+        {
+          channelId,
+          responseLength: cleanedResponse.length,
+        },
+      );
+
       return {
         response: cleanedResponse,
         timestamp: new Date().toISOString(),
       };
     } catch (error: any) {
-      console.error('Process message and reply error:', {
+      this.log('processMessageAndReply', 'error', 'Error processing message', {
+        channelId,
         message: error.message,
         status: error.response?.status,
         code: error.code,
@@ -330,7 +380,7 @@ export class ChatbotService {
       }
 
       try {
-          // Ensure bot user exists with avatar before sending error message
+        // Ensure bot user exists with avatar before sending error message
         await this.streamClient.upsertUser({
           id: this.botUserId,
           name: 'Trợ lý Y tế Thông minh',
@@ -349,7 +399,15 @@ export class ChatbotService {
           user_id: this.botUserId,
         });
       } catch (sendError) {
-        console.error('Error sending error message:', sendError);
+        this.log(
+          'processMessageAndReply',
+          'error',
+          'Failed to send error message to channel',
+          {
+            channelId,
+            error: sendError.message,
+          },
+        );
       }
 
       // Return error response instead of throwing
@@ -358,6 +416,196 @@ export class ChatbotService {
         timestamp: new Date().toISOString(),
       };
     }
+  }
+
+  /**
+   * Process agent response với recursive tool calls handling
+   * Xử lý tool calls một cách đệ quy cho đến khi có text response
+   */
+  private async processAgentResponseWithTools(
+    agentResponse: { content?: string; toolCalls?: ToolCall[] },
+    conversationHistory: AgentMessage[],
+    iteration: number,
+    maxIterations: number,
+  ): Promise<string> {
+    // Nếu không có tool calls, trả về content ngay
+    if (
+      !agentResponse.toolCalls ||
+      !Array.isArray(agentResponse.toolCalls) ||
+      agentResponse.toolCalls.length === 0
+    ) {
+      return agentResponse.content || '';
+    }
+
+    // Kiểm tra max iterations để tránh infinite loop
+    if (iteration >= maxIterations) {
+      this.log(
+        'processAgentResponseWithTools',
+        'warn',
+        'Max iterations reached',
+        {
+          iteration,
+          maxIterations,
+        },
+      );
+      return (
+        agentResponse.content ||
+        'Xin lỗi, hệ thống đang xử lý quá nhiều bước. Vui lòng thử lại với câu hỏi đơn giản hơn.'
+      );
+    }
+
+    this.log(
+      'processAgentResponseWithTools',
+      'info',
+      `Executing tools (iteration ${iteration + 1}/${maxIterations})`,
+      {
+        toolCalls: agentResponse.toolCalls.map((tc) => ({
+          name: tc.name,
+          parameters: tc.parameters,
+        })),
+      },
+    );
+
+    // Execute tools
+    const toolResults = await this.executeTools(agentResponse.toolCalls);
+
+    this.log(
+      'processAgentResponseWithTools',
+      'info',
+      'Tool execution completed',
+      {
+        iteration: iteration + 1,
+        resultsCount: toolResults.length,
+        results: toolResults.map((r) => ({
+          id: r.id,
+          hasOutput: !!r.output,
+          outputStatus: r.output?.status,
+        })),
+      },
+    );
+
+    // Kiểm tra xem tool có cần "hỏi lại" không (disambiguation)
+    const disambiguation = toolResults.find(
+      (r) => r.output?.status === 'disambiguation_needed',
+    );
+
+    if (disambiguation) {
+      // Nếu cần hỏi lại, trả về câu hỏi của Tool (không gọi AI lại)
+      const data = disambiguation.output;
+      const response = `${data.message} ${data.question}`;
+      this.log(
+        'processAgentResponseWithTools',
+        'info',
+        'Disambiguation needed from tool',
+        {
+          response: response.substring(0, 200),
+        },
+      );
+      return response;
+    }
+
+    // Kiểm tra xem tool có formattedMessage không (ưu tiên dùng trực tiếp)
+    const formattedMessageResult = toolResults.find(
+      (r) => r.output?.formattedMessage,
+    );
+
+    if (formattedMessageResult) {
+      // Nếu có formattedMessage, trả về trực tiếp mà không cần gọi AI lại
+      const formattedResponse = formattedMessageResult.output.formattedMessage;
+      this.log(
+        'processAgentResponseWithTools',
+        'info',
+        'Using formattedMessage from tool directly',
+        {
+          toolName: agentResponse.toolCalls?.find(
+            (tc) => tc.id === formattedMessageResult.id,
+          )?.name,
+          responseLength: formattedResponse.length,
+          preview: formattedResponse.substring(0, 200),
+        },
+      );
+      return formattedResponse;
+    }
+
+    // Gọi lại agent với tool results
+    this.log(
+      'processAgentResponseWithTools',
+      'info',
+      'Calling agent with tool results',
+      {
+        iteration: iteration + 1,
+        toolResultsCount: toolResults.length,
+      },
+    );
+    const nextAgentResponse = await this.callAgentWithToolResults(
+      conversationHistory,
+      agentResponse.toolCalls,
+      toolResults,
+    );
+
+    this.log(
+      'processAgentResponseWithTools',
+      'info',
+      'Agent response after tool results',
+      {
+        iteration: iteration + 1,
+        hasContent: !!nextAgentResponse.content,
+        contentLength: nextAgentResponse.content?.length || 0,
+        contentPreview: nextAgentResponse.content?.substring(0, 100) || '',
+        hasToolCalls: !!nextAgentResponse.toolCalls,
+        toolCallsCount: nextAgentResponse.toolCalls?.length || 0,
+      },
+    );
+
+    // Nếu response có content, trả về ngay (có thể kết hợp với tool calls)
+    if (
+      nextAgentResponse.content &&
+      nextAgentResponse.content.trim().length > 0
+    ) {
+      return nextAgentResponse.content;
+    }
+
+    // Nếu vẫn có tool calls, tiếp tục recursive
+    if (
+      nextAgentResponse.toolCalls &&
+      Array.isArray(nextAgentResponse.toolCalls) &&
+      nextAgentResponse.toolCalls.length > 0
+    ) {
+      // Cập nhật conversation history với tool results
+      const updatedHistory: AgentMessage[] = [
+        ...conversationHistory,
+        {
+          role: 'assistant',
+          content: '',
+          tool_calls: agentResponse.toolCalls,
+        },
+        {
+          role: 'user',
+          content: `Tool execution results:\n${toolResults
+            .map((r) => {
+              const toolCall = agentResponse.toolCalls?.find(
+                (tc) => tc.id === r.id,
+              );
+              const toolName = toolCall?.name || 'unknown';
+              return `Tool: ${toolName}\nResult: ${JSON.stringify(r.output)}`;
+            })
+            .join('\n\n')}`,
+        },
+      ];
+
+      return this.processAgentResponseWithTools(
+        nextAgentResponse,
+        updatedHistory,
+        iteration + 1,
+        maxIterations,
+      );
+    }
+
+    // Fallback: nếu không có content và không có tool calls
+    return (
+      nextAgentResponse.content ||
+      'Xin lỗi, tôi không thể xử lý yêu cầu này. Vui lòng thử lại với thông tin rõ ràng hơn.'
+    );
   }
 
   /**
@@ -371,44 +619,39 @@ export class ChatbotService {
         { role: 'user', content: messageText },
       ]);
 
-      let finalResponse = agentResponse.content;
-
-      if (agentResponse.toolCalls && agentResponse.toolCalls.length > 0) {
-        const toolResults = await this.executeTools(agentResponse.toolCalls);
-
-        // Kiểm tra xem tool có cần "hỏi lại" không (disambiguation)
-        const disambiguation = toolResults.find(
-          (r) => r.output?.status === 'disambiguation_needed',
-        );
-
-        if (disambiguation) {
-          // Nếu cần hỏi lại, trả về câu hỏi của Tool (không gọi AI lại)
-          const data = disambiguation.output;
-          finalResponse = `${data.message} ${data.question}`;
-        } else {
-          // Nếu không cần hỏi lại, tiếp tục như cũ
-          const finalAgentResponse = await this.callAgentWithToolResults(
-            [{ role: 'user', content: messageText }],
-            agentResponse.toolCalls,
-            toolResults,
-          );
-          finalResponse = finalAgentResponse.content;
-        }
-      }
+      // Sử dụng helper function để xử lý recursive tool calls
+      const finalResponse = await this.processAgentResponseWithTools(
+        agentResponse,
+        [{ role: 'user', content: messageText }],
+        0,
+        5,
+      );
 
       // Log suy nghĩ của AI (nếu có) để debug - giữ lại để xem cách Bot suy nghĩ
       this.extractAndLogAIThought(finalResponse);
 
       // Làm sạch response trước khi trả về (loại bỏ <think>...</think>)
-      console.log('🧠 [AI Thought Process1]:', finalResponse);
+      this.log(
+        'processMessage',
+        'debug',
+        'Raw final response before cleaning',
+        {
+          contentLength: finalResponse.length,
+          preview: finalResponse.substring(0, 200),
+        },
+      );
       const cleanedResponse = this.cleanResponse(finalResponse);
-      console.log('🧠 [AI Thought Process2]:', cleanedResponse);
+      this.log('processMessage', 'info', 'Final cleaned response', {
+        contentLength: cleanedResponse.length,
+        preview: cleanedResponse.substring(0, 200),
+      });
+
       return {
         response: cleanedResponse,
         timestamp: new Date().toISOString(),
       };
     } catch (error) {
-      console.error('Process message error:', error);
+      this.log('processMessage', 'error', 'Error processing message', error);
       return {
         response: 'Xin lỗi, có lỗi xảy ra. Vui lòng thử lại sau.',
         error: error.message,
@@ -422,7 +665,7 @@ export class ChatbotService {
   private cleanResponse(content: string): string {
     if (!content) return '';
 
-    // 1. Xóa thẻ <think> (hỗ trợ cả <think> và <think>, đều đóng bằng </think>)
+    // 1. Xóa thẻ <think> và <think> (đều đóng bằng </think>)
     let cleanText = content
       .replace(/<think>[\s\S]*?<\/think>/g, '')
       .replace(/<think>[\s\S]*?<\/think>/g, '')
@@ -442,9 +685,20 @@ export class ChatbotService {
    */
   private extractAndLogAIThought(content: string): void {
     if (!content) return;
-    const thinkMatch = content.match(/<think>([\s\S]*?)<\/think>/);
+    // Hỗ trợ cả <think> và <think>
+    const thinkMatch =
+      content.match(/<think>([\s\S]*?)<\/think>/) ||
+      content.match(/<think>([\s\S]*?)<\/think>/);
     if (thinkMatch) {
-      console.log('🧠 [AI Thought Process]:', thinkMatch[1].trim());
+      this.log(
+        'extractAndLogAIThought',
+        'debug',
+        'AI reasoning process extracted',
+        {
+          thoughtLength: thinkMatch[1].trim().length,
+          preview: thinkMatch[1].trim().substring(0, 300),
+        },
+      );
     }
   }
 
@@ -462,12 +716,23 @@ export class ChatbotService {
       });
 
       // Convert Stream Chat messages to Agent format
-      return result.messages.map((msg) => ({
+      const messages: AgentMessage[] = result.messages.map((msg) => ({
         role: msg.user?.id === this.botUserId ? 'assistant' : 'user',
         content: msg.text || '',
       }));
+
+      this.log('getChannelHistory', 'debug', 'Retrieved channel history', {
+        channelId,
+        limit,
+        messagesCount: messages.length,
+      });
+
+      return messages;
     } catch (error) {
-      console.error('Get channel history error:', error);
+      this.log('getChannelHistory', 'error', 'Failed to get channel history', {
+        channelId,
+        error: error.message,
+      });
       return [];
     }
   }
@@ -532,6 +797,7 @@ export class ChatbotService {
         'search_services',
         'search_doctors',
         'check_doctor_schedule',
+        'find_available_doctors',
       ];
 
       const hasJsonIntent =
@@ -543,7 +809,11 @@ export class ChatbotService {
 
       if (hasJsonIntent) {
         try {
-          console.log('⚠️ [AI Healer] Đang phân tích cấu trúc JSON lạ...');
+          this.log(
+            'callAgent',
+            'debug',
+            '[AI Healer] Analyzing unusual JSON structure',
+          );
           // Regex tìm JSON object (có thể bị cắt cụt)
           let jsonMatch = contentForParsing.match(/\{[\s\S]*\}/);
 
@@ -551,8 +821,10 @@ export class ChatbotService {
           if (!jsonMatch) {
             const incompleteJsonMatch = contentForParsing.match(/\{[\s\S]*$/);
             if (incompleteJsonMatch) {
-              console.log(
-                '⚠️ [AI Healer] Phát hiện JSON bị cắt cụt, đang thử fix...',
+              this.log(
+                'callAgent',
+                'debug',
+                '[AI Healer] Detected truncated JSON, attempting to fix',
               );
               let incompleteJson = incompleteJsonMatch[0];
 
@@ -583,9 +855,13 @@ export class ChatbotService {
             try {
               rawJson = JSON.parse(jsonMatch[0]);
             } catch (parseError) {
-              console.error(
-                '❌ [AI Healer] Không thể parse JSON (có thể bị cắt cụt):',
-                parseError.message,
+              this.log(
+                'callAgent',
+                'error',
+                '[AI Healer] Failed to parse JSON (possibly truncated)',
+                {
+                  error: parseError.message,
+                },
               );
               // Thử extract tool name và params từ JSON bị cắt
               const toolNameMatch = jsonMatch[0].match(
@@ -604,7 +880,15 @@ export class ChatbotService {
                   params = { locationName: locationMatch[1] };
                 }
 
-                console.log(`✅ [AI Healer] Đã fix JSON bị cắt: ${toolName}`);
+                this.log(
+                  'callAgent',
+                  'info',
+                  `[AI Healer] Fixed truncated JSON`,
+                  {
+                    toolName,
+                    params,
+                  },
+                );
                 toolCalls = [
                   {
                     id: `call_healed_${Date.now()}`,
@@ -655,8 +939,14 @@ export class ChatbotService {
             // -------------------------------------
 
             if (detectedToolName) {
-              console.log(
-                `✅ [AI Healer] Đã bắt dính tool: ${String(detectedToolName)}`,
+              this.log(
+                'callAgent',
+                'info',
+                `[AI Healer] Detected tool from JSON`,
+                {
+                  toolName: detectedToolName,
+                  params: detectedParams,
+                },
               );
 
               // Chuẩn hóa params (nếu params là string JSON)
@@ -679,7 +969,9 @@ export class ChatbotService {
             }
           }
         } catch (e) {
-          console.error('❌ [AI Healer] Thất bại:', e.message);
+          this.log('callAgent', 'error', '[AI Healer] Failed to heal JSON', {
+            error: e.message,
+          });
         }
       }
       // --- KẾT THÚC HEALER V4 ---
@@ -704,7 +996,15 @@ export class ChatbotService {
                   : tc.function.arguments || {},
             };
           } catch (e) {
-            console.error('Error parsing tool call arguments:', e);
+            this.log(
+              'callAgent',
+              'error',
+              'Failed to parse tool call arguments',
+              {
+                toolCallId: tc.id,
+                error: e.message,
+              },
+            );
             return {
               id: tc.id || `call_${Date.now()}_${Math.random()}`,
               name: tc.function.name || 'unknown',
@@ -726,7 +1026,7 @@ export class ChatbotService {
         toolCalls: convertedToolCalls,
       };
 
-      console.log('🔵 [Agent API] Response processed:', {
+      this.log('callAgent', 'info', 'Agent API response processed', {
         hasContent: !!result.content,
         contentLength: result.content?.length || 0,
         contentPreview: result.content?.substring(0, 100) || '',
@@ -735,7 +1035,11 @@ export class ChatbotService {
 
       return result;
     } catch (error: any) {
-      console.error('Agent API Error:', error.message);
+      this.log('callAgent', 'error', 'Agent API error', {
+        message: error.message,
+        status: error.response?.status,
+        code: error.code,
+      });
 
       // Fallback response
       return {
@@ -753,11 +1057,16 @@ export class ChatbotService {
     toolCalls: ToolCall[],
     toolResults: any[],
   ) {
-    console.log('🔄 [Agent API] Calling with tool results:', {
-      messagesCount: messages.length,
-      toolCallsCount: toolCalls.length,
-      toolResultsCount: toolResults.length,
-    });
+    this.log(
+      'callAgentWithToolResults',
+      'info',
+      'Calling agent API with tool results',
+      {
+        messagesCount: messages.length,
+        toolCallsCount: toolCalls.length,
+        toolResultsCount: toolResults.length,
+      },
+    );
 
     // Format tool results thành một message từ user
     // Vì DigitalOcean Agent API không hỗ trợ role 'tool'
@@ -765,6 +1074,12 @@ export class ChatbotService {
       .map((result) => {
         const toolCall = toolCalls.find((tc) => tc.id === result.id);
         const toolName = toolCall?.name || 'unknown';
+
+        // Nếu tool result có formattedMessage, ưu tiên dùng nó và yêu cầu AI dùng trực tiếp
+        if (result.output?.formattedMessage) {
+          return `Tool: ${toolName}\nResult (use this formatted message directly, do not reformat):\n${result.output.formattedMessage}`;
+        }
+
         return `Tool: ${toolName}\nResult: ${JSON.stringify(result.output)}`;
       })
       .join('\n\n');
@@ -783,11 +1098,18 @@ export class ChatbotService {
     ];
 
     const response = await this.callAgent(messagesWithToolResults);
-    console.log('✅ [Agent API] Response with tool results:', {
-      hasContent: !!response.content,
-      contentLength: response.content?.length || 0,
-      contentPreview: response.content?.substring(0, 100) || '',
-    });
+    this.log(
+      'callAgentWithToolResults',
+      'info',
+      'Agent API response with tool results',
+      {
+        hasContent: !!response.content,
+        contentLength: response.content?.length || 0,
+        contentPreview: response.content?.substring(0, 100) || '',
+        hasToolCalls: !!response.toolCalls,
+        toolCallsCount: response.toolCalls?.length || 0,
+      },
+    );
 
     return response;
   }
@@ -820,16 +1142,37 @@ export class ChatbotService {
           case 'check_doctor_schedule':
             output = await this.doctorScheduleTool.execute(toolCall.parameters);
             break;
+
+          case 'find_available_doctors':
+            output = await this.findAvailableDoctorsTool.execute(
+              toolCall.parameters,
+            );
+            break;
+
           default:
             output = { error: `Unknown tool: ${toolCall.name}` };
         }
+
+        this.log('executeTools', 'debug', `Tool executed: ${toolCall.name}`, {
+          toolId: toolCall.id,
+          hasOutput: !!output,
+          outputStatus: output?.status,
+        });
 
         results.push({
           id: toolCall.id || Math.random().toString(),
           output,
         });
       } catch (error) {
-        console.error(`Tool execution error (${toolCall.name}):`, error);
+        this.log(
+          'executeTools',
+          'error',
+          `Tool execution failed: ${toolCall.name}`,
+          {
+            toolId: toolCall.id,
+            error: error.message,
+          },
+        );
         results.push({
           id: toolCall.id || Math.random().toString(),
           output: {
@@ -839,6 +1182,12 @@ export class ChatbotService {
         });
       }
     }
+
+    this.log('executeTools', 'info', 'All tools execution completed', {
+      totalTools: toolCalls.length,
+      successCount: results.filter((r) => !r.output?.error).length,
+      errorCount: results.filter((r) => r.output?.error).length,
+    });
 
     return results;
   }

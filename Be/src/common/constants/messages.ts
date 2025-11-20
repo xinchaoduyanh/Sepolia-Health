@@ -61,6 +61,7 @@ export const MESSAGES = {
       'Thời gian đặt lịch không nằm trong giờ làm việc của bác sĩ',
     DOCTOR_NOT_AVAILABLE_ON_DATE: 'Bác sĩ không làm việc vào ngày này',
     TIME_SLOT_ALREADY_BOOKED: 'Thời gian đã được đặt lịch',
+    NOT_FOUND: 'Không tìm thấy lịch hẹn',
   },
 
   // Medicine messages

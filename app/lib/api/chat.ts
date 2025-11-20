@@ -27,7 +27,7 @@ export class ChatAPI {
 export class ChatService {
   private static client: StreamChat | null = null;
 
-  static setClient(client: StreamChat) {
+  static setClient(client: StreamChat | null) {
     this.client = client;
   }
 

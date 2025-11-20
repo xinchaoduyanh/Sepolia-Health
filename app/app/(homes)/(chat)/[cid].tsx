@@ -1,17 +1,14 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, ActivityIndicator, Text, TouchableOpacity, Alert, Image } from 'react-native';
 import { useLocalSearchParams, Stack, useRouter, useNavigation } from 'expo-router';
-import { Channel, MessageList, MessageInput } from 'stream-chat-expo';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Channel, MessageList } from 'stream-chat-expo';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useChatContext } from '@/contexts/ChatContext';
 import { Ionicons } from '@expo/vector-icons';
 import { CustomMessage } from '@/components/CustomMessage';
 import { CustomDateSeparator } from '@/components/CustomDateSeparator';
-import { CustomTypingIndicator } from '@/components/CustomTypingIndicator';
 import { CustomMessageInput } from '@/components/CustomMessageInput';
 import Constants from 'expo-constants';
-import { useAuth } from '@/lib/hooks/useAuth';
-import { AIThinkingProvider } from '@/contexts/AIThinkingContext';
 import { ChatbotAPI } from '@/lib/api/chatbot';
 
 // Lazy import useVideoContext
@@ -24,9 +21,10 @@ let useVideoContext: any = () => ({
 
 if (!isExpoGo) {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const videoModule = require('@/contexts/VideoContext');
     useVideoContext = videoModule.useVideoContext;
-  } catch (error) {
+  } catch {
     console.warn('VideoContext not available in Expo Go');
   }
 }
@@ -46,7 +44,7 @@ export default function ChannelScreen() {
   const { cid } = useLocalSearchParams<{ cid: string }>();
   const { chatClient, isChatReady, initChat } = useChatContext();
   const { startAudioCall, startVideoCall, isVideoReady } = useVideoContext();
-  const { user } = useAuth();
+  const insets = useSafeAreaInsets();
   const [channel, setChannel] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -55,6 +53,16 @@ export default function ChannelScreen() {
   const [otherUserAvatar, setOtherUserAvatar] = useState<string | null>(null);
   const [otherUserName, setOtherUserName] = useState<string | null>(null);
   const [isAIChannel, setIsAIChannel] = useState(false);
+
+  // Use ref to store current user ID from StreamChat
+  const currentUserIdRef = useRef<string | undefined>(undefined);
+
+  // Update ref when chatClient changes
+  useEffect(() => {
+    if (chatClient?.userID) {
+      currentUserIdRef.current = chatClient.userID;
+    }
+  }, [chatClient?.userID]);
 
   // Hide tab bar when entering individual chat
   React.useEffect(() => {
@@ -77,7 +85,9 @@ export default function ChannelScreen() {
 
     const handleNewMessage = async (event: any) => {
       // Only mark as read if it's a new message (not from current user)
-      if (event.type === 'message.new' && event.user?.id !== user?.id) {
+      // Use StreamChat user ID from ref instead of user?.id
+      const currentUserId = currentUserIdRef.current;
+      if (event.type === 'message.new' && event.user?.id !== currentUserId) {
         try {
           await channel.markRead();
           console.log('Auto-marked channel as read after new message');
@@ -95,12 +105,12 @@ export default function ChannelScreen() {
       channel.off('message.new', handleNewMessage);
 
       // Mark as read when component unmounts (user leaves the channel)
-      channel.markRead().catch((err) => {
+      channel.markRead().catch((err: unknown) => {
         console.error('Failed to mark channel as read on unmount:', err);
       });
       console.log('Marked channel as read on unmount');
     };
-  }, [channel, user?.id]);
+  }, [channel]);
 
   const handleRetryChat = useCallback(async () => {
     try {
@@ -172,13 +182,12 @@ export default function ChannelScreen() {
                   image: m.user?.image,
                 }))
               );
-              console.log('Current user ID:', user?.id, 'type:', typeof user?.id);
+              // Use StreamChat user ID from ref
+              const currentUserId = currentUserIdRef.current;
+              console.log('Current user ID (StreamChat):', currentUserId);
               console.log('Bot user ID:', botUserId);
 
               if (members.members && members.members.length > 0) {
-                // Convert user ID to string for comparison
-                const currentUserId = String(user?.id);
-
                 // For AI channels, find bot user
                 if (channelIsAI) {
                   const botMember = members.members.find((m) => m.user_id === botUserId);
@@ -196,7 +205,7 @@ export default function ChannelScreen() {
                     setOtherUserName(botMember.user.name as string);
                   }
                 } else {
-                  // For regular channels, find other member
+                  // For regular channels, find other member using StreamChat user ID
                   const otherMember = members.members.find((m) => m.user_id !== currentUserId);
                   console.log(
                     'Other member found:',
@@ -268,13 +277,12 @@ export default function ChannelScreen() {
                   image: m.user?.image,
                 }))
               );
-              console.log('Fallback - Current user ID:', user?.id, 'type:', typeof user?.id);
+              // Use StreamChat user ID from ref
+              const currentUserId = currentUserIdRef.current;
+              console.log('Fallback - Current user ID (StreamChat):', currentUserId);
               console.log('Fallback - Bot user ID:', botUserId);
 
               if (members.members && members.members.length > 0) {
-                // Convert user ID to string for comparison
-                const currentUserId = String(user?.id);
-
                 // For AI channels, find bot user
                 if (channelIsAI) {
                   const botMember = members.members.find((m) => m.user_id === botUserId);
@@ -292,7 +300,7 @@ export default function ChannelScreen() {
                     setOtherUserName(botMember.user.name as string);
                   }
                 } else {
-                  // For regular channels, find other member
+                  // For regular channels, find other member using StreamChat user ID
                   const otherMember = members.members.find((m) => m.user_id !== currentUserId);
                   console.log(
                     'Fallback - Other member found:',
@@ -361,7 +369,8 @@ export default function ChannelScreen() {
       isMounted = false;
       if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [cid, isChatReady, chatClient, retryCount, loading]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cid, isChatReady, chatClient, retryCount]);
 
   if (!isChatReady || !chatClient) {
     return (
@@ -599,72 +608,75 @@ export default function ChannelScreen() {
         }}
       />
 
-      <AIThinkingProvider>
-        <ReplyContext.Provider value={{ replyingTo, setReplyingTo }}>
-          <Channel channel={channel} MessageSimple={CustomMessage} DateHeader={CustomDateSeparator}>
-            {/* AI Channel Notice Banner */}
-            {isAIChannel && (
-              <View
-                style={{
-                  backgroundColor: '#F3E8FF',
-                  paddingHorizontal: 16,
-                  paddingVertical: 12,
-                  borderBottomWidth: 1,
-                  borderBottomColor: '#E9D5FF',
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: 10,
-                }}>
-                <View
-                  style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: 16,
-                    backgroundColor: '#A855F7',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}>
-                  <Ionicons name="sparkles" size={18} color="white" />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      fontWeight: '600',
-                      color: '#7C3AED',
-                      marginBottom: 2,
-                    }}>
-                    Trò chuyện với Trợ lý AI
-                  </Text>
-                  <Text style={{ fontSize: 11, color: '#9333EA' }}>
-                    Được hỗ trợ bởi trí tuệ nhân tạo tiên tiến
-                  </Text>
-                </View>
-              </View>
-            )}
+      {/* AI Channel Notice Banner - Positioned absolutely to float right below header */}
+      {isAIChannel && (
+        <View
+          style={{
+            position: 'absolute',
+            top: insets.top - 48, // Safe area top + header height (44px is standard header height)
+            left: 0,
+            right: 0,
+            zIndex: 10,
+            backgroundColor: '#F3E8FF',
+            paddingHorizontal: 16,
+            paddingVertical: 12,
+            borderBottomWidth: 1,
+            borderBottomColor: '#E9D5FF',
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 10,
+          }}>
+          <View
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: 16,
+              backgroundColor: '#A855F7',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+            <Ionicons name="sparkles" size={18} color="white" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text
+              style={{
+                fontSize: 13,
+                fontWeight: '600',
+                color: '#7C3AED',
+                marginBottom: 2,
+              }}>
+              Trò chuyện với Trợ lý AI
+            </Text>
+            <Text style={{ fontSize: 11, color: '#9333EA' }}>
+              Được hỗ trợ bởi trí tuệ nhân tạo tiên tiến
+            </Text>
+          </View>
+        </View>
+      )}
 
-            {/* Message List Container */}
-            <View
-              className="flex-1"
-              style={{ backgroundColor: isAIChannel ? '#FAF5FF' : '#F8FAFC' }}>
-              <MessageList
-                additionalFlatListProps={{
-                  contentContainerStyle: {
-                    paddingTop: 16,
-                    paddingBottom: 8,
-                  },
-                }}
-              />
-            </View>
+      <ReplyContext.Provider value={{ replyingTo, setReplyingTo }}>
+        <Channel channel={channel} MessageSimple={CustomMessage} DateHeader={CustomDateSeparator}>
+          {/* Message List Container */}
+          <View
+            className="flex-1"
+            style={{
+              backgroundColor: isAIChannel ? '#FAF5FF' : '#F8FAFC',
+              // paddingTop: isAIChannel ? 60 : 0, // Add padding when Banner is shown to avoid overlap
+            }}>
+            <MessageList
+              additionalFlatListProps={{
+                contentContainerStyle: {
+                  paddingTop: 16,
+                  paddingBottom: 8,
+                },
+              }}
+            />
+          </View>
 
-            {/* Typing Indicator - render manually outside MessageList */}
-            <CustomTypingIndicator />
-
-            {/* Custom Message Input with proper typing indicator */}
-            <CustomMessageInput />
-          </Channel>
-        </ReplyContext.Provider>
-      </AIThinkingProvider>
+          {/* Custom Message Input */}
+          <CustomMessageInput />
+        </Channel>
+      </ReplyContext.Provider>
     </SafeAreaView>
   );
 }
