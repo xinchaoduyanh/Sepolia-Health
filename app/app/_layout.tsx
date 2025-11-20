@@ -1,17 +1,20 @@
 import '../global.css';
 import 'react-native-reanimated';
-import 'react-native-gesture-handler';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { Stack } from 'expo-router';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AppointmentProvider } from '@/contexts/AppointmentContext';
 import { PaymentProvider } from '@/contexts/PaymentContext';
 import { QueryProvider } from '@/providers/QueryProvider';
 import { ChatProvider } from '@/contexts/ChatContext';
 import { NotificationProvider } from '@/contexts/NotificationContext';
 import { BackgroundPrefetch } from '@/components/BackgroundPrefetch';
-import { Platform } from 'react-native';
+import { LogBox } from 'react-native';
 import Constants from 'expo-constants';
+
+// Suppress the "Text strings must be rendered within a <Text> component" error
+// This error can occur during initial page load and doesn't affect functionality
+LogBox.ignoreLogs([/Text strings must be rendered within a <Text> component/i]);
 
 // Lazy import VideoProvider to avoid loading native modules in Expo Go
 let VideoProvider: any = ({ children }: { children: React.ReactNode }) => <>{children}</>;
@@ -20,6 +23,7 @@ let VideoProvider: any = ({ children }: { children: React.ReactNode }) => <>{chi
 const isExpoGo = Constants.appOwnership === 'expo';
 if (!isExpoGo) {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const videoModule = require('@/contexts/VideoContext');
     VideoProvider = videoModule.VideoProvider;
   } catch (error) {
