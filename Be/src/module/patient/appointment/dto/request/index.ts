@@ -1,5 +1,6 @@
+import { SortOrder } from '@/common/enum';
 import { DateUtil } from '@/common/utils';
-import { AppointmentStatus, Gender, PaymentStatus } from '@prisma/client';
+import { AppointmentStatus, PaymentStatus } from '@prisma/client';
 import { createZodDto } from 'nestjs-zod';
 import z from 'zod';
 
@@ -14,35 +15,7 @@ const GetAppointmentsQuerySchema = z.object({
   dateFrom: z.iso.datetime().optional(),
   dateTo: z.iso.datetime().optional(),
   sortBy: z.enum(['date', 'status', 'billingStatus']).default('date'),
-  sortOrder: z.enum(['asc', 'desc']).default('desc'),
-});
-
-// Create Appointment DTO
-export const CreateAppointmentSchema = z.object({
-  doctorId: z.coerce.number().min(1, 'Bác sĩ không được để trống'),
-  serviceId: z.coerce.number().min(1, 'Dịch vụ không được để trống'),
-  date: z.iso.datetime('Ngày hẹn không hợp lệ'),
-  notes: z.string().optional(),
-  // Patient information (required for all appointments)
-  patientName: z.string().min(1, 'Họ tên không được để trống'),
-  patientDob: z.iso.date('Ngày sinh không hợp lệ'),
-  patientPhone: z.string().min(10, 'Số điện thoại không hợp lệ'),
-  patientGender: z.enum(Gender, 'Giới tính không hợp lệ'),
-  clinicId: z.coerce.number().min(1, 'Cơ sở phòng khám không được để trống'),
-});
-
-// Update Appointment DTO
-export const UpdateAppointmentSchema = z.object({
-  date: z.iso.date('Ngày hẹn không hợp lệ').optional(),
-  startTime: z
-    .string()
-    .regex(
-      /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/,
-      'Thời gian bắt đầu không hợp lệ (HH:mm)',
-    )
-    .optional(),
-  status: z.enum(AppointmentStatus).optional(),
-  notes: z.string().optional(),
+  sortOrder: z.enum(SortOrder).default(SortOrder.DESC),
 });
 
 // Create Appointment from DoctorService DTO
@@ -52,15 +25,14 @@ export const CreateAppointmentFromDoctorServiceSchema = z.object({
   startTime: z.iso.datetime().transform((val) => new Date(val)),
   endTime: z.iso.datetime().transform((val) => new Date(val)),
   notes: z.string().optional(),
+}).refine((data) => data.startTime < data.endTime, {
+  message: 'startTime must be earlier than endTime',
+  path: ['startTime'],
+}).refine((data) => data.startTime >= new Date(), {
+  message: 'startTime must not be in the past',
+  path: ['startTime'],
 });
 
-export class UpdateAppointmentDto extends createZodDto(
-  UpdateAppointmentSchema,
-) {}
-
-export class CreateAppointmentDto extends createZodDto(
-  CreateAppointmentSchema,
-) {}
 
 export class GetAppointmentsQueryDto extends createZodDto(
   GetAppointmentsQuerySchema,
@@ -69,6 +41,8 @@ export class GetAppointmentsQueryDto extends createZodDto(
 export class CreateAppointmentFromDoctorServiceBodyDto extends createZodDto(
   CreateAppointmentFromDoctorServiceSchema,
 ) {}
+
+export class UpdateAppointmentDto extends CreateAppointmentFromDoctorServiceBodyDto {}
 
 // Booking dto
 const GetDoctorServicesSchema = z.object({

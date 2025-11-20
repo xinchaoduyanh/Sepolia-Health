@@ -119,12 +119,12 @@ export const appointmentApi = {
     return response.data;
   },
 
-  getDoctorServices: async (locationId: number, serviceId: number) => {
+  getDoctor: async (locationId: number, serviceId: number) => {
     const response = await apiClient.get<{
       data: any[];
       total: number;
     }>(
-      `${API_ENDPOINTS.APPOINTMENTS.DOCTOR_SERVICES}?locationId=${locationId}&serviceId=${serviceId}`
+      `${API_ENDPOINTS.APPOINTMENTS.DOCTOR}?locationId=${locationId}&serviceId=${serviceId}`
     );
     return response.data;
   },
@@ -264,7 +264,7 @@ export const useServices = () => {
 export const useDoctorServices = (locationId: number, serviceId: number) => {
   return useQuery({
     queryKey: ['appointments', 'doctor-services', locationId, serviceId],
-    queryFn: () => appointmentApi.getDoctorServices(locationId, serviceId),
+    queryFn: () => appointmentApi.getDoctor(locationId, serviceId),
     enabled: !!locationId && !!serviceId,
     staleTime: 2 * 60 * 1000, // 2 minutes
   });

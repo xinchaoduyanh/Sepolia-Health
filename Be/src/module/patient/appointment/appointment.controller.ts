@@ -7,13 +7,13 @@ import {
   Param,
   Query,
   ParseIntPipe,
+  HttpStatus,
 } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
-  ApiParam,
 } from '@nestjs/swagger';
 import { AppointmentService } from './appointment.service';
 import { CurrentUser } from '@/common/decorators';
@@ -35,9 +35,7 @@ export class AppointmentController {
 
   @Put(':id')
   @ApiOperation({ summary: 'Cập nhật lịch hẹn' })
-  @ApiParam({ name: 'id', description: 'ID lịch hẹn' })
-  @ApiResponse({ status: 200, description: 'Cập nhật thành công' })
-  @ApiResponse({ status: 404, description: 'Không tìm thấy lịch hẹn' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Cập nhật thành công' })
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateAppointmentDto: UpdateAppointmentDto,
@@ -48,9 +46,7 @@ export class AppointmentController {
 
   @Delete(':id')
   @ApiOperation({ summary: 'Xóa lịch hẹn' })
-  @ApiParam({ name: 'id', description: 'ID lịch hẹn' })
-  @ApiResponse({ status: 200, description: 'Xóa thành công' })
-  @ApiResponse({ status: 404, description: 'Không tìm thấy lịch hẹn' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Xóa thành công' })
   async remove(
     @Param('id', ParseIntPipe) id: number,
     @CurrentUser('userId') userId: number,
@@ -60,7 +56,7 @@ export class AppointmentController {
 
   @Get('my-appointments')
   @ApiOperation({ summary: 'Lấy lịch hẹn của bệnh nhân hiện tại' })
-  @ApiResponse({ status: 200, description: 'Lấy danh sách thành công' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Lấy danh sách thành công' })
   async getMyAppointments(
     @Query() query: GetAppointmentsQueryDto,
     @CurrentUser('userId') userId: number,
@@ -70,8 +66,7 @@ export class AppointmentController {
 
   @Get('closest')
   @ApiOperation({ summary: 'Lấy lịch hẹn gần nhất của bệnh nhân hiện tại' })
-  @ApiResponse({ status: 200, description: 'Lấy lịch hẹn gần nhất thành công' })
-  @ApiResponse({ status: 404, description: 'Không tìm thấy lịch hẹn' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Lấy lịch hẹn gần nhất thành công' })
   async getClosestAppointment(
     @CurrentUser('userId') userId: number,
   ): Promise<AppointmentDetailResponseDto | null> {
@@ -80,9 +75,7 @@ export class AppointmentController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Lấy thông tin lịch hẹn theo ID' })
-  @ApiParam({ name: 'id', description: 'ID lịch hẹn' })
-  @ApiResponse({ status: 200, description: 'Lấy thông tin thành công' })
-  @ApiResponse({ status: 404, description: 'Không tìm thấy lịch hẹn' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Lấy thông tin thành công' })
   async findOne(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<AppointmentDetailResponseDto> {

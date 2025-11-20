@@ -46,7 +46,7 @@ export class BookingController {
     return this.appointmentService.getServices();
   }
 
-  @Get('doctor-services')
+  @Get('doctor')
   @ApiOperation({
     summary: 'Lấy danh sách bác sĩ cung cấp dịch vụ theo service và location',
   })

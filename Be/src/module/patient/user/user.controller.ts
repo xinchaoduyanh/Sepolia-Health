@@ -68,10 +68,6 @@ export class UserController {
     description: 'Cập nhật thành công',
     type: UpdateUserProfileResponseDto,
   })
-  @ApiResponse({
-    status: HttpStatus.BAD_REQUEST,
-    description: 'Dữ liệu không hợp lệ',
-  })
   async updateProfile(
     @CurrentUser('userId') userId: number,
     @Body() updateData: UpdateUserProfileDtoType,
@@ -105,10 +101,6 @@ export class UserController {
     description: 'Lấy danh sách hồ sơ bệnh nhân thành công',
     type: PatientProfilesResponseDto,
   })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'Không tìm thấy người dùng',
-  })
   async getPatientProfiles(
     @CurrentUser('userId') userId: number,
   ): Promise<PatientProfilesResponseDtoType> {
@@ -121,14 +113,6 @@ export class UserController {
     status: HttpStatus.CREATED,
     description: 'Tạo hồ sơ bệnh nhân thành công',
     type: CreatePatientProfileResponseDto,
-  })
-  @ApiResponse({
-    status: HttpStatus.BAD_REQUEST,
-    description: 'Dữ liệu không hợp lệ',
-  })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'Không tìm thấy người dùng',
   })
   async createPatientProfile(
     @CurrentUser('userId') userId: number,
@@ -143,14 +127,6 @@ export class UserController {
     status: HttpStatus.OK,
     description: 'Cập nhật hồ sơ bệnh nhân thành công',
     type: UpdatePatientProfileResponseDto,
-  })
-  @ApiResponse({
-    status: HttpStatus.BAD_REQUEST,
-    description: 'Dữ liệu không hợp lệ',
-  })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'Không tìm thấy hồ sơ bệnh nhân',
   })
   async updatePatientProfile(
     @CurrentUser('userId') userId: number,
@@ -168,14 +144,6 @@ export class UserController {
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Upload ảnh thành công',
-  })
-  @ApiResponse({
-    status: HttpStatus.BAD_REQUEST,
-    description: 'Dữ liệu không hợp lệ',
-  })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'Không tìm thấy hồ sơ bệnh nhân',
   })
   async uploadPatientProfileAvatar(
     @CurrentUser('userId') userId: number,
@@ -195,14 +163,6 @@ export class UserController {
     status: HttpStatus.OK,
     description: 'Xóa hồ sơ bệnh nhân thành công',
     type: DeletePatientProfileResponseDto,
-  })
-  @ApiResponse({
-    status: HttpStatus.BAD_REQUEST,
-    description: 'Không thể xóa hồ sơ bệnh nhân đã có lịch hẹn',
-  })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'Không tìm thấy hồ sơ bệnh nhân',
   })
   async deletePatientProfile(
     @CurrentUser('userId') userId: number,

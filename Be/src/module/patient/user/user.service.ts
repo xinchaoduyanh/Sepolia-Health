@@ -329,9 +329,6 @@ export class UserService {
   ): Promise<CreatePatientProfileResponseDtoType> {
     await this.userRepository.findUserByIdSimple(userId);
 
-    // Check if this is a SELF relationship profile
-    const isSelfProfile = createData.relationship === 'SELF';
-
     const patientProfile = await this.userRepository.createPatientProfile({
       firstName: createData.firstName,
       lastName: createData.lastName,

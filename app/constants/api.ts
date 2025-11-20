@@ -39,7 +39,7 @@ export const API_ENDPOINTS = {
     DOCTOR_APPOINTMENTS: '/patient/appointments/doctor/my-appointments',
     LOCATIONS: '/patient/appointment/booking/locations',
     SERVICES: '/patient/appointment/booking/services',
-    DOCTOR_SERVICES: '/patient/appointment/booking/doctor-services',
+    DOCTOR: '/patient/appointment/booking/doctor',
     AVAILABLE_DATES: '/patient/appointment/booking/available-dates',
     DOCTOR_AVAILABILITY: '/patient/appointment/booking/doctor-availability',
     CREATE: '/patient/appointment/booking/create',
@@ -48,7 +48,6 @@ export const API_ENDPOINTS = {
   // Doctors
   DOCTORS: {
     BASE: '/patient/doctor',
-    SERVICES: '/patient/doctor/services',
     BY_SERVICE: '/patient/doctor',
     TIMESLOTS: '/patient/doctor/timeslot',
   },

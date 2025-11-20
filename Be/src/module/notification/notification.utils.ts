@@ -2,19 +2,6 @@ import { StreamChat } from 'stream-chat';
 import { PrismaService } from '@/common/prisma/prisma.service';
 import { NotificationType, NotificationPriority } from './notification.types';
 
-// Chuyển type DTO trước đây còn dùng thành type thuần hoặc import từ notification.types.ts
-// Ví dụ:
-// export interface AppointmentNotificationPatient {
-//   appointmentId: number;
-//   appointmentDate: string;
-//   appointmentTime: string;
-//   doctorName: string;
-//   serviceName: string;
-//   clinicName: string;
-//   recipientId: string;
-//   notes?: string;
-// }
-
 export class NotificationUtils {
   private static streamClient: StreamChat;
   private static readonly NOTIFICATION_CHANNEL_PREFIX = 'notifications';

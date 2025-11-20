@@ -21,22 +21,30 @@ import { PatientProfile } from '@/types/auth';
 import { getRelationshipLabel } from '@/utils/relationshipTranslator';
 import { useDoctorAvailability, useCreateAppointment } from '@/lib/api/appointments';
 import { createISODateTime, getTodayDateString } from '@/utils/datetime';
+import { userApi } from '@/lib/api';
+import { Relationship } from '@/constants/enum';
 
 export default function AppointmentScreen() {
   const { user } = useAuth();
+  
+  // Get patient profiles
+  const patientProfiles = user?.patientProfiles || [];
+  const primaryProfile = patientProfiles.find((profile) => profile.relationship === 'SELF');
+  const otherProfiles = patientProfiles.filter((profile) => profile.relationship !== 'SELF');
+  
   const [selectedCustomer, setSelectedCustomer] = useState<string>('me');
-  const [selectedProfile, setSelectedProfile] = useState<PatientProfile | null>(null);
-  const [fullName, setFullName] = useState('');
+  const [selectedProfile, setSelectedProfile] = useState<PatientProfile>(primaryProfile!);
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState<Date | null>(null);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [gender, setGender] = useState<'MALE' | 'FEMALE' | null>(null);
   const [patientDescription, setPatientDescription] = useState<string>('');
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [showTimeSlots, setShowTimeSlots] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [createdAppointmentId, setCreatedAppointmentId] = useState<number | null>(null);
   const [selectedCustomDate, setSelectedCustomDate] = useState<Date | null>(null);
-  const [selectedDateForAPI, setSelectedDateForAPI] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const {
     selectedDoctor,
     selectedFacility,
@@ -46,41 +54,21 @@ export default function AppointmentScreen() {
     selectedDoctorServiceId,
   } = useAppointment();
 
-  // Get patient profiles
-  const patientProfiles = user?.patientProfiles || [];
-  const primaryProfile = patientProfiles.find((profile) => profile.relationship === 'SELF');
-  const otherProfiles = patientProfiles.filter((profile) => profile.relationship !== 'SELF');
-
   // Auto-fill user info when component mounts (default to "Bản thân")
   useEffect(() => {
     if (user && selectedCustomer === 'me' && primaryProfile) {
       setSelectedProfile(primaryProfile); // Set profile ID for appointment
-      setFullName(`${primaryProfile.firstName} ${primaryProfile.lastName}`);
+      setFirstName(primaryProfile.firstName);
+      setLastName(primaryProfile.lastName);
       setDateOfBirth(new Date(primaryProfile.dateOfBirth));
       setPhoneNumber(primaryProfile.phone);
       setGender(primaryProfile.gender === 'OTHER' ? null : primaryProfile.gender);
     }
   }, [user, selectedCustomer, primaryProfile]);
 
-  // Tự động hiển thị time slots khi đã chọn đủ thông tin
-  useEffect(() => {
-    if (selectedFacility && selectedService && selectedDoctor) {
-      setShowTimeSlots(true);
-    }
-  }, [selectedFacility, selectedService, selectedDoctor]);
-
-  // API call để lấy availability thực tế
-  const getTodayString = () => {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const day = String(today.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
-
   const { data: availabilityData, error: availabilityError } = useDoctorAvailability(
     selectedDoctorServiceId || 0,
-    selectedDateForAPI || getTodayString()
+    selectedDate || getTodayDateString()
   );
 
   // Check if doctor is not available (no time slots)
@@ -95,15 +83,16 @@ export default function AppointmentScreen() {
     if (profile) {
       // Auto-fill form with profile data
       setSelectedProfile(profile);
-      setFullName(`${profile.firstName} ${profile.lastName}`);
+      setFirstName(profile.firstName);
+      setLastName(profile.lastName);
       setDateOfBirth(new Date(profile.dateOfBirth));
       setPhoneNumber(profile.phone);
       setGender(profile.gender === 'OTHER' ? null : profile.gender);
-      // Sử dụng relationship từ profile
     } else if (customerId === 'add') {
-      // Clear form for new customer
-      setSelectedProfile(null);
-      setFullName('');
+      // Clear form for new customer (profile will be created on booking)
+      setSelectedProfile(primaryProfile!);
+      setFirstName('');
+      setLastName('');
       setDateOfBirth(null);
       setPhoneNumber('');
       setGender(null);
@@ -112,28 +101,26 @@ export default function AppointmentScreen() {
       // Set primary profile for "me"
       setSelectedProfile(primaryProfile);
       setPatientDescription('');
-      // Thông tin user sẽ được auto-fill bởi useEffect
     }
   };
 
   const handleFacilitySelect = () => {
-    router.push('./facility-selection' as any);
+    router.push('./facility-selection');
   };
 
   const handleServiceSelect = () => {
     if (selectedFacility) {
-      router.push('./service-selection' as any);
+      router.push('./service-selection');
     }
   };
 
   const handleDoctorSelect = () => {
     if (selectedFacility && selectedService) {
-      router.push('./doctor-selection' as any);
+      router.push('./doctor-selection');
     }
   };
 
   const handleTimeSlotSelect = (time: string) => {
-    // Set selected time slot in context
     setSelectedTimeSlot(time);
   };
 
@@ -143,23 +130,15 @@ export default function AppointmentScreen() {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
-    setSelectedDateForAPI(`${year}-${month}-${day}`);
+    setSelectedDate(`${year}-${month}-${day}`);
     setShowDatePicker(false);
-    // Call API khi chọn ngày
-    if (selectedDoctorServiceId) {
-      setShowTimeSlots(true);
-    }
   };
 
   const handlePresetDateSelect = (date: any) => {
     // Clear custom date selection
     setSelectedCustomDate(null);
     // Set preset date
-    setSelectedDateForAPI(date.fullDate);
-    // Call API khi chọn ngày
-    if (selectedDoctorServiceId) {
-      setShowTimeSlots(true);
-    }
+    setSelectedDate(date.fullDate);
   };
 
   const handleCustomDatePress = () => {
@@ -195,42 +174,48 @@ export default function AppointmentScreen() {
 
   const handleBookAppointment = async () => {
     // Validate required fields
-    if (!selectedFacility || !selectedService || !selectedDoctor || !selectedTimeSlot) {
+    if (!selectedFacility || !selectedService || !selectedDoctor || !selectedTimeSlot || !selectedDate || !selectedDoctorServiceId) {
       alert('Vui lòng điền đầy đủ thông tin đặt hẹn');
       return;
     }
 
-    if (!fullName || !dateOfBirth || !phoneNumber || !gender) {
+    if (!firstName || !lastName || !dateOfBirth || !phoneNumber || !gender) {
       alert('Vui lòng điền đầy đủ thông tin khách hàng');
       return;
     }
 
-    // Validate that a patient profile is selected
-    if (!selectedProfile?.id) {
-      alert('Vui lòng chọn hồ sơ bệnh nhân');
-      return;
+    if (selectedCustomer === 'add') {
+      const profileData = {
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        dateOfBirth: dateOfBirth!.toISOString(),
+        gender: gender!,
+        phone: phoneNumber.trim(),
+        relationship: Relationship.OTHER,
+      };
+      const res = await userApi.createPatientProfile(profileData);
+      setSelectedProfile(res.profile);
     }
 
     try {
       // Create ISO datetime strings using utility function
-      const appointmentDate = selectedDateForAPI || getTodayDateString();
+      const appointmentDate = selectedDate;
       const startTime = createISODateTime(appointmentDate, selectedTimeSlot);
       
       // Calculate end datetime based on service duration (in minutes)
-      const serviceDuration = selectedService?.duration || 30;
+      const serviceDuration = selectedService.duration ;
       const startDateTime = new Date(startTime);
       const endDateTime = new Date(startDateTime.getTime() + serviceDuration * 60 * 1000);
       const endTime = endDateTime.toISOString();
 
       const appointmentData = {
-        doctorServiceId: selectedDoctorServiceId || 0,
+        doctorServiceId: selectedDoctorServiceId,
         patientProfileId: selectedProfile.id,
         startTime,
         endTime,
-        notes: patientDescription || undefined,
+        notes: patientDescription,
       };
 
-      // Gọi API tạo appointment
       const result = await createAppointmentMutation.mutateAsync(appointmentData);
 
       // Lưu appointment ID để sử dụng trong modal
@@ -433,10 +418,29 @@ export default function AppointmentScreen() {
                     style={{
                       color: selectedProfile || selectedCustomer === 'me' ? '#9CA3AF' : '#0F172A',
                     }}
-                    placeholder="* Họ tên đầy đủ"
+                    placeholder="* Họ"
                     placeholderTextColor="#475569"
-                    value={fullName}
-                    onChangeText={setFullName}
+                    value={lastName}
+                    onChangeText={setLastName}
+                    editable={!selectedProfile && selectedCustomer !== 'me'}
+                  />
+                </View>
+              </View>
+
+              <View>
+                <View
+                  className="flex-row items-center rounded-xl border px-5 py-4"
+                  style={{ backgroundColor: '#F0FDFA', borderColor: '#E0F2FE' }}>
+                  <Ionicons name="create" size={22} color="#0284C7" />
+                  <TextInput
+                    className="ml-4 flex-1 text-lg"
+                    style={{
+                      color: selectedProfile || selectedCustomer === 'me' ? '#9CA3AF' : '#0F172A',
+                    }}
+                    placeholder="* Tên"
+                    placeholderTextColor="#475569"
+                    value={firstName}
+                    onChangeText={setFirstName}
                     editable={!selectedProfile && selectedCustomer !== 'me'}
                   />
                 </View>
@@ -601,21 +605,21 @@ export default function AppointmentScreen() {
                     activeOpacity={0.7}
                     onPress={() => handlePresetDateSelect(date)}
                     className={`flex-1 rounded-xl px-4 py-4 ${
-                      selectedDateForAPI === date.fullDate ? 'bg-[#0284C7]' : 'bg-[#F0FDFA]'
+                      selectedDate === date.fullDate ? 'bg-[#0284C7]' : 'bg-[#F0FDFA]'
                     }`}
                     style={{
-                      borderColor: selectedDateForAPI === date.fullDate ? '#0284C7' : '#E0F2FE',
-                      borderWidth: selectedDateForAPI === date.fullDate ? 2 : 1,
+                      borderColor: selectedDate === date.fullDate ? '#0284C7' : '#E0F2FE',
+                      borderWidth: selectedDate === date.fullDate ? 2 : 1,
                     }}>
                     <Text
                       className={`text-center text-base font-medium ${
-                        selectedDateForAPI === date.fullDate ? 'text-white' : 'text-[#475569]'
+                        selectedDate === date.fullDate ? 'text-white' : 'text-[#475569]'
                       }`}>
                       {date.dayName} {date.day}/{date.month}
                     </Text>
                     <Text
                       className={`mt-1 text-center text-sm ${
-                        selectedDateForAPI === date.fullDate ? 'text-blue-100' : 'text-[#475569]'
+                        selectedDate === date.fullDate ? 'text-blue-100' : 'text-[#475569]'
                       }`}>
                       {index === 0
                         ? 'Hôm nay'
@@ -656,14 +660,13 @@ export default function AppointmentScreen() {
             </View>
 
             {/* Chọn thời gian - chỉ hiển thị khi đã chọn ngày */}
-            {selectedDateForAPI && (
+            {selectedDate && (
               <View>
                 {/* Time Slots - chỉ hiển thị khi đã chọn đủ thông tin và có ngày */}
-                {showTimeSlots &&
-                  selectedFacility &&
+                { selectedFacility &&
                   selectedService &&
                   selectedDoctor &&
-                  selectedDateForAPI && (
+                  selectedDate && (
                     <View className="mb-4">
                       <Text className="mb-4 text-lg font-semibold mt-4" style={{ color: '#0F172A' }}>
                         Giờ khám mong muốn*
@@ -897,12 +900,10 @@ export default function AppointmentScreen() {
                     setShowSuccessModal(false);
                     // Navigate to appointment detail
                     if (createdAppointmentId) {
-                      router.push(
-                        `/(homes)/(appointment)/appointment-detail?id=${createdAppointmentId}` as any
-                      );
+                      router.push(`/appointment-detail?id=${createdAppointmentId}`);
                     } else {
                       // Fallback to appointments list
-                      router.push('/(homes)/(appointment)/' as any);
+                      router.push('/(homes)/(appointment)/');
                     }
                     // Reset created appointment ID
                     setCreatedAppointmentId(null);

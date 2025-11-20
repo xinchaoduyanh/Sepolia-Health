@@ -14,12 +14,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { Relationship } from '@/types/auth';
 import { userApi } from '@/lib/api';
 import { useUploadPatientProfileAvatar } from '@/lib/api/user';
 import BirthDatePicker from '@/components/BirthDatePicker';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { Relationship } from '@/constants/enum';
 
 const AddPatientProfileScreen = () => {
   const { refreshProfile } = useAuth();
@@ -47,13 +47,13 @@ const AddPatientProfileScreen = () => {
 
   // Relationship options
   const relationshipOptions = [
-    { value: 'CHILD' as Relationship, label: 'Con' },
-    { value: 'SPOUSE' as Relationship, label: 'Vợ/Chồng' },
-    { value: 'PARENT' as Relationship, label: 'Bố/Mẹ' },
-    { value: 'SIBLING' as Relationship, label: 'Anh/Chị/Em' },
-    { value: 'RELATIVE' as Relationship, label: 'Họ hàng' },
-    { value: 'FRIEND' as Relationship, label: 'Bạn bè' },
-    { value: 'OTHER' as Relationship, label: 'Khác' },
+    { value: Relationship.CHILD, label: 'Con' },
+    { value: Relationship.SPOUSE, label: 'Vợ/Chồng' },
+    { value: Relationship.PARENT, label: 'Bố/Mẹ' },
+    { value: Relationship.SIBLING, label: 'Anh/Chị/Em' },
+    { value: Relationship.RELATIVE, label: 'Họ hàng' },
+    { value: Relationship.FRIEND, label: 'Bạn bè' },
+    { value: Relationship.OTHER, label: 'Khác' },
   ];
 
   // Handle avatar upload
@@ -142,8 +142,7 @@ const AddPatientProfileScreen = () => {
         gender: gender!,
         phone: formData.phone.trim(),
         relationship: formData.relationship as Relationship,
-        // Don't include avatar if not selected
-        ...(avatar && { avatar: avatar }),
+        ...(avatar && { avatar }),
         occupation: undefined,
         address: '',
       };
