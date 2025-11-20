@@ -32,14 +32,7 @@ export default function AppointmentScreen() {
   const primaryProfile = patientProfiles.find((profile) => profile.relationship === 'SELF');
   const otherProfiles = patientProfiles.filter((profile) => profile.relationship !== 'SELF');
   
-  const [selectedCustomer, setSelectedCustomer] = useState<string>('me');
   const [selectedProfile, setSelectedProfile] = useState<PatientProfile>(primaryProfile!);
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [dateOfBirth, setDateOfBirth] = useState<Date | null>(null);
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [gender, setGender] = useState<'MALE' | 'FEMALE' | null>(null);
-  const [patientDescription, setPatientDescription] = useState<string>('');
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [createdAppointmentId, setCreatedAppointmentId] = useState<number | null>(null);
@@ -52,6 +45,21 @@ export default function AppointmentScreen() {
     selectedTimeSlot,
     setSelectedTimeSlot,
     selectedDoctorServiceId,
+    // Patient form fields from context (for persistence across navigation)
+    selectedCustomer,
+    setSelectedCustomer,
+    firstName,
+    setFirstName,
+    lastName,
+    setLastName,
+    dateOfBirth,
+    setDateOfBirth,
+    phoneNumber,
+    setPhoneNumber,
+    gender,
+    setGender,
+    patientDescription,
+    setPatientDescription,
   } = useAppointment();
 
   // Auto-fill user info when component mounts (default to "Bản thân")
@@ -195,6 +203,8 @@ export default function AppointmentScreen() {
       };
       const res = await userApi.createPatientProfile(profileData);
       setSelectedProfile(res.profile);
+      // Update selectedCustomer to prevent duplicate profile creation
+      setSelectedCustomer(`profile-${res.profile.id}`);
     }
 
     try {
@@ -416,13 +426,13 @@ export default function AppointmentScreen() {
                   <TextInput
                     className="ml-4 flex-1 text-lg"
                     style={{
-                      color: selectedProfile || selectedCustomer === 'me' ? '#9CA3AF' : '#0F172A',
+                      color: selectedCustomer === 'add' ? '#0F172A' : '#9CA3AF',
                     }}
                     placeholder="* Họ"
                     placeholderTextColor="#475569"
                     value={lastName}
                     onChangeText={setLastName}
-                    editable={!selectedProfile && selectedCustomer !== 'me'}
+                    editable={selectedCustomer === 'add'}
                   />
                 </View>
               </View>
@@ -435,13 +445,13 @@ export default function AppointmentScreen() {
                   <TextInput
                     className="ml-4 flex-1 text-lg"
                     style={{
-                      color: selectedProfile || selectedCustomer === 'me' ? '#9CA3AF' : '#0F172A',
+                      color: selectedCustomer === 'add' ? '#0F172A' : '#9CA3AF',
                     }}
                     placeholder="* Tên"
                     placeholderTextColor="#475569"
                     value={firstName}
                     onChangeText={setFirstName}
-                    editable={!selectedProfile && selectedCustomer !== 'me'}
+                    editable={selectedCustomer === 'add'}
                   />
                 </View>
               </View>
@@ -451,7 +461,7 @@ export default function AppointmentScreen() {
                   selectedDate={dateOfBirth}
                   onDateSelect={setDateOfBirth}
                   placeholder="* Ngày sinh"
-                  disabled={!!selectedProfile || selectedCustomer === 'me'}
+                  disabled={selectedCustomer !== 'add'}
                 />
               </View>
 
@@ -463,14 +473,14 @@ export default function AppointmentScreen() {
                   <TextInput
                     className="ml-4 flex-1 text-lg"
                     style={{
-                      color: selectedProfile || selectedCustomer === 'me' ? '#9CA3AF' : '#0F172A',
+                      color: selectedCustomer === 'add' ? '#0F172A' : '#9CA3AF',
                     }}
                     placeholder="* 0988659126"
                     placeholderTextColor="#475569"
                     value={phoneNumber}
                     onChangeText={setPhoneNumber}
                     keyboardType="phone-pad"
-                    editable={!selectedProfile && selectedCustomer !== 'me'}
+                    editable={selectedCustomer === 'add'}
                   />
                 </View>
               </View>
@@ -481,7 +491,7 @@ export default function AppointmentScreen() {
               <GenderSelector
                 selectedGender={gender}
                 onGenderSelect={setGender}
-                disabled={!!selectedProfile || selectedCustomer === 'me'}
+                disabled={selectedCustomer !== 'add'}
               />
             </View>
           </View>

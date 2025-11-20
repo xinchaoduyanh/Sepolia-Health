@@ -8,6 +8,14 @@ interface AppointmentContextType {
   selectedDoctorServiceId: number | null;
   selectedDate: string | null;
   selectedTimeSlot: string | null;
+  // Patient form fields
+  selectedCustomer: string;
+  firstName: string;
+  lastName: string;
+  dateOfBirth: Date | null;
+  phoneNumber: string;
+  gender: 'MALE' | 'FEMALE' | null;
+  patientDescription: string;
   setSelectedSpecialty: (specialty: string) => void;
   setSelectedDoctor: (doctor: string) => void;
   setSelectedFacility: (facility: { id: number; name: string } | null) => void;
@@ -15,6 +23,14 @@ interface AppointmentContextType {
   setSelectedDoctorServiceId: (id: number | null) => void;
   setSelectedDate: (date: string | null) => void;
   setSelectedTimeSlot: (time: string | null) => void;
+  // Patient form setters
+  setSelectedCustomer: (customer: string) => void;
+  setFirstName: (name: string) => void;
+  setLastName: (name: string) => void;
+  setDateOfBirth: (date: Date | null) => void;
+  setPhoneNumber: (phone: string) => void;
+  setGender: (gender: 'MALE' | 'FEMALE' | null) => void;
+  setPatientDescription: (description: string) => void;
   clearSelections: () => void;
 }
 
@@ -47,6 +63,15 @@ export const AppointmentProvider = ({ children }: AppointmentProviderProps) => {
   const [selectedDoctorServiceId, setSelectedDoctorServiceId] = useState<number | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
+  
+  // Patient form fields
+  const [selectedCustomer, setSelectedCustomer] = useState<string>('me');
+  const [firstName, setFirstName] = useState<string>('');
+  const [lastName, setLastName] = useState<string>('');
+  const [dateOfBirth, setDateOfBirth] = useState<Date | null>(null);
+  const [phoneNumber, setPhoneNumber] = useState<string>('');
+  const [gender, setGender] = useState<'MALE' | 'FEMALE' | null>(null);
+  const [patientDescription, setPatientDescription] = useState<string>('');
 
   const clearSelections = () => {
     setSelectedSpecialty('');
@@ -56,6 +81,14 @@ export const AppointmentProvider = ({ children }: AppointmentProviderProps) => {
     setSelectedDoctorServiceId(null);
     setSelectedDate(null);
     setSelectedTimeSlot(null);
+    // Clear patient form fields
+    setSelectedCustomer('me');
+    setFirstName('');
+    setLastName('');
+    setDateOfBirth(null);
+    setPhoneNumber('');
+    setGender(null);
+    setPatientDescription('');
   };
 
   return (
@@ -68,6 +101,13 @@ export const AppointmentProvider = ({ children }: AppointmentProviderProps) => {
         selectedDoctorServiceId,
         selectedDate,
         selectedTimeSlot,
+        selectedCustomer,
+        firstName,
+        lastName,
+        dateOfBirth,
+        phoneNumber,
+        gender,
+        patientDescription,
         setSelectedSpecialty,
         setSelectedDoctor,
         setSelectedFacility,
@@ -75,6 +115,13 @@ export const AppointmentProvider = ({ children }: AppointmentProviderProps) => {
         setSelectedDoctorServiceId,
         setSelectedDate,
         setSelectedTimeSlot,
+        setSelectedCustomer,
+        setFirstName,
+        setLastName,
+        setDateOfBirth,
+        setPhoneNumber,
+        setGender,
+        setPatientDescription,
         clearSelections,
       }}>
       {children}

@@ -767,6 +767,9 @@ export class AppointmentService {
       },
       include: {
         patientProfile: true,
+        doctor: true,
+        service: true,
+        clinic: true,
       },
     });
 
@@ -862,42 +865,64 @@ export class AppointmentService {
       startTime: appointment.startTime,
       status: appointment.status,
       notes: appointment.notes,
-      patient: (appointment.patientProfile
-        ?? {
-            id: appointment.patientId,
+      patient: appointment.patientProfile
+        ? {
+            id: appointment.patientProfile.id,
             firstName: appointment.patientProfile.firstName,
             lastName: appointment.patientProfile.lastName,
             phone: appointment.patientProfile.phone,
             email: appointment.patientProfile.email,
           }
-        ),
-      doctor: (appointment.doctor
-        ?? {
-            id: appointment.doctorId,
+        : {
+            id: appointment.patientId,
+            firstName: '',
+            lastName: '',
+            phone: '',
+            email: '',
+          },
+      doctor: appointment.doctor
+        ? {
+            id: appointment.doctor.id,
             firstName: appointment.doctor.firstName,
             lastName: appointment.doctor.lastName,
-          }),
-      service: (appointment.service
-        ?? {
-            id: appointment.serviceId,
+          }
+        : {
+            id: appointment.doctorId,
+            firstName: '',
+            lastName: '',
+          },
+      service: appointment.service
+        ? {
+            id: appointment.service.id,
             name: appointment.service.name,
             price: appointment.service.price,
             duration: appointment.service.duration,
-          }),
-      clinic: (appointment.clinic
-        ?? {
-            id: appointment.clinicId,
+          }
+        : {
+            id: appointment.serviceId,
+            name: '',
+            price: 0,
+            duration: 0,
+          },
+      clinic: appointment.clinic
+        ? {
+            id: appointment.clinic.id,
             name: appointment.clinic.name,
-          }),
-      billing: (appointment.billing
-        ?? {
-            id: appointment.billingId,
+          }
+        : {
+            id: appointment.clinicId,
+            name: '',
+          },
+      billing: appointment.billing
+        ? {
+            id: appointment.billing.id,
             amount: appointment.billing.amount,
             status: appointment.billing.status,
             paymentMethod: appointment.billing.paymentMethod,
             notes: appointment.billing.notes,
             createdAt: appointment.billing.createdAt,
-          }),
+          }
+        : undefined,
       createdAt: appointment.createdAt,
       updatedAt: appointment.updatedAt,
     };
@@ -966,12 +991,16 @@ export class AppointmentService {
     }
 
     // Get existing appointments for the date
+    // Convert date string (YYYY-MM-DD) to Date objects for start and end of day
+    const startOfDay = DateUtil.startOfDay(new Date(date));  
+    const endOfDay = DateUtil.endOfDay(new Date(date));
+    
     const bookedAppointments = await this.prisma.appointment.findMany({
       where: {
         doctorId: doctorService.doctorId,
         startTime: {
-          gte: date,
-          lt: new Date(date.getTime() + 24 * 60 * 60 * 1000),
+          gte: startOfDay,
+          lte: endOfDay,
         },
         status: {
           in: [AppointmentStatus.UPCOMING, AppointmentStatus.ON_GOING],
