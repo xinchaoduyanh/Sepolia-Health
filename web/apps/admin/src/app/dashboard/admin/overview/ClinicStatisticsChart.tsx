@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Card, CardContent, CardHeader, CardTitle } from '@workspace/ui/components/Card'
 import { Button } from '@workspace/ui/components/Button'
 import { Skeleton } from '@workspace/ui/components/Skeleton'
-import { statisticsService } from '@/shared/lib/api-services/statistics.service'
+import { statisticsService, type AppointmentsChartDataByClinic } from '@/shared/lib/api-services/statistics.service'
 import { queryKeys } from '@/shared/lib/query-keys'
 import {
     LineChart,
@@ -246,7 +246,7 @@ function AppointmentsChart() {
         data: chartData,
         isLoading,
         error,
-    } = useQuery({
+    } = useQuery<AppointmentsChartDataByClinic>({
         queryKey: [...queryKeys.admin.statistics.all(), 'appointments-chart-by-clinic', selectedMonth],
         queryFn: () => statisticsService.getAppointmentsChartByClinic(selectedMonth),
         staleTime: 5 * 60 * 1000,

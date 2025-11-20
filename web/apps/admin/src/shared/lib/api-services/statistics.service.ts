@@ -81,7 +81,18 @@ export interface ChartData {
 
 export type UsersChartData = ChartData
 
-export type AppointmentsChartData = ChartData
+export interface AppointmentsChartDataPoint {
+    label: string
+    clinics: Array<{
+        clinicId: number
+        clinicName: string
+        appointments: number
+    }>
+}
+
+export interface AppointmentsChartData {
+    data: AppointmentsChartDataPoint[]
+}
 
 export interface StatisticsParams {
     period?: 'day' | 'week' | 'month' | 'year'
@@ -144,8 +155,8 @@ export class StatisticsService {
     /**
      * Get appointments chart data by clinic
      */
-    async getAppointmentsChartByClinic(month?: string): Promise<AppointmentsChartData> {
-        return apiClient.get<AppointmentsChartData>('/admin/statistics/appointments-chart-by-clinic', {
+    async getAppointmentsChartByClinic(month?: string): Promise<AppointmentsChartDataByClinic> {
+        return apiClient.get<AppointmentsChartDataByClinic>('/admin/statistics/appointments-chart-by-clinic', {
             params: month ? { month } : undefined,
         })
     }
