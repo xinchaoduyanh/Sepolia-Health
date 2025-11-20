@@ -65,7 +65,7 @@ export interface AppointmentsChartDataPoint {
     }>
 }
 
-export interface AppointmentsChartData {
+export interface AppointmentsChartDataByClinic {
     data: AppointmentsChartDataPoint[]
 }
 

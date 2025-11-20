@@ -71,7 +71,7 @@ export function ClinicCreateForm() {
         try {
             await createClinic.mutateAsync(requestData)
             router.push('/dashboard/clinic-management/clinic-list')
-        } catch (error) {
+        } catch (_error) {
             // Error is handled by the mutation
         }
     }

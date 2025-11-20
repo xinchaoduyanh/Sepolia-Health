@@ -164,40 +164,62 @@ function RevenueChart() {
                     </div>
                 </div>
             </CardHeader>
-            <CardContent>
-                <ResponsiveContainer width="100%" height={400}>
-                    <LineChart data={chartDataFormatted}>
-                        <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                        <XAxis dataKey="label" className="text-muted-foreground" tick={{ fill: 'currentColor' }} />
-                        <YAxis
-                            tickFormatter={value => formatCurrency(value)}
-                            className="text-muted-foreground"
-                            tick={{ fill: 'currentColor' }}
-                        />
-                        <Tooltip
-                            formatter={(value: number) => formatCurrency(value)}
-                            contentStyle={{
-                                backgroundColor: 'hsl(var(--card))',
-                                border: '1px solid hsl(var(--border))',
-                                borderRadius: '0.5rem',
-                                color: 'hsl(var(--foreground))',
-                            }}
-                            labelStyle={{ color: 'hsl(var(--foreground))' }}
-                        />
-                        <Legend wrapperStyle={{ color: 'hsl(var(--foreground))' }} iconType="line" />
-                        {clinicsToDisplay.map((clinic, index) => (
-                            <Line
-                                key={clinic.clinicId}
-                                type="monotone"
-                                dataKey={clinic.clinicName}
-                                stroke={colors[index % colors.length]}
-                                strokeWidth={2}
-                                dot={{ r: 4 }}
-                                activeDot={{ r: 6 }}
+            <CardContent className="px-6 py-6">
+                <div className="pl-4 pr-2">
+                    <ResponsiveContainer width="100%" height={450}>
+                        <LineChart data={chartDataFormatted} margin={{ top: 10, right: 30, left: 20, bottom: 10 }}>
+                            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                            <XAxis
+                                dataKey="label"
+                                className="text-muted-foreground"
+                                tick={{ fill: 'currentColor', fontSize: 12 }}
+                                angle={-45}
+                                textAnchor="end"
+                                height={80}
                             />
-                        ))}
-                    </LineChart>
-                </ResponsiveContainer>
+                            <YAxis
+                                tickFormatter={value => {
+                                    if (value >= 1000000) {
+                                        return `${(value / 1000000).toFixed(1)}M`
+                                    }
+                                    if (value >= 1000) {
+                                        return `${(value / 1000).toFixed(0)}K`
+                                    }
+                                    return value.toString()
+                                }}
+                                className="text-muted-foreground"
+                                tick={{ fill: 'currentColor', fontSize: 12 }}
+                                width={80}
+                            />
+                            <Tooltip
+                                formatter={(value: number) => formatCurrency(value)}
+                                contentStyle={{
+                                    backgroundColor: 'hsl(var(--card))',
+                                    border: '1px solid hsl(var(--border))',
+                                    borderRadius: '0.5rem',
+                                    color: 'hsl(var(--foreground))',
+                                    padding: '8px 12px',
+                                }}
+                                labelStyle={{ color: 'hsl(var(--foreground))', marginBottom: '4px' }}
+                            />
+                            <Legend
+                                wrapperStyle={{ color: 'hsl(var(--foreground))', paddingTop: '20px' }}
+                                iconType="line"
+                            />
+                            {clinicsToDisplay.map((clinic, index) => (
+                                <Line
+                                    key={clinic.clinicId}
+                                    type="monotone"
+                                    dataKey={clinic.clinicName}
+                                    stroke={colors[index % colors.length]}
+                                    strokeWidth={2.5}
+                                    dot={{ r: 4 }}
+                                    activeDot={{ r: 7 }}
+                                />
+                            ))}
+                        </LineChart>
+                    </ResponsiveContainer>
+                </div>
             </CardContent>
         </Card>
     )

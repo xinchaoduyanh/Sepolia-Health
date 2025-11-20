@@ -67,7 +67,7 @@ export function ServiceCreateForm() {
         try {
             await createService.mutateAsync(requestData)
             router.push('/dashboard/service-management/service-list')
-        } catch (error) {
+        } catch (_error) {
             // Error is handled by the mutation
         }
     }

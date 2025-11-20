@@ -87,7 +87,7 @@ export function ServiceEditForm({ serviceId }: ServiceEditFormProps) {
         try {
             await updateService.mutateAsync({ id: serviceId, data: requestData })
             setIsEditMode(false)
-        } catch (error) {
+        } catch (_error) {
             // Error is handled by the mutation
         }
     }

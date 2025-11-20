@@ -94,7 +94,7 @@ export function ClinicEditForm({ clinicId }: ClinicEditFormProps) {
         try {
             await updateClinic.mutateAsync({ id: clinicId, data: requestData })
             setIsEditMode(false)
-        } catch (error) {
+        } catch (_error) {
             // Error is handled by the mutation
         }
     }

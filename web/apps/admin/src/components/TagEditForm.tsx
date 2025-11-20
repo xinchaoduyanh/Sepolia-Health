@@ -70,7 +70,7 @@ export function TagEditForm({ tagId }: TagEditFormProps) {
         try {
             await updateTag.mutateAsync({ id: tagId, data: requestData })
             setIsEditMode(false)
-        } catch (error) {
+        } catch (_error) {
             // Error is handled by the mutation
         }
     }
