@@ -108,7 +108,7 @@ const CalendarCell = ({
                     /* Disabled */
                     renderProps.isDisabled && 'text-muted-foreground opacity-50',
                     /* Selected */
-                    renderProps.isSelected && 'bg-primary text-white data-[focused]:bg-primary',
+                    renderProps.isSelected && 'bg-primary text-primary-foreground data-[focused]:bg-primary',
                     /* Current Date */
                     renderProps.date.compare(today(getLocalTimeZone())) === 0 &&
                         !renderProps.isSelected &&

@@ -160,9 +160,7 @@ export function BsSelect<T extends BsSelectOption, M extends 'single' | 'multipl
                 <ChevronDownIcon className="w-4 h-4 text-muted-foreground" />
             </Button>
             {isClearable && <SelectClearButton />}
-            <Popover
-                className={cn('!max-h-[350px] w-(--trigger-width) flex flex-col p-1.5 gap-1', popoverClassName)}
-            >
+            <Popover className={cn('!max-h-[350px] w-(--trigger-width) flex flex-col p-1.5 gap-1', popoverClassName)}>
                 <ItemsWrapper isSearchable={isSearchable}>
                     <ListBox items={options} className="outline-hidden overflow-auto flex-1 scroll-pb-1">
                         {item => <BsSelectItem renderOption={renderOption}>{item.name}</BsSelectItem>}
@@ -202,7 +200,7 @@ function BsSelectItem<T extends BsSelectOption>(
             textValue={props.children}
             className={cn(
                 'cursor-pointer group flex items-center select-none gap-2 py-1.5 px-2 outline-hidden rounded-sm text-popover-foreground',
-                'data-[focus-visible]:bg-neutral-500/15 data-focused:bg-primary! data-focused:text-white!',
+                'data-[focus-visible]:bg-neutral-500/15 data-focused:bg-primary! data-focused:text-primary-foreground!',
             )}
         >
             {({ isSelected }) => (
@@ -212,7 +210,7 @@ function BsSelectItem<T extends BsSelectOption>(
                             {props.renderOption ? props.renderOption(props.value as T) : props.children}
                         </div>
                     </div>
-                    <div className="w-5 flex items-center justify-center text-primary-foreground group-data-focused:text-white">
+                    <div className="w-5 flex items-center justify-center text-primary-foreground group-data-focused:text-primary-foreground">
                         {isSelected && <CheckIcon size={16} />}
                     </div>
                 </>

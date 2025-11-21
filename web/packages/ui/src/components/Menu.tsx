@@ -56,7 +56,7 @@ const MenuItem = ({ children, className, ...props }: AriaMenuItemProps) => (
                 /* Disabled */
                 'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
                 /* Focused */
-                'data-[focused]:bg-primary data-[focused]:text-white',
+                'data-[focused]:bg-primary data-[focused]:text-primary-foreground',
                 /* Selection Mode */
                 'data-[selection-mode]:pl-8',
                 className,

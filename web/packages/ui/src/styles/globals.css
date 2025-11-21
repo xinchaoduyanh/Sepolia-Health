@@ -65,10 +65,10 @@
     --popover: #1e293b;
     --popover-foreground: #f8fafc;
     --popover-shadow: 0 10px 25px 0 rgb(0 0 0 / 0.4);
-    --primary: #38bdf8;
-    --primary-light: #e0f2fe;
+    --primary: #0ea5e9;
+    --primary-light: #bae6fd;
     --primary-dark: #0c4a6e;
-    --primary-foreground: #e0f2fe;
+    --primary-foreground: #ffffff;
     --secondary: #34d399;
     --secondary-light: #a7f3d0;
     --secondary-dark: #065f46;
@@ -83,8 +83,8 @@
     --success-foreground: #ffffff;
     --border: #334155;
     --input: #334155;
-    --ring: #38bdf8;
-    --chart-1: #38bdf8;
+    --ring: #0ea5e9;
+    --chart-1: #0ea5e9;
     --chart-2: #34d399;
     --chart-3: #22d3ee;
     --chart-4: #fbbf24;
