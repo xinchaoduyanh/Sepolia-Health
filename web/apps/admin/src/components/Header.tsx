@@ -31,15 +31,15 @@ export function Header() {
                 <ThemeSwitcher />
 
                 {/* Contact button */}
-                <button className="flex items-center space-x-2 px-4 py-2 text-slate-600 hover:text-slate-800 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all duration-200">
+                <button className="flex items-center space-x-2 px-4 py-2 text-muted-foreground hover:text-foreground hover:bg-muted dark:text-muted-foreground dark:hover:text-foreground dark:hover:bg-muted rounded-lg transition-all duration-200">
                     <Phone className="w-4 h-4" />
                     <span className="font-medium">Liên hệ</span>
                 </button>
 
                 {/* Profile section */}
                 <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-slate-600 to-slate-700 dark:from-slate-500 dark:to-slate-600 rounded-full flex items-center justify-center shadow-md">
-                        <User className="w-5 h-5 text-white" />
+                    <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center shadow-md">
+                        <User className="w-5 h-5 text-primary-foreground" />
                     </div>
                 </div>
             </div>
