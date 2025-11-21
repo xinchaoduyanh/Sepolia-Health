@@ -52,8 +52,18 @@ const adminMenuItems = [
     },
     {
         title: 'Khuyến mại',
-        url: '/dashboard/admin/promotions',
+        url: '/dashboard/admin/promotion-management',
         icon: Percent,
+        items: [
+            {
+                title: 'Quản lý voucher',
+                url: '/dashboard/admin/promotion-management',
+            },
+            {
+                title: 'Quản lý Voucher hiển thị',
+                url: '/dashboard/admin/promotion-display-management',
+            },
+        ],
     },
     {
         title: 'Câu hỏi thường gặp',

@@ -1,6 +1,6 @@
 'use client';
 
-import { View, Text, TouchableOpacity, ScrollView, StatusBar, Image } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StatusBar, Image, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -9,11 +9,14 @@ import { useNotificationContext } from '@/contexts/NotificationContext';
 import { useClosestAppointment } from '@/lib/api/appointments';
 import Svg, { Path } from 'react-native-svg';
 import { formatTime } from '@/utils/datetime';
+import { useFeaturedPromotion, useClaimPromotion } from '@/lib/api/promotion';
 
 export default function HomeScreen() {
   const { user } = useAuth();
   const { unreadCount } = useNotificationContext();
   const { data: closestAppointment, isLoading: isLoadingAppointment } = useClosestAppointment();
+  const { data: featuredPromotion } = useFeaturedPromotion();
+  const claimPromotion = useClaimPromotion();
 
   // Lấy patientProfiles từ user data
   const patientProfiles = user?.patientProfiles || [];
@@ -190,73 +193,143 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        <View style={{ paddingHorizontal: 24, marginTop: -150, marginBottom: 24 }}>
-          <LinearGradient
-            colors={['#1E3A5F', '#2C5282']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={{
-              borderRadius: 24,
-              padding: 24,
-              shadowColor: '#000000',
-              shadowOffset: { width: 0, height: 8 },
-              shadowOpacity: 0.25,
-              shadowRadius: 16,
-              elevation: 8,
-            }}>
-            <View
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-              }}>
-              <View style={{ flex: 1, paddingRight: 16 }}>
-                <Text
-                  style={{ fontSize: 22, fontWeight: 'bold', color: '#FFFFFF', marginBottom: 8 }}>
-                  Ưu đãi Giáng Sinh
-                </Text>
-                <Text
+        {featuredPromotion &&
+          (() => {
+            // Parse background colors
+            let gradientColors: [string, string, ...string[]] = ['#1E3A5F', '#2C5282'];
+            try {
+              const parsed = JSON.parse(featuredPromotion.display.backgroundColor);
+              if (Array.isArray(parsed) && parsed.length >= 2) {
+                gradientColors = parsed as [string, string, ...string[]];
+              }
+            } catch {
+              const colors = featuredPromotion.display.backgroundColor
+                .split(',')
+                .map((c: string) => c.trim().replace(/[\[\]"]/g, ''))
+                .filter((c: string) => c.length > 0);
+              if (colors.length >= 2) {
+                gradientColors = colors as [string, string, ...string[]];
+              }
+            }
+
+            return (
+              <View style={{ paddingHorizontal: 24, marginTop: -150, marginBottom: 24 }}>
+                <LinearGradient
+                  colors={gradientColors}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
                   style={{
-                    fontSize: 14,
-                    color: 'rgba(255,255,255,0.9)',
-                    lineHeight: 20,
-                    marginBottom: 16,
+                    borderRadius: 24,
+                    padding: 24,
+                    shadowColor: '#000000',
+                    shadowOffset: { width: 0, height: 8 },
+                    shadowOpacity: 0.25,
+                    shadowRadius: 16,
+                    elevation: 8,
                   }}>
-                  Nhận ngay voucher 10% nhân dịp Giáng Sinh sắp tới
-                </Text>
-                <TouchableOpacity
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    alignSelf: 'flex-start',
-                    borderRadius: 999,
-                    paddingHorizontal: 20,
-                    paddingVertical: 12,
-                    backgroundColor: 'rgba(255,255,255,0.25)',
-                    borderWidth: 2,
-                    borderColor: 'rgba(255,255,255,0.4)',
-                  }}>
-                  <Text
-                    style={{ fontSize: 14, fontWeight: '600', color: '#FFFFFF', marginRight: 8 }}>
-                    Nhận ngay
-                  </Text>
-                  <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
-                </TouchableOpacity>
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                    }}>
+                    <View style={{ flex: 1, paddingRight: 16 }}>
+                      <Text
+                        style={{
+                          fontSize: 22,
+                          fontWeight: 'bold',
+                          color: featuredPromotion.display.textColor,
+                          marginBottom: 8,
+                        }}>
+                        {featuredPromotion.promotion.title}
+                      </Text>
+                      <Text
+                        style={{
+                          fontSize: 14,
+                          color: featuredPromotion.display.textColor,
+                          opacity: 0.9,
+                          lineHeight: 20,
+                          marginBottom: 16,
+                        }}>
+                        {featuredPromotion.promotion.description ||
+                          `Nhận ngay voucher ${featuredPromotion.promotion.discountPercent}%`}
+                      </Text>
+                      <TouchableOpacity
+                        onPress={async () => {
+                          try {
+                            const result = await claimPromotion.mutateAsync(
+                              featuredPromotion.promotion.id
+                            );
+                            Alert.alert(
+                              result.success ? 'Thành công' : 'Thông báo',
+                              result.message,
+                              [{ text: 'OK' }]
+                            );
+                          } catch (error: any) {
+                            Alert.alert('Lỗi', error?.response?.data?.message || 'Có lỗi xảy ra');
+                          }
+                        }}
+                        disabled={claimPromotion.isPending}
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          alignSelf: 'flex-start',
+                          borderRadius: 999,
+                          paddingHorizontal: 20,
+                          paddingVertical: 12,
+                          backgroundColor: featuredPromotion.display.buttonColor,
+                          borderWidth: 2,
+                          borderColor: featuredPromotion.display.buttonTextColor,
+                          opacity: 0.4,
+                        }}>
+                        <Text
+                          style={{
+                            fontSize: 14,
+                            fontWeight: '600',
+                            color: featuredPromotion.display.buttonTextColor,
+                            marginRight: 8,
+                          }}>
+                          Nhận ngay
+                        </Text>
+                        <Ionicons
+                          name="arrow-forward"
+                          size={16}
+                          color={featuredPromotion.display.buttonTextColor}
+                        />
+                      </TouchableOpacity>
+                    </View>
+                    {featuredPromotion.display.imageUrl ? (
+                      <Image
+                        source={{ uri: featuredPromotion.display.imageUrl }}
+                        style={{
+                          height: 100,
+                          width: 100,
+                          borderRadius: 50,
+                        }}
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <View
+                        style={{
+                          height: 80,
+                          width: 80,
+                          borderRadius: 40,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          backgroundColor: 'rgba(255,255,255,0.2)',
+                        }}>
+                        <Ionicons
+                          name="gift-outline"
+                          size={40}
+                          color={featuredPromotion.display.textColor}
+                        />
+                      </View>
+                    )}
+                  </View>
+                </LinearGradient>
               </View>
-              <View
-                style={{
-                  height: 80,
-                  width: 80,
-                  borderRadius: 40,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: 'rgba(255,255,255,0.2)',
-                }}>
-                <Ionicons name="gift-outline" size={40} color="#FFFFFF" />
-              </View>
-            </View>
-          </LinearGradient>
-        </View>
+            );
+          })()}
 
         {/* Lịch trình Section */}
         <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
@@ -336,7 +409,9 @@ export default function HomeScreen() {
                       {formatTime(closestAppointment.startTime)} -{' '}
                       {(() => {
                         const startDate = new Date(closestAppointment.startTime);
-                        const endDate = new Date(startDate.getTime() + closestAppointment.service.duration * 60 * 1000);
+                        const endDate = new Date(
+                          startDate.getTime() + closestAppointment.service.duration * 60 * 1000
+                        );
                         return formatTime(endDate.toISOString());
                       })()}
                     </Text>

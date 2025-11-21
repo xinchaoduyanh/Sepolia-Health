@@ -55,6 +55,21 @@ export {
     type CreateAppTermsRequest,
     type UpdateAppTermsRequest,
 } from './app-terms.service'
+export {
+    promotionsService,
+    type Promotion,
+    type PromotionsListParams,
+    type PromotionsListResponse,
+    type CreatePromotionRequest,
+    type UpdatePromotionRequest,
+} from './promotions.service'
+export {
+    promotionDisplaysService,
+    type PromotionDisplay,
+    type CreatePromotionDisplayRequest,
+    type UpdatePromotionDisplayRequest,
+    type ApplyPromotionRequest,
+} from './promotion-displays.service'
 
 // Re-export API client
 export { apiClient } from '../api-client'
