@@ -58,6 +58,13 @@ export const appointmentApi = {
     return response.data;
   },
 
+  cancelAppointment: async (id: number) => {
+    const response = await apiClient.patch<{ message: string }>(
+      `${API_ENDPOINTS.APPOINTMENTS.BASE}/${id}`
+    );
+    return response.data;
+  },
+
   getMyAppointments: async (filters?: AppointmentFilters) => {
     const params = new URLSearchParams();
     if (filters) {
@@ -145,7 +152,7 @@ export const appointmentApi = {
         };
       }[];
     }>(
-      `${API_ENDPOINTS.APPOINTMENTS.AVAILABLE_DATES}?doctorServiceId=${doctorServiceId}&startDate=${startDate}&endDate=${endDate}`
+      `${API_ENDPOINTS.APPOINTMENTS.AVAILABLE_DATES}?doctorServiceId=${doctorServiceId}&startTime=${startDate}&endTime=${endDate}`
     );
     return response.data;
   },
@@ -211,6 +218,21 @@ export const useDeleteAppointment = () => {
 
   return useMutation({
     mutationFn: appointmentApi.deleteAppointment,
+    onSuccess: () => {
+      // Invalidate appointments list
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
+    },
+    onError: (error) => {
+      // Error is handled by UI
+    },
+  });
+};
+
+export const useCancelAppointment = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: appointmentApi.cancelAppointment,
     onSuccess: () => {
       // Invalidate appointments list
       queryClient.invalidateQueries({ queryKey: ['appointments'] });

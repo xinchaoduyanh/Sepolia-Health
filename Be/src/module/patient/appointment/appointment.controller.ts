@@ -8,6 +8,7 @@ import {
   Query,
   ParseIntPipe,
   HttpStatus,
+  Patch,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -25,6 +26,7 @@ import {
   GetAppointmentsQueryDto,
   AppointmentsListResponseDto,
 } from './dto';
+import { SuccessResponseDto } from '@/common/dto';
 
 @ApiBearerAuth()
 @Roles(Role.PATIENT)
@@ -44,19 +46,19 @@ export class AppointmentController {
     return this.appointmentService.update(id, updateAppointmentDto, userId);
   }
 
-  @Delete(':id')
-  @ApiOperation({ summary: 'Xóa lịch hẹn' })
-  @ApiResponse({ status: HttpStatus.OK, description: 'Xóa thành công' })
-  async remove(
+  @Patch(':id')
+  @ApiOperation({ summary: 'Hủy lịch hẹn' })
+  @ApiResponse({ status: HttpStatus.OK, type: SuccessResponseDto })
+  async cancelAppointment(
     @Param('id', ParseIntPipe) id: number,
     @CurrentUser('userId') userId: number,
-  ): Promise<{ message: string }> {
-    return this.appointmentService.remove(id, userId);
+  ): Promise<SuccessResponseDto> {
+    return this.appointmentService.cancelAppointment(id, userId);
   }
 
   @Get('my-appointments')
   @ApiOperation({ summary: 'Lấy lịch hẹn của bệnh nhân hiện tại' })
-  @ApiResponse({ status: HttpStatus.OK, description: 'Lấy danh sách thành công' })
+  @ApiResponse({ status: HttpStatus.OK, type: AppointmentsListResponseDto, description: 'Lấy danh sách thành công' })
   async getMyAppointments(
     @Query() query: GetAppointmentsQueryDto,
     @CurrentUser('userId') userId: number,

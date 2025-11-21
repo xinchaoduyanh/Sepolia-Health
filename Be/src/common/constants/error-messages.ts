@@ -35,4 +35,8 @@ export const ERROR_MESSAGES = {
     AMOUNT_MISMATCH: 'Số tiền không khớp',
     TRANSACTION_NOT_FOUND: 'Giao dịch không tồn tại',
   },
+  APPOINTMENT: {
+    CAN_NOT_UPDATE: 'Không thể cập nhật lịch hẹn',
+    CAN_NOT_CANCEL: 'Không thể hủy lịch hẹn',
+  },
 };

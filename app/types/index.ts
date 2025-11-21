@@ -61,3 +61,4 @@ export interface Specialty {
 }
 
 export type CustomerType = 'self' | 'other';
+export type SortOrder = 'asc' | 'desc';

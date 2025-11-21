@@ -33,6 +33,7 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { DateUtil, TimeUtil } from '@/common/utils';
 import { SortOrder } from '@/common/enum/sort.enum';
 import { ERROR_MESSAGES, MESSAGES } from '@/common/constants';
+import { SuccessResponseDto } from '@/common/dto';
 
 @Injectable()
 export class AppointmentService {
@@ -182,7 +183,27 @@ export class AppointmentService {
       throw new NotFoundException(MESSAGES.APPOINTMENT.APPOINTMENT_NOT_FOUND);
     }
 
-    return appointment;
+    // Fetch doctorServiceId
+    let doctorServiceId: number | undefined;
+    if (appointment.doctorId && appointment.serviceId) {
+      const doctorService = await this.prisma.doctorService.findUnique({
+        where: {
+          doctorId_serviceId: {
+            doctorId: appointment.doctorId,
+            serviceId: appointment.serviceId,
+          },
+        },
+        select: {
+          id: true,
+        },
+      });
+      doctorServiceId = doctorService?.id;
+    }
+
+    return {
+      ...appointment,
+      doctorServiceId,
+    };
   }
 
   /**
@@ -197,6 +218,7 @@ export class AppointmentService {
       where: { id },
       include: {
         doctor: true,
+        service: true,
         patientProfile: true,
       },
     });
@@ -213,48 +235,30 @@ export class AppointmentService {
       throw new ForbiddenException(MESSAGES.APPOINTMENT.UNAUTHORIZED_ACCESS);
     }
 
+    await this.checkConflict(
+      body.startTime,
+      body.endTime,
+      appointment.doctorId,
+      appointment.service.duration,
+      appointment.patientProfileId,
+      userId,
+    );
+    
+    if(TimeUtil.isLessThanFourHours(new Date(), appointment.startTime)) {
+      throw new ForbiddenException(ERROR_MESSAGES.APPOINTMENT.CAN_NOT_UPDATE);
+    }
+
     const updatedAppointment = await this.prisma.appointment.update({
       where: { id },
       data: {
-        // startTime,
-        // endTime,
-        // status: AppointmentStatus.UPCOMING,
-        // notes,
-        // type: AppointmentType.OFFLINE,
-        // patientProfileId: validatedPatientProfileId,
-        // doctorId: doctorService.doctorId,
-        // serviceId: doctorService.serviceId,
-        // clinicId: doctorService.doctor.clinicId,
         ...body,
       },
       include: {
-        patientProfile: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            phone: true,
-            managerId: true, // Cần managerId để gửi notification
-          },
-        },
-        doctor: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-          },
-        },
+        patientProfile: true,
+        doctor: true,
         service: true,
-        billing: {
-          select: {
-            id: true,
-            amount: true,
-            status: true,
-            paymentMethod: true,
-            notes: true,
-            createdAt: true,
-          },
-        },
+        billing: true,
+        clinic: true,
       },
     });
 
@@ -262,9 +266,9 @@ export class AppointmentService {
   }
 
   /**
-   * Delete appointment
+   * Cancel appointment
    */
-  async remove(id: number, userId: number): Promise<{ message: string }> {
+  async cancelAppointment(id: number, userId: number): Promise<SuccessResponseDto> {
     const appointment = await this.prisma.appointment.findUnique({
       where: { id },
       include: { patientProfile: true },
@@ -279,11 +283,18 @@ export class AppointmentService {
       throw new ForbiddenException(MESSAGES.APPOINTMENT.UNAUTHORIZED_ACCESS);
     }
 
-    await this.prisma.appointment.delete({
+    if(TimeUtil.isLessThanFourHours(new Date(), appointment.startTime)) {
+      throw new ForbiddenException(ERROR_MESSAGES.APPOINTMENT.CAN_NOT_CANCEL);
+    }
+
+    await this.prisma.appointment.update({
       where: { id },
+      data: {
+        status: AppointmentStatus.CANCELLED,
+      },
     });
 
-    return { message: 'Xóa lịch hẹn thành công' };
+    return new SuccessResponseDto();
   }
 
   /**
