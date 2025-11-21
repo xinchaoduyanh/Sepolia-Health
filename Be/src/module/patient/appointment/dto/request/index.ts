@@ -42,7 +42,20 @@ export class CreateAppointmentFromDoctorServiceBodyDto extends createZodDto(
   CreateAppointmentFromDoctorServiceSchema,
 ) {}
 
-export class UpdateAppointmentDto extends CreateAppointmentFromDoctorServiceBodyDto {}
+const UpdateAppointmentSchema = z.object({
+  startTime: z.iso.datetime().transform((val) => new Date(val)),
+  endTime: z.iso.datetime().transform((val) => new Date(val)),
+  notes: z.string().optional(),
+}).refine((data) => data.startTime < data.endTime, {
+  message: 'startTime must be earlier than endTime',
+  path: ['startTime'],
+}).refine((data) => data.startTime >= new Date(), {
+  message: 'startTime must not be in the past',
+  path: ['startTime'],
+}); 
+export class UpdateAppointmentDto extends createZodDto(
+  UpdateAppointmentSchema,
+) {}
 
 // Booking dto
 const GetDoctorServicesSchema = z.object({
@@ -60,7 +73,11 @@ const GetAvailableDatesSchema = z
     message: 'startTime must be earlier than endTime',
     path: ['startTime'],
   })
-  .refine((data) => data.startTime >= new Date(), {
+  .refine((data) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Start of today
+    return data.startTime >= today;
+  }, {
     message: 'startTime must not be in the past',
     path: ['startTime'],
   });

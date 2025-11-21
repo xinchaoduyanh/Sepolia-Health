@@ -90,3 +90,10 @@ export const getAppointmentEndTime = (startTime: string, durationMinutes: number
   const endDate = new Date(startDate.getTime() + durationMinutes * 60 * 1000);
   return endDate.toISOString();
 };
+
+  export const isWithin4Hours = (appointmentTime: string) => {
+    const now = new Date();
+    const apptTime = new Date(appointmentTime);
+    const diffInHours = (apptTime.getTime() - now.getTime()) / (1000 * 60 * 60);
+    return diffInHours < 4;
+  };

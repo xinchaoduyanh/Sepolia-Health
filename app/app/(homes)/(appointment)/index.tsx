@@ -9,24 +9,24 @@ import {
   Modal,
   Pressable,
   RefreshControl,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path } from 'react-native-svg';
 import { router } from 'expo-router';
-import { useMyAppointments } from '@/lib/api/appointments';
+import { useMyAppointments, useCancelAppointment } from '@/lib/api/appointments';
 import { usePayment } from '@/contexts/PaymentContext';
 import QRCode from 'react-native-qrcode-svg';
 import { formatTime } from '@/utils/datetime';
-
-type AppointmentStatus = 'UPCOMING' | 'ON_GOING' | 'COMPLETED' | 'CANCELLED';
-type PaymentStatus = 'pending' | 'paid' | 'refunded' | 'PENDING' | 'PAID' | 'REFUNDED';
+import { AppointmentStatus, PaymentStatus } from '@/types';
 
 export default function AppointmentsListScreen() {
   const [page, setPage] = useState(1);
   const [dateSortOrder, setDateSortOrder] = useState<'asc' | 'desc'>('desc');
   const [paymentFilter, setPaymentFilter] = useState<'all' | 'PENDING' | 'PAID'>('all');
   const [refreshing, setRefreshing] = useState(false);
+  const [cancellingId, setCancellingId] = useState<number | null>(null);
 
   // Always sort by date (default: Sớm nhất)
   const sortBy = 'date';
@@ -48,6 +48,7 @@ export default function AppointmentsListScreen() {
 
   const { data: appointmentsData, isLoading } = useMyAppointments(filters);
   const { hasPendingPayment, isPendingPaymentForAppointment } = usePayment();
+  const cancelAppointmentMutation = useCancelAppointment();
 
   const appointments = appointmentsData?.data || [];
   const total = appointmentsData?.total || 0;
@@ -124,6 +125,41 @@ export default function AppointmentsListScreen() {
     setRefreshing(true);
     setPage(1);
     setRefreshing(false);
+  };
+
+  const isWithin4Hours = (appointmentTime: string) => {
+    const now = new Date();
+    const apptTime = new Date(appointmentTime);
+    const diffInHours = (apptTime.getTime() - now.getTime()) / (1000 * 60 * 60);
+    return diffInHours < 4;
+  };
+
+  const handleCancelAppointment = async (appointmentId: number) => {
+    Alert.alert(
+      'Xác nhận hủy lịch',
+      'Bạn có chắc chắn muốn hủy lịch hẹn này? Hành động này không thể hoàn tác.',
+      [
+        {
+          text: 'Không',
+          style: 'cancel',
+        },
+        {
+          text: 'Hủy lịch',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setCancellingId(appointmentId);
+              await cancelAppointmentMutation.mutateAsync(appointmentId);
+              Alert.alert('Thành công', 'Đã hủy lịch hẹn thành công');
+            } catch (error: any) {
+              Alert.alert('Lỗi', error?.response?.data?.message || 'Không thể hủy lịch hẹn');
+            } finally {
+              setCancellingId(null);
+            }
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -497,34 +533,46 @@ export default function AppointmentsListScreen() {
                             <TouchableOpacity
                               className="flex-1 flex-row items-center justify-center rounded-lg border-2 bg-white py-2.5"
                               style={{
-                                borderColor: '#0284C7',
+                                borderColor: isWithin4Hours(appointment.startTime) ? '#9CA3AF' : '#0284C7',
                                 shadowColor: '#0284C7',
                                 shadowOffset: { width: 0, height: 1 },
                                 shadowOpacity: 0.1,
                                 shadowRadius: 2,
                                 elevation: 2,
-                              }}>
-                              <Ionicons name="calendar-outline" size={16} color="#0284C7" />
+                                opacity: isWithin4Hours(appointment.startTime) ? 0.5 : 1,
+                              }}
+                              disabled={isWithin4Hours(appointment.startTime)}
+                              onPress={() => router.push(`/(homes)/(appointment)/update?id=${appointment.id}`)}>
+                              <Ionicons name="calendar-outline" size={16} color={isWithin4Hours(appointment.startTime) ? '#9CA3AF' : '#0284C7'} />
                               <Text
                                 className="ml-1.5 text-sm font-semibold"
-                                style={{ color: '#0284C7' }}>
+                                style={{ color: isWithin4Hours(appointment.startTime) ? '#9CA3AF' : '#0284C7' }}>
                                 Đổi lịch
                               </Text>
                             </TouchableOpacity>
                             <TouchableOpacity
                               className="flex-1 flex-row items-center justify-center rounded-lg border-2 bg-white py-2.5"
                               style={{
-                                borderColor: '#EF4444',
+                                borderColor: isWithin4Hours(appointment.startTime) ? '#9CA3AF' : '#EF4444',
                                 shadowColor: '#EF4444',
                                 shadowOffset: { width: 0, height: 1 },
                                 shadowOpacity: 0.1,
                                 shadowRadius: 2,
                                 elevation: 2,
-                              }}>
-                              <Ionicons name="close-circle-outline" size={16} color="#EF4444" />
-                              <Text className="ml-1.5 text-sm font-semibold text-red-500">
-                                Hủy lịch
-                              </Text>
+                                opacity: isWithin4Hours(appointment.startTime) || cancellingId === appointment.id ? 0.5 : 1,
+                              }}
+                              disabled={isWithin4Hours(appointment.startTime) || cancellingId === appointment.id}
+                              onPress={() => handleCancelAppointment(appointment.id)}>
+                              {cancellingId === appointment.id ? (
+                                <ActivityIndicator size="small" color="#EF4444" />
+                              ) : (
+                                <>
+                                  <Ionicons name="close-circle-outline" size={16} color={isWithin4Hours(appointment.startTime) ? '#9CA3AF' : '#EF4444'} />
+                                  <Text className="ml-1.5 text-sm font-semibold" style={{ color: isWithin4Hours(appointment.startTime) ? '#9CA3AF' : '#EF4444' }}>
+                                    Hủy lịch
+                                  </Text>
+                                </>
+                              )}
                             </TouchableOpacity>
                           </View>
 

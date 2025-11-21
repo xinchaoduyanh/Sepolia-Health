@@ -95,6 +95,9 @@ export class AppointmentDetailResponseDto {
   @ApiProperty({ type: ClinicDto })
   clinic?: ClinicDto | null;
 
+  @ApiProperty()
+  doctorServiceId?: number;
+
   @ApiProperty({ type: BillingDto })
   billing?: BillingDto | null;
 

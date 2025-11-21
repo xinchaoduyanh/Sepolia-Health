@@ -1,10 +1,11 @@
 // Appointment Types
-
+export type AppointmentStatus = 'UPCOMING' | 'ON_GOING' | 'COMPLETED' | 'CANCELLED';
+export type PaymentStatus = 'PENDING' | 'PAID' | 'REFUNDED';
 // Billing information for appointments
 export interface Billing {
   id: number;
   amount: number;
-  status: 'PENDING' | 'PAID' | 'REFUNDED';
+  status: PaymentStatus;
   paymentMethod?: string | null;
   notes?: string | null;
   createdAt: string;
@@ -14,7 +15,7 @@ export interface Billing {
 export interface Appointment {
   id: number;
   startTime: string; // ISO datetime
-  status: 'UPCOMING' | 'ON_GOING' | 'COMPLETED' | 'CANCELLED';
+  status: AppointmentStatus;
   notes: string | null;
   patientProfile?: {
     id: number;
@@ -38,6 +39,7 @@ export interface Appointment {
     id: number;
     name: string;
   } | null;
+  doctorServiceId?: number;
   billing?: Billing | null;
   createdAt: string;
   updatedAt: string;
@@ -54,8 +56,8 @@ export interface CreateAppointmentRequest {
 
 // Request to update an existing appointment
 export interface UpdateAppointmentRequest {
-  date?: string; // ISO datetime
-  status?: 'UPCOMING' | 'ON_GOING' | 'COMPLETED' | 'CANCELLED';
+  startTime: string; // ISO datetime
+  endTime: string; // ISO datetime
   notes?: string;
 }
 
@@ -63,8 +65,8 @@ export interface UpdateAppointmentRequest {
 export interface AppointmentFilters {
   page?: number;
   limit?: number;
-  status?: 'UPCOMING' | 'ON_GOING' | 'COMPLETED' | 'CANCELLED';
-  billingStatus?: 'PENDING' | 'PAID' | 'REFUNDED';
+  status?: AppointmentStatus;
+  billingStatus?: PaymentStatus;
   doctorId?: number;
   patientId?: number;
   patientProfileId?: number;

@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StatusBar } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useAppointment } from '@/lib/api/appointments';
 import { formatDate, formatTime } from '@/utils/datetime';
@@ -12,127 +12,97 @@ export default function AppointmentDetailScreen() {
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#0ea5e9' }}>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#E0F2FE' }}>
         <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
-        <SafeAreaView className="flex-1 items-center justify-center">
-          <Text className="text-gray-500">Đang tải...</Text>
-        </SafeAreaView>
+        <Text style={{ fontSize: 16, color: '#6B7280' }}>Đang tải...</Text>
       </View>
     );
   }
 
   if (!appointment) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#0ea5e9' }}>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#E0F2FE' }}>
         <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
-        <SafeAreaView className="flex-1 items-center justify-center">
-          <Text className="text-gray-500">Không tìm thấy lịch hẹn</Text>
-        </SafeAreaView>
+        <Text style={{ fontSize: 16, color: '#6B7280' }}>Không tìm thấy lịch hẹn</Text>
       </View>
     );
   }
 
-
-
   return (
-    <View style={{ flex: 1, backgroundColor: '#0ea5e9' }}>
+    <View style={{ flex: 1, backgroundColor: '#E0F2FE' }}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
       {/* Header */}
-      <SafeAreaView style={{ backgroundColor: '#0ea5e9' }}>
-        <View className="flex-row items-center justify-center px-5 py-3">
-          <TouchableOpacity onPress={() => router.back()} className="absolute left-5 top-3.5 p-2">
+      <LinearGradient
+        colors={['#0284C7', '#06B6D4', '#10B981']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={{ paddingTop: 60, paddingBottom: 24, paddingHorizontal: 24 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 16 }}>
             <Ionicons name="arrow-back" size={24} color="white" />
           </TouchableOpacity>
-          <Text className="text-xl font-bold text-white">Thông tin đặt hẹn</Text>
+          <Text style={{ fontSize: 24, fontWeight: 'bold', color: 'white' }}>Thông tin đặt hẹn</Text>
         </View>
-      </SafeAreaView>
+      </LinearGradient>
 
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#F9FAFB' }}>
-        <ScrollView className="flex-1 px-6 py-5" showsVerticalScrollIndicator={false}>
-          {/* Section Component */}
-          {[
-            // {
-            //   title: 'Dịch vụ',
-            //   icon: 'medical',
-            //   rows: [{ label: 'Hình thức', value: 'Khám chuyên khoa tại bệnh viện' }],
-            // },
-            {
-              title: 'Khách hàng',
-              icon: 'person',
-              rows: [
-                {
-                  label: 'Khách hàng',
-                  value: `${appointment.patientProfile?.firstName} ${appointment.patientProfile?.lastName}`,
-                },
-                { label: 'Lý do khám', value: appointment.notes || 'Không có ghi chú' },
-              ],
-            },
-            {
-              title: 'Bác sĩ ',
-              icon: 'briefcase',
-              rows: [
-                {
-                  label: 'Bác sĩ',
-                  value: `${appointment.doctor.firstName} ${appointment.doctor.lastName}`,
-                },
-                {
-                  label: 'Thời gian khám',
-                  value: `${formatTime(appointment.startTime)}, ${formatDate(appointment.startTime)}`,
-                },
-                {
-                  label: 'Địa điểm',
-                  value: appointment.clinic?.name || 'Bệnh viện',
-                },
-                { label: 'Chuyên khoa', value: appointment.service.name },
-                {
-                  label: 'Phí khám tạm ứng',
-                  value: `${appointment.service.price.toLocaleString('vi-VN')} VNĐ`,
-                  bold: true,
-                },
-              ],
-            },
-          ].map((section, idx) => (
-            <View key={idx} className="mb-6 rounded-xl bg-white p-4 shadow-sm">
-              {/* Section Header */}
-              <View className="mb-4 flex-row items-center">
-                <View
-                  className="mr-3 h-8 w-8 items-center justify-center rounded-lg"
-                  style={{ backgroundColor: '#F0FDFA' }}>
-                  <Ionicons name={section.icon as any} size={20} color="#0284C7" />
-                </View>
-                <Text className="text-lg font-bold text-gray-900">{section.title}</Text>
-              </View>
-
-              {/* Rows */}
-              <View className="ml-11 space-y-2">
-                {section.rows.map((row, rIdx) => (
-                  <View key={rIdx} className="mb-3 flex-row">
-                    <Text className="w-32 text-sm text-gray-600">{row.label}:</Text>
-                    <Text className={`flex-1 text-sm text-gray-900 ${row.bold ? 'font-bold' : ''}`}>
-                      {row.value}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-          ))}
-
-          {/* Action Buttons */}
-          <View className="mb-6 flex-row gap-4">
-            <TouchableOpacity
-              className="flex-1 items-center rounded-xl border-2 bg-white py-3 shadow-sm"
-              style={{ borderColor: '#0284C7' }}>
-              <Text className="text-base font-semibold text-blue-600">Đổi lịch</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              className="flex-1 items-center rounded-xl border-2 bg-white py-3 shadow-sm"
-              style={{ borderColor: '#EF4444' }}>
-              <Text className="text-base font-semibold text-red-500">Hủy lịch</Text>
-            </TouchableOpacity>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 24 }}>
+        {/* Customer Section */}
+        <View style={{ backgroundColor: 'white', borderRadius: 16, padding: 16, marginBottom: 16 }}>
+          <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#1F2937', marginBottom: 12 }}>
+            Khách hàng
+          </Text>
+          <View style={{ marginBottom: 8 }}>
+            <Text style={{ fontSize: 14, color: '#6B7280' }}>Khách hàng</Text>
+            <Text style={{ fontSize: 16, fontWeight: '600', color: '#1F2937' }}>
+              {appointment.patientProfile?.firstName} {appointment.patientProfile?.lastName}
+            </Text>
           </View>
-        </ScrollView>
-      </SafeAreaView>
+          <View style={{ marginBottom: 8 }}>
+            <Text style={{ fontSize: 14, color: '#6B7280' }}>Lý do khám</Text>
+            <Text style={{ fontSize: 16, fontWeight: '600', color: '#1F2937' }}>
+              {appointment.notes || 'Không có ghi chú'}
+            </Text>
+          </View>
+        </View>
+
+        {/* Doctor Section */}
+        <View style={{ backgroundColor: 'white', borderRadius: 16, padding: 16, marginBottom: 16 }}>
+          <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#1F2937', marginBottom: 12 }}>
+            Bác sĩ
+          </Text>
+          <View style={{ marginBottom: 8 }}>
+            <Text style={{ fontSize: 14, color: '#6B7280' }}>Bác sĩ</Text>
+            <Text style={{ fontSize: 16, fontWeight: '600', color: '#1F2937' }}>
+              BS. {appointment.doctor.firstName} {appointment.doctor.lastName}
+            </Text>
+          </View>
+          <View style={{ marginBottom: 8 }}>
+            <Text style={{ fontSize: 14, color: '#6B7280' }}>Thời gian khám</Text>
+            <Text style={{ fontSize: 16, fontWeight: '600', color: '#1F2937' }}>
+              {formatTime(appointment.startTime)}, {formatDate(appointment.startTime)}
+            </Text>
+          </View>
+          <View style={{ marginBottom: 8 }}>
+            <Text style={{ fontSize: 14, color: '#6B7280' }}>Địa điểm</Text>
+            <Text style={{ fontSize: 16, fontWeight: '600', color: '#1F2937' }}>
+              {appointment.clinic?.name || 'Bệnh viện'}
+            </Text>
+          </View>
+          <View style={{ marginBottom: 8 }}>
+            <Text style={{ fontSize: 14, color: '#6B7280' }}>Chuyên khoa</Text>
+            <Text style={{ fontSize: 16, fontWeight: '600', color: '#1F2937' }}>
+              {appointment.service.name}
+            </Text>
+          </View>
+          <View style={{ marginBottom: 8 }}>
+            <Text style={{ fontSize: 14, color: '#6B7280' }}>Phí khám tạm ứng</Text>
+            <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#0284C7' }}>
+              {appointment.service.price.toLocaleString('vi-VN')} VNĐ
+            </Text>
+          </View>
+        </View>
+      </ScrollView>
     </View>
   );
 }
