@@ -22,6 +22,7 @@ import IORedis from 'ioredis';
 import { MeetingModule } from './meeting/meeting.module';
 import { DoctorModule } from './doctor/doctor.module';
 import { AppTermsModule } from './app-terms/app-terms.module';
+import { UserStatusGuard } from '@/common/guards/user-status.guard';
 
 @Module({
   imports: [
@@ -67,6 +68,10 @@ import { AppTermsModule } from './app-terms/app-terms.module';
       provide: APP_GUARD,
       useClass: RolesGuard,
     },
+    {
+      provide: APP_GUARD,
+      useClass: UserStatusGuard,
+    }
   ],
 })
 export class AppModule {}

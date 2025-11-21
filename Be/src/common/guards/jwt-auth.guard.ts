@@ -2,15 +2,11 @@ import {
   Injectable,
   ExecutionContext,
   UnauthorizedException,
-  ForbiddenException,
   Logger,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Reflector } from '@nestjs/core';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
-import { AuthRepository } from '@/module/auth/auth.repository';
-import { UserStatus } from '@prisma/client';
-import { ERROR_MESSAGES } from '@/common/constants/error-messages';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
@@ -18,7 +14,6 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
 
   constructor(
     private reflector: Reflector,
-    private authRepository: AuthRepository,
   ) {
     super();
   }
@@ -45,7 +40,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     return super.canActivate(context);
   }
 
-  async handleRequest(err: any, user: any, info: any) {
+  handleRequest(err: any, user: any, info: any) {
     // Handle authentication errors
     if (err) {
       this.logger.error(`Authentication error: ${err.message}`);
@@ -62,21 +57,6 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
         this.logger.warn('Authentication failed: No user and no info provided');
       }
       throw new UnauthorizedException('Token không hợp lệ hoặc đã hết hạn');
-    }
-
-    // Check if user is DEACTIVE
-    try {
-      const dbUser = await this.authRepository.findById(user.userId);
-      if (dbUser && dbUser.status === UserStatus.DEACTIVE) {
-        throw new ForbiddenException(ERROR_MESSAGES.AUTH.USER_DEACTIVE);
-      }
-    } catch (error) {
-      // If it's already a ForbiddenException, re-throw it
-      if (error instanceof ForbiddenException) {
-        throw error;
-      }
-      // For other errors (e.g., user not found), log but don't block
-      this.logger.warn(`Failed to check user status: ${error.message}`);
     }
 
     return user;
