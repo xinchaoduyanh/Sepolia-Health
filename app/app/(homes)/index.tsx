@@ -280,7 +280,6 @@ export default function HomeScreen() {
                           backgroundColor: featuredPromotion.display.buttonColor,
                           borderWidth: 2,
                           borderColor: featuredPromotion.display.buttonTextColor,
-                          opacity: 0.4,
                         }}>
                         <Text
                           style={{

@@ -555,7 +555,6 @@ export default function PromotionDisplayEditPage() {
                                     style={{
                                         backgroundColor: formData.buttonColor,
                                         borderColor: formData.buttonTextColor,
-                                        opacity: 0.4,
                                     }}
                                 >
                                     <span className="text-sm font-semibold" style={{ color: formData.buttonTextColor }}>
