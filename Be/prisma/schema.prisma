@@ -661,6 +661,8 @@ model PromotionDisplay {
   textColor       String    // Màu chữ
   buttonColor     String    // Màu nút
   buttonTextColor String    // Màu chữ nút
+  buttonText      String    @default("Nhận ngay") // Text hiển thị trên button
+  iconName        String    @default("gift-outline") // Tên icon Ionicons
   imageUrl        String?
   createdBy       Int?
   updatedBy       Int?

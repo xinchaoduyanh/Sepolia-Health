@@ -1,6 +1,15 @@
 'use client';
 
-import { View, Text, TouchableOpacity, ScrollView, StatusBar, Image, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  StatusBar,
+  Image,
+  Alert,
+  ImageBackground,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -212,120 +221,158 @@ export default function HomeScreen() {
               }
             }
 
-            return (
-              <View style={{ paddingHorizontal: 24, marginTop: -150, marginBottom: 24 }}>
-                <LinearGradient
-                  colors={gradientColors}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={{
-                    borderRadius: 24,
-                    padding: 24,
-                    shadowColor: '#000000',
-                    shadowOffset: { width: 0, height: 8 },
-                    shadowOpacity: 0.25,
-                    shadowRadius: 16,
-                    elevation: 8,
-                  }}>
-                  <View
+            // Render with background image if imageUrl exists, otherwise use gradient
+            const containerStyle = {
+              borderRadius: 24,
+              overflow: 'hidden' as const,
+              shadowColor: '#000000',
+              shadowOffset: { width: 0, height: 8 },
+              shadowOpacity: 0.25,
+              shadowRadius: 16,
+              elevation: 8,
+            };
+
+            const contentContainerStyle = {
+              padding: 24,
+            };
+
+            const renderContent = () => (
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}>
+                <View style={{ flex: 1, paddingRight: 16 }}>
+                  <Text
+                    style={{
+                      fontSize: 22,
+                      fontWeight: 'bold',
+                      color: featuredPromotion.display.textColor,
+                      marginBottom: 8,
+                    }}>
+                    {featuredPromotion.promotion.title}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      color: featuredPromotion.display.textColor,
+                      opacity: 0.9,
+                      lineHeight: 20,
+                      marginBottom: 16,
+                    }}>
+                    {featuredPromotion.promotion.description ||
+                      `Nhận ngay voucher ${featuredPromotion.promotion.discountPercent}%`}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={async () => {
+                      try {
+                        const result = await claimPromotion.mutateAsync(
+                          featuredPromotion.promotion.id
+                        );
+                        Alert.alert(result.success ? 'Thành công' : 'Thông báo', result.message, [
+                          {
+                            text: 'OK',
+                            onPress: () => {
+                              // Reset mutation state after Alert is dismissed
+                              claimPromotion.reset();
+                            },
+                          },
+                        ]);
+                      } catch (error: any) {
+                        Alert.alert('Lỗi', error?.response?.data?.message || 'Có lỗi xảy ra', [
+                          {
+                            text: 'OK',
+                            onPress: () => {
+                              // Reset mutation state after Alert is dismissed
+                              claimPromotion.reset();
+                            },
+                          },
+                        ]);
+                      }
+                    }}
+                    disabled={claimPromotion.isPending}
+                    activeOpacity={0.7}
                     style={{
                       flexDirection: 'row',
                       alignItems: 'center',
-                      justifyContent: 'space-between',
+                      alignSelf: 'flex-start',
+                      borderRadius: 999,
+                      paddingHorizontal: 20,
+                      paddingVertical: 12,
+                      backgroundColor: featuredPromotion.display.buttonColor,
+                      borderWidth: 2,
+                      borderColor: featuredPromotion.display.buttonTextColor,
+                      opacity: claimPromotion.isPending ? 0.5 : 1,
                     }}>
-                    <View style={{ flex: 1, paddingRight: 16 }}>
-                      <Text
-                        style={{
-                          fontSize: 22,
-                          fontWeight: 'bold',
-                          color: featuredPromotion.display.textColor,
-                          marginBottom: 8,
-                        }}>
-                        {featuredPromotion.promotion.title}
-                      </Text>
-                      <Text
-                        style={{
-                          fontSize: 14,
-                          color: featuredPromotion.display.textColor,
-                          opacity: 0.9,
-                          lineHeight: 20,
-                          marginBottom: 16,
-                        }}>
-                        {featuredPromotion.promotion.description ||
-                          `Nhận ngay voucher ${featuredPromotion.promotion.discountPercent}%`}
-                      </Text>
-                      <TouchableOpacity
-                        onPress={async () => {
-                          try {
-                            const result = await claimPromotion.mutateAsync(
-                              featuredPromotion.promotion.id
-                            );
-                            Alert.alert(
-                              result.success ? 'Thành công' : 'Thông báo',
-                              result.message,
-                              [{ text: 'OK' }]
-                            );
-                          } catch (error: any) {
-                            Alert.alert('Lỗi', error?.response?.data?.message || 'Có lỗi xảy ra');
-                          }
-                        }}
-                        disabled={claimPromotion.isPending}
-                        style={{
-                          flexDirection: 'row',
-                          alignItems: 'center',
-                          alignSelf: 'flex-start',
-                          borderRadius: 999,
-                          paddingHorizontal: 20,
-                          paddingVertical: 12,
-                          backgroundColor: featuredPromotion.display.buttonColor,
-                          borderWidth: 2,
-                          borderColor: featuredPromotion.display.buttonTextColor,
-                        }}>
-                        <Text
-                          style={{
-                            fontSize: 14,
-                            fontWeight: '600',
-                            color: featuredPromotion.display.buttonTextColor,
-                            marginRight: 8,
-                          }}>
-                          Nhận ngay
-                        </Text>
-                        <Ionicons
-                          name="arrow-forward"
-                          size={16}
-                          color={featuredPromotion.display.buttonTextColor}
-                        />
-                      </TouchableOpacity>
-                    </View>
-                    {featuredPromotion.display.imageUrl ? (
-                      <Image
-                        source={{ uri: featuredPromotion.display.imageUrl }}
-                        style={{
-                          height: 100,
-                          width: 100,
-                          borderRadius: 50,
-                        }}
-                        resizeMode="cover"
-                      />
-                    ) : (
+                    <Text
+                      style={{
+                        fontSize: 14,
+                        fontWeight: '600',
+                        color: featuredPromotion.display.buttonTextColor,
+                        marginRight: 8,
+                      }}>
+                      {featuredPromotion.display.buttonText || 'Nhận ngay'}
+                    </Text>
+                    <Ionicons
+                      name={(featuredPromotion.display.iconName || 'gift-outline') as any}
+                      size={16}
+                      color={featuredPromotion.display.buttonTextColor}
+                    />
+                  </TouchableOpacity>
+                </View>
+                <View
+                  style={{
+                    height: 80,
+                    width: 80,
+                    borderRadius: 40,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: 'rgba(255,255,255,0.2)',
+                  }}>
+                  <Ionicons
+                    name={(featuredPromotion.display.iconName || 'gift-outline') as any}
+                    size={40}
+                    color={featuredPromotion.display.textColor}
+                  />
+                </View>
+              </View>
+            );
+
+            return (
+              <View style={{ paddingHorizontal: 24, marginTop: -150, marginBottom: 24 }}>
+                <View style={containerStyle}>
+                  {featuredPromotion.display.imageUrl ? (
+                    // Use image background with overlay
+                    <ImageBackground
+                      source={{ uri: featuredPromotion.display.imageUrl }}
+                      style={contentContainerStyle}
+                      resizeMode="cover"
+                      imageStyle={{ borderRadius: 24 }}>
                       <View
                         style={{
-                          height: 80,
-                          width: 80,
-                          borderRadius: 40,
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          backgroundColor: 'rgba(255,255,255,0.2)',
+                          backgroundColor: 'rgba(0,0,0,0.3)',
+                          borderRadius: 24,
+                          padding: 24,
+                          marginTop: -24,
+                          marginLeft: -24,
+                          marginRight: -24,
+                          marginBottom: -24,
                         }}>
-                        <Ionicons
-                          name="gift-outline"
-                          size={40}
-                          color={featuredPromotion.display.textColor}
-                        />
+                        {renderContent()}
                       </View>
-                    )}
-                  </View>
-                </LinearGradient>
+                    </ImageBackground>
+                  ) : (
+                    // Use gradient background
+                    <LinearGradient
+                      colors={gradientColors}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={contentContainerStyle}>
+                      {renderContent()}
+                    </LinearGradient>
+                  )}
+                </View>
               </View>
             );
           })()}

@@ -78,6 +78,18 @@ export class PromotionDisplayDto {
   buttonTextColor: string;
 
   @ApiProperty({
+    description: 'Text hiển thị trên nút',
+    example: 'Nhận ngay',
+  })
+  buttonText: string;
+
+  @ApiProperty({
+    description: 'Tên icon Ionicons',
+    example: 'gift-outline',
+  })
+  iconName: string;
+
+  @ApiProperty({
     description: 'URL hình ảnh',
     example: 'https://example.com/image.jpg',
     nullable: true,

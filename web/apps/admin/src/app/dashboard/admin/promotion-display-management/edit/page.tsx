@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@workspace/ui/components/Button'
 import { InputField } from '@workspace/ui/components/InputField'
 import { Label } from '@workspace/ui/components/Label'
-import { ArrowLeft, AlertCircle, Save, Check } from 'lucide-react'
+import { ArrowLeft, AlertCircle, Save, Check, Upload, X } from 'lucide-react'
 import {
     useCreatePromotionDisplay,
     useUpdatePromotionDisplay,
@@ -18,6 +18,7 @@ import type {
     CreatePromotionDisplayRequest,
     UpdatePromotionDisplayRequest,
 } from '@/shared/lib/api-services/promotion-displays.service'
+import { uploadService } from '@/shared/lib/api-services/upload.service'
 
 export default function PromotionDisplayEditPage() {
     const router = useRouter()
@@ -42,10 +43,14 @@ export default function PromotionDisplayEditPage() {
         textColor: '#FFFFFF',
         buttonColor: 'rgba(255,255,255,0.25)',
         buttonTextColor: '#FFFFFF',
+        buttonText: 'Nhận ngay',
+        iconName: 'gift-outline',
         imageUrl: '',
     })
 
     const [fieldErrors, setFieldErrors] = useState<any>({})
+    const [isUploading, setIsUploading] = useState(false)
+    const [uploadError, setUploadError] = useState('')
 
     // Load existing data if editing
     useEffect(() => {
@@ -58,10 +63,37 @@ export default function PromotionDisplayEditPage() {
                 textColor: existingDisplay.textColor,
                 buttonColor: existingDisplay.buttonColor,
                 buttonTextColor: existingDisplay.buttonTextColor,
+                buttonText: existingDisplay.buttonText || 'Nhận ngay',
+                iconName: existingDisplay.iconName || 'gift-outline',
                 imageUrl: existingDisplay.imageUrl || '',
             })
         }
     }, [existingDisplay, isEditMode])
+
+    // Map icon name to emoji
+    const getIconEmoji = (iconName: string): string => {
+        const iconMap: Record<string, string> = {
+            'gift-outline': '🎁',
+            gift: '🎁',
+            'star-outline': '⭐',
+            star: '⭐',
+            'heart-outline': '❤️',
+            heart: '❤️',
+            'trophy-outline': '🏆',
+            trophy: '🏆',
+            'sparkles-outline': '✨',
+            sparkles: '✨',
+            'rocket-outline': '🚀',
+            rocket: '🚀',
+            'cash-outline': '💰',
+            cash: '💰',
+            'card-outline': '💳',
+            card: '💳',
+            'pricetag-outline': '🏷️',
+            pricetag: '🏷️',
+        }
+        return iconMap[iconName] || '🎁'
+    }
 
     // Parse gradient colors for preview
     const getGradientColors = (): string[] => {
@@ -72,7 +104,9 @@ export default function PromotionDisplayEditPage() {
             }
         } catch {
             // If not JSON, try to split by comma
-            const colors = formData.backgroundColor.split(',').map(c => c.trim().replace(/[\[\]"]/g, ''))
+            const colors = formData.backgroundColor
+                .split(',')
+                .map(c => c.trim().replaceAll('[', '').replaceAll(']', '').replaceAll('"', ''))
             if (colors.length >= 2) {
                 return colors
             }
@@ -105,6 +139,14 @@ export default function PromotionDisplayEditPage() {
             errors.buttonTextColor = 'Màu chữ nút không được để trống'
         }
 
+        if (!formData.buttonText.trim()) {
+            errors.buttonText = 'Text nút không được để trống'
+        }
+
+        if (!formData.iconName.trim()) {
+            errors.iconName = 'Icon không được để trống'
+        }
+
         setFieldErrors(errors)
         return Object.keys(errors).length === 0
     }
@@ -124,6 +166,8 @@ export default function PromotionDisplayEditPage() {
             textColor: formData.textColor,
             buttonColor: formData.buttonColor,
             buttonTextColor: formData.buttonTextColor,
+            buttonText: formData.buttonText,
+            iconName: formData.iconName,
             imageUrl: formData.imageUrl || undefined,
         }
 
@@ -249,117 +293,224 @@ export default function PromotionDisplayEditPage() {
                             </div>
                         </div>
 
-                        {/* Background Color (Gradient) */}
-                        <div className="space-y-2">
-                            <Label htmlFor="backgroundColor">
-                                Màu nền gradient (JSON array) <span className="text-red-500">*</span>
-                            </Label>
-                            <div className="space-y-2">
-                                <InputField
-                                    id="backgroundColor"
-                                    type="text"
-                                    placeholder='["#1E3A5F", "#2C5282"]'
-                                    value={formData.backgroundColor}
-                                    onChange={e => setFormData(prev => ({ ...prev, backgroundColor: e.target.value }))}
-                                    className={fieldErrors.backgroundColor ? 'border-red-500' : ''}
-                                />
-                                <div className="flex items-center space-x-2">
-                                    <Label className="text-xs text-muted-foreground">Màu 1:</Label>
-                                    <input
-                                        type="color"
-                                        value={(() => {
-                                            try {
-                                                const parsed = JSON.parse(formData.backgroundColor)
-                                                if (Array.isArray(parsed) && parsed[0]) return parsed[0]
-                                            } catch {
-                                                const colors = formData.backgroundColor.split(',')
-                                                if (colors[0]) return colors[0].trim().replace(/[\[\]"]/g, '')
+                        {/* Background Options */}
+                        <div className="space-y-3">
+                            <div className="flex items-center space-x-2">
+                                <Label className="text-base font-semibold">
+                                    Hình nền <span className="text-red-500">*</span>
+                                </Label>
+                                <span className="text-xs text-muted-foreground">
+                                    (Chọn màu nền gradient HOẶC tải ảnh lên)
+                                </span>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                {/* Option 1: Gradient Background */}
+                                <div className="space-y-2 border rounded-lg p-4 bg-card">
+                                    <Label htmlFor="backgroundColor" className="font-medium">
+                                        Màu nền gradient
+                                    </Label>
+                                    <div className="space-y-2">
+                                        <InputField
+                                            id="backgroundColor"
+                                            type="text"
+                                            placeholder='["#1E3A5F", "#2C5282"]'
+                                            value={formData.backgroundColor}
+                                            onChange={e =>
+                                                setFormData(prev => ({ ...prev, backgroundColor: e.target.value }))
                                             }
-                                            return '#1E3A5F'
-                                        })()}
-                                        onChange={e => {
-                                            const color1 = e.target.value
-                                            const color2 = (() => {
-                                                try {
-                                                    const parsed = JSON.parse(formData.backgroundColor)
-                                                    if (Array.isArray(parsed) && parsed[1]) return parsed[1]
-                                                } catch {
-                                                    const colors = formData.backgroundColor.split(',')
-                                                    if (colors[1]) return colors[1].trim().replace(/[\[\]"]/g, '')
-                                                }
-                                                return '#2C5282'
-                                            })()
-                                            setFormData(prev => ({
-                                                ...prev,
-                                                backgroundColor: JSON.stringify([color1, color2]),
-                                            }))
-                                        }}
-                                        className="w-12 h-12 border rounded cursor-pointer"
-                                        title="Chọn màu gradient 1"
-                                    />
-                                    <Label className="text-xs text-muted-foreground">Màu 2:</Label>
-                                    <input
-                                        type="color"
-                                        value={(() => {
-                                            try {
-                                                const parsed = JSON.parse(formData.backgroundColor)
-                                                if (Array.isArray(parsed) && parsed[1]) return parsed[1]
-                                            } catch {
-                                                const colors = formData.backgroundColor.split(',')
-                                                if (colors[1]) return colors[1].trim().replace(/[\[\]"]/g, '')
-                                            }
-                                            return '#2C5282'
-                                        })()}
-                                        onChange={e => {
-                                            const color2 = e.target.value
-                                            const color1 = (() => {
-                                                try {
-                                                    const parsed = JSON.parse(formData.backgroundColor)
-                                                    if (Array.isArray(parsed) && parsed[0]) return parsed[0]
-                                                } catch {
-                                                    const colors = formData.backgroundColor.split(',')
-                                                    if (colors[0]) return colors[0].trim().replace(/[\[\]"]/g, '')
-                                                }
-                                                return '#1E3A5F'
-                                            })()
-                                            setFormData(prev => ({
-                                                ...prev,
-                                                backgroundColor: JSON.stringify([color1, color2]),
-                                            }))
-                                        }}
-                                        className="w-12 h-12 border rounded cursor-pointer"
-                                        title="Chọn màu gradient 2"
-                                    />
-                                    <div
-                                        className="w-16 h-12 border rounded"
-                                        style={{
-                                            background: `linear-gradient(135deg, ${(() => {
-                                                try {
-                                                    const parsed = JSON.parse(formData.backgroundColor)
-                                                    if (Array.isArray(parsed)) return parsed.join(', ')
-                                                } catch {
-                                                    const colors = formData.backgroundColor.split(',')
-                                                    if (colors.length >= 2) {
-                                                        return colors
-                                                            .map(c => c.trim().replace(/[\[\]"]/g, ''))
-                                                            .join(', ')
+                                            className={fieldErrors.backgroundColor ? 'border-red-500' : ''}
+                                            disabled={!!formData.imageUrl}
+                                        />
+                                        <div className="flex items-center space-x-2">
+                                            <Label className="text-xs text-muted-foreground">Màu 1:</Label>
+                                            <input
+                                                type="color"
+                                                disabled={!!formData.imageUrl}
+                                                value={(() => {
+                                                    try {
+                                                        const parsed = JSON.parse(formData.backgroundColor)
+                                                        if (Array.isArray(parsed) && parsed[0]) return parsed[0]
+                                                    } catch {
+                                                        const colors = formData.backgroundColor.split(',')
+                                                        if (colors[0])
+                                                            return colors[0]
+                                                                .trim()
+                                                                .replaceAll('[', '')
+                                                                .replaceAll(']', '')
+                                                                .replaceAll('"', '')
                                                     }
+                                                    return '#1E3A5F'
+                                                })()}
+                                                onChange={e => {
+                                                    const color1 = e.target.value
+                                                    const color2 = (() => {
+                                                        try {
+                                                            const parsed = JSON.parse(formData.backgroundColor)
+                                                            if (Array.isArray(parsed) && parsed[1]) return parsed[1]
+                                                        } catch {
+                                                            const colors = formData.backgroundColor.split(',')
+                                                            if (colors[1])
+                                                                return colors[1]
+                                                                    .trim()
+                                                                    .replaceAll('[', '')
+                                                                    .replaceAll(']', '')
+                                                                    .replaceAll('"', '')
+                                                        }
+                                                        return '#2C5282'
+                                                    })()
+                                                    setFormData(prev => ({
+                                                        ...prev,
+                                                        backgroundColor: JSON.stringify([color1, color2]),
+                                                    }))
+                                                }}
+                                                className="w-12 h-12 border rounded cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                                title="Chọn màu gradient 1"
+                                            />
+                                            <Label className="text-xs text-muted-foreground">Màu 2:</Label>
+                                            <input
+                                                type="color"
+                                                disabled={!!formData.imageUrl}
+                                                value={(() => {
+                                                    try {
+                                                        const parsed = JSON.parse(formData.backgroundColor)
+                                                        if (Array.isArray(parsed) && parsed[1]) return parsed[1]
+                                                    } catch {
+                                                        const colors = formData.backgroundColor.split(',')
+                                                        if (colors[1])
+                                                            return colors[1]
+                                                                .trim()
+                                                                .replaceAll('[', '')
+                                                                .replaceAll(']', '')
+                                                                .replaceAll('"', '')
+                                                    }
+                                                    return '#2C5282'
+                                                })()}
+                                                onChange={e => {
+                                                    const color2 = e.target.value
+                                                    const color1 = (() => {
+                                                        try {
+                                                            const parsed = JSON.parse(formData.backgroundColor)
+                                                            if (Array.isArray(parsed) && parsed[0]) return parsed[0]
+                                                        } catch {
+                                                            const colors = formData.backgroundColor.split(',')
+                                                            if (colors[0])
+                                                                return colors[0].trim().replace(/[\[\]"]/g, '')
+                                                        }
+                                                        return '#1E3A5F'
+                                                    })()
+                                                    setFormData(prev => ({
+                                                        ...prev,
+                                                        backgroundColor: JSON.stringify([color1, color2]),
+                                                    }))
+                                                }}
+                                                className="w-12 h-12 border rounded cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                                title="Chọn màu gradient 2"
+                                            />
+                                            <div
+                                                className="w-16 h-12 border rounded"
+                                                style={{
+                                                    background: `linear-gradient(135deg, ${(() => {
+                                                        try {
+                                                            const parsed = JSON.parse(formData.backgroundColor)
+                                                            if (Array.isArray(parsed)) return parsed.join(', ')
+                                                        } catch {
+                                                            const colors = formData.backgroundColor.split(',')
+                                                            if (colors.length >= 2) {
+                                                                return colors
+                                                                    .map(c => c.trim().replace(/[\[\]"]/g, ''))
+                                                                    .join(', ')
+                                                            }
+                                                        }
+                                                        return '#1E3A5F, #2C5282'
+                                                    })()})`,
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+                                    {fieldErrors.backgroundColor && (
+                                        <div className="flex items-center space-x-2 text-sm text-red-600">
+                                            <AlertCircle className="h-4 w-4" />
+                                            <span>{fieldErrors.backgroundColor}</span>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Option 2: Image Upload */}
+                                <div className="space-y-2 border rounded-lg p-4 bg-card">
+                                    <Label htmlFor="imageUrl" className="font-medium">
+                                        Hình ảnh tải lên
+                                    </Label>
+                                    <div className="space-y-2">
+                                        <input
+                                            type="file"
+                                            id="imageUpload"
+                                            accept="image/*"
+                                            className="hidden"
+                                            onChange={async e => {
+                                                const file = e.target.files?.[0]
+                                                if (!file) return
+
+                                                // Validate file size (10MB)
+                                                if (file.size > 10 * 1024 * 1024) {
+                                                    setUploadError('Kích thước file không được vượt quá 10MB')
+                                                    return
                                                 }
-                                                return '#1E3A5F, #2C5282'
-                                            })()})`,
-                                        }}
-                                    />
+
+                                                // Validate file type
+                                                if (!file.type.startsWith('image/')) {
+                                                    setUploadError('Vui lòng chọn file ảnh')
+                                                    return
+                                                }
+
+                                                setIsUploading(true)
+                                                setUploadError('')
+
+                                                try {
+                                                    const url = await uploadService.uploadFile(file)
+                                                    setFormData(prev => ({ ...prev, imageUrl: url }))
+                                                } catch (error: any) {
+                                                    console.error('Upload error:', error)
+                                                    setUploadError(error.message || 'Lỗi khi upload ảnh')
+                                                } finally {
+                                                    setIsUploading(false)
+                                                }
+                                            }}
+                                        />
+                                        <label
+                                            htmlFor="imageUpload"
+                                            className="inline-flex items-center justify-center space-x-2 px-4 py-2 border border-border rounded-md cursor-pointer hover:bg-accent transition-colors w-full"
+                                        >
+                                            <Upload className="h-4 w-4" />
+                                            <span>{isUploading ? 'Đang tải lên...' : 'Chọn ảnh'}</span>
+                                        </label>
+
+                                        {formData.imageUrl && (
+                                            <div className="flex items-center justify-between bg-muted px-3 py-2 rounded-md">
+                                                <span className="text-xs text-muted-foreground truncate flex-1">
+                                                    ✓ Đã tải ảnh lên
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setFormData(prev => ({ ...prev, imageUrl: '' }))}
+                                                    className="text-destructive hover:text-destructive/80 ml-2"
+                                                >
+                                                    <X className="h-4 w-4" />
+                                                </button>
+                                            </div>
+                                        )}
+
+                                        {uploadError && (
+                                            <div className="flex items-center space-x-2 text-sm text-red-600">
+                                                <AlertCircle className="h-4 w-4" />
+                                                <span>{uploadError}</span>
+                                            </div>
+                                        )}
+
+                                        <p className="text-xs text-muted-foreground">PNG/JPG, tối đa 10MB</p>
+                                    </div>
                                 </div>
                             </div>
-                            {fieldErrors.backgroundColor && (
-                                <div className="flex items-center space-x-2 text-sm text-red-600">
-                                    <AlertCircle className="h-4 w-4" />
-                                    <span>{fieldErrors.backgroundColor}</span>
-                                </div>
-                            )}
-                            <p className="text-xs text-muted-foreground">
-                                Format: JSON array như ["#1E3A5F", "#2C5282"] hoặc chọn màu bằng color picker
-                            </p>
                         </div>
 
                         {/* Text Color */}
@@ -486,31 +637,64 @@ export default function PromotionDisplayEditPage() {
                             )}
                         </div>
 
-                        {/* Image URL */}
+                        {/* Button Text */}
                         <div className="space-y-2">
-                            <Label htmlFor="imageUrl">
-                                URL hình ảnh (tùy chọn)
-                                <span className="text-xs text-muted-foreground ml-2">
-                                    (Khuyến nghị: 120x120px hoặc 100x100px, định dạng PNG/JPG, tối đa 500KB)
-                                </span>
+                            <Label htmlFor="buttonText">
+                                Text nút <span className="text-red-500">*</span>
                             </Label>
                             <InputField
-                                id="imageUrl"
+                                id="buttonText"
                                 type="text"
-                                placeholder="https://example.com/image.jpg"
-                                value={formData.imageUrl}
-                                onChange={e => setFormData(prev => ({ ...prev, imageUrl: e.target.value }))}
+                                placeholder="Nhận ngay"
+                                value={formData.buttonText}
+                                onChange={e => setFormData(prev => ({ ...prev, buttonText: e.target.value }))}
+                                className={fieldErrors.buttonText ? 'border-red-500' : ''}
                             />
-                            {formData.imageUrl && (
-                                <div className="mt-2">
-                                    <img
-                                        src={formData.imageUrl}
-                                        alt="Preview"
-                                        className="w-24 h-24 rounded-full object-cover border"
-                                        onError={e => {
-                                            e.currentTarget.style.display = 'none'
-                                        }}
-                                    />
+                            {fieldErrors.buttonText && (
+                                <div className="flex items-center space-x-2 text-sm text-red-600">
+                                    <AlertCircle className="h-4 w-4" />
+                                    <span>{fieldErrors.buttonText}</span>
+                                </div>
+                            )}
+                            <p className="text-xs text-muted-foreground">
+                                Text hiển thị trên button (ví dụ: "Nhận ngay", "Claim Now", "Xem ngay",...)
+                            </p>
+                        </div>
+
+                        {/* Icon Name */}
+                        <div className="space-y-2">
+                            <Label htmlFor="iconName">
+                                Icon <span className="text-red-500">*</span>
+                            </Label>
+                            <select
+                                id="iconName"
+                                value={formData.iconName}
+                                onChange={e => setFormData(prev => ({ ...prev, iconName: e.target.value }))}
+                                className="w-full px-3 py-2 border border-border rounded-md bg-background"
+                            >
+                                <option value="gift-outline">🎁 Quà tặng (gift-outline)</option>
+                                <option value="gift">🎁 Quà tặng đầy (gift)</option>
+                                <option value="star-outline">⭐ Ngôi sao (star-outline)</option>
+                                <option value="star">⭐ Ngôi sao đầy (star)</option>
+                                <option value="heart-outline">❤️ Trái tim (heart-outline)</option>
+                                <option value="heart">❤️ Trái tim đầy (heart)</option>
+                                <option value="trophy-outline">🏆 Cúp (trophy-outline)</option>
+                                <option value="trophy">🏆 Cúp đầy (trophy)</option>
+                                <option value="sparkles-outline">✨ Lấp lánh (sparkles-outline)</option>
+                                <option value="sparkles">✨ Lấp lánh đầy (sparkles)</option>
+                                <option value="rocket-outline">🚀 Tên lửa (rocket-outline)</option>
+                                <option value="rocket">🚀 Tên lửa đầy (rocket)</option>
+                                <option value="cash-outline">💰 Tiền (cash-outline)</option>
+                                <option value="cash">💰 Tiền đầy (cash)</option>
+                                <option value="card-outline">💳 Thẻ (card-outline)</option>
+                                <option value="card">💳 Thẻ đầy (card)</option>
+                                <option value="pricetag-outline">🏷️ Nhãn giá (pricetag-outline)</option>
+                                <option value="pricetag">🏷️ Nhãn giá đầy (pricetag)</option>
+                            </select>
+                            {fieldErrors.iconName && (
+                                <div className="flex items-center space-x-2 text-sm text-red-600">
+                                    <AlertCircle className="h-4 w-4" />
+                                    <span>{fieldErrors.iconName}</span>
                                 </div>
                             )}
                         </div>
@@ -536,53 +720,62 @@ export default function PromotionDisplayEditPage() {
                 <div className="bg-card rounded-lg shadow-sm border border-border p-6">
                     <h2 className="text-xl font-semibold mb-4">Preview</h2>
                     <div
-                        className="rounded-2xl p-6 shadow-lg"
+                        className="rounded-2xl shadow-lg overflow-hidden relative"
                         style={{
-                            background: `linear-gradient(135deg, ${gradientColors[0]}, ${gradientColors[1]})`,
                             minHeight: '200px',
                         }}
                     >
-                        <div className="flex items-center justify-between">
-                            <div className="flex-1 pr-4">
-                                <h3 className="text-2xl font-bold mb-2" style={{ color: formData.textColor }}>
-                                    {selectedPromotion?.title || 'Tiêu đề promotion'}
-                                </h3>
-                                <p className="text-sm mb-4" style={{ color: formData.textColor, opacity: 0.9 }}>
-                                    {selectedPromotion?.description || 'Mô tả promotion sẽ hiển thị ở đây'}
-                                </p>
-                                <button
-                                    className="px-5 py-3 rounded-full border-2 flex items-center space-x-2"
-                                    style={{
-                                        backgroundColor: formData.buttonColor,
-                                        borderColor: formData.buttonTextColor,
-                                    }}
-                                >
-                                    <span className="text-sm font-semibold" style={{ color: formData.buttonTextColor }}>
-                                        Nhận ngay
-                                    </span>
-                                </button>
-                            </div>
-                            {formData.imageUrl ? (
-                                <img
-                                    src={formData.imageUrl}
-                                    alt="Promotion"
-                                    className="w-20 h-20 rounded-full object-cover"
-                                    style={{ border: `2px solid ${formData.textColor}`, opacity: 0.9 }}
-                                    onError={e => {
-                                        e.currentTarget.style.display = 'none'
-                                        const fallback = e.currentTarget.nextElementSibling as HTMLElement
-                                        if (fallback) fallback.style.display = 'flex'
-                                    }}
-                                />
-                            ) : null}
+                        {/* Background - Image or Gradient */}
+                        {formData.imageUrl ? (
                             <div
-                                className="w-20 h-20 rounded-full flex items-center justify-center"
+                                className="absolute inset-0 bg-cover bg-center"
                                 style={{
-                                    backgroundColor: 'rgba(255,255,255,0.2)',
-                                    display: formData.imageUrl ? 'none' : 'flex',
+                                    backgroundImage: `url(${formData.imageUrl})`,
                                 }}
-                            >
-                                <span style={{ color: formData.textColor, fontSize: '24px' }}>🎁</span>
+                            />
+                        ) : (
+                            <div
+                                className="absolute inset-0"
+                                style={{
+                                    background: `linear-gradient(135deg, ${gradientColors[0]}, ${gradientColors[1]})`,
+                                }}
+                            />
+                        )}
+
+                        {/* Overlay for image background */}
+                        {formData.imageUrl && <div className="absolute inset-0 bg-black/30" />}
+
+                        {/* Content */}
+                        <div className="relative p-6">
+                            <div className="flex items-center justify-between">
+                                <div className="flex-1 pr-4">
+                                    <h3 className="text-2xl font-bold mb-2" style={{ color: formData.textColor }}>
+                                        {selectedPromotion?.title || 'Tiêu đề promotion'}
+                                    </h3>
+                                    <p className="text-sm mb-4" style={{ color: formData.textColor, opacity: 0.9 }}>
+                                        {selectedPromotion?.description || 'Mô tả promotion sẽ hiển thị ở đây'}
+                                    </p>
+                                    <button
+                                        className="px-5 py-3 rounded-full border-2 flex items-center space-x-2"
+                                        style={{
+                                            backgroundColor: formData.buttonColor,
+                                            borderColor: formData.buttonTextColor,
+                                        }}
+                                    >
+                                        <span
+                                            className="text-sm font-semibold"
+                                            style={{ color: formData.buttonTextColor }}
+                                        >
+                                            {formData.buttonText}
+                                        </span>
+                                    </button>
+                                </div>
+                                <div
+                                    className="w-20 h-20 rounded-full flex items-center justify-center"
+                                    style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
+                                >
+                                    <span style={{ fontSize: '40px' }}>{getIconEmoji(formData.iconName)}</span>
+                                </div>
                             </div>
                         </div>
                     </div>

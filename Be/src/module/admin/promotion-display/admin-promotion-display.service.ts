@@ -262,6 +262,8 @@ export class AdminPromotionDisplayService {
       textColor: display.textColor,
       buttonColor: display.buttonColor,
       buttonTextColor: display.buttonTextColor,
+      buttonText: display.buttonText,
+      iconName: display.iconName,
       imageUrl: display.imageUrl || undefined,
       createdAt: display.createdAt,
       updatedAt: display.updatedAt,

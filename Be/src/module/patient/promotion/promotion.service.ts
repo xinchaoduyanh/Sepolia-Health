@@ -51,6 +51,8 @@ export class PromotionService {
         textColor: display.textColor,
         buttonColor: display.buttonColor,
         buttonTextColor: display.buttonTextColor,
+        buttonText: display.buttonText,
+        iconName: display.iconName,
         imageUrl: display.imageUrl || undefined,
       },
     };

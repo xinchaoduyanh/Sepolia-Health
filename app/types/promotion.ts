@@ -16,6 +16,8 @@ export interface PromotionDisplay {
   textColor: string;
   buttonColor: string;
   buttonTextColor: string;
+  buttonText: string;
+  iconName: string;
   imageUrl?: string;
 }
 

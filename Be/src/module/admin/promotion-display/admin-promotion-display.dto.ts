@@ -10,6 +10,14 @@ export const CreatePromotionDisplaySchema = z.object({
   textColor: z.string().min(1, 'Màu chữ không được để trống'),
   buttonColor: z.string().min(1, 'Màu nút không được để trống'),
   buttonTextColor: z.string().min(1, 'Màu chữ nút không được để trống'),
+  buttonText: z
+    .string()
+    .min(1, 'Text nút không được để trống')
+    .default('Nhận ngay'),
+  iconName: z
+    .string()
+    .min(1, 'Tên icon không được để trống')
+    .default('gift-outline'),
   imageUrl: z.string().optional(),
 });
 
@@ -32,6 +40,8 @@ export const UpdatePromotionDisplaySchema = z.object({
     .string()
     .min(1, 'Màu chữ nút không được để trống')
     .optional(),
+  buttonText: z.string().min(1, 'Text nút không được để trống').optional(),
+  iconName: z.string().min(1, 'Tên icon không được để trống').optional(),
   imageUrl: z.string().optional(),
 });
 
@@ -92,6 +102,20 @@ export class CreatePromotionDisplayDtoClass {
   buttonTextColor: string;
 
   @ApiProperty({
+    description: 'Text hiển thị trên nút',
+    example: 'Nhận ngay',
+    default: 'Nhận ngay',
+  })
+  buttonText: string;
+
+  @ApiProperty({
+    description: 'Tên icon Ionicons',
+    example: 'gift-outline',
+    default: 'gift-outline',
+  })
+  iconName: string;
+
+  @ApiProperty({
     description: 'URL hình ảnh',
     example: 'https://example.com/image.jpg',
     required: false,
@@ -148,6 +172,20 @@ export class UpdatePromotionDisplayDtoClass {
     required: false,
   })
   buttonTextColor?: string;
+
+  @ApiProperty({
+    description: 'Text hiển thị trên nút',
+    example: 'Nhận ngay',
+    required: false,
+  })
+  buttonText?: string;
+
+  @ApiProperty({
+    description: 'Tên icon Ionicons',
+    example: 'gift-outline',
+    required: false,
+  })
+  iconName?: string;
 
   @ApiProperty({
     description: 'URL hình ảnh',
@@ -221,6 +259,18 @@ export class PromotionDisplayResponseDto {
     example: '#FFFFFF',
   })
   buttonTextColor: string;
+
+  @ApiProperty({
+    description: 'Text hiển thị trên nút',
+    example: 'Nhận ngay',
+  })
+  buttonText: string;
+
+  @ApiProperty({
+    description: 'Tên icon Ionicons',
+    example: 'gift-outline',
+  })
+  iconName: string;
 
   @ApiProperty({
     description: 'URL hình ảnh',

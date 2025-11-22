@@ -11,6 +11,8 @@ export interface PromotionDisplay {
     textColor: string
     buttonColor: string
     buttonTextColor: string
+    buttonText: string
+    iconName: string
     imageUrl?: string
     createdAt: string
     updatedAt: string
@@ -27,6 +29,8 @@ export interface CreatePromotionDisplayRequest {
     textColor: string
     buttonColor: string
     buttonTextColor: string
+    buttonText?: string
+    iconName?: string
     imageUrl?: string
 }
 
@@ -38,6 +42,8 @@ export interface UpdatePromotionDisplayRequest {
     textColor?: string
     buttonColor?: string
     buttonTextColor?: string
+    buttonText?: string
+    iconName?: string
     imageUrl?: string
 }
 
