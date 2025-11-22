@@ -178,11 +178,13 @@ export default function AccountScreen() {
                 <Ionicons name="chevron-forward" size={18} color="#06B6D4" />
               </TouchableOpacity>
 
-              <TouchableOpacity className="flex-row items-center p-4">
+              <TouchableOpacity
+                onPress={() => router.push('/(homes)/(account)/promotions')}
+                className="flex-row items-center p-4">
                 <View className="mr-4 h-10 w-10 items-center justify-center rounded-lg bg-sky-50">
                   <Ionicons name="ticket-outline" size={20} color="#0284C7" />
                 </View>
-                <Text className="flex-1 text-base font-medium text-slate-900">Ưu đãi của tôi</Text>
+                <Text className="flex-1 text-base font-medium text-slate-900">Khuyến mãi</Text>
                 <Ionicons name="chevron-forward" size={18} color="#06B6D4" />
               </TouchableOpacity>
             </View>

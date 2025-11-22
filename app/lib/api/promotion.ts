@@ -25,8 +25,11 @@ export const promotionApi = {
   },
 
   // Get user's vouchers
-  getMyVouchers: async (): Promise<UserPromotion[]> => {
-    const response = await apiClient.get<UserPromotion[]>(API_ENDPOINTS.PROMOTIONS.MY_VOUCHERS);
+  getMyVouchers: async (status?: 'available' | 'used' | 'expired'): Promise<UserPromotion[]> => {
+    const params = status ? `?status=${status}` : '';
+    const response = await apiClient.get<UserPromotion[]>(
+      `${API_ENDPOINTS.PROMOTIONS.MY_VOUCHERS}${params}`
+    );
     return response.data;
   },
 
@@ -49,10 +52,10 @@ export const useFeaturedPromotion = () => {
   });
 };
 
-export const useMyVouchers = () => {
+export const useMyVouchers = (status?: 'available' | 'used' | 'expired') => {
   return useQuery({
-    queryKey: promotionKeys.myVouchers(),
-    queryFn: promotionApi.getMyVouchers,
+    queryKey: [...promotionKeys.myVouchers(), status],
+    queryFn: () => promotionApi.getMyVouchers(status),
     staleTime: 5 * 60 * 1000, // 5 minutes
     retry: 2,
   });

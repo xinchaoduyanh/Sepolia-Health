@@ -209,6 +209,9 @@ export const useAuth = () => {
     if (currentUser && currentUser.status === 'DEACTIVE' && !hasCheckedDeactiveRef.current) {
       hasCheckedDeactiveRef.current = true;
 
+      // Clear DEACTIVE flag immediately to prevent duplicate alerts
+      AsyncStorage.removeItem('user_deactive').catch(() => {});
+
       // Show alert and logout when user clicks OK
       Alert.alert(
         'Tài khoản bị khóa',
@@ -217,12 +220,31 @@ export const useAuth = () => {
           {
             text: 'Ok tôi hiểu',
             onPress: async () => {
-              // Reset the ref so it can check again if user logs in again
-              hasCheckedDeactiveRef.current = false;
-              // Clear DEACTIVE flag
-              await AsyncStorage.removeItem('user_deactive');
-              // Logout and redirect to login
-              await logout();
+              try {
+                // Reset the ref so it can check again if user logs in again
+                hasCheckedDeactiveRef.current = false;
+
+                // Force clear auth data immediately (don't wait for logout mutation)
+                setHasToken(false);
+                setIsLoadingAuth(false);
+                queryClient.cancelQueries({ queryKey: authKeys.profile() });
+                await clearAuth();
+
+                // Force redirect to login screen immediately
+                router.replace('/(auth)/login');
+
+                // Try logout mutation in background (don't wait for it)
+                logoutMutation.mutateAsync().catch(() => {
+                  // Ignore errors, we already cleared local data
+                });
+              } catch (error) {
+                // If anything fails, force clear and redirect anyway
+                console.log('Error during deactive logout:', error);
+                setHasToken(false);
+                setIsLoadingAuth(false);
+                await clearAuth().catch(() => {});
+                router.replace('/(auth)/login');
+              }
             },
           },
         ],
@@ -234,15 +256,26 @@ export const useAuth = () => {
     if (!currentUser) {
       hasCheckedDeactiveRef.current = false;
     }
-  }, [profileQuery.data, cachedUser, logout]);
+  }, [profileQuery.data, cachedUser, clearAuth, logoutMutation, queryClient]);
 
   // Check for DEACTIVE flag from API errors
   useEffect(() => {
     const checkDeactiveFlag = async () => {
       try {
         const deactiveFlag = await AsyncStorage.getItem('user_deactive');
-        if (deactiveFlag === 'true' && !hasCheckedDeactiveRef.current) {
+        // Only show alert if flag exists AND we haven't checked yet AND user is not already deactive from profile
+        const currentUser = profileQuery.data || cachedUser;
+        const isUserDeactiveFromProfile = currentUser?.status === 'DEACTIVE';
+
+        if (
+          deactiveFlag === 'true' &&
+          !hasCheckedDeactiveRef.current &&
+          !isUserDeactiveFromProfile
+        ) {
           hasCheckedDeactiveRef.current = true;
+
+          // Clear DEACTIVE flag immediately to prevent duplicate alerts
+          await AsyncStorage.removeItem('user_deactive');
 
           // Show alert and logout when user clicks OK
           Alert.alert(
@@ -252,12 +285,31 @@ export const useAuth = () => {
               {
                 text: 'Ok tôi hiểu',
                 onPress: async () => {
-                  // Reset the ref so it can check again if user logs in again
-                  hasCheckedDeactiveRef.current = false;
-                  // Clear DEACTIVE flag
-                  await AsyncStorage.removeItem('user_deactive');
-                  // Logout and redirect to login
-                  await logout();
+                  try {
+                    // Reset the ref so it can check again if user logs in again
+                    hasCheckedDeactiveRef.current = false;
+
+                    // Force clear auth data immediately (don't wait for logout mutation)
+                    setHasToken(false);
+                    setIsLoadingAuth(false);
+                    queryClient.cancelQueries({ queryKey: authKeys.profile() });
+                    await clearAuth();
+
+                    // Force redirect to login screen immediately
+                    router.replace('/(auth)/login');
+
+                    // Try logout mutation in background (don't wait for it)
+                    logoutMutation.mutateAsync().catch(() => {
+                      // Ignore errors, we already cleared local data
+                    });
+                  } catch (error) {
+                    // If anything fails, force clear and redirect anyway
+                    console.log('Error during deactive logout:', error);
+                    setHasToken(false);
+                    setIsLoadingAuth(false);
+                    await clearAuth().catch(() => {});
+                    router.replace('/(auth)/login');
+                  }
                 },
               },
             ],
@@ -274,7 +326,7 @@ export const useAuth = () => {
     const interval = setInterval(checkDeactiveFlag, 2000); // Check every 2 seconds
 
     return () => clearInterval(interval);
-  }, [logout]);
+  }, [clearAuth, logoutMutation, queryClient, profileQuery.data, cachedUser]);
 
   // Auto redirect on logout - removed to prevent navigation before mount
 

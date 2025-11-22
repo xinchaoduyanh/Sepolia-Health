@@ -45,34 +45,80 @@ class ApiClient {
         const originalRequest = error.config;
 
         // Check for DEACTIVE status (403 with specific message)
-        if (error.response?.status === 403) {
-          const errorMessage = error.response?.data?.message || '';
-          if (errorMessage.includes('Tài khoản bạn bị khóa')) {
-            // Store DEACTIVE flag in AsyncStorage
-            await AsyncStorage.setItem('user_deactive', 'true');
-          }
+        const isDeactiveError =
+          error.response?.status === 403 &&
+          (error.response?.data?.message?.includes('Tài khoản này hiện đang bị khóa') ||
+            error.response?.data?.message?.includes('Tài khoản bạn bị khóa'));
+
+        if (isDeactiveError) {
+          // Store DEACTIVE flag in AsyncStorage
+          await AsyncStorage.setItem('user_deactive', 'true');
+          // Clear token and refresh token immediately to prevent any further API calls
+          await this.clearToken();
+          await AsyncStorage.removeItem('refresh_token');
+          // Don't retry or call refresh token - return error directly
+          return Promise.reject(this.handleError(error));
         }
 
-        // Handle 401 Unauthorized
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        // Handle 401 Unauthorized - BUT don't retry for login/register/auth endpoints
+        // Also don't retry if we already detected deactive
+        const isAuthEndpoint =
+          originalRequest.url?.includes('/auth/login') ||
+          originalRequest.url?.includes('/auth/register') ||
+          originalRequest.url?.includes('/auth/refresh-token');
+
+        // ALWAYS check if user is already marked as deactive BEFORE attempting refresh
+        const deactiveFlag = await AsyncStorage.getItem('user_deactive');
+        const isUserDeactive = deactiveFlag === 'true';
+
+        // If user is deactive, don't attempt refresh token at all
+        if (isUserDeactive) {
+          // Clear tokens if not already cleared
+          await this.clearToken();
+          // Return error directly without attempting refresh
+          return Promise.reject(this.handleError(error));
+        }
+
+        if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
           originalRequest._retry = true;
 
           try {
-            await this.refreshToken();
-            return this.client(originalRequest);
+            // Double check deactive flag before attempting refresh
+            const currentDeactiveFlag = await AsyncStorage.getItem('user_deactive');
+            if (currentDeactiveFlag === 'true') {
+              await this.clearToken();
+              return Promise.reject(this.handleError(error));
+            }
+
+            const refreshSuccess = await this.refreshToken();
+            // Only retry if refresh token succeeded (response is 200)
+            if (refreshSuccess) {
+              // Triple check deactive flag before retrying request
+              const finalDeactiveFlag = await AsyncStorage.getItem('user_deactive');
+              if (finalDeactiveFlag === 'true') {
+                await this.clearToken();
+                return Promise.reject(this.handleError(error));
+              }
+              return this.client(originalRequest);
+            }
           } catch (refreshError: any) {
             // Check if refresh token failed due to DEACTIVE
-            if (refreshError.response?.status === 403) {
-              const errorMessage = refreshError.response?.data?.message || '';
-              if (errorMessage.includes('Tài khoản bạn bị khóa')) {
-                await AsyncStorage.setItem('user_deactive', 'true');
-              }
+            const isRefreshDeactiveError =
+              refreshError.response?.status === 403 &&
+              (refreshError.response?.data?.message?.includes('Tài khoản này hiện đang bị khóa') ||
+                refreshError.response?.data?.message?.includes('Tài khoản bạn bị khóa'));
+
+            if (isRefreshDeactiveError || refreshError.message === 'User account is deactive') {
+              await AsyncStorage.setItem('user_deactive', 'true');
+              await this.clearToken();
             }
             await this.logout();
             return Promise.reject(refreshError);
           }
         }
 
+        // For auth endpoints with 401, return error directly without retry
+        // This ensures login form can catch and display the error message
         return Promise.reject(this.handleError(error));
       }
     );
@@ -97,6 +143,8 @@ class ApiClient {
   public async clearToken() {
     this.token = null;
     await AsyncStorage.removeItem('auth_token');
+    // Also clear refresh token to prevent any refresh attempts
+    await AsyncStorage.removeItem('refresh_token');
   }
 
   // IMPROVEMENT: Thêm method để kiểm tra token một cách đồng bộ
@@ -114,10 +162,22 @@ class ApiClient {
     }
   }
 
-  private async refreshToken() {
+  private async refreshToken(): Promise<boolean> {
     try {
+      // Check if user is deactive BEFORE attempting refresh
+      const deactiveFlag = await AsyncStorage.getItem('user_deactive');
+      if (deactiveFlag === 'true') {
+        // User is deactive, don't attempt refresh
+        throw new Error('User account is deactive');
+      }
+
       const refreshToken = await AsyncStorage.getItem('refresh_token');
       if (!refreshToken) {
+        // Don't throw error if user is deactive to avoid confusing messages
+        const isDeactive = await AsyncStorage.getItem('user_deactive');
+        if (isDeactive === 'true') {
+          throw new Error('User account is deactive');
+        }
         throw new Error('No refresh token available');
       }
 
@@ -125,12 +185,45 @@ class ApiClient {
         refreshToken,
       });
 
-      const { accessToken, refreshToken: newRefreshToken } = response.data.data;
-      await this.setToken(accessToken);
-      await AsyncStorage.setItem('refresh_token', newRefreshToken);
-    } catch (err) {
+      // Only proceed if response status is 200 (success)
+      if (response.status === 200 && response.data) {
+        const { accessToken, refreshToken: newRefreshToken } = response.data.data || response.data;
+
+        if (accessToken) {
+          await this.setToken(accessToken);
+          if (newRefreshToken) {
+            await AsyncStorage.setItem('refresh_token', newRefreshToken);
+          }
+          return true;
+        }
+      }
+
+      // If not 200 or missing data, refresh failed
+      throw new Error('Refresh token response invalid');
+    } catch (err: any) {
       console.error('Refresh token failed:', err);
-      throw new Error('Failed to refresh token');
+
+      // Check if error is due to deactive
+      const isDeactiveError =
+        err.response?.status === 403 &&
+        (err.response?.data?.message?.includes('Tài khoản này hiện đang bị khóa') ||
+          err.response?.data?.message?.includes('Tài khoản bạn bị khóa'));
+
+      if (isDeactiveError || err.message === 'User account is deactive') {
+        await AsyncStorage.setItem('user_deactive', 'true');
+        await this.clearToken();
+        await AsyncStorage.removeItem('refresh_token');
+      }
+
+      // If error has response data, preserve it
+      if (err.response?.data) {
+        throw err;
+      }
+
+      // Otherwise throw a generic error
+      const error = new Error(err.message || 'Failed to refresh token');
+      (error as any).response = err.response;
+      throw error;
     }
   }
 

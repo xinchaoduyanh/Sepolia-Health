@@ -56,7 +56,10 @@ export class PromotionService {
     };
   }
 
-  async getMyVouchers(userId: number): Promise<UserPromotionDto[]> {
+  async getMyVouchers(
+    userId: number,
+    status?: 'available' | 'used' | 'expired',
+  ): Promise<UserPromotionDto[]> {
     const userPromotions = await this.prisma.userPromotion.findMany({
       where: {
         userId,
@@ -69,7 +72,25 @@ export class PromotionService {
       },
     });
 
-    return userPromotions.map((up) => ({
+    const now = new Date();
+    let filteredPromotions = userPromotions;
+
+    // Filter by status if provided
+    if (status === 'used') {
+      // Voucher đã sử dụng là voucher có usedAt khác null
+      filteredPromotions = userPromotions.filter((up) => up.usedAt !== null);
+    } else if (status === 'available') {
+      // Voucher còn hạn là voucher chưa sử dụng (usedAt === null) và chưa hết hạn
+      filteredPromotions = userPromotions.filter(
+        (up) => up.usedAt === null && new Date(up.promotion.validTo) >= now,
+      );
+    } else if (status === 'expired') {
+      filteredPromotions = userPromotions.filter(
+        (up) => new Date(up.promotion.validTo) < now,
+      );
+    }
+
+    return filteredPromotions.map((up) => ({
       id: up.id,
       promotion: {
         id: up.promotion.id,

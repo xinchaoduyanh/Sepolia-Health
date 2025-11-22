@@ -2,12 +2,12 @@ export const ERROR_MESSAGES = {
   AUTH: {
     USER_NOT_FOUND: 'Không tìm thấy người dùng',
     REFRESH_TOKEN_INVALID: 'Refresh token không hợp lệ',
-    USER_NOT_VERIFIED: 'Người dùng chưa được xác thực',
+    USER_NOT_VERIFIED: 'Chưa xác thực',
     INVALID_CREADENTIALS: 'Email hoặc mật khẩu không hợp lệ',
     EMAIL_ALREADY_EXISTS: 'Email đã được sử dụng',
     INVALID_OTP: 'Mã OTP không hợp lệ hoặc đã hết hạn',
     COMPLETE_REGISTER_SUCCESS: 'Đăng ký hoàn tất thành công',
-    USER_DEACTIVE: 'Tài khoản bạn bị khóa',
+    USER_DEACTIVE: 'Tài khoản này hiện đang bị khóa',
   },
   USER: {
     USER_NOT_FOUND: 'Không tìm thấy người dùng',

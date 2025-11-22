@@ -7,6 +7,7 @@ import {
   HttpStatus,
   UseGuards,
   ParseIntPipe,
+  Query,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -53,7 +54,11 @@ export class PromotionController {
 
   @Get('my-vouchers')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Lấy danh sách vouchers đã claim' })
+  @ApiOperation({
+    summary: 'Lấy danh sách vouchers đã claim',
+    description:
+      'Có thể filter theo status: available (còn hạn), used (đã sử dụng), expired (hết hạn)',
+  })
   @ApiResponse({
     status: 200,
     description: 'Lấy danh sách vouchers thành công',
@@ -62,8 +67,9 @@ export class PromotionController {
   @ApiResponse({ status: 401, description: 'Không có quyền truy cập' })
   async getMyVouchers(
     @CurrentUser('userId') userId: number,
+    @Query('status') status?: 'available' | 'used' | 'expired',
   ): Promise<UserPromotionDto[]> {
-    return this.promotionService.getMyVouchers(userId);
+    return this.promotionService.getMyVouchers(userId, status);
   }
 
   @Post(':id/claim')
