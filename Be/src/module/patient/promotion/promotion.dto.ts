@@ -131,12 +131,6 @@ export class UserPromotionDto {
   claimedAt: Date;
 
   @ApiProperty({
-    description: 'Đã sử dụng chưa',
-    example: false,
-  })
-  isUsed: boolean;
-
-  @ApiProperty({
     description: 'Thời điểm sử dụng',
     example: '2024-12-01T00:00:00.000Z',
     nullable: true,

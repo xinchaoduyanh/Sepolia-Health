@@ -1,8 +1,27 @@
 // Payment-related types
 
+export interface ApplyVoucherPayload {
+  appointmentId: number;
+  userPromotionId: number;
+}
+
+export interface ApplyVoucherResponse {
+  originalAmount: number;
+  discountAmount: number;
+  finalAmount: number;
+  voucherInfo: {
+    id: number;
+    title: string;
+    code: string;
+    discountPercent: number;
+    maxDiscountAmount: number;
+  };
+}
+
 export interface CreateQrScanPayload {
   appointmentId: number;
   amount: number;
+  userPromotionId?: number;
 }
 
 export interface QrScanResponse {

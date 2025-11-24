@@ -70,7 +70,51 @@ const CheckPaymentStatusResponseSchema = z.object({
   paymentStatus: z.enum(['PENDING', 'PAID', 'REFUNDED']),
 });
 
-export class CreateQrScanDto extends createZodDto(CreateQrScanSchema) {}
+// Apply Voucher DTO
+const ApplyVoucherSchema = z.object({
+  appointmentId: z
+    .number()
+    .int()
+    .positive('Appointment ID phải là số nguyên dương'),
+  userPromotionId: z
+    .number()
+    .int()
+    .positive('User Promotion ID phải là số nguyên dương'),
+});
+
+// Apply Voucher Response DTO
+const ApplyVoucherResponseSchema = z.object({
+  originalAmount: z.number(),
+  discountAmount: z.number(),
+  finalAmount: z.number(),
+  voucherInfo: z.object({
+    id: z.number(),
+    title: z.string(),
+    code: z.string(),
+    discountPercent: z.number(),
+    maxDiscountAmount: z.number(),
+  }),
+});
+
+// Update CreateQrScanSchema to include optional userPromotionId
+const CreateQrScanSchemaUpdated = z.object({
+  appointmentId: z
+    .number()
+    .int()
+    .positive('Appointment ID phải là số nguyên dương'),
+  amount: z.number().positive('Số tiền phải lớn hơn 0'),
+  userPromotionId: z
+    .number()
+    .int()
+    .positive('User Promotion ID phải là số nguyên dương')
+    .optional(),
+});
+
+export class CreateQrScanDto extends createZodDto(CreateQrScanSchemaUpdated) {}
+export class ApplyVoucherDto extends createZodDto(ApplyVoucherSchema) {}
+export class ApplyVoucherResponseDto extends createZodDto(
+  ApplyVoucherResponseSchema,
+) {}
 export class QrScanResponseDto extends createZodDto(QrScanResponseSchema) {}
 export class SepayWebhookPayloadDto extends createZodDto(
   SepayWebhookPayloadSchema,

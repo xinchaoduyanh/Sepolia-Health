@@ -24,12 +24,37 @@ import {
   CancelPaymentCodeResponseDto,
   CheckPaymentStatusDto,
   CheckPaymentStatusResponseDto,
+  ApplyVoucherDto,
+  ApplyVoucherResponseDto,
 } from './dto';
 
 @ApiTags('Payment')
 @Controller('payment')
 export class PaymentController {
   constructor(private readonly paymentService: PaymentService) {}
+
+  @Post('apply-voucher')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Áp dụng voucher cho appointment' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    type: ApplyVoucherResponseDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Dữ liệu không hợp lệ hoặc voucher không hợp lệ',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Appointment hoặc voucher không tồn tại',
+  })
+  async applyVoucher(
+    @Body() applyVoucherDto: ApplyVoucherDto,
+    @CurrentUser('userId') userId: number,
+  ): Promise<ApplyVoucherResponseDto> {
+    return this.paymentService.applyVoucher(applyVoucherDto, userId);
+  }
 
   @Post('create-qr-scan')
   @HttpCode(HttpStatus.OK)

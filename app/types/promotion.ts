@@ -30,7 +30,6 @@ export interface UserPromotion {
   id: number;
   promotion: Promotion;
   claimedAt: string;
-  isUsed: boolean;
   usedAt?: string;
 }
 
