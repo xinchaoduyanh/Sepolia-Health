@@ -2,7 +2,6 @@ import {
   Controller,
   Patch,
   Param,
-  UseGuards,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
@@ -11,26 +10,20 @@ import {
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
-  ApiParam,
 } from '@nestjs/swagger';
 import { NotificationService } from './notification.service';
-import { JwtAuthGuard } from '@/common/guards';
 import { CurrentUser } from '@/common/decorators';
 
+@ApiBearerAuth()
 @ApiTags('Notifications')
 @Controller('notifications')
-@ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
 export class NotificationController {
-  constructor(private readonly notificationService: NotificationService) {}
+  constructor(private readonly notificationService: NotificationService) { }
 
   @Patch(':userId/:messageId/read')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Mark notification as read' })
-  @ApiParam({ name: 'userId', description: 'User ID' })
-  @ApiParam({ name: 'messageId', description: 'Message ID' })
-  @ApiResponse({ status: 204, description: 'Notification marked as read' })
-  @ApiResponse({ status: 404, description: 'Notification not found' })
+  @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Notification marked as read' })
   async markAsRead(
     @Param('userId') userId: string,
     @Param('messageId') messageId: string,
