@@ -32,29 +32,9 @@ export { clinicsService } from './clinics.service'
 export { uploadService } from './upload.service'
 export { chatService, type ChatChannel, type Clinic, type ChatChannelResponse } from './chat.service'
 export { videoService, type VideoTokenResponse } from './video.service'
-export {
-    qnaService,
-    type Question,
-    type QuestionDetail,
-    type Answer,
-    type Tag,
-    type QuestionFilters,
-    type QuestionsListResponse,
-    type CreateAnswerRequest,
-    type VoteRequest,
-    type VoteType,
-    type SetBestAnswerRequest,
-} from './qna.service'
-export {
-    appTermsService,
-    type AppTerms,
-    type AppTermsType,
-    type AppTermsListParams,
-    type AppTermsListResponse,
-    type AppTermsDetailResponse,
-    type CreateAppTermsRequest,
-    type UpdateAppTermsRequest,
-} from './app-terms.service'
+export * from './qna.service'
+export * from './app-terms.service'
+export * from './appointment.service'
 
 // Re-export API client
 export { apiClient } from '../api-client'

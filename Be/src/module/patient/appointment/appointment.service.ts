@@ -337,7 +337,7 @@ export class AppointmentService {
 
     // Ensure sortBy and sortOrder are properly set
     const finalSortBy = sortBy || 'date';
-    const finalSortOrder = sortOrder || 'desc';
+    const finalSortOrder = sortOrder || SortOrder.DESC;
 
     const skip = (Number(page) - 1) * Number(limit);
 
