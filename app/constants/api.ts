@@ -61,6 +61,7 @@ export const API_ENDPOINTS = {
 
   // Payment
   PAYMENT: {
+    APPLY_VOUCHER: '/payment/apply-voucher',
     CREATE_QR_SCAN: '/payment/create-qr-scan',
     CHECK_STATUS: '/payment/check-payment-status',
     CANCEL: '/payment/cancel-payment-code',

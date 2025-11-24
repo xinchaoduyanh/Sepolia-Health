@@ -5,9 +5,16 @@ import {
   QrScanResponse,
   CheckPaymentStatusResponse,
   CancelPaymentResponse,
+  ApplyVoucherPayload,
+  ApplyVoucherResponse,
 } from '@/types/payment';
 
 // API Functions
+export const applyVoucher = async (payload: ApplyVoucherPayload): Promise<ApplyVoucherResponse> => {
+  const response = await apiClient.post('/payment/apply-voucher', payload);
+  return response.data;
+};
+
 export const createQrScan = async (payload: CreateQrScanPayload): Promise<QrScanResponse> => {
   const response = await apiClient.post('/payment/create-qr-scan', payload);
   return response.data;
@@ -26,6 +33,12 @@ export const cancelPayment = async (appointmentId: number): Promise<CancelPaymen
 };
 
 // React Query Hooks
+export const useApplyVoucher = () => {
+  return useMutation({
+    mutationFn: applyVoucher,
+  });
+};
+
 export const useCreateQrScan = () => {
   return useMutation({
     mutationFn: createQrScan,
@@ -46,5 +59,3 @@ export const useCancelPayment = () => {
     mutationFn: cancelPayment,
   });
 };
-
-

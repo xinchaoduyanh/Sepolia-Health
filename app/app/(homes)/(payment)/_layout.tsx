@@ -9,6 +9,18 @@ export default function PaymentLayout() {
           headerShown: false,
         }}
       />
+      <Stack.Screen
+        name="voucher-select"
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="qr-payment"
+        options={{
+          headerShown: false,
+        }}
+      />
     </Stack>
   );
 }

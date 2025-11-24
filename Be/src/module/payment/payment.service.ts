@@ -14,6 +14,8 @@ import {
   CreateQrScanDto,
   QrScanResponseDto,
   SepayWebhookPayloadDto,
+  ApplyVoucherDto,
+  ApplyVoucherResponseDto,
 } from './dto';
 
 @Injectable()
@@ -26,22 +28,133 @@ export class PaymentService {
   ) {}
 
   /**
+   * Apply voucher to appointment billing
+   */
+  async applyVoucher(
+    applyVoucherDto: ApplyVoucherDto,
+    userId: number,
+  ): Promise<ApplyVoucherResponseDto> {
+    const { appointmentId, userPromotionId } = applyVoucherDto;
+
+    // Check if appointment exists and belongs to user
+    const appointment = await this.prisma.appointment.findUnique({
+      where: { id: appointmentId },
+      include: {
+        patientProfile: true,
+        billing: true,
+        service: true,
+      },
+    });
+
+    if (!appointment) {
+      throw new NotFoundException(ERROR_MESSAGES.PAYMENT.APPOINTMENT_NOT_FOUND);
+    }
+
+    // Check permission
+    if (appointment.patientProfile?.managerId !== userId) {
+      throw new BadRequestException(
+        'Bạn không có quyền áp dụng voucher cho appointment này',
+      );
+    }
+
+    // Validate billing exists
+    if (!appointment.billing) {
+      throw new BadRequestException(
+        'Billing không tồn tại cho appointment này',
+      );
+    }
+
+    if (appointment.billing.status === PaymentStatus.PAID) {
+      throw new BadRequestException(
+        'Không thể áp dụng voucher cho appointment đã thanh toán',
+      );
+    }
+
+    // Get user promotion
+    const userPromotion = await this.prisma.userPromotion.findUnique({
+      where: { id: userPromotionId },
+      include: { promotion: true },
+    });
+
+    if (!userPromotion) {
+      throw new NotFoundException('Không tìm thấy voucher');
+    }
+
+    // Validate user owns the voucher
+    if (userPromotion.userId !== userId) {
+      throw new BadRequestException('Bạn không sở hữu voucher này');
+    }
+
+    // Validate voucher chưa được sử dụng
+    if (userPromotion.usedAt !== null) {
+      throw new BadRequestException('Voucher này đã được sử dụng');
+    }
+
+    // Validate voucher còn hạn
+    const now = new Date();
+    if (
+      now < userPromotion.promotion.validFrom ||
+      now > userPromotion.promotion.validTo
+    ) {
+      throw new BadRequestException('Voucher đã hết hạn');
+    }
+
+    // Get original amount from service price (billing.amount giữ nguyên)
+    const originalAmount =
+      appointment.service?.price || appointment.billing.amount;
+
+    // Calculate discount (FE cũng tính, nhưng BE cũng tính để trả về)
+    const discountAmount = Math.min(
+      (originalAmount * userPromotion.promotion.discountPercent) / 100,
+      userPromotion.promotion.maxDiscountAmount,
+    );
+
+    const finalAmount = Math.max(0, originalAmount - discountAmount);
+
+    // KHÔNG lưu vào billing, chỉ tính toán và trả về
+    // userPromotionId sẽ được lưu vào transaction khi tạo QR
+
+    return {
+      originalAmount,
+      discountAmount,
+      finalAmount,
+      voucherInfo: {
+        id: userPromotion.promotion.id,
+        title: userPromotion.promotion.title,
+        code: userPromotion.promotion.code,
+        discountPercent: userPromotion.promotion.discountPercent,
+        maxDiscountAmount: userPromotion.promotion.maxDiscountAmount,
+      },
+    };
+  }
+
+  /**
    * Create QR code for payment
    */
   async createQrScan(
     createQrScanDto: CreateQrScanDto,
     userId: number,
   ): Promise<QrScanResponseDto> {
-    const { appointmentId, amount } = createQrScanDto;
+    const { appointmentId, amount, userPromotionId } = createQrScanDto;
 
     // Check if appointment exists and needs payment
     const appointment = await this.prisma.appointment.findUnique({
       where: { id: appointmentId },
-      include: { billing: true },
+      include: {
+        billing: true,
+        patientProfile: true,
+      },
     });
 
     if (!appointment) {
       throw new NotFoundException(ERROR_MESSAGES.PAYMENT.APPOINTMENT_NOT_FOUND);
+    }
+
+    // Check permission
+    if (appointment.patientProfile?.managerId !== userId) {
+      throw new BadRequestException(
+        'Bạn không có quyền tạo mã QR thanh toán cho appointment này',
+      );
     }
 
     // Validate billing exists (should be created with appointment)
@@ -59,14 +172,41 @@ export class PaymentService {
       );
     }
 
-    // Update billing amount if different
-    if (billing.amount !== amount) {
-      await this.prisma.billing.update({
-        where: { id: billing.id },
-        data: { amount, paymentMethod: 'ONLINE' },
+    // If userPromotionId is provided, validate voucher exists and belongs to user
+    // Không cần check usedAt vì chỉ khi thanh toán thành công mới update usedAt
+    if (userPromotionId) {
+      const userPromotion = await this.prisma.userPromotion.findUnique({
+        where: { id: userPromotionId },
+        include: { promotion: true },
       });
-    } else if (!billing.paymentMethod) {
-      // Set payment method to ONLINE if not set
+
+      if (!userPromotion) {
+        throw new NotFoundException('Không tìm thấy voucher');
+      }
+
+      if (userPromotion.userId !== userId) {
+        throw new BadRequestException('Bạn không sở hữu voucher này');
+      }
+
+      // Validate voucher còn hạn
+      const now = new Date();
+      if (
+        now < userPromotion.promotion.validFrom ||
+        now > userPromotion.promotion.validTo
+      ) {
+        throw new BadRequestException('Voucher đã hết hạn');
+      }
+
+      // Validate voucher chưa được sử dụng (usedAt === null)
+      if (userPromotion.usedAt !== null) {
+        throw new BadRequestException('Voucher này đã được sử dụng');
+      }
+
+      // Không cần check billing.userPromotionId nữa vì không lưu vào billing khi apply
+    }
+
+    // Set payment method to ONLINE if not set (KHÔNG update amount)
+    if (!billing.paymentMethod) {
       await this.prisma.billing.update({
         where: { id: billing.id },
         data: { paymentMethod: 'ONLINE' },
@@ -91,7 +231,7 @@ export class PaymentService {
       existingCode,
     );
 
-    // Create transaction record
+    // Create transaction record with userPromotionId (if provided)
     const transaction = await this.prisma.transaction.create({
       data: {
         billingId: billing.id,
@@ -99,7 +239,8 @@ export class PaymentService {
         status: TransactionStatus.PENDING,
         provider: 'SEPAY_QR',
         userId: userId,
-      },
+        userPromotionId: userPromotionId || null,
+      } as any,
     });
 
     // Save payment code to Redis with 10 minutes expiration
@@ -275,6 +416,12 @@ export class PaymentService {
       },
     });
 
+    // Get transaction with userPromotion to check if voucher was used
+    const transactionWithVoucher = await this.prisma.transaction.findUnique({
+      where: { id: transaction.id },
+      include: { userPromotion: true } as any,
+    });
+
     // Update billing status
     await this.prisma.billing.update({
       where: { id: paymentCodeData.billingId },
@@ -282,6 +429,29 @@ export class PaymentService {
         status: PaymentStatus.PAID,
       },
     });
+
+    // Chỉ khi thanh toán thành công mới update voucher usedAt và billing.userPromotionId
+    const transactionWithVoucherTyped = transactionWithVoucher as any;
+    if (
+      transactionWithVoucherTyped?.userPromotionId &&
+      transactionWithVoucherTyped.userPromotion
+    ) {
+      // Update userPromotion.usedAt
+      await this.prisma.userPromotion.update({
+        where: { id: transactionWithVoucherTyped.userPromotionId },
+        data: {
+          usedAt: new Date(),
+        },
+      });
+
+      // Update billing.userPromotionId (chỉ update sau khi thanh toán thành công)
+      await this.prisma.billing.update({
+        where: { id: paymentCodeData.billingId },
+        data: {
+          userPromotionId: transactionWithVoucherTyped.userPromotionId,
+        } as any,
+      });
+    }
 
     // Mark payment code as used in Redis
     await this.redis.markPaymentCodeAsUsed(paymentCode);
@@ -344,6 +514,7 @@ export class PaymentService {
       include: {
         patientProfile: true,
         billing: true,
+        service: true,
       },
     });
 
@@ -392,6 +563,10 @@ export class PaymentService {
     if (!cancelled) {
       throw new BadRequestException('Không thể hủy mã thanh toán');
     }
+
+    // Không cần clear userPromotionId từ billing vì không lưu vào billing khi apply
+    // Voucher chỉ được mark as used khi thanh toán thành công
+    // Transaction với userPromotionId vẫn còn nhưng không ảnh hưởng vì chưa thanh toán thành công
 
     return {
       success: true,

@@ -105,7 +105,6 @@ export class PromotionService {
         validTo: up.promotion.validTo,
       },
       claimedAt: up.claimedAt,
-      isUsed: up.isUsed,
       usedAt: up.usedAt || undefined,
     }));
   }

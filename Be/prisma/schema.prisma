@@ -275,9 +275,6 @@ model Appointment {
   clinic    Clinic?        @relation("ClinicAppointments", fields: [clinicId], references: [id])
   billing   Billing?
 
-  // Quan hệ với Promotion
-  userPromotions UserPromotion[]
-
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -345,6 +342,8 @@ model Billing {
   notes         String?
   appointmentId Int            @unique
   appointment   Appointment    @relation(fields: [appointmentId], references: [id])
+  userPromotionId Int?         // Voucher được áp dụng (chỉ update sau khi thanh toán thành công)
+  userPromotion UserPromotion? @relation(fields: [userPromotionId], references: [id])
 
   // One-to-many relationship: One billing can have multiple transactions
   transactions Transaction[]
@@ -405,6 +404,10 @@ model Transaction {
   // 1. (CRITICAL) Many-to-one relationship with Billing
   billingId Int
   billing   Billing @relation(fields: [billingId], references: [id])
+
+  // 2. Voucher được áp dụng cho transaction này (chỉ lưu tạm, chưa mark as used)
+  userPromotionId Int?
+  userPromotion   UserPromotion? @relation(fields: [userPromotionId], references: [id])
 
   // 2. Provider information
   // (e.g., "SEPAY_QR", "CASH", "VNPAY")
@@ -682,10 +685,9 @@ model UserPromotion {
   promotionId  Int
   promotion    Promotion  @relation(fields: [promotionId], references: [id])
   claimedAt    DateTime   @default(now())
-  isUsed       Boolean    @default(false)
-  usedAt       DateTime?
-  appointmentId Int?
-  appointment  Appointment? @relation(fields: [appointmentId], references: [id])
+  usedAt       DateTime?  // Chỉ update khi thanh toán thành công
+  billings     Billing[]  // Quan hệ với billing (chỉ update sau khi thanh toán thành công)
+  transactions Transaction[] // Quan hệ với transactions (lưu tạm khi apply voucher)
 
   @@unique([userId, promotionId])
   @@index([userId])
