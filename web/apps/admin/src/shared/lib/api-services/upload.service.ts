@@ -71,6 +71,35 @@ export class UploadService {
             throw new Error(errorMessage)
         }
     }
+
+    /**
+     * Upload any file (images, documents, etc.)
+     */
+    async uploadFile(file: File): Promise<string> {
+        const formData = new FormData()
+        formData.append('file', file)
+
+        try {
+            const responseData = await apiClient.post<UploadApiResponse>('/admin/upload/file', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            })
+
+            // Handle admin upload response structure (already unwrapped by apiClient)
+            if (responseData?.success && responseData?.url) {
+                return responseData.url
+            } else {
+                throw new Error('Invalid response structure')
+            }
+        } catch (error: any) {
+            console.error('Upload file error:', error)
+            // Handle both wrapped and unwrapped error responses
+            const errorMessage =
+                error?.response?.data?.message || error?.response?.data?.data?.message || 'Lỗi khi upload file'
+            throw new Error(errorMessage)
+        }
+    }
 }
 
 export const uploadService = new UploadService()

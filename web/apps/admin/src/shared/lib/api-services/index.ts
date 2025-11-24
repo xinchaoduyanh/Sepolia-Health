@@ -3,12 +3,7 @@ export * from './auth.service'
 export * from './statistics.service'
 
 // Export specific services to avoid naming conflicts
-export {
-    usersService,
-    type User,
-    type DoctorProfile as UsersDoctorProfile,
-    type ReceptionistProfile as UsersReceptionistProfile,
-} from './users.service'
+export * from './users.service'
 export {
     patientsService,
     type Patient,
@@ -18,13 +13,8 @@ export {
     type CreatePatientRequest,
     type UpdatePatientRequest,
 } from './patients.service'
-export { doctorsService } from './doctors.service'
-export {
-    doctorScheduleService,
-    type WeeklyScheduleResponse,
-    type WeeklyScheduleDay,
-    type BookedTimeSlot,
-} from './doctor-schedule.service'
+export * from './doctors.service'
+export * from './doctor-schedule.service'
 export { receptionistsService } from './receptionists.service'
 export { articlesService } from './articles.service'
 export { servicesService } from './services.service'
@@ -35,6 +25,8 @@ export { videoService, type VideoTokenResponse } from './video.service'
 export * from './qna.service'
 export * from './app-terms.service'
 export * from './appointment.service'
+export * from './promotions.service'
+export * from './promotion-displays.service'
 
 // Re-export API client
 export { apiClient } from '../api-client'

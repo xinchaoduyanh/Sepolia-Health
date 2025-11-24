@@ -80,4 +80,49 @@ export class AdminUploadController {
 
     return this.adminUploadService.uploadAvatarFile(userId, file);
   }
+
+  @Post('file')
+  @HttpCode(HttpStatus.OK)
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiOperation({ summary: 'Upload file bất kỳ cho admin' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'File cần upload (Image, PDF, etc., tối đa 10MB)',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Upload file thành công',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean' },
+        url: { type: 'string' },
+      },
+    },
+  })
+  async uploadFile(
+    @CurrentUser('userId') userId: number,
+    @UploadedFile() file: any,
+  ): Promise<{ success: boolean; url?: string; error?: string }> {
+    if (!file) {
+      throw new BadRequestException('Vui lòng chọn file');
+    }
+
+    // Validate file size (10MB max)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      throw new BadRequestException('Kích thước file không được vượt quá 10MB');
+    }
+
+    return this.adminUploadService.uploadFile(userId, file);
+  }
 }

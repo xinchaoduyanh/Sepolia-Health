@@ -64,8 +64,13 @@ export class AuthService {
       throw new UnauthorizedException(ERROR_MESSAGES.AUTH.INVALID_CREADENTIALS);
     }
 
-    if (user.status !== UserStatus.ACTIVE) {
+    // Check user status and return appropriate error message
+    if (user.status === UserStatus.UNVERIFIED) {
       throw new UnauthorizedException(ERROR_MESSAGES.AUTH.USER_NOT_VERIFIED);
+    }
+
+    if (user.status === UserStatus.DEACTIVE) {
+      throw new UnauthorizedException(ERROR_MESSAGES.AUTH.USER_DEACTIVE);
     }
 
     // Generate tokens

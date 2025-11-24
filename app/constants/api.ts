@@ -75,6 +75,14 @@ export const API_ENDPOINTS = {
     TAGS: '/qna/tags',
     POPULAR_TAGS: '/qna/tags/popular',
   },
+
+  // Promotions
+  PROMOTIONS: {
+    BASE: '/patient/promotions',
+    FEATURED: '/patient/promotions/featured',
+    MY_VOUCHERS: '/patient/promotions/my-vouchers',
+    CLAIM: (id: number) => `/patient/promotions/${id}/claim`,
+  },
 } as const;
 
 // Request/Response Types

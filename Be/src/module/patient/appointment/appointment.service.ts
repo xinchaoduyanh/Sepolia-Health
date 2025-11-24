@@ -235,6 +235,12 @@ export class AppointmentService {
       throw new ForbiddenException(MESSAGES.APPOINTMENT.UNAUTHORIZED_ACCESS);
     }
 
+    if (!appointment.patientProfileId) {
+      throw new BadRequestException(
+        MESSAGES.APPOINTMENT.PATIENT_PROFILE_NOT_FOUND,
+      );
+    }
+
     await this.checkConflict(
       body.startTime,
       body.endTime,
@@ -243,8 +249,8 @@ export class AppointmentService {
       appointment.patientProfileId,
       userId,
     );
-    
-    if(TimeUtil.isLessThanFourHours(new Date(), appointment.startTime)) {
+
+    if (TimeUtil.isLessThanFourHours(new Date(), appointment.startTime)) {
       throw new ForbiddenException(ERROR_MESSAGES.APPOINTMENT.CAN_NOT_UPDATE);
     }
 
@@ -268,7 +274,10 @@ export class AppointmentService {
   /**
    * Cancel appointment
    */
-  async cancelAppointment(id: number, userId: number): Promise<SuccessResponseDto> {
+  async cancelAppointment(
+    id: number,
+    userId: number,
+  ): Promise<SuccessResponseDto> {
     const appointment = await this.prisma.appointment.findUnique({
       where: { id },
       include: { patientProfile: true },
@@ -283,7 +292,7 @@ export class AppointmentService {
       throw new ForbiddenException(MESSAGES.APPOINTMENT.UNAUTHORIZED_ACCESS);
     }
 
-    if(TimeUtil.isLessThanFourHours(new Date(), appointment.startTime)) {
+    if (TimeUtil.isLessThanFourHours(new Date(), appointment.startTime)) {
       throw new ForbiddenException(ERROR_MESSAGES.APPOINTMENT.CAN_NOT_CANCEL);
     }
 
@@ -422,7 +431,7 @@ export class AppointmentService {
         const aStatus = a.billing?.status || PaymentStatus.PENDING;
         const bStatus = b.billing?.status || PaymentStatus.PENDING;
 
-        if (finalSortOrder === 'asc') {
+        if (finalSortOrder === SortOrder.ASC) {
           // PENDING (1) -> PAID (2) -> REFUNDED (3)
           const statusOrder = { PENDING: 1, PAID: 2, REFUNDED: 3 };
           const aOrder = statusOrder[aStatus] || 0;
@@ -1003,9 +1012,9 @@ export class AppointmentService {
 
     // Get existing appointments for the date
     // Convert date string (YYYY-MM-DD) to Date objects for start and end of day
-    const startOfDay = DateUtil.startOfDay(new Date(date));  
+    const startOfDay = DateUtil.startOfDay(new Date(date));
     const endOfDay = DateUtil.endOfDay(new Date(date));
-    
+
     const bookedAppointments = await this.prisma.appointment.findMany({
       where: {
         doctorId: doctorService.doctorId,

@@ -11,6 +11,8 @@ import { AdminClinicModule } from './clinic/admin-clinic.module';
 import { AdminQnaModule } from './qna/admin-qna.module';
 import { AdminAppTermsModule } from './app-terms/admin-app-terms.module';
 import { AdminTagModule } from './tag/admin-tag.module';
+import { AdminPromotionModule } from './promotion/admin-promotion.module';
+import { AdminPromotionDisplayModule } from './promotion-display/admin-promotion-display.module';
 
 @Module({
   imports: [
@@ -26,6 +28,8 @@ import { AdminTagModule } from './tag/admin-tag.module';
     AdminQnaModule,
     AdminAppTermsModule,
     AdminTagModule,
+    AdminPromotionModule,
+    AdminPromotionDisplayModule,
   ],
   exports: [
     AdminPatientModule,
@@ -40,6 +44,8 @@ import { AdminTagModule } from './tag/admin-tag.module';
     AdminQnaModule,
     AdminAppTermsModule,
     AdminTagModule,
+    AdminPromotionModule,
+    AdminPromotionDisplayModule,
   ],
 })
 export class AdminModule {}

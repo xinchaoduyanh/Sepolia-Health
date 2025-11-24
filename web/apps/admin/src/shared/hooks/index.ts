@@ -11,3 +11,17 @@ export * from './useClinics'
 export * from './useTags'
 export * from './useAppTerms'
 export * from './useAppointment'
+export * from './usePromotions'
+export * from './usePromotionDisplays'
+// Export QNA hooks (excluding useTags to avoid conflict with admin useTags)
+export {
+    useQuestions,
+    useQuestion,
+    usePopularTags,
+    useCreateAnswer,
+    useVoteQuestion,
+    useVoteAnswer,
+    useSetBestAnswer,
+    useDeleteAnswer,
+    useDeleteQuestion,
+} from './useQna'

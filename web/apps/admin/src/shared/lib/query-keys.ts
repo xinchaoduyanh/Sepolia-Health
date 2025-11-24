@@ -92,6 +92,20 @@ export const queryKeys = {
             detail: (id: number) => [...queryKeys.admin.appTerms.details(), id] as const,
             byType: (type: string) => [...queryKeys.admin.appTerms.all(), 'type', type] as const,
         },
+        promotions: {
+            all: () => [...queryKeys.admin.all, 'promotions'] as const,
+            lists: () => [...queryKeys.admin.promotions.all(), 'list'] as const,
+            list: (filters: Record<string, any>) => [...queryKeys.admin.promotions.lists(), { filters }] as const,
+            details: () => [...queryKeys.admin.promotions.all(), 'detail'] as const,
+            detail: (id: string) => [...queryKeys.admin.promotions.details(), id] as const,
+        },
+        promotionDisplays: {
+            all: () => [...queryKeys.admin.all, 'promotionDisplays'] as const,
+            lists: () => [...queryKeys.admin.promotionDisplays.all(), 'list'] as const,
+            active: () => [...queryKeys.admin.promotionDisplays.all(), 'active'] as const,
+            details: () => [...queryKeys.admin.promotionDisplays.all(), 'detail'] as const,
+            detail: (id: string) => [...queryKeys.admin.promotionDisplays.details(), id] as const,
+        },
     },
 
     // QnA related queries
