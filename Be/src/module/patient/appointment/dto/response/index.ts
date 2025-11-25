@@ -28,6 +28,20 @@ export class DoctorDto {
   lastName: string;
 }
 
+export class SpecialtyDto {
+  @ApiProperty()
+  id: number;
+
+  @ApiProperty()
+  name: string;
+
+  @ApiProperty()
+  description?: string;
+
+  @ApiProperty()
+  icon?: string;
+}
+
 export class ServiceDto {
   @ApiProperty()
   id: number;
@@ -40,6 +54,9 @@ export class ServiceDto {
 
   @ApiProperty()
   duration: number;
+
+  @ApiProperty({ type: SpecialtyDto, required: false })
+  specialty?: SpecialtyDto;
 }
 
 export class ClinicDto {

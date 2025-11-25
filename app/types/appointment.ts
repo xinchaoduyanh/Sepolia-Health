@@ -54,6 +54,12 @@ export interface Appointment {
     name: string;
     price: number;
     duration: number;
+    specialty?: {
+      id: number;
+      name: string;
+      description?: string;
+      icon?: string;
+    };
   };
   clinic?: {
     id: number;

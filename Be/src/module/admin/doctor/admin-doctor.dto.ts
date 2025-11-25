@@ -41,6 +41,9 @@ export const CreateDoctorSchema = z.object({
   serviceIds: z
     .array(z.number().int().positive())
     .min(1, 'Cần chọn ít nhất một dịch vụ'),
+  specialtyIds: z
+    .array(z.number().int().positive())
+    .min(1, 'Cần chọn ít nhất một chuyên khoa'),
   availabilities: z
     .array(
       z.object({
@@ -115,6 +118,14 @@ export class CreateDoctorDtoClass {
   serviceIds: number[];
 
   @ApiProperty({
+    description: 'Danh sách chuyên khoa bác sĩ (Specialty IDs)',
+    example: [1, 2],
+    isArray: true,
+    type: Number,
+  })
+  specialtyIds: number[];
+
+  @ApiProperty({
     description: 'Lịch làm việc hàng tuần (tùy chọn)',
     required: false,
     example: [
@@ -135,6 +146,10 @@ export const UpdateDoctorSchema = z.object({
   experienceYears: z.number().min(0, 'Số năm kinh nghiệm phải >= 0').optional(),
   description: z.string().optional(),
   address: z.string().optional(),
+  specialtyIds: z
+    .array(z.number().int().positive())
+    .min(1, 'Cần chọn ít nhất một chuyên khoa')
+    .optional(),
 });
 
 export type UpdateDoctorDto = z.infer<typeof UpdateDoctorSchema>;
@@ -180,6 +195,15 @@ export class UpdateDoctorDtoClass {
     required: false,
   })
   address?: string;
+
+  @ApiProperty({
+    description: 'Danh sách chuyên khoa bác sĩ (Specialty IDs)',
+    example: [1, 2],
+    isArray: true,
+    type: Number,
+    required: false,
+  })
+  specialtyIds?: number[];
 }
 
 export class UpdateDoctorStatusDtoClass {
@@ -211,12 +235,27 @@ export class CreateDoctorResponseDto {
   fullName: string;
 
   @ApiProperty({
-    description: 'Danh sách chuyên khoa',
+    description: 'Danh sách dịch vụ',
     example: ['Tim mạch', 'Nội tổng quát'],
     isArray: true,
     type: String,
   })
   services: string[];
+
+  @ApiProperty({
+    description: 'Danh sách chuyên khoa',
+    example: [
+      { id: 1, name: 'Mắt' },
+      { id: 2, name: 'Nội khoa' },
+    ],
+    isArray: true,
+  })
+  specialties: Array<{
+    id: number;
+    name: string;
+    description?: string;
+    icon?: string;
+  }>;
 
   @ApiProperty({
     description: 'Số năm kinh nghiệm',
@@ -311,6 +350,21 @@ export class DoctorDetailResponseDto {
     price: number;
     duration: number;
     description?: string;
+  }>;
+
+  @ApiProperty({
+    description: 'Danh sách chuyên khoa',
+    example: [
+      { id: 1, name: 'Mắt' },
+      { id: 2, name: 'Nội khoa' },
+    ],
+    isArray: true,
+  })
+  specialties: Array<{
+    id: number;
+    name: string;
+    description?: string;
+    icon?: string;
   }>;
 
   @ApiProperty({

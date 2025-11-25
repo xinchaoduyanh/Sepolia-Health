@@ -13,7 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useAppointment, useCreateFeedback } from '@/lib/api/appointments';
-import { AppointmentStatus } from '@/types/appointment';
+import { AppointmentStatus } from '@/constants/enum';
 
 export default function FeedbackScreen() {
   const { id } = useLocalSearchParams();
@@ -239,4 +239,3 @@ export default function FeedbackScreen() {
     </View>
   );
 }
-

@@ -41,7 +41,7 @@ export class AppointmentService {
     private readonly prisma: PrismaService,
     @InjectQueue('appointment') private readonly appointmentQueue: Queue,
     private readonly notificationService: NotificationService,
-  ) { }
+  ) {}
 
   /**
    * Get all appointments with filters
@@ -105,7 +105,18 @@ export class AppointmentService {
               lastName: true,
             },
           },
-          service: true,
+          service: {
+            include: {
+              specialty: {
+                select: {
+                  id: true,
+                  name: true,
+                  description: true,
+                  icon: true,
+                },
+              },
+            },
+          },
           clinic: {
             select: {
               id: true,
@@ -120,6 +131,26 @@ export class AppointmentService {
               paymentMethod: true,
               notes: true,
               createdAt: true,
+            },
+          },
+          feedback: {
+            select: {
+              id: true,
+              rating: true,
+              comment: true,
+              createdAt: true,
+            },
+          },
+          result: {
+            select: {
+              id: true,
+              diagnosis: true,
+              notes: true,
+              prescription: true,
+              recommendations: true,
+              appointmentId: true,
+              createdAt: true,
+              updatedAt: true,
             },
           },
         },
@@ -160,7 +191,18 @@ export class AppointmentService {
             lastName: true,
           },
         },
-        service: true,
+        service: {
+          include: {
+            specialty: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+                icon: true,
+              },
+            },
+          },
+        },
         billing: {
           select: {
             id: true,
@@ -183,6 +225,18 @@ export class AppointmentService {
             rating: true,
             comment: true,
             createdAt: true,
+          },
+        },
+        result: {
+          select: {
+            id: true,
+            diagnosis: true,
+            notes: true,
+            prescription: true,
+            recommendations: true,
+            appointmentId: true,
+            createdAt: true,
+            updatedAt: true,
           },
         },
       },
@@ -227,7 +281,18 @@ export class AppointmentService {
       where: { id },
       include: {
         doctor: true,
-        service: true,
+        service: {
+          include: {
+            specialty: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+                icon: true,
+              },
+            },
+          },
+        },
         patientProfile: true,
       },
     });
@@ -271,7 +336,18 @@ export class AppointmentService {
       include: {
         patientProfile: true,
         doctor: true,
-        service: true,
+        service: {
+          include: {
+            specialty: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+                icon: true,
+              },
+            },
+          },
+        },
         billing: true,
         clinic: true,
         feedback: true,
@@ -426,7 +502,18 @@ export class AppointmentService {
               lastName: true,
             },
           },
-          service: true,
+          service: {
+            include: {
+              specialty: {
+                select: {
+                  id: true,
+                  name: true,
+                  description: true,
+                  icon: true,
+                },
+              },
+            },
+          },
           clinic: {
             select: {
               id: true,
@@ -507,7 +594,18 @@ export class AppointmentService {
               lastName: true,
             },
           },
-          service: true,
+          service: {
+            include: {
+              specialty: {
+                select: {
+                  id: true,
+                  name: true,
+                  description: true,
+                  icon: true,
+                },
+              },
+            },
+          },
           clinic: {
             select: {
               id: true,
@@ -522,6 +620,26 @@ export class AppointmentService {
               paymentMethod: true,
               notes: true,
               createdAt: true,
+            },
+          },
+          feedback: {
+            select: {
+              id: true,
+              rating: true,
+              comment: true,
+              createdAt: true,
+            },
+          },
+          result: {
+            select: {
+              id: true,
+              diagnosis: true,
+              notes: true,
+              prescription: true,
+              recommendations: true,
+              appointmentId: true,
+              createdAt: true,
+              updatedAt: true,
             },
           },
         },
@@ -607,7 +725,18 @@ export class AppointmentService {
             lastName: true,
           },
         },
-        service: true,
+        service: {
+          include: {
+            specialty: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+                icon: true,
+              },
+            },
+          },
+        },
         clinic: {
           select: {
             id: true,
@@ -682,6 +811,14 @@ export class AppointmentService {
         price: true,
         duration: true,
         description: true,
+        specialty: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            icon: true,
+          },
+        },
       },
       orderBy: {
         name: SortOrder.ASC,
@@ -773,7 +910,18 @@ export class AppointmentService {
       where: { id: doctorServiceId },
       include: {
         doctor: true,
-        service: true,
+        service: {
+          include: {
+            specialty: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+                icon: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -818,7 +966,18 @@ export class AppointmentService {
       include: {
         patientProfile: true,
         doctor: true,
-        service: true,
+        service: {
+          include: {
+            specialty: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+                icon: true,
+              },
+            },
+          },
+        },
         clinic: true,
       },
     });
@@ -840,14 +999,16 @@ export class AppointmentService {
           '⚠️ [AppointmentService] Cannot send notification: patientProfile.managerId is missing',
         );
       } else {
-        await this.notificationService.sendCreateAppointmentPatientNotification({
-          appointmentId: appointment.id,
-          startTime: appointment.startTime,
-          doctorName: `${doctorService.doctor.firstName} ${doctorService.doctor.lastName}`,
-          serviceName: doctorService.service.name,
-          clinicName: clinic.name,
-          recipientId: patientUserId,
-        });
+        await this.notificationService.sendCreateAppointmentPatientNotification(
+          {
+            appointmentId: appointment.id,
+            startTime: appointment.startTime,
+            doctorName: `${doctorService.doctor.firstName} ${doctorService.doctor.lastName}`,
+            serviceName: doctorService.service.name,
+            clinicName: clinic.name,
+            recipientId: patientUserId,
+          },
+        );
       }
     } catch (error) {
       console.error('Failed to send notification:', error);
@@ -904,61 +1065,70 @@ export class AppointmentService {
       notes: appointment.notes,
       patient: appointment.patientProfile
         ? {
-          id: appointment.patientProfile.id,
-          firstName: appointment.patientProfile.firstName,
-          lastName: appointment.patientProfile.lastName,
-          phone: appointment.patientProfile.phone,
-          email: appointment.patientProfile.email,
-        }
+            id: appointment.patientProfile.id,
+            firstName: appointment.patientProfile.firstName,
+            lastName: appointment.patientProfile.lastName,
+            phone: appointment.patientProfile.phone,
+            email: appointment.patientProfile.email,
+          }
         : {
-          id: appointment.patientId,
-          firstName: '',
-          lastName: '',
-          phone: '',
-          email: '',
-        },
+            id: appointment.patientId,
+            firstName: '',
+            lastName: '',
+            phone: '',
+            email: '',
+          },
       doctor: appointment.doctor
         ? {
-          id: appointment.doctor.id,
-          firstName: appointment.doctor.firstName,
-          lastName: appointment.doctor.lastName,
-        }
+            id: appointment.doctor.id,
+            firstName: appointment.doctor.firstName,
+            lastName: appointment.doctor.lastName,
+          }
         : {
-          id: appointment.doctorId,
-          firstName: '',
-          lastName: '',
-        },
+            id: appointment.doctorId,
+            firstName: '',
+            lastName: '',
+          },
       service: appointment.service
         ? {
-          id: appointment.service.id,
-          name: appointment.service.name,
-          price: appointment.service.price,
-          duration: appointment.service.duration,
-        }
+            id: appointment.service.id,
+            name: appointment.service.name,
+            price: appointment.service.price,
+            duration: appointment.service.duration,
+            specialty: appointment.service.specialty
+              ? {
+                  id: appointment.service.specialty.id,
+                  name: appointment.service.specialty.name,
+                  description:
+                    appointment.service.specialty.description || undefined,
+                  icon: appointment.service.specialty.icon || undefined,
+                }
+              : undefined,
+          }
         : {
-          id: appointment.serviceId,
-          name: '',
-          price: 0,
-          duration: 0,
-        },
+            id: appointment.serviceId,
+            name: '',
+            price: 0,
+            duration: 0,
+          },
       clinic: appointment.clinic
         ? {
-          id: appointment.clinic.id,
-          name: appointment.clinic.name,
-        }
+            id: appointment.clinic.id,
+            name: appointment.clinic.name,
+          }
         : {
-          id: appointment.clinicId,
-          name: '',
-        },
+            id: appointment.clinicId,
+            name: '',
+          },
       billing: appointment.billing
         ? {
-          id: appointment.billing.id,
-          amount: appointment.billing.amount,
-          status: appointment.billing.status,
-          paymentMethod: appointment.billing.paymentMethod,
-          notes: appointment.billing.notes,
-          createdAt: appointment.billing.createdAt,
-        }
+            id: appointment.billing.id,
+            amount: appointment.billing.amount,
+            status: appointment.billing.status,
+            paymentMethod: appointment.billing.paymentMethod,
+            notes: appointment.billing.notes,
+            createdAt: appointment.billing.createdAt,
+          }
         : undefined,
       feedback: appointment.feedback
         ? {

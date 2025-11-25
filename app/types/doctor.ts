@@ -1,10 +1,18 @@
 // Doctor Types
+export interface Specialty {
+  id: number;
+  name: string;
+  description?: string;
+  icon?: string;
+}
+
 export interface Service {
   id: number;
   name: string;
   description?: string;
   price: number;
   duration: number;
+  specialty?: Specialty;
   createdAt: string;
   updatedAt: string;
 }

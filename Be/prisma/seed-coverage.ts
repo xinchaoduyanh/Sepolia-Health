@@ -1,149 +1,190 @@
-import { PrismaClient, Role, UserStatus } from '@prisma/client';
+import {
+  PrismaClient,
+  UserStatus,
+  AppointmentStatus,
+  AppTermsType,
+} from '@prisma/client';
 import { fakerVI as faker } from '@faker-js/faker';
 import * as bcrypt from 'bcrypt';
-import { AppointmentStatus } from '@prisma/client'; // Thêm import
+
 const prisma = new PrismaClient();
 
 // --- CẤU HÌNH ---
-// Số lượng bác sĩ sẽ được tạo cho MỖI DỊCH VỤ tại MỖI CƠ SỞ (random từ 2-4)
-const MIN_DOCTORS_PER_SERVICE_PER_CLINIC = 2;
-const MAX_DOCTORS_PER_SERVICE_PER_CLINIC = 4;
-
 const NUMBER_OF_CLINICS = 5; // ID từ 1 đến 5
-const NUMBER_OF_SERVICES = 17; // ID từ 1 đến 17
 const DEFAULT_PASSWORD = 'password123';
 
-// Cấu hình cho dữ liệu mới
-const NUMBER_OF_PATIENT_USERS = 500; // Tăng số user để có đủ bệnh nhân cho nhiều appointments
-const NUMBER_OF_STAFF_PER_ROLE = 5; // 5 admin, 5 lễ tân
-const NUMBER_OF_APPOINTMENTS = 12000; // ~12,000 lịch hẹn (đủ để test các tính năng)
-// Khoảng thời gian: 3.5 năm (từ quá khứ đến tương lai)
-// - Quá khứ: để test lịch sử, feedback, completed appointments
-// - Tương lai: để test booking, upcoming appointments
-const APPOINTMENT_START_DATE = new Date('2022-06-01'); // Bắt đầu từ 2.5 năm trước
-const APPOINTMENT_END_DATE = new Date('2026-12-31'); // Kết thúc ở 1 năm sau
+// Cấu hình dữ liệu mới
+const NUMBER_OF_PATIENT_USERS = 800; // 800 user bệnh nhân
+const NUMBER_OF_ADMIN = 5; // 5 admin
+const NUMBER_OF_RECEPTIONISTS = 10; // 10 lễ tân
+const MIN_DOCTORS_PER_SPECIALTY_PER_CLINIC = 3; // Ít nhất 3 bác sĩ cho mỗi chuyên khoa tại mỗi clinic
+const MAX_DOCTORS_PER_SPECIALTY_PER_CLINIC = 5; // Tối đa 5 bác sĩ
+
+// Thời gian appointment: 01/01/2024 - 31/12/2025
+const APPOINTMENT_START_DATE = new Date('2024-01-01');
+const APPOINTMENT_END_DATE = new Date('2025-12-31');
+
+// Community posts
+const NUMBER_OF_POSTS = 20; // 20 bài viết cộng đồng
 // -----------------
 
-// Dữ liệu dịch vụ
-const services = [
+// Dữ liệu 4 chuyên khoa được giữ lại
+const specialties = [
   {
-    name: 'Nội tiết',
-    description:
-      'Khám và điều trị các bệnh như tiểu đường, rối loạn tuyến giáp, rối loạn cholesterol, các bệnh lý tuyến yên, tuyến thượng thận.',
-    price: 300000,
-    duration: 30,
-  },
-  {
-    name: 'Nội Tiêu hoá',
-    description:
-      'Khám chữa tổng hợp các bệnh liên quan đến đường tiêu hóa và các cơ quan phụ trợ tiêu hóa như bệnh dạ dày, tá tràng, đại tràng, gan, mật.',
-    price: 300000,
-    duration: 30,
-  },
-  {
-    name: 'Nội Tim mạch',
-    description:
-      'Khám và điều trị các bệnh như đau ngực, nặng ngực, đau ngực khi gắng sức, xúc động mạnh, tăng huyết áp, bệnh lý van tim.',
-    price: 350000,
-    duration: 30,
-  },
-  {
-    name: 'Răng - Hàm - Mặt',
-    description:
-      'Khám và điều trị các bệnh như sâu răng, viêm tủy răng, viêm nướu, nứt răng, gãy chân răng, các bệnh lý vùng hàm mặt.',
-    price: 200000,
-    duration: 60,
-  },
-  {
-    name: 'Sản phụ khoa',
-    description:
-      'Khám và điều trị các bệnh như viêm nhiễm phụ khoa, khí hư bất thường, rối loạn kinh nguyệt, khám thai, tư vấn kế hoạch hóa gia đình.',
-    price: 300000,
-    duration: 30,
+    name: 'Mắt',
+    description: 'Chuyên khoa về các bệnh lý mắt và phẫu thuật mắt',
   },
   {
     name: 'Tai - Mũi - Họng',
-    description:
-      'Khám và điều trị các bệnh như viêm đau họng, đau rát họng, ung thư cổ họng, ung thư thanh quản, viêm xoang, viêm tai giữa.',
-    price: 250000,
-    duration: 30,
+    description: 'Chuyên khoa về tai, mũi và họng',
   },
   {
-    name: 'Tiêm chủng vắc xin',
-    description:
-      'Thực hiện tiêm vắc xin cho trẻ em và người lớn theo chương trình tiêm chủng mở rộng và tiêm chủng dịch vụ.',
-    price: 150000,
-    duration: 30,
+    name: 'Sản phụ khoa',
+    description: 'Chuyên khoa về sản phụ khoa và chăm sóc sức khỏe phụ nữ',
   },
   {
-    name: 'Truyền nhiễm',
-    description:
-      'Tiếp nhận khám, chẩn đoán, điều trị, hợp tác chống dịch bệnh và chăm sóc bệnh nhân bị bệnh truyền nhiễm.',
-    price: 300000,
-    duration: 30,
+    name: 'Tiêm chủng',
+    description: 'Chuyên khoa về tiêm chủng và phòng ngừa bệnh tật',
   },
+];
+
+// Dữ liệu dịch vụ - Mỗi chuyên khoa có 4-5 dịch vụ
+const servicesData = [
+  // Mắt (4 dịch vụ)
   {
-    name: 'Đa khoa',
+    name: 'Khám mắt tổng quát',
     description:
-      'Khám sàng lọc các bệnh lý cơ bản, chưa rõ nguyên nhân, chưa có định hướng chuyên khoa sâu để được tư vấn và điều trị ban đầu.',
-    price: 250000,
-    duration: 30,
-  },
-  {
-    name: 'Da liễu',
-    description:
-      'Khoa Da liễu là khoa chuyên điều trị các bệnh về da và những phần phụ của da (tóc, móng, tuyến mồ hôi...).',
-    price: 250000,
-    duration: 30,
-  },
-  {
-    name: 'Khám sàng lọc tiêu hóa',
-    description:
-      'Tầm soát và phát hiện sớm các bệnh lý đường tiêu hóa, đặc biệt là ung thư dạ dày, đại trực tràng.',
-    price: 500000,
-    duration: 60,
-  },
-  {
-    name: 'Khám sàng lọc tim mạch',
-    description:
-      'Tầm soát, phát hiện sớm các yếu tố nguy cơ và bệnh lý tim mạch để có kế hoạch điều trị kịp thời.',
-    price: 550000,
-    duration: 60,
-  },
-  {
-    name: 'Khám sức khỏe tổng quát - Trẻ em',
-    description:
-      'Chỉ khám cho khách hàng dưới 16 tuổi. Kiểm tra sức khỏe toàn diện, theo dõi sự phát triển thể chất và tinh thần của trẻ.',
-    price: 400000,
-    duration: 60,
-  },
-  {
-    name: 'Mắt',
-    description:
-      'Khám và điều trị các bệnh lý nội khoa về mắt cũng như các phẫu thuật mắt như: mộng thịt, chắp, lẹo.',
+      'Khám và tầm soát các bệnh lý về mắt, đo thị lực, kiểm tra khúc xạ',
     price: 200000,
     duration: 30,
+    specialtyIndex: 0,
   },
   {
-    name: 'Ngoại chấn thương chỉnh hình',
+    name: 'Điều trị tật khúc xạ',
+    description: 'Điều trị cận thị, viễn thị, loạn thị, lão thị',
+    price: 300000,
+    duration: 45,
+    specialtyIndex: 0,
+  },
+  {
+    name: 'Phẫu thuật mắt',
+    description: 'Phẫu thuật đục thủy tinh thể, glaucoma, võng mạc',
+    price: 5000000,
+    duration: 90,
+    specialtyIndex: 0,
+  },
+  {
+    name: 'Điều trị bệnh võng mạc',
     description:
-      'Khám thực hiện phẫu thuật các vấn đề chấn thương và di chứng chấn thương xương khớp, thay khớp.',
-    price: 350000,
+      'Điều trị thoái hóa hoàng điểm, bệnh lý võng mạc do tiểu đường',
+    price: 800000,
     duration: 60,
+    specialtyIndex: 0,
+  },
+
+  // Tai - Mũi - Họng (5 dịch vụ)
+  {
+    name: 'Khám Tai - Mũi - Họng tổng quát',
+    description: 'Khám và điều trị các bệnh lý về tai, mũi, họng',
+    price: 250000,
+    duration: 30,
+    specialtyIndex: 1,
   },
   {
-    name: 'Ngoại Thận - Tiết niệu',
-    description:
-      'Thực hiện các phẫu thuật nội soi và phẫu thuật mở điều trị các bệnh ngoại khoa Tiết niệu: sỏi thận, sỏi niệu quản, u bàng quang.',
+    name: 'Điều trị viêm xoang',
+    description: 'Điều trị viêm xoang cấp và mãn tính',
     price: 350000,
-    duration: 60,
+    duration: 45,
+    specialtyIndex: 1,
   },
   {
-    name: 'Ngoại Tiêu hoá',
-    description:
-      'Phẫu thuật nội soi, phẫu thuật robot điều trị ung thư dạ dày, ung thư đại trực tràng, gan mật tụy, thoát vị bẹn.',
+    name: 'Điều trị viêm amidan',
+    description: 'Điều trị viêm amidan, phẫu thuật cắt amidan',
     price: 400000,
     duration: 60,
+    specialtyIndex: 1,
+  },
+  {
+    name: 'Điều trị viêm tai giữa',
+    description: 'Điều trị viêm tai giữa cấp và mãn tính',
+    price: 300000,
+    duration: 45,
+    specialtyIndex: 1,
+  },
+  {
+    name: 'Nội soi tai mũi họng',
+    description: 'Nội soi chẩn đoán và điều trị các bệnh lý tai mũi họng',
+    price: 500000,
+    duration: 60,
+    specialtyIndex: 1,
+  },
+
+  // Sản phụ khoa (5 dịch vụ)
+  {
+    name: 'Khám sản phụ khoa tổng quát',
+    description: 'Khám và tầm soát các bệnh lý phụ khoa',
+    price: 300000,
+    duration: 30,
+    specialtyIndex: 2,
+  },
+  {
+    name: 'Khám thai định kỳ',
+    description: 'Khám thai, siêu âm thai, theo dõi sức khỏe mẹ và bé',
+    price: 350000,
+    duration: 45,
+    specialtyIndex: 2,
+  },
+  {
+    name: 'Tầm soát ung thư cổ tử cung',
+    description: 'Xét nghiệm PAP, HPV test, soi cổ tử cung',
+    price: 500000,
+    duration: 60,
+    specialtyIndex: 2,
+  },
+  {
+    name: 'Tư vấn kế hoạch hóa gia đình',
+    description: 'Tư vấn các biện pháp tránh thai, đặt vòng, cấy que',
+    price: 250000,
+    duration: 30,
+    specialtyIndex: 2,
+  },
+  {
+    name: 'Điều trị vô sinh',
+    description: 'Khám và điều trị vô sinh nam nữ, hỗ trợ sinh sản',
+    price: 800000,
+    duration: 60,
+    specialtyIndex: 2,
+  },
+
+  // Tiêm chủng (4 dịch vụ)
+  {
+    name: 'Tiêm chủng trẻ em',
+    description:
+      'Tiêm các loại vắc xin trong chương trình tiêm chủng mở rộng cho trẻ em',
+    price: 150000,
+    duration: 20,
+    specialtyIndex: 3,
+  },
+  {
+    name: 'Tiêm chủng người lớn',
+    description: 'Tiêm phòng cúm, viêm gan, HPV, COVID-19 cho người lớn',
+    price: 200000,
+    duration: 20,
+    specialtyIndex: 3,
+  },
+  {
+    name: 'Tiêm phòng dại',
+    description: 'Tiêm phòng bệnh dại sau khi bị động vật cắn',
+    price: 300000,
+    duration: 30,
+    specialtyIndex: 3,
+  },
+  {
+    name: 'Tiêm phòng du lịch',
+    description: 'Tiêm các loại vắc xin cần thiết khi đi du lịch nước ngoài',
+    price: 250000,
+    duration: 30,
+    specialtyIndex: 3,
   },
 ];
 
@@ -165,7 +206,7 @@ const clinics = [
     phone: '02438398686',
     email: 'caugiay@sepoliahealthcare.vn',
     description:
-      'Phòng khám hiện đại tại Cầu Giấy, tập trung vào các chuyên khoa Tai - Mũi - Họng và Răng - Hàm - Mặt.',
+      'Phòng khám hiện đại tại Cầu Giấy, tập trung vào các chuyên khoa Tai - Mũi - Họng.',
     isActive: true,
   },
   {
@@ -174,7 +215,7 @@ const clinics = [
     phone: '02435729999',
     email: 'dongda@sepoliahealthcare.vn',
     description:
-      'Chuyên khoa Nhi và Sản phụ khoa, cung cấp dịch vụ chăm sóc toàn diện cho mẹ và bé tại khu vực Đống Đa.',
+      'Chuyên khoa Sản phụ khoa, cung cấp dịch vụ chăm sóc toàn diện cho mẹ và bé tại khu vực Đống Đa.',
     isActive: true,
   },
   {
@@ -183,7 +224,7 @@ const clinics = [
     phone: '02437228686',
     email: 'badinh@sepoliahealthcare.vn',
     description:
-      'Cơ sở chuyên về Nội khoa và Da liễu, với đội ngũ bác sĩ giàu kinh nghiệm và trang thiết bị tiên tiến.',
+      'Cơ sở chuyên về Mắt, với đội ngũ bác sĩ giàu kinh nghiệm và trang thiết bị tiên tiến.',
     isActive: true,
   },
   {
@@ -193,7 +234,7 @@ const clinics = [
     phone: '02439968989',
     email: 'hadong@sepoliahealthcare.vn',
     description:
-      'Cung cấp dịch vụ y tế đa dạng cho khu vực Hà Đông, bao gồm khám sức khỏe tổng quát và các gói tiêm chủng.',
+      'Cung cấp dịch vụ y tế đa dạng cho khu vực Hà Đông, bao gồm các gói tiêm chủng.',
     isActive: true,
   },
 ];
@@ -202,7 +243,6 @@ const clinics = [
 const workShifts = [
   { name: 'Sáng', startTime: '08:00', endTime: '12:00' },
   { name: 'Chiều', startTime: '13:30', endTime: '17:30' },
-  { name: 'Cả ngày', startTime: '08:00', endTime: '17:00' },
 ];
 
 // Thứ trong tuần: 1 = Monday, 2 = Tuesday, ..., 6 = Saturday (không bao gồm Sunday = 0)
@@ -211,18 +251,97 @@ const daysOfWeek = [1, 2, 3, 4, 5, 6];
 // Gender options
 const genders = ['MALE', 'FEMALE'] as const;
 
+// Tags cho Q&A
+const tagsData = [
+  {
+    name: 'Sức khỏe tổng quát',
+    slug: 'suc-khoe-tong-quat',
+    description: 'Câu hỏi về sức khỏe tổng quát',
+  },
+  {
+    name: 'Bệnh mắt',
+    slug: 'benh-mat',
+    description: 'Câu hỏi về các bệnh lý mắt',
+  },
+  {
+    name: 'Tai mũi họng',
+    slug: 'tai-mui-hong',
+    description: 'Câu hỏi về bệnh tai mũi họng',
+  },
+  {
+    name: 'Sản phụ khoa',
+    slug: 'san-phu-khoa',
+    description: 'Câu hỏi về sản phụ khoa',
+  },
+  {
+    name: 'Tiêm chủng',
+    slug: 'tiem-chung',
+    description: 'Câu hỏi về tiêm chủng',
+  },
+  {
+    name: 'Dinh dưỡng',
+    slug: 'dinh-duong',
+    description: 'Câu hỏi về dinh dưỡng',
+  },
+  {
+    name: 'Thuốc men',
+    slug: 'thuoc-men',
+    description: 'Câu hỏi về thuốc và điều trị',
+  },
+  {
+    name: 'Chăm sóc trẻ em',
+    slug: 'cham-soc-tre-em',
+    description: 'Câu hỏi về chăm sóc trẻ em',
+  },
+];
+
+// FAQ data
+const faqsData = [
+  {
+    type: AppTermsType.APP_FAQ,
+    title: 'Làm thế nào để đặt lịch khám bệnh?',
+    content:
+      'Bạn có thể đặt lịch khám bệnh bằng cách vào mục "Đặt lịch", chọn chuyên khoa, bác sĩ và thời gian phù hợp. Sau đó xác nhận và thanh toán để hoàn tất.',
+  },
+  {
+    type: AppTermsType.APP_FAQ,
+    title: 'Tôi có thể hủy lịch hẹn không?',
+    content:
+      'Có, bạn có thể hủy lịch hẹn trong mục "Lịch hẹn của tôi". Lưu ý rằng việc hủy cần được thực hiện trước 24 giờ để được hoàn tiền.',
+  },
+  {
+    type: AppTermsType.APP_FAQ,
+    title: 'Làm thế nào để thêm hồ sơ bệnh nhân?',
+    content:
+      'Vào mục "Hồ sơ", chọn "Thêm hồ sơ bệnh nhân" và điền đầy đủ thông tin cần thiết. Bạn có thể thêm hồ sơ cho người thân để dễ dàng đặt lịch cho họ.',
+  },
+  {
+    type: AppTermsType.APP_FAQ,
+    title: 'Tôi có thể xem kết quả khám bệnh ở đâu?',
+    content:
+      'Kết quả khám bệnh sẽ được cập nhật trong mục "Lịch hẹn của tôi". Sau khi bác sĩ hoàn thành khám, bạn có thể xem chi tiết kết quả và đơn thuốc.',
+  },
+];
+
 async function main() {
   console.log('--- BẮT ĐẦU QUÁ TRÌNH SEED DỮ LIỆU ---');
 
   const hashedPassword = await bcrypt.hash(DEFAULT_PASSWORD, 10);
 
-  // ---- BƯỚC 1: XÓA DỮ LIỆU CŨ (TÙY CHỌN) ----
+  // ---- BƯỚC 1: XÓA DỮ LIỆU CŨ ----
   console.log('\n--- Bước 1: Xóa dữ liệu cũ...');
-  // Xóa theo thứ tự quan hệ
+  await prisma.answerVote.deleteMany({});
+  await prisma.questionVote.deleteMany({});
+  await prisma.questionTag.deleteMany({});
+  await prisma.answer.deleteMany({});
+  await prisma.question.deleteMany({});
+  await prisma.tag.deleteMany({});
+  await prisma.appTerms.deleteMany({});
   await prisma.feedback.deleteMany({});
   await prisma.billing.deleteMany({});
   await prisma.doctorAvailability.deleteMany({});
   await prisma.doctorService.deleteMany({});
+  await prisma.doctorSpecialty.deleteMany({});
   await prisma.appointment.deleteMany({});
   await prisma.doctorProfile.deleteMany({});
   await prisma.receptionistProfile.deleteMany({});
@@ -230,62 +349,80 @@ async function main() {
   await prisma.patientProfile.deleteMany({});
   await prisma.user.deleteMany({});
   await prisma.service.deleteMany({});
+  await prisma.specialty.deleteMany({});
   await prisma.clinic.deleteMany({});
   console.log('✅ Đã xóa dữ liệu cũ');
 
-  // ---- BƯỚC 2: TẠO PHÒNG KHÁM (CLINIC) - TRƯỚC DỊCH VỤ ----
+  // ---- BƯỚC 2: TẠO PHÒNG KHÁM ----
   console.log('\n--- Bước 2: Tạo phòng khám...');
   await prisma.clinic.createMany({
     data: clinics,
   });
   console.log(`✅ Đã tạo ${clinics.length} phòng khám`);
 
-  // ---- BƯỚC 3: TẠO DỊCH VỤ (SERVICE) ----
-  console.log('\n--- Bước 3: Tạo dịch vụ...');
-  await prisma.service.createMany({
-    data: services,
+  // ---- BƯỚC 3: TẠO CHUYÊN KHOA ----
+  console.log('\n--- Bước 3: Tạo chuyên khoa...');
+  await prisma.specialty.createMany({
+    data: specialties,
   });
-  console.log(`✅ Đã tạo ${services.length} dịch vụ`);
+  console.log(`✅ Đã tạo ${specialties.length} chuyên khoa`);
 
-  // ---- BƯỚC 4: TẠO BÁC SĨ ----
-  console.log('\n--- Bước 4: Tạo bác sĩ...');
-  console.log(
-    `- Mục tiêu: Mỗi Clinic và mỗi Service có random ${MIN_DOCTORS_PER_SERVICE_PER_CLINIC}-${MAX_DOCTORS_PER_SERVICE_PER_CLINIC} bác sĩ.`,
-  );
-  console.log(
-    `- Tổng số bác sĩ ước tính: ${
-      (NUMBER_OF_CLINICS *
-        NUMBER_OF_SERVICES *
-        (MIN_DOCTORS_PER_SERVICE_PER_CLINIC +
-          MAX_DOCTORS_PER_SERVICE_PER_CLINIC)) /
-      2
-    }`,
-  );
+  // Get specialty IDs
+  const specialtyRecords = await prisma.specialty.findMany({
+    orderBy: { id: 'asc' },
+  });
 
-  let createdDoctorsCount = 0;
+  // ---- BƯỚC 4: TẠO DỊCH VỤ ----
+  console.log('\n--- Bước 4: Tạo dịch vụ...');
+  const servicesWithSpecialty = servicesData.map((service) => {
+    const specialtyId = specialtyRecords[service.specialtyIndex].id;
+    return {
+      name: service.name,
+      description: service.description,
+      price: service.price,
+      duration: service.duration,
+      specialtyId,
+    };
+  });
 
-  // Vòng lặp chính để đảm bảo độ phủ
+  await prisma.service.createMany({
+    data: servicesWithSpecialty,
+  });
+  console.log(`✅ Đã tạo ${servicesData.length} dịch vụ`);
+
+  // Get all services
+  const serviceRecords = await prisma.service.findMany({
+    orderBy: { id: 'asc' },
+    include: { specialty: true },
+  });
+
+  // ---- BƯỚC 5: TẠO BÁC SĨ ----
+  console.log('\n--- Bước 5: Tạo bác sĩ...');
+  console.log('Mỗi chuyên khoa tại mỗi clinic có 3-5 bác sĩ');
+
+  let doctorCount = 0;
+  const allDoctors: any[] = [];
+
+  // Tạo bác sĩ cho mỗi chuyên khoa tại mỗi clinic
   for (let clinicId = 1; clinicId <= NUMBER_OF_CLINICS; clinicId++) {
-    for (let serviceId = 1; serviceId <= NUMBER_OF_SERVICES; serviceId++) {
-      // Random số lượng bác sĩ từ 2-4
-      const doctorsCount = faker.number.int({
-        min: MIN_DOCTORS_PER_SERVICE_PER_CLINIC,
-        max: MAX_DOCTORS_PER_SERVICE_PER_CLINIC,
+    for (const specialty of specialtyRecords) {
+      const numDoctors = faker.number.int({
+        min: MIN_DOCTORS_PER_SPECIALTY_PER_CLINIC,
+        max: MAX_DOCTORS_PER_SPECIALTY_PER_CLINIC,
       });
 
       console.log(
-        `\n--> Đang tạo ${doctorsCount} bác sĩ cho [Clinic #${clinicId}] - [Service #${serviceId}]...`,
+        `\n--> Tạo ${numDoctors} bác sĩ cho [${specialty.name}] tại [Clinic #${clinicId}]`,
       );
-      for (let i = 0; i < doctorsCount; i++) {
-        // ---- B1: TẠO USER ----
+
+      for (let i = 0; i < numDoctors; i++) {
+        doctorCount++;
         const firstName = faker.person.firstName();
         const lastName = faker.person.lastName();
-        // Email: firstnamelastname + 3 số + @sepoliahealthcare.vn
-        const email = `${firstName.toLowerCase()}${lastName.toLowerCase()}${faker.number.int(
-          { min: 100, max: 999 },
-        )}@sepoliahealthcare.vn`;
-        const phone = faker.helpers.fromRegExp(/0[3-9][0-9]{8}/); // Số điện thoại Việt Nam
+        const email = `doctor${doctorCount}@sepolia.vn`;
+        const phone = faker.helpers.fromRegExp(/0[3-9][0-9]{8}/);
 
+        // Tạo user
         const user = await prisma.user.create({
           data: {
             email,
@@ -296,19 +433,14 @@ async function main() {
           },
         });
 
-        // ---- B2: TẠO DOCTOR PROFILE ----
+        // Tạo doctor profile
         const gender = faker.helpers.arrayElement(genders);
         const dateOfBirth = faker.date.birthdate({
-          min: 25,
-          max: 65,
+          min: 30,
+          max: 60,
           mode: 'age',
         });
-
-        const service = services[serviceId - 1];
-        // SĐT liên hệ ngẫu nhiên
-        const contactInfo = faker.helpers.fromRegExp(/0[3-9][0-9]{8}/);
-        // Năm kinh nghiệm (2000-2019)
-        const experienceYear = faker.number.int({ min: 2000, max: 2019 });
+        const experienceYear = faker.number.int({ min: 2005, max: 2020 });
 
         const doctorProfile = await prisma.doctorProfile.create({
           data: {
@@ -316,36 +448,38 @@ async function main() {
             lastName,
             dateOfBirth,
             gender,
-            // YÊU CẦU MỚI: Chỉ lưu năm
             experience: experienceYear.toString(),
-            contactInfo: contactInfo,
+            contactInfo: phone,
             avatar: faker.image.avatar(),
             userId: user.id,
-            clinicId: clinicId || null, // Có thể null nếu không có
+            clinicId,
           },
         });
 
-        // ---- B3: GÁN DỊCH VỤ CHO BÁC SĨ (DOCTORSERVICE) ----
-        const assignedServiceIds = new Set<number>();
-        // Dịch vụ được đảm bảo
-        assignedServiceIds.add(serviceId);
-        // Thêm ngẫu nhiên 1-2 dịch vụ khác để dữ liệu đa dạng hơn
-        const extraServices = faker.number.int({ min: 1, max: 2 });
-        for (let j = 0; j < extraServices; j++) {
-          assignedServiceIds.add(
-            faker.number.int({ min: 1, max: NUMBER_OF_SERVICES }),
-          );
-        }
+        allDoctors.push(doctorProfile);
+
+        // Gán chuyên khoa cho bác sĩ (CHỈ 1 chuyên khoa)
+        await prisma.doctorSpecialty.create({
+          data: {
+            doctorId: doctorProfile.id,
+            specialtyId: specialty.id,
+          },
+        });
+
+        // Gán TẤT CẢ dịch vụ của chuyên khoa đó cho bác sĩ
+        const specialtyServices = serviceRecords.filter(
+          (s) => s.specialtyId === specialty.id,
+        );
 
         await prisma.doctorService.createMany({
-          data: Array.from(assignedServiceIds).map((sId) => ({
+          data: specialtyServices.map((s) => ({
             doctorId: doctorProfile.id,
-            serviceId: sId,
+            serviceId: s.id,
           })),
         });
 
-        // ---- B4: TẠO LỊCH LÀM VIỆC (DOCTORAVAILABILITY) ----
-        const workDaysCount = faker.number.int({ min: 4, max: 6 }); // Làm việc 4-6 ngày/tuần
+        // Tạo lịch làm việc (Ít nhất 5 ngày/tuần)
+        const workDaysCount = faker.number.int({ min: 5, max: 6 });
         const workDays = faker.helpers
           .shuffle(daysOfWeek)
           .slice(0, workDaysCount);
@@ -364,72 +498,89 @@ async function main() {
           data: availabilityData,
         });
 
-        createdDoctorsCount++;
         console.log(
-          `   [${createdDoctorsCount}] Đã tạo: Dr. ${lastName} ${firstName} (${gender}, ${phone})`,
+          `   [${doctorCount}] Đã tạo: Dr. ${lastName} ${firstName} (${email})`,
         );
       }
     }
   }
-  console.log(`✅ Đã tạo ${createdDoctorsCount} bác sĩ.`);
+  console.log(`✅ Đã tạo ${doctorCount} bác sĩ`);
 
-  // ---- BƯỚC 5 (MỚI): TẠO STAFF (ADMIN & LỄ TÂN) ----
-  console.log('\n--- Bước 5: Tạo Staff (Admin & Lễ tân)...');
-  let staffCount = 0;
-  const staffRoles: Role[] = ['ADMIN', 'RECEPTIONIST'];
+  // ---- BƯỚC 6: TẠO ADMIN ----
+  console.log('\n--- Bước 6: Tạo Admin...');
+  for (let i = 1; i <= NUMBER_OF_ADMIN; i++) {
+    const firstName = faker.person.firstName();
+    const lastName = faker.person.lastName();
+    const email = `admin${i}@sepolia.vn`;
 
-  for (const role of staffRoles) {
-    for (let i = 0; i < NUMBER_OF_STAFF_PER_ROLE; i++) {
-      const firstName = faker.person.firstName();
-      const lastName = faker.person.lastName();
-      const email = `${role.toLowerCase()}${i + 1}@sepolia.vn`;
-      const user = await prisma.user.create({
-        data: {
-          email,
-          password: hashedPassword,
-          phone: faker.helpers.fromRegExp(/0[3-9][0-9]{8}/),
-          role: role,
-          status: UserStatus.ACTIVE,
-        },
-      });
+    const user = await prisma.user.create({
+      data: {
+        email,
+        password: hashedPassword,
+        phone: faker.helpers.fromRegExp(/0[3-9][0-9]{8}/),
+        role: 'ADMIN',
+        status: UserStatus.ACTIVE,
+      },
+    });
 
-      if (role === 'ADMIN') {
-        await prisma.adminProfile.create({
-          data: {
-            userId: user.id,
-            firstName,
-            lastName,
-            avatar: faker.image.avatar(),
-          },
-        });
-      } else if (role === 'RECEPTIONIST') {
-        await prisma.receptionistProfile.create({
-          data: {
-            userId: user.id,
-            firstName,
-            lastName,
-            avatar: faker.image.avatar(),
-          },
-        });
-      }
-      staffCount++;
-      console.log(
-        `   [${staffCount}] Đã tạo ${role}: ${lastName} ${firstName} (${email})`,
-      );
-    }
+    await prisma.adminProfile.create({
+      data: {
+        userId: user.id,
+        firstName,
+        lastName,
+        avatar: faker.image.avatar(),
+      },
+    });
+
+    console.log(`   [${i}] Đã tạo Admin: ${lastName} ${firstName} (${email})`);
   }
-  console.log(`✅ Đã tạo ${staffCount} nhân viên (Admin & Lễ tân)`);
+  console.log(`✅ Đã tạo ${NUMBER_OF_ADMIN} admin`);
 
-  // ---- BƯỚC 6 (MỚI): TẠO BỆNH NHÂN (USERS & PATIENTPROFILES) ----
-  console.log('\n--- Bước 6: Tạo Bệnh nhân (Users & PatientProfiles)...');
+  // ---- BƯỚC 7: TẠO LỄ TÂN ----
+  console.log('\n--- Bước 7: Tạo Lễ tân...');
+  for (let i = 1; i <= NUMBER_OF_RECEPTIONISTS; i++) {
+    const firstName = faker.person.firstName();
+    const lastName = faker.person.lastName();
+    const email = `receptionist${i}@sepolia.vn`;
+
+    const user = await prisma.user.create({
+      data: {
+        email,
+        password: hashedPassword,
+        phone: faker.helpers.fromRegExp(/0[3-9][0-9]{8}/),
+        role: 'RECEPTIONIST',
+        status: UserStatus.ACTIVE,
+      },
+    });
+
+    // Random gán clinic cho lễ tân
+    const clinicId = faker.number.int({ min: 1, max: NUMBER_OF_CLINICS });
+
+    await prisma.receptionistProfile.create({
+      data: {
+        userId: user.id,
+        firstName,
+        lastName,
+        avatar: faker.image.avatar(),
+        clinicId,
+      },
+    });
+
+    console.log(
+      `   [${i}] Đã tạo Receptionist: ${lastName} ${firstName} (${email})`,
+    );
+  }
+  console.log(`✅ Đã tạo ${NUMBER_OF_RECEPTIONISTS} lễ tân`);
+
+  // ---- BƯỚC 8: TẠO BỆNH NHÂN ----
+  console.log('\n--- Bước 8: Tạo Bệnh nhân (800 users)...');
   const createdPatientProfileIds: number[] = [];
   let totalProfilesCreated = 0;
-  let patientUserCount = 0;
 
-  for (let i = 0; i < NUMBER_OF_PATIENT_USERS; i++) {
+  for (let i = 1; i <= NUMBER_OF_PATIENT_USERS; i++) {
     const managerFirstName = faker.person.firstName();
     const managerLastName = faker.person.lastName();
-    const email = `patient${faker.number.int({ min: 10000, max: 99999 })}@gmail.com`;
+    const email = `user${i}@sepolia.vn`;
     const phone = faker.helpers.fromRegExp(/0[3-9][0-9]{8}/);
 
     const user = await prisma.user.create({
@@ -441,230 +592,368 @@ async function main() {
         status: UserStatus.ACTIVE,
       },
     });
-    patientUserCount++;
 
-    // 1. Tạo hồ sơ SELF (Bắt buộc)
-    const selfProfile = await prisma.patientProfile.create({
-      data: {
-        managerId: user.id,
-        firstName: managerFirstName,
-        lastName: managerLastName,
-        dateOfBirth: faker.date.birthdate({ min: 18, max: 70, mode: 'age' }),
-        gender: faker.helpers.arrayElement(genders),
-        phone: phone, // Dùng SĐT của user
-        relationship: 'SELF',
-        avatar: faker.image.avatar(),
-      },
-    });
-    createdPatientProfileIds.push(selfProfile.id);
-    totalProfilesCreated++;
+    // Mỗi user có từ 1-3 patient profiles
+    const numProfiles = faker.number.int({ min: 1, max: 3 });
 
-    // 2. Tạo thêm 0-2 hồ sơ (random 1-3 total)
-    const extraProfilesCount = faker.number.int({ min: 0, max: 2 });
-    for (let j = 0; j < extraProfilesCount; j++) {
-      const relationship = faker.helpers.arrayElement([
-        'CHILD',
-        'PARENT',
-        'SPOUSE',
-        'OTHER',
-      ]);
-      const extraProfile = await prisma.patientProfile.create({
+    for (let j = 0; j < numProfiles; j++) {
+      let relationship: any;
+      let firstName: string;
+      let dateOfBirth: Date;
+
+      if (j === 0) {
+        // Profile đầu tiên luôn là SELF
+        relationship = 'SELF';
+        firstName = managerFirstName;
+        dateOfBirth = faker.date.birthdate({ min: 18, max: 70, mode: 'age' });
+      } else {
+        // Các profile khác
+        relationship = faker.helpers.arrayElement([
+          'CHILD',
+          'PARENT',
+          'SPOUSE',
+          'OTHER',
+        ]);
+        firstName = faker.person.firstName();
+
+        if (relationship === 'CHILD') {
+          dateOfBirth = faker.date.birthdate({ min: 1, max: 17, mode: 'age' });
+        } else if (relationship === 'PARENT') {
+          dateOfBirth = faker.date.birthdate({ min: 50, max: 80, mode: 'age' });
+        } else {
+          dateOfBirth = faker.date.birthdate({ min: 18, max: 70, mode: 'age' });
+        }
+      }
+
+      const profile = await prisma.patientProfile.create({
         data: {
           managerId: user.id,
-          firstName: faker.person.firstName(),
-          lastName: managerLastName, // Thường chung họ
-          dateOfBirth:
-            relationship === 'CHILD'
-              ? faker.date.birthdate({ min: 1, max: 17, mode: 'age' })
-              : faker.date.birthdate({ min: 18, max: 80, mode: 'age' }),
+          firstName,
+          lastName: managerLastName,
+          dateOfBirth,
           gender: faker.helpers.arrayElement(genders),
-          phone: faker.helpers.fromRegExp(/0[3-9][0-9]{8}/),
-          relationship: relationship,
+          phone: j === 0 ? phone : faker.helpers.fromRegExp(/0[3-9][0-9]{8}/),
+          relationship,
           avatar: faker.image.avatar(),
         },
       });
-      createdPatientProfileIds.push(extraProfile.id);
+
+      createdPatientProfileIds.push(profile.id);
       totalProfilesCreated++;
     }
-  }
-  console.log(
-    `✅ Đã tạo ${patientUserCount} user PATIENT và ${totalProfilesCreated} PatientProfiles.`,
-  );
 
-  // ---- BƯỚC 7 (MỚI): TẠO LỊCH HẸN, HÓA ĐƠN, FEEDBACK ----
-  console.log('\n--- Bước 7: Tạo Lịch hẹn, Hóa đơn, Feedback...');
-  const today = new Date();
-
-  // Lấy tất cả các "cặp" dịch vụ-bác sĩ hợp lệ
-  console.log('Đang lấy dữ liệu bác sĩ/dịch vụ/lịch làm việc...');
-  const validDoctorServices = await prisma.doctorService.findMany({
-    include: {
-      service: true,
-      doctor: {
-        include: {
-          availabilities: true,
-          clinic: true,
-        },
-      },
-    },
-  });
-
-  if (createdPatientProfileIds.length === 0) {
-    console.warn('⚠️ Không có PatientProfile nào, bỏ qua tạo lịch hẹn.');
-    return;
-  }
-  if (validDoctorServices.length === 0) {
-    console.warn('⚠️ Không có DoctorService nào, bỏ qua tạo lịch hẹn.');
-    return;
-  }
-
-  let appointmentsCreated = 0;
-  let feedbacksCreated = 0;
-
-  for (let i = 0; i < NUMBER_OF_APPOINTMENTS; i++) {
-    try {
-      // 1. Chọn ngẫu nhiên 1 Patient
-      const patientProfileId = faker.helpers.arrayElement(
-        createdPatientProfileIds,
-      );
-      // Lấy thông tin patient
-      const patient = await prisma.patientProfile.findUnique({
-        where: { id: patientProfileId },
-      });
-      if (!patient) continue;
-
-      // 2. Chọn ngẫu nhiên 1 combo Bác sĩ - Dịch vụ - Phòng khám
-      const combo = faker.helpers.arrayElement(validDoctorServices);
-      const { doctor, service } = combo;
-      const clinicId = doctor.clinicId;
-      if (
-        !clinicId ||
-        !doctor.availabilities ||
-        doctor.availabilities.length === 0
-      ) {
-        continue; // Bỏ qua nếu bác sĩ không có clinic hoặc lịch làm việc
-      }
-
-      // 3. Tạo ngày hẹn ngẫu nhiên
-      const appointmentDate = faker.date.between({
-        from: APPOINTMENT_START_DATE,
-        to: APPOINTMENT_END_DATE,
-      });
-      const dayOfWeek = appointmentDate.getDay(); // Sunday = 0, Monday = 1...
-
-      // 4. Tìm ca làm việc
-      const availability = doctor.availabilities.find(
-        (a) => a.dayOfWeek === dayOfWeek,
-      );
-      if (!availability) {
-        // Bác sĩ không làm việc hôm đó, thử lại với vòng lặp khác
-        continue;
-      }
-
-      // 5. Tìm slot thời gian
-      const [startHour, startMin] = availability.startTime
-        .split(':')
-        .map(Number);
-      const [endHour, endMin] = availability.endTime.split(':').map(Number);
-
-      const shiftStart = new Date(appointmentDate);
-      shiftStart.setHours(startHour, startMin, 0, 0);
-
-      const shiftEnd = new Date(appointmentDate);
-      shiftEnd.setHours(endHour, endMin, 0, 0);
-
-      const totalShiftMinutes =
-        (shiftEnd.getTime() - shiftStart.getTime()) / 60000;
-      const availableSlots = Math.floor(totalShiftMinutes / service.duration);
-
-      if (availableSlots <= 0) {
-        // Ca làm việc quá ngắn cho dịch vụ
-        continue;
-      }
-
-      // Chọn 1 slot ngẫu nhiên
-      const randomSlot = faker.number.int({ min: 0, max: availableSlots - 1 });
-      const minutesOffset = randomSlot * service.duration;
-
-      const appointmentStart = new Date(
-        shiftStart.getTime() + minutesOffset * 60000,
-      );
-      const appointmentEnd = new Date(
-        appointmentStart.getTime() + service.duration * 60000,
-      );
-
-      // 6. Xác định trạng thái
-      let status: AppointmentStatus;
-      if (appointmentEnd < today) {
-        status = 'COMPLETED';
-      } else if (appointmentStart <= today && appointmentEnd > today) {
-        status = 'ON_GOING';
-      } else {
-        status = 'UPCOMING';
-      }
-
-      // 7. Tạo Appointment (schema mới: startTime và endTime là DateTime)
-      const appointment = await prisma.appointment.create({
-        data: {
-          startTime: appointmentStart,
-          endTime: appointmentEnd,
-          status: status,
-          notes: 'Lịch hẹn được tạo tự động (seed)',
-          type: 'OFFLINE',
-          patientProfileId: patient.id,
-
-          doctorId: doctor.id,
-          serviceId: service.id,
-          clinicId: clinicId,
-        },
-      });
-      appointmentsCreated++;
-
-      // 8. Tạo Billing
-      await prisma.billing.create({
-        data: {
-          appointmentId: appointment.id,
-          amount: service.price,
-          status: 'PAID',
-          paymentMethod: faker.helpers.arrayElement(['ONLINE', 'OFFLINE']),
-        },
-      });
-
-      // 9. Tạo Feedback nếu đã COMPLETED
-      if (status === 'COMPLETED') {
-        await prisma.feedback.create({
-          data: {
-            appointmentId: appointment.id,
-            rating: faker.number.int({ min: 3, max: 5 }), // 3-5 sao
-            comment: faker.lorem.sentence({ min: 5, max: 20 }),
-          },
-        });
-        feedbacksCreated++;
-      }
-
-      if (appointmentsCreated % 100 === 0) {
-        console.log(
-          `   ... đã tạo ${appointmentsCreated}/${NUMBER_OF_APPOINTMENTS} lịch hẹn`,
-        );
-      }
-    } catch (err) {
-      console.warn(`Lỗi khi tạo lịch hẹn: ${err.message}. Bỏ qua...`);
+    if (i % 100 === 0) {
+      console.log(`   ... đã tạo ${i}/${NUMBER_OF_PATIENT_USERS} users`);
     }
   }
   console.log(
-    `✅ Đã tạo ${appointmentsCreated} lịch hẹn, ${appointmentsCreated} hóa đơn, và ${feedbacksCreated} feedbacks.`,
+    `✅ Đã tạo ${NUMBER_OF_PATIENT_USERS} user và ${totalProfilesCreated} patient profiles`,
   );
 
+  // ---- BƯỚC 9: TẠO LỊCH HẸN, HÓA ĐƠN, FEEDBACK ----
+  console.log('\n--- Bước 9: Tạo Lịch hẹn từ 01/01/2024 - 31/12/2025...');
+  const today = new Date();
+
+  let appointmentsCreated = 0;
+  let billingsCreated = 0;
+  let feedbacksCreated = 0;
+
+  // Lặp qua từng bác sĩ để tạo appointments
+  console.log('Tạo appointments cho từng bác sĩ...');
+
+  for (const doctor of allDoctors) {
+    // Lấy availabilities và services của bác sĩ
+    const availabilities = await prisma.doctorAvailability.findMany({
+      where: { doctorId: doctor.id },
+    });
+
+    const doctorServices = await prisma.doctorService.findMany({
+      where: { doctorId: doctor.id },
+      include: { service: true },
+    });
+
+    if (availabilities.length === 0 || doctorServices.length === 0) {
+      continue;
+    }
+
+    // Tạo appointments cho mỗi ngày làm việc từ START_DATE đến END_DATE
+    const currentDate = new Date(APPOINTMENT_START_DATE);
+
+    while (currentDate <= APPOINTMENT_END_DATE) {
+      const dayOfWeek = currentDate.getDay();
+
+      // Kiểm tra xem bác sĩ có làm việc ngày này không
+      const availability = availabilities.find(
+        (a) => a.dayOfWeek === dayOfWeek,
+      );
+
+      if (availability) {
+        // Tạo vài cuộc hẹn trong ngày (2-4 appointments)
+        const numAppointments = faker.number.int({ min: 2, max: 4 });
+
+        for (let i = 0; i < numAppointments; i++) {
+          try {
+            // Chọn service ngẫu nhiên từ các service của bác sĩ
+            const doctorService = faker.helpers.arrayElement(doctorServices);
+            const service = doctorService.service;
+
+            // Chọn patient ngẫu nhiên
+            const patientProfileId = faker.helpers.arrayElement(
+              createdPatientProfileIds,
+            );
+
+            // Tạo thời gian appointment
+            const [startHour, startMin] = availability.startTime
+              .split(':')
+              .map(Number);
+            const [endHour, endMin] = availability.endTime
+              .split(':')
+              .map(Number);
+
+            const shiftStart = new Date(currentDate);
+            shiftStart.setHours(startHour, startMin, 0, 0);
+
+            const shiftEnd = new Date(currentDate);
+            shiftEnd.setHours(endHour, endMin, 0, 0);
+
+            const totalMinutes =
+              (shiftEnd.getTime() - shiftStart.getTime()) / 60000;
+            const maxSlots = Math.floor(totalMinutes / service.duration);
+
+            if (maxSlots <= 0) continue;
+
+            const randomSlot = faker.number.int({ min: 0, max: maxSlots - 1 });
+            const appointmentStart = new Date(
+              shiftStart.getTime() + randomSlot * service.duration * 60000,
+            );
+            const appointmentEnd = new Date(
+              appointmentStart.getTime() + service.duration * 60000,
+            );
+
+            // Xác định trạng thái
+            let status: AppointmentStatus;
+            if (appointmentEnd < today) {
+              // Random COMPLETED hoặc CANCELLED cho quá khứ
+              status = faker.helpers.arrayElement([
+                'COMPLETED',
+                'COMPLETED',
+                'COMPLETED',
+                'CANCELLED',
+              ]) as AppointmentStatus;
+            } else if (appointmentStart <= today && appointmentEnd > today) {
+              status = 'ON_GOING';
+            } else {
+              // Random UPCOMING hoặc CANCELLED cho tương lai
+              status = faker.helpers.arrayElement([
+                'UPCOMING',
+                'UPCOMING',
+                'UPCOMING',
+                'CANCELLED',
+              ]) as AppointmentStatus;
+            }
+
+            // Tạo appointment
+            const appointment = await prisma.appointment.create({
+              data: {
+                startTime: appointmentStart,
+                endTime: appointmentEnd,
+                status,
+                notes: faker.lorem.sentence(),
+                type: 'OFFLINE',
+                patientProfileId,
+                doctorId: doctor.id,
+                serviceId: service.id,
+                clinicId: doctor.clinicId,
+              },
+            });
+            appointmentsCreated++;
+
+            // Tạo billing
+            const billingStatus = status === 'CANCELLED' ? 'REFUNDED' : 'PAID';
+            await prisma.billing.create({
+              data: {
+                appointmentId: appointment.id,
+                amount: service.price,
+                status: billingStatus,
+                paymentMethod: faker.helpers.arrayElement([
+                  'ONLINE',
+                  'OFFLINE',
+                ]),
+              },
+            });
+            billingsCreated++;
+
+            // Tạo feedback nếu COMPLETED
+            if (status === 'COMPLETED') {
+              await prisma.feedback.create({
+                data: {
+                  appointmentId: appointment.id,
+                  rating: faker.number.int({ min: 3, max: 5 }),
+                  comment: faker.lorem.sentence(),
+                },
+              });
+              feedbacksCreated++;
+            }
+          } catch {
+            // Bỏ qua lỗi (có thể do trùng thời gian)
+          }
+        }
+      }
+
+      // Chuyển sang ngày tiếp theo
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    if (appointmentsCreated % 500 === 0 && appointmentsCreated > 0) {
+      console.log(`   ... đã tạo ${appointmentsCreated} appointments`);
+    }
+  }
+
+  console.log(
+    `✅ Đã tạo ${appointmentsCreated} appointments, ${billingsCreated} billings, ${feedbacksCreated} feedbacks`,
+  );
+
+  // ---- BƯỚC 10: TẠO TAGS CHO Q&A ----
+  console.log('\n--- Bước 10: Tạo Tags cho Q&A...');
+  await prisma.tag.createMany({
+    data: tagsData,
+  });
+  console.log(`✅ Đã tạo ${tagsData.length} tags`);
+
+  // Get created tags
+  const tags = await prisma.tag.findMany();
+
+  // ---- BƯỚC 11: TẠO QUESTIONS & ANSWERS ----
+  console.log('\n--- Bước 11: Tạo Questions & Answers...');
+
+  // Lấy một số user để làm tác giả
+  const users = await prisma.user.findMany({
+    where: { role: 'PATIENT' },
+    take: 50,
+  });
+
+  // Lấy một số bác sĩ để trả lời
+  const doctorUsers = await prisma.user.findMany({
+    where: { role: 'DOCTOR' },
+    take: 20,
+  });
+
+  let questionsCreated = 0;
+  let answersCreated = 0;
+  let votesCreated = 0;
+
+  for (let i = 0; i < NUMBER_OF_POSTS; i++) {
+    try {
+      const author = faker.helpers.arrayElement(users);
+
+      // Tạo question
+      const question = await prisma.question.create({
+        data: {
+          title: faker.lorem.sentence({ min: 5, max: 10 }),
+          content: faker.lorem.paragraphs(2),
+          views: faker.number.int({ min: 10, max: 500 }),
+          upvotes: faker.number.int({ min: 0, max: 50 }),
+          downvotes: faker.number.int({ min: 0, max: 5 }),
+          authorId: author.id,
+        },
+      });
+      questionsCreated++;
+
+      // Gán tags cho question (1-3 tags)
+      const numTags = faker.number.int({ min: 1, max: 3 });
+      const selectedTags = faker.helpers.arrayElements(tags, numTags);
+
+      for (const tag of selectedTags) {
+        await prisma.questionTag.create({
+          data: {
+            questionId: question.id,
+            tagId: tag.id,
+          },
+        });
+      }
+
+      // Tạo answers (1-5 answers)
+      const numAnswers = faker.number.int({ min: 1, max: 5 });
+
+      for (let j = 0; j < numAnswers; j++) {
+        // Một số answer từ bác sĩ, một số từ user khác
+        const answerAuthor =
+          j === 0
+            ? faker.helpers.arrayElement(doctorUsers)
+            : faker.helpers.arrayElement([...users, ...doctorUsers]);
+
+        const answer = await prisma.answer.create({
+          data: {
+            content: faker.lorem.paragraphs(1),
+            upvotes: faker.number.int({ min: 0, max: 30 }),
+            downvotes: faker.number.int({ min: 0, max: 3 }),
+            questionId: question.id,
+            authorId: answerAuthor.id,
+          },
+        });
+        answersCreated++;
+
+        // Đặt best answer cho câu trả lời đầu tiên có thể
+        if (j === 0 && faker.datatype.boolean()) {
+          await prisma.question.update({
+            where: { id: question.id },
+            data: { bestAnswerId: answer.id },
+          });
+        }
+      }
+
+      // Tạo votes cho question
+      const numVoters = faker.number.int({ min: 2, max: 10 });
+      const voters = faker.helpers.arrayElements(users, numVoters);
+
+      for (const voter of voters) {
+        try {
+          await prisma.questionVote.create({
+            data: {
+              questionId: question.id,
+              userId: voter.id,
+              voteType: faker.helpers.arrayElement(['UP', 'DOWN']),
+            },
+          });
+          votesCreated++;
+        } catch {
+          // Bỏ qua nếu user đã vote
+        }
+      }
+    } catch {
+      // Bỏ qua lỗi
+    }
+  }
+
+  console.log(
+    `✅ Đã tạo ${questionsCreated} questions, ${answersCreated} answers, ${votesCreated} votes`,
+  );
+
+  // ---- BƯỚC 12: TẠO FAQs ----
+  console.log('\n--- Bước 12: Tạo FAQs...');
+  await prisma.appTerms.createMany({
+    data: faqsData,
+  });
+  console.log(`✅ Đã tạo ${faqsData.length} FAQs`);
+
+  // ---- SUMMARY ----
   console.log(
     `\n✅ HOÀN THÀNH! Đã tạo thành công:
-     - ${services.length} dịch vụ
+     - ${specialties.length} chuyên khoa
+     - ${servicesData.length} dịch vụ
      - ${clinics.length} phòng khám
-     - ${createdDoctorsCount} bác sĩ
-     - ${staffCount} nhân viên (Admin/Lễ tân)
-     - ${patientUserCount} user bệnh nhân
+     - ${doctorCount} bác sĩ
+     - ${NUMBER_OF_ADMIN} admin
+     - ${NUMBER_OF_RECEPTIONISTS} lễ tân
+     - ${NUMBER_OF_PATIENT_USERS} user bệnh nhân
      - ${totalProfilesCreated} hồ sơ bệnh nhân
-     - ${appointmentsCreated} lịch hẹn (kèm hóa đơn)
-     - ${feedbacksCreated} feedback`,
+     - ${appointmentsCreated} lịch hẹn
+     - ${billingsCreated} hóa đơn
+     - ${feedbacksCreated} feedbacks
+     - ${tagsData.length} tags
+     - ${questionsCreated} questions
+     - ${answersCreated} answers
+     - ${faqsData.length} FAQs`,
   );
 }
 

@@ -135,6 +135,7 @@ model DoctorProfile {
   results        AppointmentResult[]     @relation("DoctorResults")
   prescriptions  Prescription[]
   services       DoctorService[]        @relation("Services")
+  specialties    DoctorSpecialty[]
   availabilities DoctorAvailability[]
   overrides      AvailabilityOverride[]
 
@@ -327,12 +328,28 @@ model AppointmentResult {
 
 // ----------------- OTHER MODELS (Giữ nguyên hoặc ít thay đổi) -----------------
 
+/// Chuyên khoa: Phân loại các dịch vụ y tế theo chuyên khoa
+model Specialty {
+  id          Int       @id @default(autoincrement())
+  name        String
+  description String?
+  icon        String? // Icon hoặc image URL (optional)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Quan hệ
+  services        Service[]         @relation("ServiceSpecialty")
+  doctorSpecialties DoctorSpecialty[]
+}
+
 model Service {
   id            Int             @id @default(autoincrement())
   name          String
   price         Float
   duration      Int // thời lượng (phút)
   description   String?
+  specialtyId   Int
+  specialty     Specialty       @relation("ServiceSpecialty", fields: [specialtyId], references: [id])
   createdAt     DateTime        @default(now())
   updatedAt     DateTime?
   appointments  Appointment[]
@@ -348,6 +365,20 @@ model DoctorService {
   createdAt DateTime      @default(now())
 
   @@unique([doctorId, serviceId])
+}
+
+/// Quan hệ many-to-many giữa Doctor và Specialty
+model DoctorSpecialty {
+  id          Int       @id @default(autoincrement())
+  doctorId    Int
+  doctor      DoctorProfile @relation(fields: [doctorId], references: [id])
+  specialtyId Int
+  specialty   Specialty @relation(fields: [specialtyId], references: [id])
+  createdAt   DateTime  @default(now())
+
+  @@unique([doctorId, specialtyId])
+  @@index([doctorId])
+  @@index([specialtyId])
 }
 
 model Billing {

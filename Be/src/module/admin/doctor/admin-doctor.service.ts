@@ -55,6 +55,16 @@ export class AdminDoctorService {
       throw new NotFoundException('Một hoặc nhiều dịch vụ không tồn tại');
     }
 
+    // Validate specialties
+    const uniqueSpecialtyIds = Array.from(new Set(doctorData.specialtyIds));
+    const specialties = await this.prisma.specialty.findMany({
+      where: { id: { in: uniqueSpecialtyIds } },
+      select: { id: true },
+    });
+    if (specialties.length !== uniqueSpecialtyIds.length) {
+      throw new NotFoundException('Một hoặc nhiều chuyên khoa không tồn tại');
+    }
+
     // Create user and doctor profile + relations
     const result = await this.prisma.$transaction(async (tx) => {
       // Create user
@@ -90,6 +100,17 @@ export class AdminDoctorService {
         });
       }
 
+      // Create doctor specialties
+      if (uniqueSpecialtyIds.length > 0) {
+        await tx.doctorSpecialty.createMany({
+          data: uniqueSpecialtyIds.map((specialtyId) => ({
+            doctorId: doctorProfile.id,
+            specialtyId,
+          })),
+          skipDuplicates: true,
+        });
+      }
+
       // Create weekly availabilities (optional)
       if (doctorData.availabilities && doctorData.availabilities.length > 0) {
         await tx.doctorAvailability.createMany({
@@ -106,17 +127,32 @@ export class AdminDoctorService {
       return { user, doctorProfile };
     });
 
-    // Get services for the doctor
-    const doctorServices = await this.prisma.doctorService.findMany({
-      where: { doctorId: result.doctorProfile.id },
-      include: {
-        service: {
-          select: {
-            name: true,
+    // Get services and specialties for the doctor
+    const [doctorServices, doctorSpecialties] = await Promise.all([
+      this.prisma.doctorService.findMany({
+        where: { doctorId: result.doctorProfile.id },
+        include: {
+          service: {
+            select: {
+              name: true,
+            },
           },
         },
-      },
-    });
+      }),
+      this.prisma.doctorSpecialty.findMany({
+        where: { doctorId: result.doctorProfile.id },
+        include: {
+          specialty: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
+              icon: true,
+            },
+          },
+        },
+      }),
+    ]);
 
     return {
       id: result.doctorProfile.id,
@@ -124,6 +160,12 @@ export class AdminDoctorService {
       fullName: `${result.doctorProfile.firstName} ${result.doctorProfile.lastName}`,
       phone: result.user.phone || '',
       services: doctorServices.map((s) => s.service.name),
+      specialties: doctorSpecialties.map((ds) => ({
+        id: ds.specialty.id,
+        name: ds.specialty.name,
+        description: ds.specialty.description || undefined,
+        icon: ds.specialty.icon || undefined,
+      })),
       experienceYears: parseInt(result.doctorProfile.experience || '0'),
       status: result.user.status,
       createdAt: result.doctorProfile.createdAt,
@@ -202,6 +244,18 @@ export class AdminDoctorService {
                   },
                 },
               },
+              specialties: {
+                include: {
+                  specialty: {
+                    select: {
+                      id: true,
+                      name: true,
+                      description: true,
+                      icon: true,
+                    },
+                  },
+                },
+              },
             },
           },
         },
@@ -224,6 +278,12 @@ export class AdminDoctorService {
         fullName: `${doctor.doctorProfile!.firstName} ${doctor.doctorProfile!.lastName}`,
         phone: doctor.phone || '',
         services: doctor.doctorProfile!.services.map((s) => s.service.name),
+        specialties: doctor.doctorProfile!.specialties.map((ds) => ({
+          id: ds.specialty.id,
+          name: ds.specialty.name,
+          description: ds.specialty.description || undefined,
+          icon: ds.specialty.icon || undefined,
+        })),
         experienceYears: parseInt(doctor.doctorProfile!.experience || '0'),
         status: doctor.status,
         clinic: doctor.doctorProfile!.clinic
@@ -260,6 +320,18 @@ export class AdminDoctorService {
                 price: true,
                 duration: true,
                 description: true,
+              },
+            },
+          },
+        },
+        specialties: {
+          include: {
+            specialty: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+                icon: true,
               },
             },
           },
@@ -301,6 +373,12 @@ export class AdminDoctorService {
         duration: s.service.duration,
         description: s.service.description || undefined,
       })),
+      specialties: doctor.specialties.map((ds) => ({
+        id: ds.specialty.id,
+        name: ds.specialty.name,
+        description: ds.specialty.description || undefined,
+        icon: ds.specialty.icon || undefined,
+      })),
       appointmentStats,
       experienceYears: parseInt(doctor.experience || '0'),
       description: doctor.contactInfo || undefined,
@@ -330,6 +408,20 @@ export class AdminDoctorService {
       throw new NotFoundException('Không tìm thấy bác sĩ');
     }
 
+    // Validate specialties if updating
+    if (updateDoctorDto.specialtyIds) {
+      const uniqueSpecialtyIds = Array.from(
+        new Set(updateDoctorDto.specialtyIds),
+      );
+      const specialties = await this.prisma.specialty.findMany({
+        where: { id: { in: uniqueSpecialtyIds } },
+        select: { id: true },
+      });
+      if (specialties.length !== uniqueSpecialtyIds.length) {
+        throw new NotFoundException('Một hoặc nhiều chuyên khoa không tồn tại');
+      }
+    }
+
     // Prepare update data based on the DTO
     const updateData: any = {};
     if (updateDoctorDto.fullName) {
@@ -341,28 +433,78 @@ export class AdminDoctorService {
       updateData.experience = updateDoctorDto.experienceYears.toString();
     if (updateDoctorDto.phone) updateData.contactInfo = updateDoctorDto.phone;
 
-    const updatedDoctor = await this.prisma.doctorProfile.update({
-      where: { id },
-      data: updateData,
-      include: {
-        user: true,
-        services: {
-          include: {
-            service: {
-              select: {
-                name: true,
-              },
+    const updatedDoctor = await this.prisma.$transaction(async (tx) => {
+      // Update doctor profile
+      const doctor = await tx.doctorProfile.update({
+        where: { id },
+        data: updateData,
+        include: {
+          user: true,
+        },
+      });
+
+      // Update specialties if provided
+      if (updateDoctorDto.specialtyIds) {
+        const uniqueSpecialtyIds = Array.from(
+          new Set(updateDoctorDto.specialtyIds),
+        );
+        // Delete existing specialties
+        await tx.doctorSpecialty.deleteMany({
+          where: { doctorId: id },
+        });
+        // Create new specialties
+        if (uniqueSpecialtyIds.length > 0) {
+          await tx.doctorSpecialty.createMany({
+            data: uniqueSpecialtyIds.map((specialtyId) => ({
+              doctorId: id,
+              specialtyId,
+            })),
+            skipDuplicates: true,
+          });
+        }
+      }
+
+      return doctor;
+    });
+
+    // Get updated services and specialties
+    const [doctorServices, doctorSpecialties] = await Promise.all([
+      this.prisma.doctorService.findMany({
+        where: { doctorId: id },
+        include: {
+          service: {
+            select: {
+              name: true,
             },
           },
         },
-      },
-    });
+      }),
+      this.prisma.doctorSpecialty.findMany({
+        where: { doctorId: id },
+        include: {
+          specialty: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
+              icon: true,
+            },
+          },
+        },
+      }),
+    ]);
 
     return {
       id: updatedDoctor.id,
       email: updatedDoctor.user.email,
       fullName: `${updatedDoctor.firstName} ${updatedDoctor.lastName}`,
-      services: updatedDoctor.services.map((s) => s.service.name),
+      services: doctorServices.map((s) => s.service.name),
+      specialties: doctorSpecialties.map((ds) => ({
+        id: ds.specialty.id,
+        name: ds.specialty.name,
+        description: ds.specialty.description || undefined,
+        icon: ds.specialty.icon || undefined,
+      })),
       experienceYears: parseInt(updatedDoctor.experience || '0'),
       status: 'ACTIVE',
     };
@@ -401,6 +543,18 @@ export class AdminDoctorService {
             },
           },
         },
+        specialties: {
+          include: {
+            specialty: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+                icon: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -413,6 +567,12 @@ export class AdminDoctorService {
       email: updatedDoctor.user.email,
       fullName: `${updatedDoctor.firstName} ${updatedDoctor.lastName}`,
       services: updatedDoctor.services.map((s) => s.service.name),
+      specialties: updatedDoctor.specialties.map((ds) => ({
+        id: ds.specialty.id,
+        name: ds.specialty.name,
+        description: ds.specialty.description || undefined,
+        icon: ds.specialty.icon || undefined,
+      })),
       experienceYears: parseInt(updatedDoctor.experience || '0'),
       status: updatedDoctor.user.status,
     };

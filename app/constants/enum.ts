@@ -8,3 +8,10 @@ export enum Relationship {
   FRIEND = 'FRIEND',
   OTHER = 'OTHER',
 }
+
+export enum AppointmentStatus {
+  UPCOMING = 'UPCOMING',
+  ON_GOING = 'ON_GOING',
+  COMPLETED = 'COMPLETED',
+  CANCELLED = 'CANCELLED',
+}

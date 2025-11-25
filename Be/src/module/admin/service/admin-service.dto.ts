@@ -16,6 +16,7 @@ export const CreateServiceSchema = z.object({
   price: z.number().min(0, 'Giá phải >= 0'),
   duration: z.number().int().min(1, 'Thời lượng phải >= 1 phút'),
   description: z.string().optional(),
+  specialtyId: z.number().int().min(1, 'Chuyên khoa không được để trống'),
 });
 
 export type CreateServiceDto = z.infer<typeof CreateServiceSchema>;
@@ -25,6 +26,11 @@ export const UpdateServiceSchema = z.object({
   price: z.number().min(0, 'Giá phải >= 0').optional(),
   duration: z.number().int().min(1, 'Thời lượng phải >= 1 phút').optional(),
   description: z.string().optional(),
+  specialtyId: z
+    .number()
+    .int()
+    .min(1, 'Chuyên khoa không được để trống')
+    .optional(),
 });
 
 export type UpdateServiceDto = z.infer<typeof UpdateServiceSchema>;
@@ -57,6 +63,13 @@ export class CreateServiceDtoClass {
     required: false,
   })
   description?: string;
+
+  @ApiProperty({
+    description: 'ID chuyên khoa',
+    example: 1,
+    minimum: 1,
+  })
+  specialtyId: number;
 }
 
 export class UpdateServiceDtoClass {
@@ -89,6 +102,43 @@ export class UpdateServiceDtoClass {
     required: false,
   })
   description?: string;
+
+  @ApiProperty({
+    description: 'ID chuyên khoa',
+    example: 1,
+    minimum: 1,
+    required: false,
+  })
+  specialtyId?: number;
+}
+
+// Specialty DTO for response
+export class SpecialtyDto {
+  @ApiProperty({
+    description: 'ID chuyên khoa',
+    example: 1,
+  })
+  id: number;
+
+  @ApiProperty({
+    description: 'Tên chuyên khoa',
+    example: 'Mắt',
+  })
+  name: string;
+
+  @ApiProperty({
+    description: 'Mô tả chuyên khoa',
+    example: 'Chuyên khoa về các bệnh lý mắt',
+    nullable: true,
+  })
+  description?: string;
+
+  @ApiProperty({
+    description: 'Icon hoặc image URL',
+    example: 'https://example.com/icon.png',
+    nullable: true,
+  })
+  icon?: string;
 }
 
 // Response DTOs
@@ -136,6 +186,12 @@ export class ServiceResponseDto {
     nullable: true,
   })
   updatedAt?: Date;
+
+  @ApiProperty({
+    description: 'Thông tin chuyên khoa',
+    type: SpecialtyDto,
+  })
+  specialty: SpecialtyDto;
 }
 
 export class ServicesListResponseDto {

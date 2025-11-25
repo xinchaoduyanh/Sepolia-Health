@@ -5,7 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useAppointment } from '@/lib/api/appointments';
 import { formatDate, formatTime } from '@/utils/datetime';
-import { AppointmentStatus } from '@/types/appointment';
+import { AppointmentStatus } from '@/constants/enum';
 
 export default function AppointmentDetailScreen() {
   const { id } = useLocalSearchParams();
