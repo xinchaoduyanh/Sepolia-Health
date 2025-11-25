@@ -176,6 +176,14 @@ export class AppointmentService {
             name: true,
           },
         },
+        feedback: {
+          select: {
+            id: true,
+            rating: true,
+            comment: true,
+            createdAt: true,
+          },
+        },
       },
     });
 
@@ -200,10 +208,10 @@ export class AppointmentService {
       doctorServiceId = doctorService?.id;
     }
 
-    return {
+    return this.formatAppointmentResponse({
       ...appointment,
       doctorServiceId,
-    };
+    });
   }
 
   /**
@@ -265,6 +273,19 @@ export class AppointmentService {
         service: true,
         billing: true,
         clinic: true,
+        feedback: true,
+        result: {
+          select: {
+            id: true,
+            diagnosis: true,
+            notes: true,
+            prescription: true,
+            recommendations: true,
+            appointmentId: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        },
       },
     });
 
@@ -599,6 +620,14 @@ export class AppointmentService {
             status: true,
             paymentMethod: true,
             notes: true,
+            createdAt: true,
+          },
+        },
+        feedback: {
+          select: {
+            id: true,
+            rating: true,
+            comment: true,
             createdAt: true,
           },
         },
@@ -941,6 +970,26 @@ export class AppointmentService {
             paymentMethod: appointment.billing.paymentMethod,
             notes: appointment.billing.notes,
             createdAt: appointment.billing.createdAt,
+          }
+        : undefined,
+      feedback: appointment.feedback
+        ? {
+            id: appointment.feedback.id,
+            rating: appointment.feedback.rating,
+            comment: appointment.feedback.comment,
+            createdAt: appointment.feedback.createdAt,
+          }
+        : undefined,
+      result: appointment.result
+        ? {
+            id: appointment.result.id,
+            diagnosis: appointment.result.diagnosis,
+            notes: appointment.result.notes,
+            prescription: appointment.result.prescription,
+            recommendations: appointment.result.recommendations,
+            appointmentId: appointment.result.appointmentId,
+            createdAt: appointment.result.createdAt,
+            updatedAt: appointment.result.updatedAt,
           }
         : undefined,
       createdAt: appointment.createdAt,

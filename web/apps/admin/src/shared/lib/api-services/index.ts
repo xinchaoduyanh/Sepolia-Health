@@ -25,6 +25,7 @@ export { videoService, type VideoTokenResponse } from './video.service'
 export * from './qna.service'
 export * from './app-terms.service'
 export * from './appointment.service'
+export * from './doctor-appointment.service'
 export * from './promotions.service'
 export * from './promotion-displays.service'
 

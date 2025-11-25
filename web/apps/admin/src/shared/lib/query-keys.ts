@@ -125,6 +125,18 @@ export const queryKeys = {
         },
     },
 
+    // Doctor related queries
+    doctor: {
+        all: ['doctor'] as const,
+        appointments: {
+            all: () => [...queryKeys.doctor.all, 'appointments'] as const,
+            lists: () => [...queryKeys.doctor.appointments.all(), 'list'] as const,
+            list: (filters?: Record<string, any>) => [...queryKeys.doctor.appointments.lists(), { filters }] as const,
+            details: () => [...queryKeys.doctor.appointments.all(), 'detail'] as const,
+            detail: (id: string) => [...queryKeys.doctor.appointments.details(), id] as const,
+        },
+    },
+
     // General queries
     general: {
         all: ['general'] as const,

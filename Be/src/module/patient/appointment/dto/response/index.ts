@@ -70,6 +70,46 @@ export class BillingDto {
   createdAt: Date;
 }
 
+export class FeedbackDto {
+  @ApiProperty()
+  id: number;
+
+  @ApiProperty()
+  rating: number;
+
+  @ApiProperty()
+  comment?: string | null;
+
+  @ApiProperty()
+  createdAt: Date;
+}
+
+export class AppointmentResultDto {
+  @ApiProperty()
+  id: number;
+
+  @ApiProperty()
+  diagnosis?: string | null;
+
+  @ApiProperty()
+  notes?: string | null;
+
+  @ApiProperty()
+  prescription?: string | null;
+
+  @ApiProperty()
+  recommendations?: string | null;
+
+  @ApiProperty()
+  appointmentId: number;
+
+  @ApiProperty()
+  createdAt: Date;
+
+  @ApiProperty()
+  updatedAt: Date;
+}
+
 export class AppointmentDetailResponseDto {
   @ApiProperty()
   id: number;
@@ -100,6 +140,12 @@ export class AppointmentDetailResponseDto {
 
   @ApiProperty({ type: BillingDto })
   billing?: BillingDto | null;
+
+  @ApiProperty({ type: FeedbackDto })
+  feedback?: FeedbackDto | null;
+
+  @ApiProperty({ type: AppointmentResultDto })
+  result?: AppointmentResultDto | null;
 
   @ApiProperty()
   createdAt: Date;

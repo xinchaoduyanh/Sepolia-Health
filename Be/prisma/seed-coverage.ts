@@ -14,11 +14,14 @@ const NUMBER_OF_SERVICES = 17; // ID từ 1 đến 17
 const DEFAULT_PASSWORD = 'password123';
 
 // Cấu hình cho dữ liệu mới
-const NUMBER_OF_PATIENT_USERS = 350; // Số user bệnh nhân (mục tiêu 300-400)
+const NUMBER_OF_PATIENT_USERS = 500; // Tăng số user để có đủ bệnh nhân cho nhiều appointments
 const NUMBER_OF_STAFF_PER_ROLE = 5; // 5 admin, 5 lễ tân
-const NUMBER_OF_APPOINTMENTS = 1500; // Số lịch hẹn
-const APPOINTMENT_START_DATE = new Date('2024-01-01');
-const APPOINTMENT_END_DATE = new Date('2025-10-26');
+const NUMBER_OF_APPOINTMENTS = 12000; // ~12,000 lịch hẹn (đủ để test các tính năng)
+// Khoảng thời gian: 3.5 năm (từ quá khứ đến tương lai)
+// - Quá khứ: để test lịch sử, feedback, completed appointments
+// - Tương lai: để test booking, upcoming appointments
+const APPOINTMENT_START_DATE = new Date('2022-06-01'); // Bắt đầu từ 2.5 năm trước
+const APPOINTMENT_END_DATE = new Date('2026-12-31'); // Kết thúc ở 1 năm sau
 // -----------------
 
 // Dữ liệu dịch vụ
@@ -631,8 +634,7 @@ async function main() {
       if (status === 'COMPLETED') {
         await prisma.feedback.create({
           data: {
-            patientProfileId: patient.id,
-            doctorId: doctor.id,
+            appointmentId: appointment.id,
             rating: faker.number.int({ min: 3, max: 5 }), // 3-5 sao
             comment: faker.lorem.sentence({ min: 5, max: 20 }),
           },
