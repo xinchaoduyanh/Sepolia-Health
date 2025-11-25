@@ -15,9 +15,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useForgotPasswordFlow } from '@/lib/hooks/useFogotPassword';
 import { validatePassword } from '@/lib/utils/validation';
+import OtpInput from '@/components/OtpInput';
 
 type ForgotPasswordStep = 'email' | 'otp' | 'password';
 
@@ -46,9 +47,6 @@ export default function ForgotPasswordScreen() {
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
-
-  // Refs for OTP inputs
-  const otpRefs = useRef<TextInput[]>([]);
 
   const handleSendOTP = async () => {
     // Clear previous errors
@@ -120,7 +118,7 @@ export default function ForgotPasswordScreen() {
     try {
       await resetPassword({ email, otp: otp.join(''), newPassword });
       Alert.alert('Thành công', 'Đặt lại mật khẩu thành công!', [
-        { text: 'OK', onPress: () => router.push('/(auth)/login' as any) },
+        { text: 'OK', onPress: () => router.push('/(auth)/login') },
       ]);
     } catch {
       // Error is handled by hook
@@ -261,64 +259,12 @@ export default function ForgotPasswordScreen() {
               </View>
 
               <View className="gap-4">
-                <View className="mb-8 flex-row justify-between gap-2">
-                  {otp.map((digit, index) => (
-                    <TextInput
-                      key={index}
-                      ref={(ref) => {
-                        if (ref) otpRefs.current[index] = ref;
-                      }}
-                      className="h-16 flex-1 rounded-lg border-2 border-gray-200 bg-white text-center text-2xl font-bold text-gray-800"
-                      value={digit}
-                      onChangeText={(text) => {
-                        // Chỉ lấy số
-                        const digit = text.replace(/\D/g, '').slice(-1);
-
-                        if (digit) {
-                          const newOtp = [...otp];
-                          const isUpdating = newOtp[index] !== digit;
-
-                          // Cập nhật ô hiện tại
-                          newOtp[index] = digit;
-                          setOtp(newOtp);
-
-                          // Tự động chuyển sang ô tiếp theo nếu có thay đổi hoặc ô đã có giá trị
-                          if (index < 5 && (isUpdating || otp[index])) {
-                            setTimeout(() => {
-                              otpRefs.current[index + 1]?.focus();
-                            }, 10);
-                          }
-                        } else if (text === '' && otp[index] !== '') {
-                          // Xử lý khi xóa text bằng cách select all + delete
-                          const newOtp = [...otp];
-                          newOtp[index] = '';
-                          setOtp(newOtp);
-                        }
-                      }}
-                      onKeyPress={({ nativeEvent }) => {
-                        if (nativeEvent.key === 'Backspace') {
-                          const newOtp = [...otp];
-
-                          if (otp[index]) {
-                            // Nếu ô hiện tại có giá trị, xóa nó
-                            newOtp[index] = '';
-                            setOtp(newOtp);
-                          } else if (index > 0) {
-                            // Nếu ô hiện tại trống, xóa ô trước đó và quay lại
-                            newOtp[index - 1] = '';
-                            setOtp(newOtp);
-                            setTimeout(() => {
-                              otpRefs.current[index - 1]?.focus();
-                            }, 10);
-                          }
-                        }
-                      }}
-                      keyboardType="number-pad"
-                      maxLength={1}
-                      selectTextOnFocus
-                    />
-                  ))}
-                </View>
+                <OtpInput
+                  value={otp}
+                  onChange={setOtp}
+                  length={6}
+                  onResendOTP={handleSendOTP}
+                />
 
                 <TouchableOpacity
                   className="overflow-hidden rounded-lg bg-blue-400 py-4"

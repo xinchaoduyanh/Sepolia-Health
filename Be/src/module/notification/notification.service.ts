@@ -7,80 +7,17 @@ import {
   NotificationType,
   NotificationPriority,
   NotificationStatus,
+  NotificationResponse,
+  AppointmentNotificationPatient,
+  UpdateAppointmentNotificationPatient,
+  DeleteAppointmentNotificationPatient,
+  AppointmentNotificationDoctor,
+  UpdateAppointmentNotificationDoctor,
+  DeleteAppointmentNotificationDoctor,
 } from './notification.types';
 
-// Khai báo bổ sung type cần thiết cho các hàm (bạn có thể di chuyển các type này vào notification.types.ts để dùng chung)
-
-export interface AppointmentNotificationPatient {
-  appointmentId: number;
-  appointmentDate: string;
-  appointmentTime: string;
-  doctorName: string;
-  serviceName: string;
-  clinicName: string;
-  recipientId: string;
-  notes?: string;
-}
-
-export interface UpdateAppointmentNotificationPatient
-  extends Partial<AppointmentNotificationPatient> {
-  appointmentId: number;
-  recipientId: string;
-  changes?: Record<string, any>;
-  notes?: string;
-}
-
-export interface DeleteAppointmentNotificationPatient {
-  appointmentId: number;
-  appointmentDate: string;
-  appointmentTime: string;
-  doctorName: string;
-  serviceName: string;
-  recipientId: string;
-  reason?: string;
-}
-
-export interface AppointmentNotificationDoctor {
-  appointmentId: number;
-  appointmentDate: string;
-  appointmentTime: string;
-  patientName: string;
-  serviceName: string;
-  clinicName: string;
-  recipientId: string;
-  notes?: string;
-}
-export interface UpdateAppointmentNotificationDoctor
-  extends Partial<AppointmentNotificationDoctor> {
-  appointmentId: number;
-  recipientId: string;
-  changes?: Record<string, any>;
-  notes?: string;
-}
-export interface DeleteAppointmentNotificationDoctor {
-  appointmentId: number;
-  appointmentDate: string;
-  appointmentTime: string;
-  patientName: string;
-  serviceName: string;
-  recipientId: string;
-  reason?: string;
-}
-
-export interface NotificationResponse {
-  id: string;
-  type: NotificationType;
-  priority: NotificationPriority;
-  status: NotificationStatus;
-  title: string;
-  message: string;
-  metadata?: Record<string, any>;
-  createdAt: Date;
-  readAt?: Date;
-}
-
 @Injectable()
-export class NotificationService implements OnModuleInit {
+export class NotificationService {
   private streamClient: StreamChat;
   private readonly NOTIFICATION_CHANNEL_PREFIX = 'notifications';
   private readonly logger = new Logger(NotificationService.name);
@@ -162,11 +99,18 @@ export class NotificationService implements OnModuleInit {
     };
   }
 
+  /**
+   * Send notification when patient creates an appointment
+   */
+
   async sendCreateAppointmentPatientNotification(
     obj: AppointmentNotificationPatient,
   ): Promise<NotificationResponse> {
+    const appointmentDate = obj.startTime.toLocaleDateString('vi-VN');
+    const appointmentTime = obj.startTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+
     const title = 'Đặt lịch hẹn thành công';
-    const message = `Bạn đã đặt lịch khám với Bác sĩ ${obj.doctorName} vào ${obj.appointmentDate} lúc ${obj.appointmentTime} tại ${obj.clinicName}. Dịch vụ: ${obj.serviceName}.`;
+    const message = `Bạn đã đặt lịch khám với Bác sĩ ${obj.doctorName} vào ${appointmentDate} lúc ${appointmentTime} tại ${obj.clinicName}. Dịch vụ: ${obj.serviceName}.`;
     return this.sendNotification({
       type: NotificationType.CREATE_APPOINTMENT_PATIENT,
       priority: NotificationPriority.HIGH,
@@ -214,8 +158,11 @@ export class NotificationService implements OnModuleInit {
   async sendDeleteAppointmentPatientNotification(
     dto: DeleteAppointmentNotificationPatient,
   ): Promise<NotificationResponse> {
+    const appointmentDate = dto.startTime.toLocaleDateString('vi-VN');
+    const appointmentTime = dto.startTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+
     const title = 'Hủy lịch hẹn';
-    const message = `Lịch hẹn #${dto.appointmentId} với Bác sĩ ${dto.doctorName} vào ${dto.appointmentDate} lúc ${dto.appointmentTime} đã được hủy.${dto.reason ? ` Lý do: ${dto.reason}` : ''}`;
+    const message = `Lịch hẹn #${dto.appointmentId} với Bác sĩ ${dto.doctorName} vào ${appointmentDate} lúc ${appointmentTime} đã được hủy.${dto.reason ? ` Lý do: ${dto.reason}` : ''}`;
 
     return this.sendNotification({
       type: NotificationType.DELETE_APPOINTMENT_PATIENT,
@@ -236,8 +183,11 @@ export class NotificationService implements OnModuleInit {
   async sendCreateAppointmentDoctorNotification(
     dto: AppointmentNotificationDoctor,
   ): Promise<NotificationResponse> {
+    const appointmentDate = dto.startTime.toLocaleDateString('vi-VN');
+    const appointmentTime = dto.startTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+
     const title = 'Lịch hẹn mới';
-    const message = `Bạn có lịch hẹn mới với bệnh nhân ${dto.patientName} vào ${dto.appointmentDate} lúc ${dto.appointmentTime} tại ${dto.clinicName}. Dịch vụ: ${dto.serviceName}.`;
+    const message = `Bạn có lịch hẹn mới với bệnh nhân ${dto.patientName} vào ${appointmentDate} lúc ${appointmentTime} tại ${dto.clinicName}. Dịch vụ: ${dto.serviceName}.`;
 
     return this.sendNotification({
       type: NotificationType.CREATE_APPOINTMENT_DOCTOR,
@@ -288,8 +238,11 @@ export class NotificationService implements OnModuleInit {
   async sendDeleteAppointmentDoctorNotification(
     dto: DeleteAppointmentNotificationDoctor,
   ): Promise<NotificationResponse> {
+    const appointmentDate = dto.startTime.toLocaleDateString('vi-VN');
+    const appointmentTime = dto.startTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+
     const title = 'Hủy lịch hẹn';
-    const message = `Lịch hẹn #${dto.appointmentId} với bệnh nhân ${dto.patientName} vào ${dto.appointmentDate} lúc ${dto.appointmentTime} đã được hủy.${dto.reason ? ` Lý do: ${dto.reason}` : ''}`;
+    const message = `Lịch hẹn #${dto.appointmentId} với bệnh nhân ${dto.patientName} vào ${appointmentDate} lúc ${appointmentTime} đã được hủy.${dto.reason ? ` Lý do: ${dto.reason}` : ''}`;
 
     return this.sendNotification({
       type: NotificationType.DELETE_APPOINTMENT_DOCTOR,

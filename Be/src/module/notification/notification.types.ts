@@ -85,8 +85,72 @@ export interface StreamNotificationMessage {
   priority: NotificationPriority;
   status: NotificationStatus;
   data:
-    | BaseNotificationData
-    | AppointmentNotificationData
-    | PaymentNotificationData;
+  BaseNotificationData
+  AppointmentNotificationData
+  PaymentNotificationData;
   timestamp: Date;
+}
+
+export interface AppointmentNotificationPatient {
+  appointmentId: number;
+  startTime: Date;
+  doctorName: string;
+  serviceName: string;
+  clinicName: string;
+  recipientId: string;
+  notes?: string;
+}
+
+export interface UpdateAppointmentNotificationPatient
+  extends Partial<AppointmentNotificationPatient> {
+  appointmentId: number;
+  recipientId: string;
+  changes?: Record<string, any>;
+  notes?: string;
+}
+
+export interface DeleteAppointmentNotificationPatient {
+  appointmentId: number;
+  startTime: Date;
+  doctorName: string;
+  serviceName: string;
+  recipientId: string;
+  reason?: string;
+}
+
+export interface AppointmentNotificationDoctor {
+  appointmentId: number;
+  startTime: Date;
+  patientName: string;
+  serviceName: string;
+  clinicName: string;
+  recipientId: string;
+  notes?: string;
+}
+export interface UpdateAppointmentNotificationDoctor
+  extends Partial<AppointmentNotificationDoctor> {
+  appointmentId: number;
+  recipientId: string;
+  changes?: Record<string, any>;
+  notes?: string;
+}
+export interface DeleteAppointmentNotificationDoctor {
+  appointmentId: number;
+  startTime: Date;
+  patientName: string;
+  serviceName: string;
+  recipientId: string;
+  reason?: string;
+}
+
+export interface NotificationResponse {
+  id: string;
+  type: NotificationType;
+  priority: NotificationPriority;
+  status: NotificationStatus;
+  title: string;
+  message: string;
+  metadata?: Record<string, any>;
+  createdAt: Date;
+  readAt?: Date;
 }

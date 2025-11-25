@@ -23,7 +23,7 @@ import {
   AppointmentDetailResponseDto,
   AvailableDateDto,
 } from './dto';
-import { NotificationUtils } from '@/module/notification/notification.utils';
+import { NotificationService } from '@/module/notification/notification.service';
 import {
   NotificationPriority,
   NotificationType,
@@ -40,7 +40,8 @@ export class AppointmentService {
   constructor(
     private readonly prisma: PrismaService,
     @InjectQueue('appointment') private readonly appointmentQueue: Queue,
-  ) {}
+    private readonly notificationService: NotificationService,
+  ) { }
 
   /**
    * Get all appointments with filters
@@ -839,21 +840,14 @@ export class AppointmentService {
           '⚠️ [AppointmentService] Cannot send notification: patientProfile.managerId is missing',
         );
       } else {
-        await NotificationUtils.sendNotification(
-          NotificationType.CREATE_APPOINTMENT_PATIENT,
-          NotificationPriority.MEDIUM,
-          patientUserId,
-          'system',
-          'Đặt lịch hẹn thành công',
-          `Bạn đã đặt lịch vào ${appointment.startTime.toLocaleDateString('vi-VN')}. Dịch vụ: ${doctorService.service.name}.`,
-          {
-            appointmentId: appointment.id,
-            appointmentDate: appointment.startTime.toLocaleDateString('vi-VN'),
-            doctorName: `${doctorService.doctor.firstName} ${doctorService.doctor.lastName}`,
-            serviceName: doctorService.service.name,
-            clinicName: clinic.name,
-          },
-        );
+        await this.notificationService.sendCreateAppointmentPatientNotification({
+          appointmentId: appointment.id,
+          startTime: appointment.startTime,
+          doctorName: `${doctorService.doctor.firstName} ${doctorService.doctor.lastName}`,
+          serviceName: doctorService.service.name,
+          clinicName: clinic.name,
+          recipientId: patientUserId,
+        });
       }
     } catch (error) {
       console.error('Failed to send notification:', error);
@@ -862,21 +856,15 @@ export class AppointmentService {
 
     // Send notification to doctor
     try {
-      await NotificationUtils.sendNotification(
-        NotificationType.CREATE_APPOINTMENT_DOCTOR,
-        NotificationPriority.MEDIUM,
-        doctorService.doctor.userId.toString(),
-        'system',
-        'Lịch hẹn mới',
-        `Bạn có lịch hẹn mới với bệnh nhân ${appointment.patientProfile?.firstName + ' ' + appointment.patientProfile?.lastName} vào ${appointment.startTime.toLocaleDateString('vi-VN')} tại ${clinic.name}. Dịch vụ: ${doctorService.service.name}.`,
-        {
-          appointmentId: appointment.id,
-          appointmentDate: appointment.startTime.toLocaleDateString('vi-VN'),
-          serviceName: doctorService.service.name,
-          clinicName: clinic.name,
-          notes: notes,
-        },
-      );
+      await this.notificationService.sendCreateAppointmentDoctorNotification({
+        appointmentId: appointment.id,
+        startTime: appointment.startTime,
+        patientName: `${appointment.patientProfile?.firstName} ${appointment.patientProfile?.lastName}`,
+        serviceName: doctorService.service.name,
+        clinicName: clinic.name,
+        recipientId: doctorService.doctor.userId.toString(),
+        notes: notes,
+      });
     } catch (error) {
       console.error('Failed to send notification to doctor:', error);
       // Don't throw error, just log it
@@ -916,61 +904,61 @@ export class AppointmentService {
       notes: appointment.notes,
       patient: appointment.patientProfile
         ? {
-            id: appointment.patientProfile.id,
-            firstName: appointment.patientProfile.firstName,
-            lastName: appointment.patientProfile.lastName,
-            phone: appointment.patientProfile.phone,
-            email: appointment.patientProfile.email,
-          }
+          id: appointment.patientProfile.id,
+          firstName: appointment.patientProfile.firstName,
+          lastName: appointment.patientProfile.lastName,
+          phone: appointment.patientProfile.phone,
+          email: appointment.patientProfile.email,
+        }
         : {
-            id: appointment.patientId,
-            firstName: '',
-            lastName: '',
-            phone: '',
-            email: '',
-          },
+          id: appointment.patientId,
+          firstName: '',
+          lastName: '',
+          phone: '',
+          email: '',
+        },
       doctor: appointment.doctor
         ? {
-            id: appointment.doctor.id,
-            firstName: appointment.doctor.firstName,
-            lastName: appointment.doctor.lastName,
-          }
+          id: appointment.doctor.id,
+          firstName: appointment.doctor.firstName,
+          lastName: appointment.doctor.lastName,
+        }
         : {
-            id: appointment.doctorId,
-            firstName: '',
-            lastName: '',
-          },
+          id: appointment.doctorId,
+          firstName: '',
+          lastName: '',
+        },
       service: appointment.service
         ? {
-            id: appointment.service.id,
-            name: appointment.service.name,
-            price: appointment.service.price,
-            duration: appointment.service.duration,
-          }
+          id: appointment.service.id,
+          name: appointment.service.name,
+          price: appointment.service.price,
+          duration: appointment.service.duration,
+        }
         : {
-            id: appointment.serviceId,
-            name: '',
-            price: 0,
-            duration: 0,
-          },
+          id: appointment.serviceId,
+          name: '',
+          price: 0,
+          duration: 0,
+        },
       clinic: appointment.clinic
         ? {
-            id: appointment.clinic.id,
-            name: appointment.clinic.name,
-          }
+          id: appointment.clinic.id,
+          name: appointment.clinic.name,
+        }
         : {
-            id: appointment.clinicId,
-            name: '',
-          },
+          id: appointment.clinicId,
+          name: '',
+        },
       billing: appointment.billing
         ? {
-            id: appointment.billing.id,
-            amount: appointment.billing.amount,
-            status: appointment.billing.status,
-            paymentMethod: appointment.billing.paymentMethod,
-            notes: appointment.billing.notes,
-            createdAt: appointment.billing.createdAt,
-          }
+          id: appointment.billing.id,
+          amount: appointment.billing.amount,
+          status: appointment.billing.status,
+          paymentMethod: appointment.billing.paymentMethod,
+          notes: appointment.billing.notes,
+          createdAt: appointment.billing.createdAt,
+        }
         : undefined,
       feedback: appointment.feedback
         ? {

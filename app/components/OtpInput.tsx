@@ -79,10 +79,10 @@ export default function OtpInput({
 								<View
 									key={index}
 									className={`h-16 flex-1 items-center justify-center rounded-xl border-2 bg-white shadow-sm ${value[index]
-											? 'border-blue-500'
-											: isActive
-												? 'border-blue-400'
-												: 'border-gray-200'
+										? 'border-blue-200'
+										: isActive
+											? 'border-blue-600'
+											: 'border-gray-200'
 										}`}
 								>
 									<Text className="text-center text-2xl font-bold text-gray-800">
@@ -103,11 +103,15 @@ export default function OtpInput({
 				onBlur={() => setIsFocused(false)}
 				keyboardType="number-pad"
 				maxLength={length}
+				caretHidden={false}
 				style={{
 					position: 'absolute',
-					opacity: 0,
-					height: 1,
-					width: 1,
+					top: 0,
+					left: 0,
+					width: '100%',
+					height: 64,
+					opacity: 0.01,
+					color: 'transparent',
 				}}
 				autoFocus
 			/>
