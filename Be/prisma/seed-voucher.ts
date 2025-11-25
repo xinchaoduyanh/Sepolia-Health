@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Promotion } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -89,7 +89,7 @@ async function main() {
     },
   ];
 
-  const createdVouchers = [];
+  const createdVouchers: Promotion[] = [];
   for (const voucherData of vouchersData) {
     try {
       const voucher = await prisma.promotion.create({

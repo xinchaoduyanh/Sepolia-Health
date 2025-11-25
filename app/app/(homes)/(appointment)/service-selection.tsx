@@ -10,6 +10,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Path } from 'react-native-svg';
 import { router } from 'expo-router';
 import { useAppointment } from '@/contexts/AppointmentContext';
 import { useServices } from '@/lib/api/appointments';
@@ -108,134 +110,240 @@ export default function ServiceSelectionScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50">
-      <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
+    <View style={{ flex: 1, backgroundColor: '#E0F2FE' }}>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
-      {/* Header */}
-      <View className="border-b border-slate-100 bg-white px-5 py-4">
-        <View className="flex-row items-center justify-between">
-          <TouchableOpacity onPress={handleBack}>
-            <Ionicons name="arrow-back" size={24} color="#2563EB" />
-          </TouchableOpacity>
-          <Text className="text-xl font-bold text-slate-900">Chọn dịch vụ</Text>
-          <TouchableOpacity onPress={handleBackToAppointments}>
-            <Ionicons name="calendar-outline" size={24} color="#2563EB" />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Selected Facility Info */}
-      {selectedFacility && (
-        <View className="mx-4 mt-4 rounded-xl bg-blue-50 p-3">
-          <View className="flex-row items-center">
-            <Ionicons name="location" size={16} color="#2563EB" />
-            <Text className="ml-2 text-sm font-medium text-blue-800">
-              Cơ sở: {selectedFacility.name}
-            </Text>
-          </View>
-        </View>
-      )}
-
-      {/* Search Bar */}
-      <View className="mb-4 mt-4 px-4">
-        <View className="flex-row items-center rounded-xl border border-slate-200 bg-white px-4 py-3">
-          <Ionicons name="search" size={20} color="#2563EB" />
-          <TextInput
-            className="ml-3 flex-1 text-base text-slate-900"
-            placeholder="Tìm dịch vụ"
-            placeholderTextColor="#94A3B8"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: 100 }}>
+        {/* Background Gradient */}
+        <View style={{ height: 280, position: 'relative', marginTop: -60 }}>
+          <LinearGradient
+            colors={['#0284C7', '#06B6D4', '#10B981']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{ flex: 1 }}
           />
-        </View>
-      </View>
+          {/* Curved bottom edge using SVG */}
+          <Svg
+            height="70"
+            width="200%"
+            viewBox="0 0 1440 120"
+            style={{ position: 'absolute', bottom: -1, left: 0, right: 0 }}>
+            <Path d="M0,0 Q720,120 1440,0 L1440,120 L0,120 Z" fill="#E0F2FE" />
+          </Svg>
 
-      {/* Services List */}
-      <ScrollView className="flex-1 px-4" showsVerticalScrollIndicator={true}>
-        {filteredServices.length === 0 ? (
-          <View className="mt-8 items-center">
-            <Ionicons name="medical-outline" size={48} color="#94A3B8" />
-            <Text className="mt-4 text-center text-base text-slate-600">
-              {searchQuery ? 'Không tìm thấy dịch vụ phù hợp' : 'Không có dịch vụ nào'}
-            </Text>
-          </View>
-        ) : (
-          filteredServices.map((service: Service) => (
-            <TouchableOpacity
-              key={service.id}
-              onPress={() => handleServiceSelect(service.id)}
-              className={`mb-3 rounded-xl p-4 ${
-                selectedService === service.id
-                  ? 'border-2 border-blue-500 bg-blue-50'
-                  : 'border border-slate-200 bg-white'
-              }`}
-              style={{
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: 0.05,
-                shadowRadius: 3,
-                elevation: 1,
-              }}>
-              <View className="flex-row items-start">
-                <View className="mr-4">
-                  <View className="h-12 w-12 items-center justify-center rounded-full bg-purple-100">
-                    <Ionicons name="medical" size={24} color="#8B5CF6" />
-                  </View>
-                </View>
-
-                <View className="flex-1">
-                  <View className="mb-1 flex-row items-center justify-between">
-                    <Text className="text-base font-semibold text-slate-900">{service.name}</Text>
-                    {selectedService === service.id && (
-                      <View className="rounded-full bg-blue-600 p-1">
-                        <Ionicons name="checkmark" size={16} color="white" />
-                      </View>
-                    )}
-                  </View>
-
-                  {service.description && (
-                    <Text className="mb-2 text-sm text-slate-600">{service.description}</Text>
-                  )}
-
-                  <View className="flex-row items-center justify-between">
-                    <View className="flex-row items-center">
-                      <Ionicons name="time-outline" size={16} color="#6B7280" />
-                      <Text className="ml-1 text-sm text-slate-600">
-                        {formatDuration(service.duration)}
-                      </Text>
-                    </View>
-
-                    <View className="flex-row items-center">
-                      <Ionicons name="cash-outline" size={16} color="#10B981" />
-                      <Text className="ml-1 text-sm font-semibold text-green-600">
-                        {formatPrice(service.price)}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-              </View>
-            </TouchableOpacity>
-          ))
-        )}
-      </ScrollView>
-
-      {/* Continue Button */}
-      {selectedService && (
-        <View className="border-t border-slate-100 bg-white px-4 py-4">
-          <TouchableOpacity
-            onPress={handleContinue}
-            className="items-center rounded-xl bg-blue-600 py-4"
+          {/* Decorative circles */}
+          <View
             style={{
-              shadowColor: '#2563EB',
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.2,
-              shadowRadius: 8,
-              elevation: 4,
+              position: 'absolute',
+              top: -40,
+              right: -40,
+              height: 120,
+              width: 120,
+              borderRadius: 60,
+              backgroundColor: 'rgba(255,255,255,0.12)',
+            }}
+          />
+          <View
+            style={{
+              position: 'absolute',
+              top: 80,
+              left: -30,
+              height: 100,
+              width: 100,
+              borderRadius: 50,
+              backgroundColor: 'rgba(255,255,255,0.08)',
+            }}
+          />
+
+          {/* Header positioned within gradient */}
+          <View
+            style={{
+              position: 'absolute',
+              top: 100,
+              left: 24,
+              right: 24,
+              flexDirection: 'row',
+              alignItems: 'center',
             }}>
-            <Text className="text-base font-bold text-white">Tiếp tục</Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleBack}
+              style={{
+                height: 40,
+                width: 40,
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: 20,
+                backgroundColor: 'rgba(255,255,255,0.25)',
+                marginRight: 12,
+              }}>
+              <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+            </TouchableOpacity>
+            <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#FFFFFF', flex: 1 }}>
+              Chọn dịch vụ
+            </Text>
+            <TouchableOpacity
+              onPress={handleBackToAppointments}
+              style={{
+                height: 40,
+                width: 40,
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: 20,
+                backgroundColor: 'rgba(255,255,255,0.25)',
+              }}>
+              <Ionicons name="calendar-outline" size={24} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
         </View>
-      )}
-    </SafeAreaView>
+
+        {/* Content */}
+        <View style={{ paddingHorizontal: 24, marginTop: -80, marginBottom: 24 }}>
+          {/* Selected Facility Info */}
+          {selectedFacility && (
+            <View
+              style={{
+                marginBottom: 16,
+                backgroundColor: 'white',
+                borderRadius: 12,
+                padding: 12,
+                borderWidth: 1,
+                borderColor: '#E0F2FE',
+              }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons name="location" size={16} color="#0284C7" />
+                <Text style={{ marginLeft: 8, fontSize: 14, fontWeight: '600', color: '#0284C7' }}>
+                  Cơ sở: {selectedFacility.name}
+                </Text>
+              </View>
+            </View>
+          )}
+
+          {/* Search Bar */}
+          <View style={{ marginBottom: 16 }}>
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: 'white',
+                borderRadius: 12,
+                borderWidth: 1,
+                borderColor: '#E0F2FE',
+                paddingHorizontal: 16,
+                paddingVertical: 12,
+              }}>
+              <Ionicons name="search" size={20} color="#0284C7" />
+              <TextInput
+                style={{
+                  flex: 1,
+                  marginLeft: 12,
+                  fontSize: 16,
+                  color: '#0F172A',
+                }}
+                placeholder="Tìm dịch vụ"
+                placeholderTextColor="#94A3B8"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+              />
+            </View>
+          </View>
+
+          {/* Services List */}
+          <View>
+            {filteredServices.length === 0 ? (
+              <View className="mt-8 items-center">
+                <Ionicons name="medical-outline" size={48} color="#94A3B8" />
+                <Text className="mt-4 text-center text-base text-slate-600">
+                  {searchQuery ? 'Không tìm thấy dịch vụ phù hợp' : 'Không có dịch vụ nào'}
+                </Text>
+              </View>
+            ) : (
+              filteredServices.map((service: Service) => (
+                <TouchableOpacity
+                  key={service.id}
+                  onPress={() => handleServiceSelect(service.id)}
+                  className={`mb-3 rounded-xl p-4 ${
+                    selectedService === service.id
+                      ? 'border-2 border-blue-500 bg-blue-50'
+                      : 'border border-slate-200 bg-white'
+                  }`}
+                  style={{
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 1 },
+                    shadowOpacity: 0.05,
+                    shadowRadius: 3,
+                    elevation: 1,
+                  }}>
+                  <View className="flex-row items-start">
+                    <View className="mr-4">
+                      <View className="h-12 w-12 items-center justify-center rounded-full bg-purple-100">
+                        <Ionicons name="medical" size={24} color="#8B5CF6" />
+                      </View>
+                    </View>
+
+                    <View className="flex-1">
+                      <View className="mb-1 flex-row items-center justify-between">
+                        <Text className="text-base font-semibold text-slate-900">
+                          {service.name}
+                        </Text>
+                        {selectedService === service.id && (
+                          <View className="rounded-full bg-blue-600 p-1">
+                            <Ionicons name="checkmark" size={16} color="white" />
+                          </View>
+                        )}
+                      </View>
+
+                      {service.description && (
+                        <Text className="mb-2 text-sm text-slate-600">{service.description}</Text>
+                      )}
+
+                      <View className="flex-row items-center justify-between">
+                        <View className="flex-row items-center">
+                          <Ionicons name="time-outline" size={16} color="#6B7280" />
+                          <Text className="ml-1 text-sm text-slate-600">
+                            {formatDuration(service.duration)}
+                          </Text>
+                        </View>
+
+                        <View className="flex-row items-center">
+                          <Ionicons name="cash-outline" size={16} color="#10B981" />
+                          <Text className="ml-1 text-sm font-semibold text-green-600">
+                            {formatPrice(service.price)}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              ))
+            )}
+
+            {/* Continue Button */}
+            {selectedService && (
+              <View style={{ marginTop: 24 }}>
+                <TouchableOpacity
+                  onPress={handleContinue}
+                  style={{
+                    backgroundColor: '#0284C7',
+                    paddingVertical: 16,
+                    borderRadius: 12,
+                    alignItems: 'center',
+                    shadowColor: '#0284C7',
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.3,
+                    shadowRadius: 8,
+                    elevation: 4,
+                  }}>
+                  <Text style={{ color: 'white', fontSize: 16, fontWeight: 'bold' }}>Tiếp tục</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        </View>
+      </ScrollView>
+    </View>
   );
 }

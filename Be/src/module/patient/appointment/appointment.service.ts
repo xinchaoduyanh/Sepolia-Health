@@ -24,10 +24,6 @@ import {
   AvailableDateDto,
 } from './dto';
 import { NotificationService } from '@/module/notification/notification.service';
-import {
-  NotificationPriority,
-  NotificationType,
-} from '@/module/notification/notification.types';
 import { Queue } from 'bullmq';
 import { InjectQueue } from '@nestjs/bullmq';
 import { DateUtil, TimeUtil } from '@/common/utils';
@@ -1069,14 +1065,24 @@ export class AppointmentService {
             firstName: appointment.patientProfile.firstName,
             lastName: appointment.patientProfile.lastName,
             phone: appointment.patientProfile.phone,
-            email: appointment.patientProfile.email,
+            email: appointment.patientProfile.email || null,
+            dateOfBirth: appointment.patientProfile.dateOfBirth
+              ? appointment.patientProfile.dateOfBirth
+                  .toISOString()
+                  .split('T')[0]
+              : null,
+            gender: appointment.patientProfile.gender || null,
+            relationship: appointment.patientProfile.relationship || null,
           }
         : {
             id: appointment.patientId,
             firstName: '',
             lastName: '',
             phone: '',
-            email: '',
+            email: null,
+            dateOfBirth: null,
+            gender: null,
+            relationship: null,
           },
       doctor: appointment.doctor
         ? {

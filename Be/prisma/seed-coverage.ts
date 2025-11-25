@@ -3,6 +3,8 @@ import {
   UserStatus,
   AppointmentStatus,
   AppTermsType,
+  PaymentStatus,
+  PaymentMethod,
 } from '@prisma/client';
 import { fakerVI as faker } from '@faker-js/faker';
 import * as bcrypt from 'bcrypt';
@@ -654,23 +656,46 @@ async function main() {
   console.log('\n--- Bước 9: Tạo Lịch hẹn từ 01/01/2024 - 31/12/2025...');
   const today = new Date();
 
-  let appointmentsCreated = 0;
-  let billingsCreated = 0;
-  let feedbacksCreated = 0;
+  // Load tất cả availabilities và services một lần để tránh query lặp lại
+  console.log('Đang load dữ liệu bác sĩ...');
+  const allAvailabilities = await prisma.doctorAvailability.findMany();
+  const allDoctorServices = await prisma.doctorService.findMany({
+    include: { service: true },
+  });
 
-  // Lặp qua từng bác sĩ để tạo appointments
-  console.log('Tạo appointments cho từng bác sĩ...');
+  // Tạo map để truy cập nhanh
+  const availabilitiesByDoctor = new Map<number, typeof allAvailabilities>();
+  const servicesByDoctor = new Map<number, typeof allDoctorServices>();
 
   for (const doctor of allDoctors) {
-    // Lấy availabilities và services của bác sĩ
-    const availabilities = await prisma.doctorAvailability.findMany({
-      where: { doctorId: doctor.id },
-    });
+    availabilitiesByDoctor.set(
+      doctor.id,
+      allAvailabilities.filter((a) => a.doctorId === doctor.id),
+    );
+    servicesByDoctor.set(
+      doctor.id,
+      allDoctorServices.filter((ds) => ds.doctorId === doctor.id),
+    );
+  }
 
-    const doctorServices = await prisma.doctorService.findMany({
-      where: { doctorId: doctor.id },
-      include: { service: true },
-    });
+  // Thu thập tất cả appointment data vào mảng
+  console.log('Đang tạo dữ liệu appointments...');
+  const appointmentData: Array<{
+    startTime: Date;
+    endTime: Date;
+    status: AppointmentStatus;
+    notes: string;
+    type: 'OFFLINE';
+    patientProfileId: number;
+    doctorId: number;
+    serviceId: number;
+    clinicId: number | null;
+    servicePrice: number;
+  }> = [];
+
+  for (const doctor of allDoctors) {
+    const availabilities = availabilitiesByDoctor.get(doctor.id) || [];
+    const doctorServices = servicesByDoctor.get(doctor.id) || [];
 
     if (availabilities.length === 0 || doctorServices.length === 0) {
       continue;
@@ -752,56 +777,153 @@ async function main() {
               ]) as AppointmentStatus;
             }
 
-            // Tạo appointment
-            const appointment = await prisma.appointment.create({
-              data: {
-                startTime: appointmentStart,
-                endTime: appointmentEnd,
-                status,
-                notes: faker.lorem.sentence(),
-                type: 'OFFLINE',
-                patientProfileId,
-                doctorId: doctor.id,
-                serviceId: service.id,
-                clinicId: doctor.clinicId,
-              },
+            // Thêm vào mảng thay vì tạo ngay
+            appointmentData.push({
+              startTime: appointmentStart,
+              endTime: appointmentEnd,
+              status,
+              notes: faker.lorem.sentence(),
+              type: 'OFFLINE',
+              patientProfileId,
+              doctorId: doctor.id,
+              serviceId: service.id,
+              clinicId: doctor.clinicId,
+              servicePrice: service.price,
             });
-            appointmentsCreated++;
-
-            // Tạo billing
-            const billingStatus = status === 'CANCELLED' ? 'REFUNDED' : 'PAID';
-            await prisma.billing.create({
-              data: {
-                appointmentId: appointment.id,
-                amount: service.price,
-                status: billingStatus,
-                paymentMethod: faker.helpers.arrayElement([
-                  'ONLINE',
-                  'OFFLINE',
-                ]),
-              },
-            });
-            billingsCreated++;
-
-            // Tạo feedback nếu COMPLETED
-            if (status === 'COMPLETED') {
-              await prisma.feedback.create({
-                data: {
-                  appointmentId: appointment.id,
-                  rating: faker.number.int({ min: 3, max: 5 }),
-                  comment: faker.lorem.sentence(),
-                },
-              });
-              feedbacksCreated++;
-            }
           } catch {
-            // Bỏ qua lỗi (có thể do trùng thời gian)
+            // Bỏ qua lỗi
           }
         }
       }
 
       // Chuyển sang ngày tiếp theo
       currentDate.setDate(currentDate.getDate() + 1);
+    }
+  }
+
+  console.log(
+    `Đã chuẩn bị ${appointmentData.length} appointments. Đang insert...`,
+  );
+
+  // Batch insert appointments
+  const BATCH_SIZE = 1000;
+  let appointmentsCreated = 0;
+  let billingsCreated = 0;
+  let feedbacksCreated = 0;
+
+  for (let i = 0; i < appointmentData.length; i += BATCH_SIZE) {
+    const batch = appointmentData.slice(i, i + BATCH_SIZE);
+
+    // Insert appointments
+    const appointmentsToInsert = batch.map((data) => ({
+      startTime: data.startTime,
+      endTime: data.endTime,
+      status: data.status,
+      notes: data.notes,
+      type: data.type,
+      patientProfileId: data.patientProfileId,
+      doctorId: data.doctorId,
+      serviceId: data.serviceId,
+      clinicId: data.clinicId,
+    }));
+
+    await prisma.appointment.createMany({
+      data: appointmentsToInsert,
+      skipDuplicates: true,
+    });
+
+    // Query lại để lấy IDs (query theo thứ tự insert mới nhất)
+    // Lấy appointments mới nhất của các doctor và patient trong batch
+    const doctorIds = [...new Set(batch.map((b) => b.doctorId))];
+    const patientIds = [...new Set(batch.map((b) => b.patientProfileId))];
+
+    const insertedAppointments = await prisma.appointment.findMany({
+      where: {
+        doctorId: { in: doctorIds },
+        patientProfileId: { in: patientIds },
+      },
+      select: {
+        id: true,
+        startTime: true,
+        endTime: true,
+        doctorId: true,
+        patientProfileId: true,
+        serviceId: true,
+        status: true,
+      },
+      orderBy: { id: 'desc' },
+      take: batch.length * 2, // Lấy thêm một chút để đảm bảo
+    });
+
+    // Tạo map để match appointments với data (dựa trên tất cả các field quan trọng)
+    const appointmentMap = new Map<string, (typeof insertedAppointments)[0]>();
+    for (const apt of insertedAppointments) {
+      const key = `${apt.doctorId}-${apt.patientProfileId}-${apt.serviceId}-${apt.startTime.getTime()}-${apt.endTime.getTime()}`;
+      if (!appointmentMap.has(key)) {
+        appointmentMap.set(key, apt);
+      }
+    }
+
+    // Tạo billings và feedbacks
+    const billingsToInsert: Array<{
+      appointmentId: number;
+      amount: number;
+      status: PaymentStatus;
+      paymentMethod: PaymentMethod;
+    }> = [];
+
+    const feedbacksToInsert: Array<{
+      appointmentId: number;
+      rating: number;
+      comment: string;
+    }> = [];
+
+    for (const data of batch) {
+      const key = `${data.doctorId}-${data.patientProfileId}-${data.serviceId}-${data.startTime.getTime()}-${data.endTime.getTime()}`;
+      const appointment = appointmentMap.get(key);
+
+      if (appointment) {
+        appointmentsCreated++;
+
+        // Tạo billing
+        const billingStatus =
+          appointment.status === 'CANCELLED' ? 'REFUNDED' : 'PAID';
+        billingsToInsert.push({
+          appointmentId: appointment.id,
+          amount: data.servicePrice,
+          status: billingStatus,
+          paymentMethod: faker.helpers.arrayElement([
+            PaymentMethod.ONLINE,
+            PaymentMethod.OFFLINE,
+          ]),
+        });
+
+        // Tạo feedback nếu COMPLETED
+        if (appointment.status === 'COMPLETED') {
+          feedbacksToInsert.push({
+            appointmentId: appointment.id,
+            rating: faker.number.int({ min: 3, max: 5 }),
+            comment: faker.lorem.sentence(),
+          });
+        }
+      }
+    }
+
+    // Insert billings và feedbacks
+    if (billingsToInsert.length > 0) {
+      await prisma.billing.createMany({
+        data: billingsToInsert,
+        skipDuplicates: true,
+      });
+      billingsCreated += billingsToInsert.length;
+    }
+
+    if (feedbacksToInsert.length > 0) {
+      await prisma.feedback.createMany({
+        data: feedbacksToInsert,
+        skipDuplicates: true,
+      });
+      feedbacksCreated += feedbacksToInsert.length;
     }
 
     if (appointmentsCreated % 500 === 0 && appointmentsCreated > 0) {

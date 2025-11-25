@@ -7,8 +7,8 @@ export default function DoctorDashboardPage() {
     const router = useRouter()
 
     useEffect(() => {
-        // Redirect to appointments page
-        router.replace('/dashboard/doctor/appointments')
+        // Redirect to schedule appointments page
+        router.replace('/dashboard/doctor/schedule/appointments')
     }, [router])
 
     return null

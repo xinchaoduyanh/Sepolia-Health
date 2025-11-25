@@ -15,6 +15,15 @@ export class PatientDto {
 
   @ApiProperty()
   phone: string | null;
+
+  @ApiProperty({ required: false })
+  dateOfBirth?: string | null;
+
+  @ApiProperty({ required: false })
+  gender?: string | null;
+
+  @ApiProperty({ required: false })
+  relationship?: string | null;
 }
 
 export class DoctorDto {

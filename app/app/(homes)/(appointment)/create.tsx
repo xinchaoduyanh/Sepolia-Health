@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useAppointment } from '@/contexts/AppointmentContext';
 import GenderSelector from '@/components/GenderSelector';
@@ -26,12 +27,12 @@ import { Relationship } from '@/constants/enum';
 
 export default function AppointmentScreen() {
   const { user } = useAuth();
-  
+
   // Get patient profiles
   const patientProfiles = user?.patientProfiles || [];
   const primaryProfile = patientProfiles.find((profile) => profile.relationship === 'SELF');
   const otherProfiles = patientProfiles.filter((profile) => profile.relationship !== 'SELF');
-  
+
   const [selectedProfile, setSelectedProfile] = useState<PatientProfile>(primaryProfile!);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -182,7 +183,14 @@ export default function AppointmentScreen() {
 
   const handleBookAppointment = async () => {
     // Validate required fields
-    if (!selectedFacility || !selectedService || !selectedDoctor || !selectedTimeSlot || !selectedDate || !selectedDoctorServiceId) {
+    if (
+      !selectedFacility ||
+      !selectedService ||
+      !selectedDoctor ||
+      !selectedTimeSlot ||
+      !selectedDate ||
+      !selectedDoctorServiceId
+    ) {
       alert('Vui lòng điền đầy đủ thông tin đặt hẹn');
       return;
     }
@@ -211,9 +219,9 @@ export default function AppointmentScreen() {
       // Create ISO datetime strings using utility function
       const appointmentDate = selectedDate;
       const startTime = createISODateTime(appointmentDate, selectedTimeSlot);
-      
+
       // Calculate end datetime based on service duration (in minutes)
-      const serviceDuration = selectedService.duration ;
+      const serviceDuration = selectedService.duration;
       const startDateTime = new Date(startTime);
       const endDateTime = new Date(startDateTime.getTime() + serviceDuration * 60 * 1000);
       const endTime = endDateTime.toISOString();
@@ -248,15 +256,24 @@ export default function AppointmentScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1" style={{ backgroundColor: '#E0F2FE' }}>
-      <StatusBar barStyle="dark-content" backgroundColor="#E0F2FE" />
+    <View style={{ flex: 1, backgroundColor: '#E0F2FE' }}>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
       {/* Header */}
-      <View className="flex-row items-center px-4 py-3">
-        <TouchableOpacity onPress={() => router.push('/(homes)/(appointment)')}>
-          <Ionicons name="arrow-back" size={24} color="#0284C7" />
-        </TouchableOpacity>
-      </View>
+      <LinearGradient
+        colors={['#0284C7', '#06B6D4', '#10B981']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={{ paddingTop: 60, paddingBottom: 24, paddingHorizontal: 24 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity
+            onPress={() => router.push('/(homes)/(appointment)')}
+            style={{ marginRight: 16 }}>
+            <Ionicons name="arrow-back" size={24} color="white" />
+          </TouchableOpacity>
+          <Text style={{ fontSize: 24, fontWeight: 'bold', color: 'white' }}>Đặt lịch hẹn</Text>
+        </View>
+      </LinearGradient>
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* Main Content */}
@@ -673,54 +690,51 @@ export default function AppointmentScreen() {
             {selectedDate && (
               <View>
                 {/* Time Slots - chỉ hiển thị khi đã chọn đủ thông tin và có ngày */}
-                { selectedFacility &&
-                  selectedService &&
-                  selectedDoctor &&
-                  selectedDate && (
-                    <View className="mb-4">
-                      <Text className="mb-4 text-lg font-semibold mt-4" style={{ color: '#0F172A' }}>
-                        Giờ khám mong muốn*
-                      </Text>
-                      
-                      {isDoctorNotAvailable ? (
-                        <View className="rounded-xl border border-blue-200 bg-blue-50 p-6">
-                          <View className="mb-3 flex-row items-center justify-center space-x-3">
-                            <Ionicons name="calendar-outline" size={24} color="#3B82F6" />
-                            <Text className="text-lg font-semibold text-blue-800">
-                              Không có lịch trống
-                            </Text>
-                          </View>
-                          <Text className="text-center text-blue-700">
-                            Bác sĩ không có lịch trống trong ngày này. Vui lòng chọn ngày khác.
+                {selectedFacility && selectedService && selectedDoctor && selectedDate && (
+                  <View className="mb-4">
+                    <Text className="mb-4 mt-4 text-lg font-semibold" style={{ color: '#0F172A' }}>
+                      Giờ khám mong muốn*
+                    </Text>
+
+                    {isDoctorNotAvailable ? (
+                      <View className="rounded-xl border border-blue-200 bg-blue-50 p-6">
+                        <View className="mb-3 flex-row items-center justify-center space-x-3">
+                          <Ionicons name="calendar-outline" size={24} color="#3B82F6" />
+                          <Text className="text-lg font-semibold text-blue-800">
+                            Không có lịch trống
                           </Text>
                         </View>
-                      ) : availabilityData ? (
-                        <TimeSlotPicker
-                          availableTimeSlots={availabilityData.availableTimeSlots}
-                          selectedTimeSlot={selectedTimeSlot}
-                          onTimeSlotSelect={handleTimeSlotSelect}
-                          isLoading={false}
-                          error={null}
-                        />
-                      ) : availabilityError ? (
-                        <View className="rounded-xl border border-red-200 bg-red-50 p-6">
-                          <View className="mb-3 flex-row items-center justify-center space-x-3">
-                            <Ionicons name="warning-outline" size={24} color="#EF4444" />
-                            <Text className="text-lg font-semibold text-red-800">
-                              Lỗi tải dữ liệu
-                            </Text>
-                          </View>
-                          <Text className="text-center text-red-700">
-                            Không thể tải khung giờ khả dụng. Vui lòng thử lại.
+                        <Text className="text-center text-blue-700">
+                          Bác sĩ không có lịch trống trong ngày này. Vui lòng chọn ngày khác.
+                        </Text>
+                      </View>
+                    ) : availabilityData ? (
+                      <TimeSlotPicker
+                        availableTimeSlots={availabilityData.availableTimeSlots}
+                        selectedTimeSlot={selectedTimeSlot}
+                        onTimeSlotSelect={handleTimeSlotSelect}
+                        isLoading={false}
+                        error={null}
+                      />
+                    ) : availabilityError ? (
+                      <View className="rounded-xl border border-red-200 bg-red-50 p-6">
+                        <View className="mb-3 flex-row items-center justify-center space-x-3">
+                          <Ionicons name="warning-outline" size={24} color="#EF4444" />
+                          <Text className="text-lg font-semibold text-red-800">
+                            Lỗi tải dữ liệu
                           </Text>
                         </View>
-                      ) : (
-                        <View className="flex-row items-center justify-center py-8">
-                          <Text className="text-gray-600">Đang tải...</Text>
-                        </View>
-                      )}
-                    </View>
-                  )}
+                        <Text className="text-center text-red-700">
+                          Không thể tải khung giờ khả dụng. Vui lòng thử lại.
+                        </Text>
+                      </View>
+                    ) : (
+                      <View className="flex-row items-center justify-center py-8">
+                        <Text className="text-gray-600">Đang tải...</Text>
+                      </View>
+                    )}
+                  </View>
+                )}
               </View>
             )}
 
@@ -927,6 +941,6 @@ export default function AppointmentScreen() {
           </View>
         </Modal>
       )}
-    </SafeAreaView>
+    </View>
   );
 }

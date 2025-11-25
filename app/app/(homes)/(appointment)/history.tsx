@@ -13,8 +13,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path } from 'react-native-svg';
 import { router } from 'expo-router';
 import { useMyAppointments } from '@/lib/api/appointments';
-import { formatTime, formatDate } from '@/utils/datetime';
+import { formatTime } from '@/utils/datetime';
 import { AppointmentStatus } from '@/types/appointment';
+import { getRelationshipLabel } from '@/utils/relationshipTranslator';
 
 export default function AppointmentHistoryScreen() {
   const [page, setPage] = useState(1);
@@ -201,6 +202,30 @@ export default function AppointmentHistoryScreen() {
                       <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#1F2937' }}>
                         {appointment.service.name}
                       </Text>
+                      {(appointment.patient || appointment.patientProfile) && (
+                        <Text
+                          style={{
+                            marginTop: 4,
+                            fontSize: 14,
+                            color: '#0284C7',
+                            fontWeight: '600',
+                          }}>
+                          {appointment.patient?.firstName || appointment.patientProfile?.firstName}{' '}
+                          {appointment.patient?.lastName || appointment.patientProfile?.lastName}
+                          {(appointment.patient?.relationship ||
+                            appointment.patientProfile?.relationship) && (
+                            <Text style={{ fontSize: 12, color: '#6B7280', fontWeight: '400' }}>
+                              {' '}
+                              (
+                              {getRelationshipLabel(
+                                (appointment.patient?.relationship ||
+                                  appointment.patientProfile?.relationship) as string | undefined
+                              )}
+                              )
+                            </Text>
+                          )}
+                        </Text>
+                      )}
                       <Text style={{ marginTop: 4, fontSize: 14, color: '#6B7280' }}>
                         BS. {appointment.doctor.firstName} {appointment.doctor.lastName}
                       </Text>

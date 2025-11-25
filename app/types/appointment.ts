@@ -37,12 +37,26 @@ export interface Appointment {
   startTime: string; // ISO datetime
   status: AppointmentStatus;
   notes: string | null;
+  patient?: {
+    id: number;
+    firstName: string;
+    lastName: string;
+    email: string | null;
+    phone: string | null;
+    dateOfBirth?: string | null;
+    gender?: string | null;
+    relationship?: string | null;
+  };
+  // Alias for backward compatibility
   patientProfile?: {
     id: number;
     firstName: string;
     lastName: string;
-    email: string;
+    email: string | null;
     phone: string | null;
+    dateOfBirth?: string | null;
+    gender?: string | null;
+    relationship?: string | null;
   };
   doctor: {
     id: number;

@@ -46,7 +46,7 @@ function ToggleLogo() {
 const DOCTOR_MAIN_ITEMS: Array<SidebarNavigationMenuItem> = [
     {
         title: 'Lịch khám',
-        url: '/dashboard/doctor/appointments',
+        url: '/dashboard/doctor/schedule/appointments',
         icon: Monitor,
     },
     {
@@ -133,14 +133,14 @@ export function DoctorDashboardLayout({ children, defaultOpen = true }: DoctorDa
     return (
         <SidebarProvider defaultOpen={defaultOpen}>
             <Sidebar collapsible="icon">
-                <SidebarHeader className="border-b border-border">
-                    <div className="flex items-center gap-2 px-2">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                            <Monitor className="h-4 w-4" />
+                <SidebarHeader className="border-b-2 border-border bg-gradient-to-r from-primary/5 to-primary/10">
+                    <div className="flex items-center gap-3 px-4 py-4">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg">
+                            <Monitor className="h-5 w-5" />
                         </div>
                         <div className="grid flex-1 text-left text-sm leading-tight">
-                            <span className="truncate font-semibold">Sepolia Health</span>
-                            <span className="truncate text-xs text-sidebar-foreground/70">DOCTOR Dashboard</span>
+                            <span className="truncate font-bold text-foreground">Sepolia Health</span>
+                            <span className="truncate text-xs text-muted-foreground font-medium">DOCTOR Dashboard</span>
                         </div>
                     </div>
                 </SidebarHeader>
@@ -158,30 +158,36 @@ export function DoctorDashboardLayout({ children, defaultOpen = true }: DoctorDa
                     <div className="relative" ref={sidebarDropdownRef}>
                         <button
                             onClick={() => setIsSidebarDropdownOpen(!isSidebarDropdownOpen)}
-                            className="w-full flex items-center gap-3 px-2 py-2 hover:bg-white/15 rounded-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2"
+                            className="w-full flex items-center gap-3 px-3 py-3 hover:bg-sidebar-accent rounded-lg transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 group"
                         >
-                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                                <span className="text-sm font-medium">HP</span>
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg group-hover:scale-110 transition-transform">
+                                <span className="text-sm font-bold">D</span>
                             </div>
                             <div className="grid flex-1 text-left text-xs">
-                                <span className="truncate font-medium text-sidebar-foreground">Doctor User</span>
+                                <span className="truncate font-semibold text-sidebar-foreground">Doctor User</span>
                                 <span className="truncate text-sidebar-foreground/70">doctor@sepolia.com</span>
                             </div>
                         </button>
 
                         {isMounted && isSidebarDropdownOpen && (
-                            <div className="absolute bottom-full right-0 mb-2 w-56 bg-popover border border-border rounded-lg shadow-popover z-50">
-                                <div className="p-1">
+                            <div className="absolute bottom-full right-0 mb-2 w-64 bg-popover border-2 border-border rounded-xl shadow-2xl z-50 overflow-hidden backdrop-blur-sm">
+                                <div className="p-2">
+                                    <div className="px-4 py-3 border-b border-border bg-gradient-to-r from-primary/5 to-primary/10 mb-1">
+                                        <p className="text-sm font-semibold text-popover-foreground truncate">
+                                            Doctor User
+                                        </p>
+                                        <p className="text-xs text-muted-foreground truncate">doctor@sepolia.com</p>
+                                    </div>
                                     <button
                                         onClick={handleAccountInfo}
-                                        className="w-full flex items-center gap-3 px-3 py-2 text-sm text-popover-foreground hover:bg-accent hover:text-accent-foreground rounded-sm transition-colors cursor-pointer"
+                                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-popover-foreground hover:bg-accent hover:text-accent-foreground rounded-lg transition-all duration-200 cursor-pointer"
                                     >
                                         <User className="w-4 h-4" />
                                         Thông tin tài khoản
                                     </button>
                                     <button
                                         onClick={handleLogout}
-                                        className="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950 dark:hover:text-red-300 rounded-sm transition-colors cursor-pointer"
+                                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950 dark:hover:text-red-300 rounded-lg transition-all duration-200 cursor-pointer"
                                     >
                                         <LogOut className="w-4 h-4" />
                                         Đăng xuất
@@ -194,49 +200,56 @@ export function DoctorDashboardLayout({ children, defaultOpen = true }: DoctorDa
             </Sidebar>
 
             <SidebarInset>
-                <header className="sticky top-0 z-10 bg-background flex h-16 shrink-0 items-center gap-2 border-b w-full">
+                <header className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex h-16 shrink-0 items-center gap-2 border-b-2 border-border shadow-lg w-full">
                     <div className="flex items-center justify-between px-6 w-full">
                         <div className="flex items-center space-x-4">
                             <ToggleLogo />
+                            <div className="h-8 w-px bg-border" />
+                            <div className="flex items-center gap-2">
+                                <div className="p-1.5 bg-primary/10 rounded-lg">
+                                    <Monitor className="h-5 w-5 text-primary" />
+                                </div>
+                                <span className="text-sm font-semibold text-muted-foreground hidden sm:block">
+                                    Doctor Dashboard
+                                </span>
+                            </div>
                         </div>
                         <div className="flex items-center space-x-4">
                             <ThemeSwitcher />
                             <div className="relative" ref={dropdownRef}>
                                 <button
                                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                                    className="ml-auto cursor-pointer hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
+                                    className="ml-auto cursor-pointer hover:opacity-80 transition-all duration-200 hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-full shadow-md hover:shadow-lg"
                                 >
-                                    <Avatar>
-                                        <AvatarFallback className="bg-primary text-primary-foreground">
-                                            {user?.email ? user.email.charAt(0).toUpperCase() : 'A'}
+                                    <Avatar className="border-2 border-primary/20">
+                                        <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-bold">
+                                            {user?.email ? user.email.charAt(0).toUpperCase() : 'D'}
                                         </AvatarFallback>
                                     </Avatar>
                                 </button>
 
                                 {isMounted && isDropdownOpen && (
-                                    <div className="absolute right-0 top-full mt-2 w-56 bg-popover border border-border rounded-lg shadow-popover z-50">
-                                        <div className="p-1">
-                                            <div className="px-3 py-2 border-b border-border">
-                                                <p className="text-sm font-medium text-popover-foreground">
+                                    <div className="absolute right-0 top-full mt-2 w-64 bg-popover border-2 border-border rounded-xl shadow-2xl z-50 overflow-hidden backdrop-blur-sm">
+                                        <div className="p-2">
+                                            <div className="px-4 py-3 border-b border-border bg-gradient-to-r from-primary/5 to-primary/10">
+                                                <p className="text-sm font-semibold text-popover-foreground truncate">
                                                     {user?.email || 'doctor@sepoliahealth.com'}
                                                 </p>
-                                                <p className="text-xs text-muted-foreground">
-                                                    {user?.email || 'doctor@sepoliahealth.com'}
-                                                </p>
-                                                <p className="text-xs text-muted-foreground">
+                                                <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                                                    <Monitor className="w-3 h-3" />
                                                     Role: {user?.role || 'DOCTOR'}
                                                 </p>
                                             </div>
                                             <button
                                                 onClick={handleAccountInfo}
-                                                className="w-full flex items-center gap-3 px-3 py-2 text-sm text-popover-foreground hover:bg-accent hover:text-accent-foreground rounded-sm transition-colors cursor-pointer"
+                                                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-popover-foreground hover:bg-accent hover:text-accent-foreground rounded-lg transition-all duration-200 cursor-pointer mt-1"
                                             >
                                                 <User className="w-4 h-4" />
                                                 Thông tin tài khoản
                                             </button>
                                             <button
                                                 onClick={handleLogout}
-                                                className="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950 dark:hover:text-red-300 rounded-sm transition-colors cursor-pointer"
+                                                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950 dark:hover:text-red-300 rounded-lg transition-all duration-200 cursor-pointer mt-1"
                                             >
                                                 <LogOut className="w-4 h-4" />
                                                 Đăng xuất
