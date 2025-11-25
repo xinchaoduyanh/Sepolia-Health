@@ -135,6 +135,7 @@ export const queryKeys = {
             details: () => [...queryKeys.doctor.appointments.all(), 'detail'] as const,
             detail: (id: string) => [...queryKeys.doctor.appointments.details(), id] as const,
         },
+        profile: () => [...queryKeys.doctor.all, 'profile'] as const,
     },
 
     // General queries

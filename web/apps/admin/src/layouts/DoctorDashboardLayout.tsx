@@ -1,6 +1,6 @@
 'use client'
 
-import { Avatar, AvatarFallback } from '@workspace/ui/components/Avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@workspace/ui/components/Avatar'
 import { SidebarNavigationMenu, SidebarNavigationMenuItem } from '@workspace/ui/components/Sidebar.helpers'
 import {
     Sidebar,
@@ -13,6 +13,7 @@ import {
 } from '@workspace/ui/components/Sidebar'
 import { ThemeSwitcher } from '@/shared/components/ThemeSwitcher'
 import { useAuth, useAdminLogout } from '@/shared/hooks/useAuth'
+import { useDoctorProfile } from '@/shared/hooks/useDoctorProfile'
 import Image from 'next/image'
 import { Monitor, UserCheck, User, LogOut, MessageSquare } from 'lucide-react'
 import Link from 'next/link'
@@ -44,11 +45,6 @@ function ToggleLogo() {
 
 // Menu items cho DOCTOR
 const DOCTOR_MAIN_ITEMS: Array<SidebarNavigationMenuItem> = [
-    {
-        title: 'Lịch khám',
-        url: '/dashboard/doctor/schedule/appointments',
-        icon: Monitor,
-    },
     {
         title: 'Hồ sơ cá nhân',
         url: '/dashboard/doctor/profile',
@@ -88,6 +84,9 @@ export function DoctorDashboardLayout({ children, defaultOpen = true }: DoctorDa
     const [isMounted, setIsMounted] = useState(false)
     const dropdownRef = useRef<HTMLDivElement>(null)
     const sidebarDropdownRef = useRef<HTMLDivElement>(null)
+
+    // Get doctor profile for avatar and name
+    const { data: doctorProfile } = useDoctorProfile()
 
     // Fix hydration mismatch by ensuring client-side rendering
     useEffect(() => {
@@ -130,6 +129,24 @@ export function DoctorDashboardLayout({ children, defaultOpen = true }: DoctorDa
     }, [])
     const currentPathname = usePathname()
 
+    // Get greeting based on time of day
+    const getGreeting = () => {
+        const hour = new Date().getHours()
+        if (hour < 12) return 'Chào buổi sáng'
+        if (hour < 18) return 'Chào buổi chiều'
+        return 'Chào buổi tối'
+    }
+
+    const greeting = getGreeting()
+    const doctorName = doctorProfile
+        ? `Bác sĩ ${doctorProfile.lastName || ''} ${doctorProfile.firstName || ''}`.trim()
+        : 'Bác sĩ'
+    const doctorAvatar = doctorProfile?.avatar || null
+    const doctorEmail = doctorProfile?.email || user?.email || 'doctor@sepolia.com'
+    const doctorFullName = doctorProfile
+        ? `${doctorProfile.lastName || ''} ${doctorProfile.firstName || ''}`.trim() || 'Doctor User'
+        : 'Doctor User'
+
     return (
         <SidebarProvider defaultOpen={defaultOpen}>
             <Sidebar collapsible="icon">
@@ -139,8 +156,7 @@ export function DoctorDashboardLayout({ children, defaultOpen = true }: DoctorDa
                             <Monitor className="h-5 w-5" />
                         </div>
                         <div className="grid flex-1 text-left text-sm leading-tight">
-                            <span className="truncate font-bold text-foreground">Sepolia Health</span>
-                            <span className="truncate text-xs text-muted-foreground font-medium">DOCTOR Dashboard</span>
+                            <span className="truncate font-bold text-foreground">Sepolia Healthcare</span>
                         </div>
                     </div>
                 </SidebarHeader>
@@ -160,12 +176,15 @@ export function DoctorDashboardLayout({ children, defaultOpen = true }: DoctorDa
                             onClick={() => setIsSidebarDropdownOpen(!isSidebarDropdownOpen)}
                             className="w-full flex items-center gap-3 px-3 py-3 hover:bg-sidebar-accent rounded-lg transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 group"
                         >
-                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg group-hover:scale-110 transition-transform">
-                                <span className="text-sm font-bold">D</span>
-                            </div>
+                            <Avatar className="h-10 w-10 border-2 border-primary/20">
+                                {doctorAvatar ? <AvatarImage src={doctorAvatar} alt={doctorFullName} /> : null}
+                                <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-bold">
+                                    {doctorFullName.charAt(0).toUpperCase()}
+                                </AvatarFallback>
+                            </Avatar>
                             <div className="grid flex-1 text-left text-xs">
-                                <span className="truncate font-semibold text-sidebar-foreground">Doctor User</span>
-                                <span className="truncate text-sidebar-foreground/70">doctor@sepolia.com</span>
+                                <span className="truncate font-semibold text-sidebar-foreground">{doctorFullName}</span>
+                                <span className="truncate text-sidebar-foreground/70">{doctorEmail}</span>
                             </div>
                         </button>
 
@@ -174,9 +193,9 @@ export function DoctorDashboardLayout({ children, defaultOpen = true }: DoctorDa
                                 <div className="p-2">
                                     <div className="px-4 py-3 border-b border-border bg-gradient-to-r from-primary/5 to-primary/10 mb-1">
                                         <p className="text-sm font-semibold text-popover-foreground truncate">
-                                            Doctor User
+                                            {doctorFullName}
                                         </p>
-                                        <p className="text-xs text-muted-foreground truncate">doctor@sepolia.com</p>
+                                        <p className="text-xs text-muted-foreground truncate">{doctorEmail}</p>
                                     </div>
                                     <button
                                         onClick={handleAccountInfo}
@@ -206,11 +225,8 @@ export function DoctorDashboardLayout({ children, defaultOpen = true }: DoctorDa
                             <ToggleLogo />
                             <div className="h-8 w-px bg-border" />
                             <div className="flex items-center gap-2">
-                                <div className="p-1.5 bg-primary/10 rounded-lg">
-                                    <Monitor className="h-5 w-5 text-primary" />
-                                </div>
-                                <span className="text-sm font-semibold text-muted-foreground hidden sm:block">
-                                    Doctor Dashboard
+                                <span className="text-sm font-semibold text-foreground hidden sm:block">
+                                    {greeting}, {doctorName}
                                 </span>
                             </div>
                         </div>
@@ -222,8 +238,9 @@ export function DoctorDashboardLayout({ children, defaultOpen = true }: DoctorDa
                                     className="ml-auto cursor-pointer hover:opacity-80 transition-all duration-200 hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-full shadow-md hover:shadow-lg"
                                 >
                                     <Avatar className="border-2 border-primary/20">
+                                        {doctorAvatar ? <AvatarImage src={doctorAvatar} alt={doctorFullName} /> : null}
                                         <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-bold">
-                                            {user?.email ? user.email.charAt(0).toUpperCase() : 'D'}
+                                            {doctorFullName.charAt(0).toUpperCase()}
                                         </AvatarFallback>
                                     </Avatar>
                                 </button>
@@ -233,11 +250,10 @@ export function DoctorDashboardLayout({ children, defaultOpen = true }: DoctorDa
                                         <div className="p-2">
                                             <div className="px-4 py-3 border-b border-border bg-gradient-to-r from-primary/5 to-primary/10">
                                                 <p className="text-sm font-semibold text-popover-foreground truncate">
-                                                    {user?.email || 'doctor@sepoliahealth.com'}
+                                                    {doctorFullName}
                                                 </p>
-                                                <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                                                    <Monitor className="w-3 h-3" />
-                                                    Role: {user?.role || 'DOCTOR'}
+                                                <p className="text-xs text-muted-foreground mt-1 truncate">
+                                                    {doctorEmail}
                                                 </p>
                                             </div>
                                             <button

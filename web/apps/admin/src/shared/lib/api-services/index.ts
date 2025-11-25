@@ -15,6 +15,7 @@ export {
 } from './patients.service'
 export * from './doctors.service'
 export * from './doctor-schedule.service'
+export * from './doctor-profile.service'
 export { receptionistsService } from './receptionists.service'
 export { articlesService } from './articles.service'
 export { servicesService } from './services.service'
