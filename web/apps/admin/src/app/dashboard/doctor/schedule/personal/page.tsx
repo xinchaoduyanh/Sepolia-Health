@@ -321,31 +321,65 @@ export default function DoctorPersonalSchedulePage() {
     }
 
     return (
-        <div className="p-6 space-y-6 max-w-[1400px] mx-auto">
+        <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
+            {/* Header */}
+            <div className="flex flex-col space-y-4">
+                <div>
+                    <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                        Lịch cá nhân
+                    </h1>
+                    <p className="text-sm text-muted-foreground mt-2">
+                        Quản lý và theo dõi lịch làm việc của bạn một cách trực quan
+                    </p>
+                </div>
+            </div>
+
             {/* Navigation Bar */}
-            <Card className="border">
-                <CardContent className="p-4">
+            <Card className="border-2 shadow-lg bg-gradient-to-br from-card to-card/50">
+                <CardContent className="p-6">
                     <div className="flex items-center justify-between flex-wrap gap-4">
                         {/* Left: Date Navigation */}
-                        <div className="flex items-center gap-2">
-                            <Button variant="outline" size="sm" onClick={handlePrevious}>
+                        <div className="flex items-center gap-3">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handlePrevious}
+                                className="hover:bg-primary/10 hover:border-primary/50 transition-all"
+                            >
                                 <ChevronLeft className="h-4 w-4" />
                             </Button>
-                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-muted/50 min-w-[140px] justify-center">
-                                <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                                <span className="text-sm font-medium capitalize">{dateDisplay}</span>
+                            <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 min-w-[200px] justify-center">
+                                <CalendarIcon className="h-5 w-5 text-primary" />
+                                <span className="text-base font-semibold capitalize text-foreground">
+                                    {dateDisplay}
+                                </span>
                             </div>
-                            <Button variant="outline" size="sm" onClick={handleNext}>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleNext}
+                                className="hover:bg-primary/10 hover:border-primary/50 transition-all"
+                            >
                                 <ChevronRight className="h-4 w-4" />
                             </Button>
-                            <Button variant="outline" size="sm" onClick={handleToday}>
+                            <Button
+                                variant="default"
+                                size="sm"
+                                onClick={handleToday}
+                                className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all"
+                            >
                                 Hôm nay
                             </Button>
                         </div>
 
                         {/* Right: Filter and View Mode */}
                         <div className="flex items-center gap-3">
-                            <Button variant="ghost" size="icon" onClick={handleRefresh} className="rounded-full">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={handleRefresh}
+                                className="rounded-full hover:bg-primary/10 hover:text-primary transition-all"
+                            >
                                 <RefreshCw className="h-4 w-4" />
                             </Button>
                             <BsSelect
@@ -358,28 +392,40 @@ export default function DoctorPersonalSchedulePage() {
                                 className="w-[120px]"
                             />
 
-                            <div className="flex bg-muted rounded-lg p-1">
+                            <div className="flex bg-muted rounded-lg p-1 border-2 border-border">
                                 <Button
-                                    variant={viewMode === 'day' ? 'secondary' : 'ghost'}
+                                    variant={viewMode === 'day' ? 'default' : 'ghost'}
                                     size="sm"
                                     onClick={() => setViewMode('day')}
-                                    className="h-8 px-3"
+                                    className={`h-8 px-4 transition-all ${
+                                        viewMode === 'day'
+                                            ? 'bg-gradient-to-r from-primary to-primary/90 shadow-lg'
+                                            : 'hover:bg-muted/80'
+                                    }`}
                                 >
                                     Ngày
                                 </Button>
                                 <Button
-                                    variant={viewMode === 'week' ? 'secondary' : 'ghost'}
+                                    variant={viewMode === 'week' ? 'default' : 'ghost'}
                                     size="sm"
                                     onClick={() => setViewMode('week')}
-                                    className="h-8 px-3"
+                                    className={`h-8 px-4 transition-all ${
+                                        viewMode === 'week'
+                                            ? 'bg-gradient-to-r from-primary to-primary/90 shadow-lg'
+                                            : 'hover:bg-muted/80'
+                                    }`}
                                 >
                                     Tuần
                                 </Button>
                                 <Button
-                                    variant={viewMode === 'month' ? 'secondary' : 'ghost'}
+                                    variant={viewMode === 'month' ? 'default' : 'ghost'}
                                     size="sm"
                                     onClick={() => setViewMode('month')}
-                                    className="h-8 px-3"
+                                    className={`h-8 px-4 transition-all ${
+                                        viewMode === 'month'
+                                            ? 'bg-gradient-to-r from-primary to-primary/90 shadow-lg'
+                                            : 'hover:bg-muted/80'
+                                    }`}
                                 >
                                     Tháng
                                 </Button>
@@ -395,17 +441,15 @@ export default function DoctorPersonalSchedulePage() {
                 <div>
                     {/* Week View */}
                     {viewMode === 'week' && weeklySchedule && (
-                        <Card className="border-2 shadow-lg">
+                        <Card className="border-2 shadow-xl bg-gradient-to-br from-card to-card/50 overflow-hidden">
                             <CardContent className="p-0">
                                 <div className="overflow-x-auto">
                                     <table className="w-full border-collapse min-w-[800px]">
                                         {/* Header - Days of week */}
                                         <thead>
-                                            <tr className="bg-muted/50">
-                                                <th className="border-b-2 border-r-2 p-2 w-20 bg-background sticky left-0 z-10">
-                                                    <span className="text-xs font-medium text-muted-foreground">
-                                                        Giờ
-                                                    </span>
+                                            <tr className="bg-gradient-to-r from-muted/80 to-muted/50 border-b-2 border-border">
+                                                <th className="border-r-2 border-border p-4 w-24 bg-background sticky left-0 z-10 shadow-lg">
+                                                    <span className="text-sm font-bold text-foreground">Giờ</span>
                                                 </th>
                                                 {weeklySchedule.days.map(day => {
                                                     const date = parseISO(day.date)
@@ -413,17 +457,27 @@ export default function DoctorPersonalSchedulePage() {
                                                     return (
                                                         <th
                                                             key={day.date}
-                                                            className={`border-b-2 border-r-2 p-2 text-center font-semibold min-w-[140px] transition-colors ${
+                                                            className={`border-r-2 border-border p-4 text-center font-semibold min-w-[160px] transition-all ${
                                                                 isToday
-                                                                    ? 'bg-primary/10 dark:bg-primary/20 border-primary/40'
-                                                                    : 'bg-background'
+                                                                    ? 'bg-gradient-to-br from-primary/20 to-primary/10 dark:from-primary/30 dark:to-primary/15 border-primary/40 shadow-inner'
+                                                                    : 'bg-background hover:bg-muted/30'
                                                             }`}
                                                         >
-                                                            <div className="flex flex-col gap-0.5">
-                                                                <span className="text-sm font-bold capitalize">
+                                                            <div className="flex flex-col gap-1">
+                                                                <span
+                                                                    className={`text-base font-bold capitalize ${
+                                                                        isToday ? 'text-primary' : 'text-foreground'
+                                                                    }`}
+                                                                >
                                                                     {day.dayName}
                                                                 </span>
-                                                                <span className="text-xs text-muted-foreground font-normal">
+                                                                <span
+                                                                    className={`text-xs font-medium ${
+                                                                        isToday
+                                                                            ? 'text-primary/80'
+                                                                            : 'text-muted-foreground'
+                                                                    }`}
+                                                                >
                                                                     {format(date, 'dd/MM', { locale: vi })}
                                                                 </span>
                                                             </div>
@@ -462,23 +516,28 @@ export default function DoctorPersonalSchedulePage() {
                                                         return (
                                                             <td
                                                                 key={day.date}
-                                                                className={`border-r-2 border-b-2 p-1.5 align-top transition-colors h-[60px] ${
+                                                                className={`border-r border-b border-border p-1.5 align-top transition-all duration-200 h-[65px] ${
                                                                     isToday
                                                                         ? 'bg-primary/5 dark:bg-primary/10'
-                                                                        : 'bg-background'
+                                                                        : 'bg-background hover:bg-muted/20'
                                                                 } ${
-                                                                    isWorkingHour
-                                                                        ? 'bg-blue-50/50 dark:bg-blue-950/10'
-                                                                        : 'bg-muted/20 dark:bg-muted/10'
+                                                                    isWorkingHour && !bookedSlot
+                                                                        ? 'bg-gradient-to-br from-blue-50/80 to-blue-100/40 dark:from-blue-950/20 dark:to-blue-900/10'
+                                                                        : !isWorkingHour && !bookedSlot
+                                                                          ? 'bg-muted/30 dark:bg-muted/20'
+                                                                          : ''
                                                                 }`}
                                                             >
                                                                 {bookedSlot ? (
                                                                     <PopoverTrigger>
-                                                                        <div className="group/appointment relative bg-gradient-to-br from-primary/15 to-primary/5 dark:from-primary/20 dark:to-primary/10 border border-primary/30 dark:border-primary/40 rounded-md p-2 cursor-pointer hover:shadow-md hover:scale-[1.02] transition-all duration-200 hover:border-primary/50 dark:hover:border-primary/60 h-full">
-                                                                            <div className="text-xs font-semibold text-primary dark:text-primary mb-1 truncate">
-                                                                                {bookedSlot.displayTime}
+                                                                        <div className="group/appointment relative bg-gradient-to-br from-primary/20 via-primary/15 to-primary/10 dark:from-primary/25 dark:via-primary/20 dark:to-primary/15 border-2 border-primary/40 dark:border-primary/50 rounded-lg p-2.5 cursor-pointer hover:shadow-lg hover:scale-[1.03] transition-all duration-300 hover:border-primary/70 dark:hover:border-primary/80 h-full backdrop-blur-sm">
+                                                                            <div className="flex items-center gap-1.5 mb-1.5">
+                                                                                <Clock className="h-3 w-3 text-primary" />
+                                                                                <span className="text-xs font-bold text-primary dark:text-primary">
+                                                                                    {bookedSlot.displayTime}
+                                                                                </span>
                                                                             </div>
-                                                                            <div className="text-xs font-medium text-foreground truncate">
+                                                                            <div className="text-xs font-semibold text-foreground truncate">
                                                                                 {bookedSlot.patientName}
                                                                             </div>
                                                                         </div>
@@ -547,15 +606,15 @@ export default function DoctorPersonalSchedulePage() {
 
                     {/* Month View */}
                     {viewMode === 'month' && monthlySchedule && (
-                        <Card className="border-2 shadow-lg">
-                            <CardContent className="p-4">
-                                <div className="grid grid-cols-7 gap-px bg-muted/20 rounded-lg overflow-hidden border">
+                        <Card className="border-2 shadow-xl bg-gradient-to-br from-card to-card/50 overflow-hidden">
+                            <CardContent className="p-6">
+                                <div className="grid grid-cols-7 gap-1 bg-muted/30 rounded-xl overflow-hidden border-2 border-border p-1">
                                     {/* Weekday Headers */}
                                     {['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'].map(
                                         (day, index) => (
                                             <div
                                                 key={index}
-                                                className="p-2 text-center font-semibold text-sm bg-muted/50 border-b"
+                                                className="p-3 text-center font-bold text-sm bg-gradient-to-br from-muted/80 to-muted/50 border-b-2 border-border"
                                             >
                                                 {day}
                                             </div>
@@ -574,40 +633,46 @@ export default function DoctorPersonalSchedulePage() {
                                         return (
                                             <div
                                                 key={dateStr}
-                                                className={`min-h-[100px] p-2 bg-background border-r border-b relative transition-colors hover:bg-muted/10 ${
-                                                    !isCurrentMonth ? 'opacity-50 bg-muted/5' : ''
-                                                } ${isToday ? 'bg-primary/5 dark:bg-primary/10' : ''}`}
+                                                className={`min-h-[120px] p-3 bg-background border-2 rounded-lg relative transition-all duration-200 hover:shadow-md hover:scale-[1.02] ${
+                                                    !isCurrentMonth
+                                                        ? 'opacity-40 bg-muted/10 border-muted/30'
+                                                        : 'border-border hover:border-primary/30'
+                                                } ${
+                                                    isToday
+                                                        ? 'bg-gradient-to-br from-primary/15 to-primary/5 dark:from-primary/20 dark:to-primary/10 border-primary/50 shadow-lg ring-2 ring-primary/20'
+                                                        : ''
+                                                }`}
                                             >
-                                                <div className="flex justify-between items-start mb-1">
+                                                <div className="flex justify-between items-start mb-2">
                                                     <span
-                                                        className={`text-sm font-medium rounded-full w-6 h-6 flex items-center justify-center ${
+                                                        className={`text-base font-bold rounded-full w-7 h-7 flex items-center justify-center transition-all ${
                                                             isToday
-                                                                ? 'bg-primary text-primary-foreground'
-                                                                : 'text-muted-foreground'
+                                                                ? 'bg-gradient-to-br from-primary to-primary/90 text-primary-foreground shadow-lg scale-110'
+                                                                : 'text-foreground hover:bg-muted/50'
                                                         }`}
                                                     >
                                                         {format(date, 'd')}
                                                     </span>
                                                     {hasSchedule && (
-                                                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 font-medium">
+                                                        <span className="text-[10px] px-2 py-1 rounded-lg bg-gradient-to-r from-green-500/20 to-green-500/10 border border-green-500/30 text-green-700 dark:text-green-400 font-semibold">
                                                             {dayData.actualSchedule?.startTime?.slice(0, 5)} -{' '}
                                                             {dayData.actualSchedule?.endTime?.slice(0, 5)}
                                                         </span>
                                                     )}
                                                 </div>
 
-                                                <div className="space-y-1 mt-2">
+                                                <div className="space-y-1.5 mt-2">
                                                     {appointmentCount > 0 ? (
-                                                        <div className="text-xs px-2 py-1 rounded bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-medium flex items-center gap-1">
-                                                            <User className="h-3 w-3" />
-                                                            {appointmentCount} bệnh nhân
+                                                        <div className="text-xs px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-blue-500/20 to-blue-500/10 border border-blue-500/30 text-blue-700 dark:text-blue-400 font-semibold flex items-center gap-1.5">
+                                                            <User className="h-3.5 w-3.5" />
+                                                            <span>{appointmentCount} bệnh nhân</span>
                                                         </div>
                                                     ) : hasSchedule ? (
-                                                        <div className="text-[10px] text-muted-foreground text-center mt-4">
+                                                        <div className="text-[11px] text-muted-foreground text-center mt-4 px-2 py-1 bg-muted/30 rounded-lg">
                                                             Trống lịch
                                                         </div>
                                                     ) : (
-                                                        <div className="text-[10px] text-muted-foreground/50 text-center mt-4">
+                                                        <div className="text-[11px] text-muted-foreground/50 text-center mt-4 px-2 py-1 bg-muted/20 rounded-lg">
                                                             Nghỉ
                                                         </div>
                                                     )}

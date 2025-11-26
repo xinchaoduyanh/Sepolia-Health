@@ -172,7 +172,7 @@ const adminManagementItems = [
 const doctorMenuItems = [
     {
         title: 'Lịch khám',
-        url: '/dashboard/doctor/appointments',
+        url: '/dashboard/doctor/schedule/appointments',
         icon: Monitor,
     },
     {

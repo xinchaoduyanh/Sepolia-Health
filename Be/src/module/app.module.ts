@@ -72,7 +72,7 @@ import { REDIS_CLIENT } from '@/common/modules';
     {
       provide: APP_GUARD,
       useClass: UserStatusGuard,
-    }
+    },
   ],
 })
 export class AppModule { }

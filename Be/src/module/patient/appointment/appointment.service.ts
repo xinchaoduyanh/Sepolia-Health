@@ -24,10 +24,6 @@ import {
   AvailableDateDto,
 } from './dto';
 import { NotificationService } from '@/module/notification/notification.service';
-import {
-  NotificationPriority,
-  NotificationType,
-} from '@/module/notification/notification.types';
 import { Queue } from 'bullmq';
 import { InjectQueue } from '@nestjs/bullmq';
 import { DateUtil, TimeUtil } from '@/common/utils';
@@ -42,7 +38,7 @@ export class AppointmentService {
     private readonly prisma: PrismaService,
     @InjectQueue(AppointmentQueueName.QUEUE_NAME) private readonly appointmentQueue: Queue,
     private readonly notificationService: NotificationService,
-  ) { }
+  ) {}
 
   /**
    * Get all appointments with filters
@@ -106,7 +102,18 @@ export class AppointmentService {
               lastName: true,
             },
           },
-          service: true,
+          service: {
+            include: {
+              specialty: {
+                select: {
+                  id: true,
+                  name: true,
+                  description: true,
+                  icon: true,
+                },
+              },
+            },
+          },
           clinic: {
             select: {
               id: true,
@@ -121,6 +128,26 @@ export class AppointmentService {
               paymentMethod: true,
               notes: true,
               createdAt: true,
+            },
+          },
+          feedback: {
+            select: {
+              id: true,
+              rating: true,
+              comment: true,
+              createdAt: true,
+            },
+          },
+          result: {
+            select: {
+              id: true,
+              diagnosis: true,
+              notes: true,
+              prescription: true,
+              recommendations: true,
+              appointmentId: true,
+              createdAt: true,
+              updatedAt: true,
             },
           },
         },
@@ -161,7 +188,18 @@ export class AppointmentService {
             lastName: true,
           },
         },
-        service: true,
+        service: {
+          include: {
+            specialty: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+                icon: true,
+              },
+            },
+          },
+        },
         billing: {
           select: {
             id: true,
@@ -176,6 +214,26 @@ export class AppointmentService {
           select: {
             id: true,
             name: true,
+          },
+        },
+        feedback: {
+          select: {
+            id: true,
+            rating: true,
+            comment: true,
+            createdAt: true,
+          },
+        },
+        result: {
+          select: {
+            id: true,
+            diagnosis: true,
+            notes: true,
+            prescription: true,
+            recommendations: true,
+            appointmentId: true,
+            createdAt: true,
+            updatedAt: true,
           },
         },
       },
@@ -202,10 +260,10 @@ export class AppointmentService {
       doctorServiceId = doctorService?.id;
     }
 
-    return {
+    return this.formatAppointmentResponse({
       ...appointment,
       doctorServiceId,
-    };
+    });
   }
 
   /**
@@ -220,7 +278,18 @@ export class AppointmentService {
       where: { id },
       include: {
         doctor: true,
-        service: true,
+        service: {
+          include: {
+            specialty: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+                icon: true,
+              },
+            },
+          },
+        },
         patientProfile: true,
       },
     });
@@ -263,12 +332,95 @@ export class AppointmentService {
       },
       include: {
         patientProfile: true,
-        doctor: true,
-        service: true,
+        doctor: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+        service: {
+          include: {
+            specialty: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+                icon: true,
+              },
+            },
+          },
+        },
         billing: true,
-        clinic: true,
+        clinic: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        feedback: true,
+        result: {
+          select: {
+            id: true,
+            diagnosis: true,
+            notes: true,
+            prescription: true,
+            recommendations: true,
+            appointmentId: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        },
       },
     });
+
+    // Send notification to patient when they update appointment
+    // Only send if patient is the one updating (not doctor)
+    const isPatientUpdating = appointment.patientProfile?.managerId === userId;
+    if (isPatientUpdating) {
+      try {
+        const patientUserId = appointment.patientProfile?.managerId?.toString();
+        if (patientUserId) {
+          // Build changes object
+          const changes: Record<string, any> = {};
+          if (
+            body.startTime &&
+            body.startTime.getTime() !== appointment.startTime.getTime()
+          ) {
+            changes['Thời gian bắt đầu'] =
+              body.startTime.toLocaleString('vi-VN');
+          }
+          if (
+            body.endTime &&
+            body.endTime.getTime() !== appointment.endTime.getTime()
+          ) {
+            changes['Thời gian kết thúc'] =
+              body.endTime.toLocaleString('vi-VN');
+          }
+          if (body.notes !== undefined && body.notes !== appointment.notes) {
+            changes['Ghi chú'] = body.notes || 'Đã xóa ghi chú';
+          }
+
+          await this.notificationService.sendUpdateAppointmentPatientNotification(
+            {
+              appointmentId: appointment.id,
+              recipientId: patientUserId,
+              changes: Object.keys(changes).length > 0 ? changes : undefined,
+              notes: body.notes,
+              startTime: updatedAppointment.startTime,
+              doctorName: `${
+                updatedAppointment.doctor?.firstName || ''
+              } ${updatedAppointment.doctor?.lastName || ''}`.trim(),
+              serviceName: updatedAppointment.service?.name || '',
+              clinicName: updatedAppointment.clinic?.name || '',
+            },
+          );
+        }
+      } catch (error) {
+        console.error('Failed to send update notification to patient:', error);
+        // Don't throw error, just log it
+      }
+    }
 
     return this.formatAppointmentResponse(updatedAppointment);
   }
@@ -282,7 +434,28 @@ export class AppointmentService {
   ): Promise<SuccessResponseDto> {
     const appointment = await this.prisma.appointment.findUnique({
       where: { id },
-      include: { patientProfile: true },
+      include: {
+        patientProfile: true,
+        doctor: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+        service: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        clinic: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
     });
 
     if (!appointment) {
@@ -304,6 +477,31 @@ export class AppointmentService {
         status: AppointmentStatus.CANCELLED,
       },
     });
+
+    // Send notification to patient when they cancel appointment
+    try {
+      const patientUserId = appointment.patientProfile?.managerId?.toString();
+      if (patientUserId) {
+        await this.notificationService.sendDeleteAppointmentPatientNotification(
+          {
+            appointmentId: appointment.id,
+            startTime: appointment.startTime,
+            doctorName: `${
+              appointment.doctor?.firstName || ''
+            } ${appointment.doctor?.lastName || ''}`.trim(),
+            serviceName: appointment.service?.name || '',
+            recipientId: patientUserId,
+            reason: 'Bạn đã hủy lịch hẹn này',
+          },
+        );
+      }
+    } catch (error) {
+      console.error(
+        'Failed to send cancellation notification to patient:',
+        error,
+      );
+      // Don't throw error, just log it
+    }
 
     return new SuccessResponseDto();
   }
@@ -348,10 +546,12 @@ export class AppointmentService {
 
     // Ensure sortBy and sortOrder are properly set
     const finalSortBy = sortBy || 'date';
+    // Mặc định sort từ xa nhất đến gần nhất (DESC - appointment xa nhất có startTime lớn nhất)
     const finalSortOrder = sortOrder || SortOrder.DESC;
 
     const skip = (Number(page) - 1) * Number(limit);
 
+    const now = new Date();
     const where: any = {
       patientProfileId: { in: patientProfileIds }, // Query all patient profiles
     };
@@ -363,10 +563,19 @@ export class AppointmentService {
         status: billingStatus,
       };
     }
-    if (dateFrom || dateTo) {
-      where.date = {};
-      if (dateFrom) where.date.gte = new Date(dateFrom);
-      if (dateTo) where.date.lte = new Date(dateTo);
+
+    // Xử lý filter theo thời gian: chỉ lấy appointments trong tương lai
+    where.startTime = {};
+    if (dateFrom) {
+      const dateFromTime = new Date(dateFrom);
+      // Lấy max giữa dateFrom và now để đảm bảo chỉ lấy trong tương lai
+      where.startTime.gte = dateFromTime > now ? dateFromTime : now;
+    } else {
+      // Không có dateFrom thì mặc định chỉ lấy từ hiện tại trở đi
+      where.startTime.gte = now;
+    }
+    if (dateTo) {
+      where.startTime.lte = new Date(dateTo);
     }
 
     // Build orderBy based on sortBy and sortOrder
@@ -380,9 +589,10 @@ export class AppointmentService {
     } else if (finalSortBy === 'billingStatus') {
       // For billingStatus, we need to sort in memory
       shouldSortInMemory = true;
-      orderBy = { startTime: SortOrder.ASC }; // Temporary orderBy, will be overridden
+      // Sort by startTime DESC first (xa nhất đến gần nhất), then by billing status
+      orderBy = { startTime: SortOrder.DESC };
     } else {
-      // Default: sort by date
+      // Default: sort by startTime - từ xa nhất đến gần nhất (DESC)
       orderBy = { startTime: finalSortOrder };
     }
 
@@ -406,7 +616,18 @@ export class AppointmentService {
               lastName: true,
             },
           },
-          service: true,
+          service: {
+            include: {
+              specialty: {
+                select: {
+                  id: true,
+                  name: true,
+                  description: true,
+                  icon: true,
+                },
+              },
+            },
+          },
           clinic: {
             select: {
               id: true,
@@ -426,26 +647,34 @@ export class AppointmentService {
         },
       });
 
-      // Sort by billing status
-      // asc: PENDING -> PAID -> REFUNDED (Chưa thanh toán trước)
-      // desc: PAID -> PENDING -> REFUNDED (Đã thanh toán trước)
+      // Sort: đầu tiên theo billing status, sau đó trong cùng status thì sort theo startTime (xa nhất đến gần nhất - DESC)
       allAppointments.sort((a, b) => {
         const aStatus = a.billing?.status || PaymentStatus.PENDING;
         const bStatus = b.billing?.status || PaymentStatus.PENDING;
 
+        // Sort theo billing status trước
+        let statusComparison = 0;
         if (finalSortOrder === SortOrder.ASC) {
           // PENDING (1) -> PAID (2) -> REFUNDED (3)
           const statusOrder = { PENDING: 1, PAID: 2, REFUNDED: 3 };
           const aOrder = statusOrder[aStatus] || 0;
           const bOrder = statusOrder[bStatus] || 0;
-          return aOrder - bOrder;
+          statusComparison = aOrder - bOrder;
         } else {
           // PAID (1) -> PENDING (2) -> REFUNDED (3)
           const statusOrder = { PAID: 1, PENDING: 2, REFUNDED: 3 };
           const aOrder = statusOrder[aStatus] || 0;
           const bOrder = statusOrder[bStatus] || 0;
-          return aOrder - bOrder;
+          statusComparison = aOrder - bOrder;
         }
+
+        // Nếu billing status khác nhau, sort theo billing status
+        if (statusComparison !== 0) {
+          return statusComparison;
+        }
+
+        // Nếu billing status giống nhau, sort theo startTime từ xa nhất đến gần nhất (DESC)
+        return b.startTime.getTime() - a.startTime.getTime();
       });
 
       // Paginate after sorting
@@ -487,7 +716,18 @@ export class AppointmentService {
               lastName: true,
             },
           },
-          service: true,
+          service: {
+            include: {
+              specialty: {
+                select: {
+                  id: true,
+                  name: true,
+                  description: true,
+                  icon: true,
+                },
+              },
+            },
+          },
           clinic: {
             select: {
               id: true,
@@ -502,6 +742,26 @@ export class AppointmentService {
               paymentMethod: true,
               notes: true,
               createdAt: true,
+            },
+          },
+          feedback: {
+            select: {
+              id: true,
+              rating: true,
+              comment: true,
+              createdAt: true,
+            },
+          },
+          result: {
+            select: {
+              id: true,
+              diagnosis: true,
+              notes: true,
+              prescription: true,
+              recommendations: true,
+              appointmentId: true,
+              createdAt: true,
+              updatedAt: true,
             },
           },
         },
@@ -587,7 +847,18 @@ export class AppointmentService {
             lastName: true,
           },
         },
-        service: true,
+        service: {
+          include: {
+            specialty: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+                icon: true,
+              },
+            },
+          },
+        },
         clinic: {
           select: {
             id: true,
@@ -601,6 +872,14 @@ export class AppointmentService {
             status: true,
             paymentMethod: true,
             notes: true,
+            createdAt: true,
+          },
+        },
+        feedback: {
+          select: {
+            id: true,
+            rating: true,
+            comment: true,
             createdAt: true,
           },
         },
@@ -654,6 +933,14 @@ export class AppointmentService {
         price: true,
         duration: true,
         description: true,
+        specialty: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            icon: true,
+          },
+        },
       },
       orderBy: {
         name: SortOrder.ASC,
@@ -745,7 +1032,18 @@ export class AppointmentService {
       where: { id: doctorServiceId },
       include: {
         doctor: true,
-        service: true,
+        service: {
+          include: {
+            specialty: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+                icon: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -790,7 +1088,18 @@ export class AppointmentService {
       include: {
         patientProfile: true,
         doctor: true,
-        service: true,
+        service: {
+          include: {
+            specialty: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+                icon: true,
+              },
+            },
+          },
+        },
         clinic: true,
       },
     });
@@ -812,14 +1121,16 @@ export class AppointmentService {
           '⚠️ [AppointmentService] Cannot send notification: patientProfile.managerId is missing',
         );
       } else {
-        await this.notificationService.sendCreateAppointmentPatientNotification({
-          appointmentId: appointment.id,
-          startTime: appointment.startTime,
-          doctorName: `${doctorService.doctor.firstName} ${doctorService.doctor.lastName}`,
-          serviceName: doctorService.service.name,
-          clinicName: clinic.name,
-          recipientId: patientUserId,
-        });
+        await this.notificationService.sendCreateAppointmentPatientNotification(
+          {
+            appointmentId: appointment.id,
+            startTime: appointment.startTime,
+            doctorName: `${doctorService.doctor.firstName} ${doctorService.doctor.lastName}`,
+            serviceName: doctorService.service.name,
+            clinicName: clinic.name,
+            recipientId: patientUserId,
+          },
+        );
       }
     } catch (error) {
       console.error('Failed to send notification:', error);
@@ -874,61 +1185,100 @@ export class AppointmentService {
       notes: appointment.notes,
       patient: appointment.patientProfile
         ? {
-          id: appointment.patientProfile.id,
-          firstName: appointment.patientProfile.firstName,
-          lastName: appointment.patientProfile.lastName,
-          phone: appointment.patientProfile.phone,
-          email: appointment.patientProfile.email,
-        }
+            id: appointment.patientProfile.id,
+            firstName: appointment.patientProfile.firstName,
+            lastName: appointment.patientProfile.lastName,
+            phone: appointment.patientProfile.phone,
+            email: appointment.patientProfile.email || null,
+            dateOfBirth: appointment.patientProfile.dateOfBirth
+              ? appointment.patientProfile.dateOfBirth
+                  .toISOString()
+                  .split('T')[0]
+              : null,
+            gender: appointment.patientProfile.gender || null,
+            relationship: appointment.patientProfile.relationship || null,
+          }
         : {
-          id: appointment.patientId,
-          firstName: '',
-          lastName: '',
-          phone: '',
-          email: '',
-        },
+            id: appointment.patientId,
+            firstName: '',
+            lastName: '',
+            phone: '',
+            email: null,
+            dateOfBirth: null,
+            gender: null,
+            relationship: null,
+          },
       doctor: appointment.doctor
         ? {
-          id: appointment.doctor.id,
-          firstName: appointment.doctor.firstName,
-          lastName: appointment.doctor.lastName,
-        }
+            id: appointment.doctor.id,
+            firstName: appointment.doctor.firstName,
+            lastName: appointment.doctor.lastName,
+          }
         : {
-          id: appointment.doctorId,
-          firstName: '',
-          lastName: '',
-        },
+            id: appointment.doctorId,
+            firstName: '',
+            lastName: '',
+          },
       service: appointment.service
         ? {
-          id: appointment.service.id,
-          name: appointment.service.name,
-          price: appointment.service.price,
-          duration: appointment.service.duration,
-        }
+            id: appointment.service.id,
+            name: appointment.service.name,
+            price: appointment.service.price,
+            duration: appointment.service.duration,
+            specialty: appointment.service.specialty
+              ? {
+                  id: appointment.service.specialty.id,
+                  name: appointment.service.specialty.name,
+                  description:
+                    appointment.service.specialty.description || undefined,
+                  icon: appointment.service.specialty.icon || undefined,
+                }
+              : undefined,
+          }
         : {
-          id: appointment.serviceId,
-          name: '',
-          price: 0,
-          duration: 0,
-        },
+            id: appointment.serviceId,
+            name: '',
+            price: 0,
+            duration: 0,
+          },
       clinic: appointment.clinic
         ? {
-          id: appointment.clinic.id,
-          name: appointment.clinic.name,
-        }
+            id: appointment.clinic.id,
+            name: appointment.clinic.name,
+          }
         : {
-          id: appointment.clinicId,
-          name: '',
-        },
+            id: appointment.clinicId,
+            name: '',
+          },
       billing: appointment.billing
         ? {
-          id: appointment.billing.id,
-          amount: appointment.billing.amount,
-          status: appointment.billing.status,
-          paymentMethod: appointment.billing.paymentMethod,
-          notes: appointment.billing.notes,
-          createdAt: appointment.billing.createdAt,
-        }
+            id: appointment.billing.id,
+            amount: appointment.billing.amount,
+            status: appointment.billing.status,
+            paymentMethod: appointment.billing.paymentMethod,
+            notes: appointment.billing.notes,
+            createdAt: appointment.billing.createdAt,
+          }
+        : undefined,
+      feedback: appointment.feedback
+        ? {
+            id: appointment.feedback.id,
+            rating: appointment.feedback.rating,
+            comment: appointment.feedback.comment,
+            createdAt: appointment.feedback.createdAt,
+          }
+        : undefined,
+      result: appointment.result
+        ? {
+            id: appointment.result.id,
+            diagnosis: appointment.result.diagnosis,
+            notes: appointment.result.notes,
+            prescription: appointment.result.prescription,
+            recommendations: appointment.result.recommendations,
+            appointmentId: appointment.result.appointmentId,
+            createdAt: appointment.result.createdAt,
+            updatedAt: appointment.result.updatedAt,
+          }
         : undefined,
       createdAt: appointment.createdAt,
       updatedAt: appointment.updatedAt,

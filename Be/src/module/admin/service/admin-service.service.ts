@@ -17,16 +17,26 @@ export class AdminServiceService {
   async createService(
     createServiceDto: CreateServiceDto,
   ): Promise<CreateServiceResponseDto> {
+    // Verify specialty exists
+    const specialty = await this.prisma.specialty.findUnique({
+      where: { id: createServiceDto.specialtyId },
+    });
+
+    if (!specialty) {
+      throw new NotFoundException('Chuyên khoa không tồn tại');
+    }
+
     const service = await this.prisma.service.create({
       data: createServiceDto,
-      select: {
-        id: true,
-        name: true,
-        price: true,
-        duration: true,
-        description: true,
-        createdAt: true,
-        updatedAt: true,
+      include: {
+        specialty: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            icon: true,
+          },
+        },
       },
     });
 
@@ -38,6 +48,12 @@ export class AdminServiceService {
       description: service.description || undefined,
       createdAt: service.createdAt!,
       updatedAt: service.updatedAt || undefined,
+      specialty: {
+        id: service.specialty.id,
+        name: service.specialty.name,
+        description: service.specialty.description || undefined,
+        icon: service.specialty.icon || undefined,
+      },
     };
   }
 
@@ -63,14 +79,15 @@ export class AdminServiceService {
         orderBy: {
           name: 'asc',
         },
-        select: {
-          id: true,
-          name: true,
-          price: true,
-          duration: true,
-          description: true,
-          createdAt: true,
-          updatedAt: true,
+        include: {
+          specialty: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
+              icon: true,
+            },
+          },
         },
       }),
       this.prisma.service.count({ where }),
@@ -85,6 +102,12 @@ export class AdminServiceService {
         description: service.description || undefined,
         createdAt: service.createdAt!,
         updatedAt: service.updatedAt || undefined,
+        specialty: {
+          id: service.specialty.id,
+          name: service.specialty.name,
+          description: service.specialty.description || undefined,
+          icon: service.specialty.icon || undefined,
+        },
       })),
       total,
       page,
@@ -95,14 +118,15 @@ export class AdminServiceService {
   async getService(id: number): Promise<ServiceDetailResponseDto> {
     const service = await this.prisma.service.findUnique({
       where: { id },
-      select: {
-        id: true,
-        name: true,
-        price: true,
-        duration: true,
-        description: true,
-        createdAt: true,
-        updatedAt: true,
+      include: {
+        specialty: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            icon: true,
+          },
+        },
       },
     });
 
@@ -118,6 +142,12 @@ export class AdminServiceService {
       description: service.description || undefined,
       createdAt: service.createdAt!,
       updatedAt: service.updatedAt || undefined,
+      specialty: {
+        id: service.specialty.id,
+        name: service.specialty.name,
+        description: service.specialty.description || undefined,
+        icon: service.specialty.icon || undefined,
+      },
     };
   }
 
@@ -133,17 +163,29 @@ export class AdminServiceService {
       throw new NotFoundException('Dịch vụ không tồn tại');
     }
 
+    // Verify specialty exists if updating specialtyId
+    if (updateServiceDto.specialtyId) {
+      const specialty = await this.prisma.specialty.findUnique({
+        where: { id: updateServiceDto.specialtyId },
+      });
+
+      if (!specialty) {
+        throw new NotFoundException('Chuyên khoa không tồn tại');
+      }
+    }
+
     const service = await this.prisma.service.update({
       where: { id },
       data: updateServiceDto,
-      select: {
-        id: true,
-        name: true,
-        price: true,
-        duration: true,
-        description: true,
-        createdAt: true,
-        updatedAt: true,
+      include: {
+        specialty: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            icon: true,
+          },
+        },
       },
     });
 
@@ -155,6 +197,12 @@ export class AdminServiceService {
       description: service.description || undefined,
       createdAt: service.createdAt!,
       updatedAt: service.updatedAt || undefined,
+      specialty: {
+        id: service.specialty.id,
+        name: service.specialty.name,
+        description: service.specialty.description || undefined,
+        icon: service.specialty.icon || undefined,
+      },
     };
   }
 

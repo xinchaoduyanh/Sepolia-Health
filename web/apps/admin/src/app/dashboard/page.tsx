@@ -11,7 +11,7 @@ export default function DashboardPage() {
     useEffect(() => {
         // Redirect based on role
         if (user?.role === 'ADMIN') {
-            router.replace('/dashboard/admin')
+            router.replace('/dashboard/admin/overview')
         } else if (user?.role === 'DOCTOR') {
             router.replace('/dashboard/doctor')
         } else if (user?.role === 'RECEPTIONIST') {
