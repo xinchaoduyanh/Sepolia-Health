@@ -3,10 +3,11 @@ import { PrismaService } from '@/common/prisma/prisma.service';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { SuccessResponseDto } from '@/common/dto';
 import { AppointmentDetailResponseDto } from '@/module/patient/appointment/dto';
+import { AppointmentStatus } from '@prisma/client';
 
 @Injectable()
 export class ReceptionistAppointmentService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async getAppointmentDetail(
     id: number,
@@ -60,7 +61,7 @@ export class ReceptionistAppointmentService {
   async checkInAppointment(id: number): Promise<SuccessResponseDto> {
     await this.prisma.appointment.update({
       where: { id },
-      data: { status: 'ON_GOING' },
+      data: { status: AppointmentStatus.ON_GOING },
     });
 
     return new SuccessResponseDto();

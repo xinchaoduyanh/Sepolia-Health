@@ -23,3 +23,5 @@ export interface RedisKeyValue {
   value: string;
   ttl?: number;
 }
+
+export const REDIS_CLIENT = 'REDIS_CLIENT';

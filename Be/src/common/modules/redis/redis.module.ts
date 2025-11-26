@@ -3,11 +3,12 @@ import { RedisService } from './redis.service';
 import { appConfig } from '@/common/config';
 import { ConfigType } from '@nestjs/config';
 import IORedis from 'ioredis';
+import { REDIS_CLIENT } from './redis.types';
 
 @Module({
   providers: [
     {
-      provide: 'REDIS_CLIENT',
+      provide: REDIS_CLIENT,
       inject: [appConfig.KEY],
       useFactory: async (redisConf: ConfigType<typeof appConfig>) => {
         const logger = new Logger('RedisModule');
@@ -32,6 +33,6 @@ import IORedis from 'ioredis';
     },
     RedisService,
   ],
-  exports: [RedisService, 'REDIS_CLIENT'],
+  exports: [RedisService, REDIS_CLIENT],
 })
-export class RedisModule {}
+export class RedisModule { }
