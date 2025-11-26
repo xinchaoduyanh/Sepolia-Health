@@ -30,12 +30,13 @@ import { DateUtil, TimeUtil } from '@/common/utils';
 import { SortOrder } from '@/common/enum/sort.enum';
 import { ERROR_MESSAGES, MESSAGES } from '@/common/constants';
 import { SuccessResponseDto } from '@/common/dto';
+import { AppointmentQueueName } from '@/common/enum';
 
 @Injectable()
 export class AppointmentService {
   constructor(
     private readonly prisma: PrismaService,
-    @InjectQueue('appointment') private readonly appointmentQueue: Queue,
+    @InjectQueue(AppointmentQueueName.QUEUE_NAME) private readonly appointmentQueue: Queue,
     private readonly notificationService: NotificationService,
   ) {}
 
@@ -1133,7 +1134,6 @@ export class AppointmentService {
       }
     } catch (error) {
       console.error('Failed to send notification:', error);
-      // Don't throw error, just log it
     }
 
     // Send notification to doctor
@@ -1149,11 +1149,10 @@ export class AppointmentService {
       });
     } catch (error) {
       console.error('Failed to send notification to doctor:', error);
-      // Don't throw error, just log it
     }
 
     await this.appointmentQueue.add(
-      'appointment',
+      AppointmentQueueName.QUEUE_NAME,
       {
         appointmentId: appointment.id,
       },

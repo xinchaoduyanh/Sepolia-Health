@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { StreamChat } from 'stream-chat';
 import { appConfig } from '@/common/config';
@@ -303,8 +303,13 @@ export class NotificationService {
   /**
    * Mark notification as read
    */
-  async markAsRead(userId: string, messageId: string): Promise<void> {
-    const channel = await this.getOrCreateNotificationChannel(userId);
+  async markAsRead(userId: number, messageId: string, currentUserId: number): Promise<void> {
+    if (userId !== currentUserId) {
+      throw new UnauthorizedException(
+        "Unauthorized: Cannot mark other user's notifications as read",
+      );
+    }
+    const channel = await this.getOrCreateNotificationChannel(userId.toString());
 
     // Get the message from channel state
     const message = channel.state.messages.find((msg) => msg.id === messageId);

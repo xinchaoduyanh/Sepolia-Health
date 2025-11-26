@@ -23,6 +23,7 @@ import { MeetingModule } from './meeting/meeting.module';
 import { DoctorModule } from './doctor/doctor.module';
 import { AppTermsModule } from './app-terms/app-terms.module';
 import { UserStatusGuard } from '@/common/guards/user-status.guard';
+import { REDIS_CLIENT } from '@/common/modules';
 
 @Module({
   imports: [
@@ -37,7 +38,7 @@ import { UserStatusGuard } from '@/common/guards/user-status.guard';
       useFactory: (redisClient: IORedis) => ({
         connection: redisClient,
       }),
-      inject: ['REDIS_CLIENT'],
+      inject: [REDIS_CLIENT],
     }),
     PrismaModule,
     AuthModule,
@@ -74,4 +75,4 @@ import { UserStatusGuard } from '@/common/guards/user-status.guard';
     },
   ],
 })
-export class AppModule {}
+export class AppModule { }

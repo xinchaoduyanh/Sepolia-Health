@@ -1,17 +1,16 @@
+import { AppointmentQueueName } from '@/common/enum';
 import { PrismaService } from '@/common/prisma/prisma.service';
 import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
 import { AppointmentStatus } from '@prisma/client';
 import { Job } from 'bullmq';
 
-@Processor('appointment')
-export class ReceptionistAppointmentProcessor extends WorkerHost {
+@Processor(AppointmentQueueName.QUEUE_NAME)
+export class AppointmentProcessor extends WorkerHost {
   constructor(private readonly prisma: PrismaService) {
     super();
   }
 
   async process(job: Job<any>): Promise<void> {
-    console.log('Processing job:', job.name);
-
     const appointment = await this.prisma.appointment.findFirstOrThrow({
       where: { id: job.data.appointmentId },
     });

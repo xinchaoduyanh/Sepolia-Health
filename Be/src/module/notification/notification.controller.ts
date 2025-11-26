@@ -4,6 +4,7 @@ import {
   Param,
   HttpCode,
   HttpStatus,
+  ParseIntPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -25,16 +26,10 @@ export class NotificationController {
   @ApiOperation({ summary: 'Mark notification as read' })
   @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Notification marked as read' })
   async markAsRead(
-    @Param('userId') userId: string,
+    @Param('userId', ParseIntPipe) userId: number,
     @Param('messageId') messageId: string,
     @CurrentUser('userId') currentUserId: number,
   ): Promise<void> {
-    // Verify that the user is marking their own notification
-    if (userId !== currentUserId.toString()) {
-      throw new Error(
-        "Unauthorized: Cannot mark other user's notifications as read",
-      );
-    }
-    return this.notificationService.markAsRead(userId, messageId);
+    return this.notificationService.markAsRead(userId, messageId, currentUserId);
   }
 }
