@@ -1294,6 +1294,26 @@ export class AppointmentService {
           updatedAt: appointment.result.updatedAt,
         }
         : undefined,
+      feedback: appointment.feedback
+        ? {
+          id: appointment.feedback.id,
+          rating: appointment.feedback.rating,
+          comment: appointment.feedback.comment,
+          createdAt: appointment.feedback.createdAt,
+        }
+        : undefined,
+      result: appointment.result
+        ? {
+          id: appointment.result.id,
+          diagnosis: appointment.result.diagnosis,
+          notes: appointment.result.notes,
+          prescription: appointment.result.prescription,
+          recommendations: appointment.result.recommendations,
+          appointmentId: appointment.result.appointmentId,
+          createdAt: appointment.result.createdAt,
+          updatedAt: appointment.result.updatedAt,
+        }
+        : undefined,
       createdAt: appointment.createdAt,
       updatedAt: appointment.updatedAt,
     };

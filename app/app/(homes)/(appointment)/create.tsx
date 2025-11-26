@@ -28,12 +28,10 @@ import { Relationship } from '@/constants/enum';
 export default function AppointmentScreen() {
   const { user } = useAuth();
 
-
   // Get patient profiles
   const patientProfiles = user?.patientProfiles || [];
   const primaryProfile = patientProfiles.find((profile) => profile.relationship === 'SELF');
   const otherProfiles = patientProfiles.filter((profile) => profile.relationship !== 'SELF');
-
 
   const [selectedProfile, setSelectedProfile] = useState<PatientProfile>(primaryProfile!);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -221,9 +219,7 @@ export default function AppointmentScreen() {
       const appointmentDate = selectedDate;
       const startTime = createISODateTime(appointmentDate, selectedTimeSlot);
 
-
       // Calculate end datetime based on service duration (in minutes)
-      const serviceDuration = selectedService.duration;
       const serviceDuration = selectedService.duration;
       const startDateTime = new Date(startTime);
       const endDateTime = new Date(startDateTime.getTime() + serviceDuration * 60 * 1000);
@@ -677,54 +673,51 @@ export default function AppointmentScreen() {
             {selectedDate && (
               <View>
                 {/* Time Slots - chỉ hiển thị khi đã chọn đủ thông tin và có ngày */}
-                {selectedFacility &&
-                  selectedService &&
-                  selectedDoctor &&
-                  selectedDate && (
-                    <View className="mb-4">
-                      <Text className="mb-4 text-lg font-semibold mt-4" style={{ color: '#0F172A' }}>
-                        Giờ khám mong muốn*
-                      </Text>
+                {selectedFacility && selectedService && selectedDoctor && selectedDate && (
+                  <View className="mb-4">
+                    <Text className="mb-4 mt-4 text-lg font-semibold" style={{ color: '#0F172A' }}>
+                      Giờ khám mong muốn*
+                    </Text>
 
-                      {isDoctorNotAvailable ? (
-                        <View className="rounded-xl border border-blue-200 bg-blue-50 p-6">
-                          <View className="mb-3 flex-row items-center justify-center space-x-3">
-                            <Ionicons name="calendar-outline" size={24} color="#3B82F6" />
-                            <Text className="text-lg font-semibold text-blue-800">
-                              Không có lịch trống
-                            </Text>
-                          </View>
-                          <Text className="text-center text-blue-700">
-                            Bác sĩ không có lịch trống trong ngày này. Vui lòng chọn ngày khác.
+                    {isDoctorNotAvailable ? (
+                      <View className="rounded-xl border border-blue-200 bg-blue-50 p-6">
+                        <View className="mb-3 flex-row items-center justify-center space-x-3">
+                          <Ionicons name="calendar-outline" size={24} color="#3B82F6" />
+                          <Text className="text-lg font-semibold text-blue-800">
+                            Không có lịch trống
                           </Text>
                         </View>
-                      ) : availabilityData ? (
-                        <TimeSlotPicker
-                          availableTimeSlots={availabilityData.availableTimeSlots}
-                          selectedTimeSlot={selectedTimeSlot}
-                          onTimeSlotSelect={handleTimeSlotSelect}
-                          isLoading={false}
-                          error={null}
-                        />
-                      ) : availabilityError ? (
-                        <View className="rounded-xl border border-red-200 bg-red-50 p-6">
-                          <View className="mb-3 flex-row items-center justify-center space-x-3">
-                            <Ionicons name="warning-outline" size={24} color="#EF4444" />
-                            <Text className="text-lg font-semibold text-red-800">
-                              Lỗi tải dữ liệu
-                            </Text>
-                          </View>
-                          <Text className="text-center text-red-700">
-                            Không thể tải khung giờ khả dụng. Vui lòng thử lại.
+                        <Text className="text-center text-blue-700">
+                          Bác sĩ không có lịch trống trong ngày này. Vui lòng chọn ngày khác.
+                        </Text>
+                      </View>
+                    ) : availabilityData ? (
+                      <TimeSlotPicker
+                        availableTimeSlots={availabilityData.availableTimeSlots}
+                        selectedTimeSlot={selectedTimeSlot}
+                        onTimeSlotSelect={handleTimeSlotSelect}
+                        isLoading={false}
+                        error={null}
+                      />
+                    ) : availabilityError ? (
+                      <View className="rounded-xl border border-red-200 bg-red-50 p-6">
+                        <View className="mb-3 flex-row items-center justify-center space-x-3">
+                          <Ionicons name="warning-outline" size={24} color="#EF4444" />
+                          <Text className="text-lg font-semibold text-red-800">
+                            Lỗi tải dữ liệu
                           </Text>
                         </View>
-                      ) : (
-                        <View className="flex-row items-center justify-center py-8">
-                          <Text className="text-gray-600">Đang tải...</Text>
-                        </View>
-                      )}
-                    </View>
-                  )}
+                        <Text className="text-center text-red-700">
+                          Không thể tải khung giờ khả dụng. Vui lòng thử lại.
+                        </Text>
+                      </View>
+                    ) : (
+                      <View className="flex-row items-center justify-center py-8">
+                        <Text className="text-gray-600">Đang tải...</Text>
+                      </View>
+                    )}
+                  </View>
+                )}
               </View>
             )}
 
