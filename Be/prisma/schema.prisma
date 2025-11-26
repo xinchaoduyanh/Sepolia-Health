@@ -132,9 +132,10 @@ model DoctorProfile {
   clinicId       Int?
   clinic         Clinic?                @relation("ClinicDoctors", fields: [clinicId], references: [id])
   appointments   Appointment[]          @relation("DoctorAppointments")
-  feedbacks      Feedback[]             @relation("DoctorFeedbacks")
+  results        AppointmentResult[]     @relation("DoctorResults")
   prescriptions  Prescription[]
   services       DoctorService[]        @relation("Services")
+  specialties    DoctorSpecialty[]
   availabilities DoctorAvailability[]
   overrides      AvailabilityOverride[]
 
@@ -213,7 +214,6 @@ model PatientProfile {
   manager       User           @relation(fields: [managerId], references: [id])
   appointments  Appointment[]
   prescriptions Prescription[]
-  feedbacks     Feedback[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -260,9 +260,10 @@ model Appointment {
   endTime   DateTime
   status    AppointmentStatus
   notes     String?
-  meetingUrl String?
+  joinUrl   String?
+  hostUrl   String? 
   type      AppointmentType @default(OFFLINE)
-
+  
   patientProfileId Int
   patientProfile   PatientProfile @relation(fields: [patientProfileId], references: [id])
 
@@ -272,11 +273,17 @@ model Appointment {
   serviceId Int
   service   Service       @relation(fields: [serviceId], references: [id])
   clinicId  Int?
-  clinic    Clinic?        @relation("ClinicAppointments", fields: [clinicId], references: [id])
+  clinic    Clinic?       @relation("ClinicAppointments", fields: [clinicId], references: [id])
   billing   Billing?
+  feedback  Feedback?
+  result    AppointmentResult?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // Indexes for performance optimization
+  @@index([startTime, status, clinicId])
+  @@index([status, clinicId, startTime])
 }
 
 /// Đơn thuốc: Gắn với một hồ sơ bệnh nhân cụ thể.
@@ -294,22 +301,51 @@ model Prescription {
   createdAt DateTime           @default(now())
 }
 
-/// Feedback: Gắn với một hồ sơ bệnh nhân cụ thể.
+/// Feedback: Gắn với một appointment cụ thể.
 model Feedback {
   id      Int     @id @default(autoincrement())
   rating  Int
   comment String?
 
-  patientProfileId Int
-  patientProfile   PatientProfile @relation(fields: [patientProfileId], references: [id])
-
-  doctorId Int
-  doctor   DoctorProfile @relation("DoctorFeedbacks", fields: [doctorId], references: [id])
+  appointmentId Int         @unique
+  appointment   Appointment @relation(fields: [appointmentId], references: [id])
 
   createdAt DateTime @default(now())
 }
 
+/// Kết quả khám từ bác sĩ: Gắn với một appointment cụ thể.
+model AppointmentResult {
+  id          Int     @id @default(autoincrement())
+  diagnosis   String? // Chẩn đoán
+  notes       String? // Ghi chú của bác sĩ
+  prescription String? // Đơn thuốc (có thể là text hoặc JSON)
+  recommendations String? // Khuyến nghị, lời dặn
+
+  appointmentId Int         @unique
+  appointment   Appointment @relation(fields: [appointmentId], references: [id])
+
+  doctorId Int
+  doctor   DoctorProfile @relation("DoctorResults", fields: [doctorId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 // ----------------- OTHER MODELS (Giữ nguyên hoặc ít thay đổi) -----------------
+
+/// Chuyên khoa: Phân loại các dịch vụ y tế theo chuyên khoa
+model Specialty {
+  id          Int       @id @default(autoincrement())
+  name        String
+  description String?
+  icon        String? // Icon hoặc image URL (optional)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Quan hệ
+  services        Service[]         @relation("ServiceSpecialty")
+  doctorSpecialties DoctorSpecialty[]
+}
 
 model Service {
   id            Int             @id @default(autoincrement())
@@ -317,6 +353,8 @@ model Service {
   price         Float
   duration      Int // thời lượng (phút)
   description   String?
+  specialtyId   Int
+  specialty     Specialty       @relation("ServiceSpecialty", fields: [specialtyId], references: [id])
   createdAt     DateTime        @default(now())
   updatedAt     DateTime?
   appointments  Appointment[]
@@ -334,22 +372,39 @@ model DoctorService {
   @@unique([doctorId, serviceId])
 }
 
+/// Quan hệ many-to-many giữa Doctor và Specialty
+model DoctorSpecialty {
+  id          Int       @id @default(autoincrement())
+  doctorId    Int
+  doctor      DoctorProfile @relation(fields: [doctorId], references: [id])
+  specialtyId Int
+  specialty   Specialty @relation(fields: [specialtyId], references: [id])
+  createdAt   DateTime  @default(now())
+
+  @@unique([doctorId, specialtyId])
+  @@index([doctorId])
+  @@index([specialtyId])
+}
+
 model Billing {
-  id            Int            @id @default(autoincrement())
-  amount        Float
-  status        PaymentStatus // Overall status of the billing
-  paymentMethod PaymentMethod?
-  notes         String?
-  appointmentId Int            @unique
-  appointment   Appointment    @relation(fields: [appointmentId], references: [id])
-  userPromotionId Int?         // Voucher được áp dụng (chỉ update sau khi thanh toán thành công)
-  userPromotion UserPromotion? @relation(fields: [userPromotionId], references: [id])
+  id              Int            @id @default(autoincrement())
+  amount          Float
+  status          PaymentStatus // Overall status of the billing
+  paymentMethod   PaymentMethod?
+  notes           String?
+  appointmentId   Int            @unique
+  appointment     Appointment    @relation(fields: [appointmentId], references: [id])
+  userPromotionId Int? // Voucher được áp dụng (chỉ update sau khi thanh toán thành công)
+  userPromotion   UserPromotion? @relation(fields: [userPromotionId], references: [id])
 
   // One-to-many relationship: One billing can have multiple transactions
   transactions Transaction[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // Indexes for performance optimization
+  @@index([status, appointmentId])
 }
 
 model Medicine {
@@ -447,8 +502,8 @@ model Promotion {
   title             String
   code              String   @unique
   description       String?
-  discountPercent   Float    // % giảm giá
-  maxDiscountAmount Float    // Giảm giá tối đa (VND)
+  discountPercent   Float // % giảm giá
+  maxDiscountAmount Float // Giảm giá tối đa (VND)
   validFrom         DateTime
   validTo           DateTime
   createdBy         Int?
@@ -457,7 +512,7 @@ model Promotion {
   updatedAt         DateTime @updatedAt
 
   // Quan hệ
-  displays      PromotionDisplay[]
+  displays       PromotionDisplay[]
   userPromotions UserPromotion[]
 }
 
@@ -484,7 +539,7 @@ model Question {
   bestAnswer   Answer? @relation("BestAnswer", fields: [bestAnswerId], references: [id])
 
   tags        QuestionTag[]
-  answers     Answer[] @relation("QuestionAnswers")
+  answers     Answer[]              @relation("QuestionAnswers")
   votes       QuestionVote[]
   editHistory QuestionEditHistory[]
 
@@ -638,8 +693,8 @@ enum AppTermsType {
 model AppTerms {
   id        Int          @id @default(autoincrement())
   type      AppTermsType // Loại điều khoản
-  title     String       // Tiêu đề
-  content   String       // Nội dung (HTML hoặc markdown)
+  title     String // Tiêu đề
+  content   String // Nội dung (HTML hoặc markdown)
   version   Int          @default(1) // Phiên bản
   isActive  Boolean      @default(true) // Bản đang được áp dụng
   createdAt DateTime     @default(now())
@@ -660,10 +715,10 @@ model PromotionDisplay {
   promotion       Promotion @relation(fields: [promotionId], references: [id])
   displayOrder    Int       @default(0)
   isActive        Boolean   @default(false)
-  backgroundColor String    // JSON: ["#1E3A5F", "#2C5282"]
-  textColor       String    // Màu chữ
-  buttonColor     String    // Màu nút
-  buttonTextColor String    // Màu chữ nút
+  backgroundColor String // JSON: ["#1E3A5F", "#2C5282"]
+  textColor       String // Màu chữ
+  buttonColor     String // Màu nút
+  buttonTextColor String // Màu chữ nút
   buttonText      String    @default("Nhận ngay") // Text hiển thị trên button
   iconName        String    @default("gift-outline") // Tên icon Ionicons
   imageUrl        String?
@@ -679,14 +734,14 @@ model PromotionDisplay {
 
 /// Tracking khi user claim voucher
 model UserPromotion {
-  id           Int        @id @default(autoincrement())
+  id           Int           @id @default(autoincrement())
   userId       Int
-  user         User       @relation(fields: [userId], references: [id])
+  user         User          @relation(fields: [userId], references: [id])
   promotionId  Int
-  promotion    Promotion  @relation(fields: [promotionId], references: [id])
-  claimedAt    DateTime   @default(now())
-  usedAt       DateTime?  // Chỉ update khi thanh toán thành công
-  billings     Billing[]  // Quan hệ với billing (chỉ update sau khi thanh toán thành công)
+  promotion    Promotion     @relation(fields: [promotionId], references: [id])
+  claimedAt    DateTime      @default(now())
+  usedAt       DateTime? // Chỉ update khi thanh toán thành công
+  billings     Billing[] // Quan hệ với billing (chỉ update sau khi thanh toán thành công)
   transactions Transaction[] // Quan hệ với transactions (lưu tạm khi apply voucher)
 
   @@unique([userId, promotionId])

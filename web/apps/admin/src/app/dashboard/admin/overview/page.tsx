@@ -86,12 +86,8 @@ export default function OverviewPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{formatNumber(stats.totalPatients.currentMonth)}</div>
-                        <p
-                            className={`text-xs ${
-                                stats.totalPatients.percentageChange >= 0 ? 'text-green-600' : 'text-red-600'
-                            }`}
-                        >
-                            Thêm {formatNumber(stats.totalPatients.currentMonth)} bệnh nhân trong tháng này
+                        <p className="text-xs text-muted-foreground">
+                            {formatNumber(stats.totalPatients.currentMonth)} bệnh nhân mới trong tháng này
                             {stats.totalPatients.percentageChange !== 0 && (
                                 <span>
                                     {' '}
@@ -108,12 +104,8 @@ export default function OverviewPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{formatNumber(stats.appointments.currentMonth)}</div>
-                        <p
-                            className={`text-xs ${
-                                stats.appointments.percentageChange >= 0 ? 'text-green-600' : 'text-red-600'
-                            }`}
-                        >
-                            {formatNumber(stats.appointments.currentMonth)} lịch hẹn đã hoàn thành trong tháng này
+                        <p className="text-xs text-muted-foreground">
+                            {formatNumber(stats.appointments.currentMonth)} lịch hẹn hoàn thành trong tháng này
                             {stats.appointments.percentageChange !== 0 && (
                                 <span>
                                     {' '}
@@ -130,12 +122,8 @@ export default function OverviewPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{formatNumber(stats.doctors.currentMonth)}</div>
-                        <p
-                            className={`text-xs ${
-                                stats.doctors.percentageChange >= 0 ? 'text-green-600' : 'text-red-600'
-                            }`}
-                        >
-                            Thêm {formatNumber(stats.doctors.currentMonth)} bác sĩ trong tháng này
+                        <p className="text-xs text-muted-foreground">
+                            {formatNumber(stats.doctors.currentMonth)} bác sĩ mới trong tháng này
                             {stats.doctors.percentageChange !== 0 && (
                                 <span>
                                     {' '}
@@ -152,12 +140,8 @@ export default function OverviewPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{formatCurrency(stats.revenue.currentMonth)}</div>
-                        <p
-                            className={`text-xs ${
-                                stats.revenue.percentageChange >= 0 ? 'text-green-600' : 'text-red-600'
-                            }`}
-                        >
-                            Doanh thu từ lịch hẹn đã hoàn thành trong tháng này
+                        <p className="text-xs text-muted-foreground">
+                            Doanh thu từ lịch hẹn hoàn thành trong tháng này
                             {stats.revenue.percentageChange !== 0 && (
                                 <span>
                                     {' '}

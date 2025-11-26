@@ -7,6 +7,8 @@ import {
   CreateAppointmentRequest,
   UpdateAppointmentRequest,
   AppointmentFilters,
+  Feedback,
+  CreateFeedbackRequest,
 } from '@/types/appointment';
 
 // API Functions
@@ -130,9 +132,7 @@ export const appointmentApi = {
     const response = await apiClient.get<{
       data: any[];
       total: number;
-    }>(
-      `${API_ENDPOINTS.APPOINTMENTS.DOCTOR}?locationId=${locationId}&serviceId=${serviceId}`
-    );
+    }>(`${API_ENDPOINTS.APPOINTMENTS.DOCTOR}?locationId=${locationId}&serviceId=${serviceId}`);
     return response.data;
   },
 
@@ -160,6 +160,21 @@ export const appointmentApi = {
   getDoctorAvailability: async (doctorServiceId: number, date: string) => {
     const response = await apiClient.get<DoctorAvailability>(
       `${API_ENDPOINTS.APPOINTMENTS.DOCTOR_AVAILABILITY}?doctorServiceId=${doctorServiceId}&date=${date}`
+    );
+    return response.data;
+  },
+
+  createFeedback: async (appointmentId: number, data: CreateFeedbackRequest) => {
+    const response = await apiClient.post<Feedback>(
+      `${API_ENDPOINTS.APPOINTMENTS.BASE}/${appointmentId}/feedback`,
+      data
+    );
+    return response.data;
+  },
+
+  getFeedback: async (appointmentId: number) => {
+    const response = await apiClient.get<Feedback | null>(
+      `${API_ENDPOINTS.APPOINTMENTS.BASE}/${appointmentId}/feedback`
     );
     return response.data;
   },
@@ -307,6 +322,31 @@ export const useDoctorAvailability = (doctorServiceId: number, date: string) => 
     queryFn: () => appointmentApi.getDoctorAvailability(doctorServiceId, date),
     enabled: !!doctorServiceId && !!date,
     staleTime: 1 * 60 * 1000, // 1 minute (frequently changes)
+  });
+};
+
+export const useCreateFeedback = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ appointmentId, data }: { appointmentId: number; data: CreateFeedbackRequest }) =>
+      appointmentApi.createFeedback(appointmentId, data),
+    onSuccess: (_, variables) => {
+      // Invalidate appointment detail and list
+      queryClient.invalidateQueries({
+        queryKey: ['appointments', 'detail', variables.appointmentId],
+      });
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
+    },
+  });
+};
+
+export const useFeedback = (appointmentId: number) => {
+  return useQuery({
+    queryKey: ['appointments', 'feedback', appointmentId],
+    queryFn: () => appointmentApi.getFeedback(appointmentId),
+    enabled: !!appointmentId,
+    staleTime: 2 * 60 * 1000, // 2 minutes
   });
 };
 

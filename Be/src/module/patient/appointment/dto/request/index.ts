@@ -1,6 +1,6 @@
 import { SortOrder } from '@/common/enum';
 import { DateUtil } from '@/common/utils';
-import { AppointmentStatus, PaymentStatus } from '@prisma/client';
+import { AppointmentStatus, AppointmentType, PaymentStatus } from '@prisma/client';
 import { createZodDto } from 'nestjs-zod';
 import z from 'zod';
 
@@ -25,6 +25,7 @@ export const CreateAppointmentFromDoctorServiceSchema = z.object({
   startTime: z.iso.datetime().transform((val) => new Date(val)),
   endTime: z.iso.datetime().transform((val) => new Date(val)),
   notes: z.string().optional(),
+  type: z.enum(AppointmentType).default(AppointmentType.OFFLINE),
 }).refine((data) => data.startTime < data.endTime, {
   message: 'startTime must be earlier than endTime',
   path: ['startTime'],
@@ -36,11 +37,11 @@ export const CreateAppointmentFromDoctorServiceSchema = z.object({
 
 export class GetAppointmentsQueryDto extends createZodDto(
   GetAppointmentsQuerySchema,
-) {}
+) { }
 
 export class CreateAppointmentFromDoctorServiceBodyDto extends createZodDto(
   CreateAppointmentFromDoctorServiceSchema,
-) {}
+) { }
 
 const UpdateAppointmentSchema = z.object({
   startTime: z.iso.datetime().transform((val) => new Date(val)),
@@ -52,14 +53,14 @@ const UpdateAppointmentSchema = z.object({
 }).refine((data) => data.startTime >= new Date(), {
   message: 'startTime must not be in the past',
   path: ['startTime'],
-}); 
+});
 export class UpdateAppointmentDto extends createZodDto(
   UpdateAppointmentSchema,
-) {}
+) { }
 
 // Booking dto
 const GetDoctorServicesSchema = z.object({
-  locationId: z.coerce.number(),
+  locationId: z.coerce.number().optional(),
   serviceId: z.coerce.number(),
 });
 
@@ -94,12 +95,12 @@ const GetDoctorAvailabilitySchema = z
 
 export class GetDoctorServicesQueryDto extends createZodDto(
   GetDoctorServicesSchema,
-) {}
+) { }
 
 export class GetAvailableDateQueryDto extends createZodDto(
   GetAvailableDatesSchema,
-) {}
+) { }
 
 export class GetDoctorAvailabilityQueryDto extends createZodDto(
   GetDoctorAvailabilitySchema,
-) {}
+) { }

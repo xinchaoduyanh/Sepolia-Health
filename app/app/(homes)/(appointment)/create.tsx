@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useAppointment } from '@/contexts/AppointmentContext';
 import GenderSelector from '@/components/GenderSelector';
@@ -26,12 +27,14 @@ import { Relationship } from '@/constants/enum';
 
 export default function AppointmentScreen() {
   const { user } = useAuth();
-  
+
+
   // Get patient profiles
   const patientProfiles = user?.patientProfiles || [];
   const primaryProfile = patientProfiles.find((profile) => profile.relationship === 'SELF');
   const otherProfiles = patientProfiles.filter((profile) => profile.relationship !== 'SELF');
-  
+
+
   const [selectedProfile, setSelectedProfile] = useState<PatientProfile>(primaryProfile!);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -45,7 +48,6 @@ export default function AppointmentScreen() {
     selectedTimeSlot,
     setSelectedTimeSlot,
     selectedDoctorServiceId,
-    // Patient form fields from context (for persistence across navigation)
     selectedCustomer,
     setSelectedCustomer,
     firstName,
@@ -182,7 +184,14 @@ export default function AppointmentScreen() {
 
   const handleBookAppointment = async () => {
     // Validate required fields
-    if (!selectedFacility || !selectedService || !selectedDoctor || !selectedTimeSlot || !selectedDate || !selectedDoctorServiceId) {
+    if (
+      !selectedFacility ||
+      !selectedService ||
+      !selectedDoctor ||
+      !selectedTimeSlot ||
+      !selectedDate ||
+      !selectedDoctorServiceId
+    ) {
       alert('Vui lòng điền đầy đủ thông tin đặt hẹn');
       return;
     }
@@ -211,9 +220,11 @@ export default function AppointmentScreen() {
       // Create ISO datetime strings using utility function
       const appointmentDate = selectedDate;
       const startTime = createISODateTime(appointmentDate, selectedTimeSlot);
-      
+
+
       // Calculate end datetime based on service duration (in minutes)
-      const serviceDuration = selectedService.duration ;
+      const serviceDuration = selectedService.duration;
+      const serviceDuration = selectedService.duration;
       const startDateTime = new Date(startTime);
       const endDateTime = new Date(startDateTime.getTime() + serviceDuration * 60 * 1000);
       const endTime = endDateTime.toISOString();
@@ -248,15 +259,24 @@ export default function AppointmentScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1" style={{ backgroundColor: '#E0F2FE' }}>
-      <StatusBar barStyle="dark-content" backgroundColor="#E0F2FE" />
+    <View style={{ flex: 1, backgroundColor: '#E0F2FE' }}>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
       {/* Header */}
-      <View className="flex-row items-center px-4 py-3">
-        <TouchableOpacity onPress={() => router.push('/(homes)/(appointment)')}>
-          <Ionicons name="arrow-back" size={24} color="#0284C7" />
-        </TouchableOpacity>
-      </View>
+      <LinearGradient
+        colors={['#0284C7', '#06B6D4', '#10B981']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={{ paddingTop: 60, paddingBottom: 24, paddingHorizontal: 24 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity
+            onPress={() => router.push('/(homes)/(appointment)')}
+            style={{ marginRight: 16 }}>
+            <Ionicons name="arrow-back" size={24} color="white" />
+          </TouchableOpacity>
+          <Text style={{ fontSize: 24, fontWeight: 'bold', color: 'white' }}>Đặt lịch hẹn</Text>
+        </View>
+      </LinearGradient>
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* Main Content */}
@@ -280,9 +300,8 @@ export default function AppointmentScreen() {
                   <View className="items-center">
                     <TouchableOpacity
                       onPress={() => handleCustomerSelect('me', primaryProfile)}
-                      className={`h-16 w-16 items-center justify-center rounded-full border-2 ${
-                        selectedCustomer === 'me' ? 'border-[#0284C7]' : 'border-[#06B6D4]'
-                      }`}>
+                      className={`h-16 w-16 items-center justify-center rounded-full border-2 ${selectedCustomer === 'me' ? 'border-[#0284C7]' : 'border-[#06B6D4]'
+                        }`}>
                       {primaryProfile.avatar ? (
                         <Image
                           source={{ uri: primaryProfile.avatar }}
@@ -298,14 +317,12 @@ export default function AppointmentScreen() {
                     </TouchableOpacity>
                     <TouchableOpacity
                       onPress={() => handleCustomerSelect('me', primaryProfile)}
-                      className={`mt-2 rounded-full px-4 py-2 ${
-                        selectedCustomer === 'me' ? 'bg-[#0284C7]' : 'bg-[#E0F2FE]'
-                      }`}>
+                      className={`mt-2 rounded-full px-4 py-2 ${selectedCustomer === 'me' ? 'bg-[#0284C7]' : 'bg-[#E0F2FE]'
+                        }`}>
                       <View className="flex-row items-center">
                         <Text
-                          className={`font-medium ${
-                            selectedCustomer === 'me' ? 'text-white' : 'text-[#475569]'
-                          }`}>
+                          className={`font-medium ${selectedCustomer === 'me' ? 'text-white' : 'text-[#475569]'
+                            }`}>
                           Bản thân
                         </Text>
                         {selectedCustomer === 'me' && (
@@ -326,11 +343,10 @@ export default function AppointmentScreen() {
                   <View key={profile.id} className="items-center">
                     <TouchableOpacity
                       onPress={() => handleCustomerSelect(`profile-${profile.id}`, profile)}
-                      className={`h-16 w-16 items-center justify-center rounded-full border-2 ${
-                        selectedCustomer === `profile-${profile.id}`
-                          ? 'border-[#0284C7]'
-                          : 'border-[#06B6D4]'
-                      }`}>
+                      className={`h-16 w-16 items-center justify-center rounded-full border-2 ${selectedCustomer === `profile-${profile.id}`
+                        ? 'border-[#0284C7]'
+                        : 'border-[#06B6D4]'
+                        }`}>
                       {profile.avatar ? (
                         <Image
                           source={{ uri: profile.avatar }}
@@ -344,18 +360,16 @@ export default function AppointmentScreen() {
                     </TouchableOpacity>
                     <TouchableOpacity
                       onPress={() => handleCustomerSelect(`profile-${profile.id}`, profile)}
-                      className={`mt-2 rounded-full px-4 py-2 ${
-                        selectedCustomer === `profile-${profile.id}`
-                          ? 'bg-[#0284C7]'
-                          : 'bg-[#E0F2FE]'
-                      }`}>
+                      className={`mt-2 rounded-full px-4 py-2 ${selectedCustomer === `profile-${profile.id}`
+                        ? 'bg-[#0284C7]'
+                        : 'bg-[#E0F2FE]'
+                        }`}>
                       <View className="flex-row items-center">
                         <Text
-                          className={`font-medium ${
-                            selectedCustomer === `profile-${profile.id}`
-                              ? 'text-white'
-                              : 'text-[#475569]'
-                          }`}>
+                          className={`font-medium ${selectedCustomer === `profile-${profile.id}`
+                            ? 'text-white'
+                            : 'text-[#475569]'
+                            }`}>
                           {getRelationshipLabel(profile.relationship) || profile.firstName}
                         </Text>
                         {selectedCustomer === `profile-${profile.id}` && (
@@ -375,9 +389,8 @@ export default function AppointmentScreen() {
                 <View className="items-center">
                   <TouchableOpacity
                     onPress={() => handleCustomerSelect('add')}
-                    className={`h-16 w-16 items-center justify-center rounded-full border-2 ${
-                      selectedCustomer === 'add' ? 'border-[#0284C7]' : 'border-[#06B6D4]'
-                    }`}>
+                    className={`h-16 w-16 items-center justify-center rounded-full border-2 ${selectedCustomer === 'add' ? 'border-[#0284C7]' : 'border-[#06B6D4]'
+                      }`}>
                     <Ionicons
                       name="person-add"
                       size={32}
@@ -386,14 +399,12 @@ export default function AppointmentScreen() {
                   </TouchableOpacity>
                   <TouchableOpacity
                     onPress={() => handleCustomerSelect('add')}
-                    className={`mt-2 rounded-full px-4 py-2 ${
-                      selectedCustomer === 'add' ? 'bg-[#0284C7]' : 'bg-[#E0F2FE]'
-                    }`}>
+                    className={`mt-2 rounded-full px-4 py-2 ${selectedCustomer === 'add' ? 'bg-[#0284C7]' : 'bg-[#E0F2FE]'
+                      }`}>
                     <View className="flex-row items-center">
                       <Text
-                        className={`font-medium ${
-                          selectedCustomer === 'add' ? 'text-white' : 'text-[#475569]'
-                        }`}>
+                        className={`font-medium ${selectedCustomer === 'add' ? 'text-white' : 'text-[#475569]'
+                          }`}>
                         Thêm mới
                       </Text>
                       {selectedCustomer === 'add' && (
@@ -531,9 +542,8 @@ export default function AppointmentScreen() {
                 activeOpacity={0.7}
                 onPress={handleServiceSelect}
                 disabled={!selectedFacility}
-                className={`flex-row items-center rounded-xl border px-5 py-4 ${
-                  selectedFacility ? 'border-[#E0F2FE]' : 'border-[#D1D5DB]'
-                }`}
+                className={`flex-row items-center rounded-xl border px-5 py-4 ${selectedFacility ? 'border-[#E0F2FE]' : 'border-[#D1D5DB]'
+                  }`}
                 style={{
                   backgroundColor: selectedFacility ? '#F0FDFA' : '#F9FAFB',
                   opacity: selectedFacility ? 1 : 0.6,
@@ -544,9 +554,8 @@ export default function AppointmentScreen() {
                   color={selectedFacility ? '#0284C7' : '#9CA3AF'}
                 />
                 <Text
-                  className={`ml-4 text-lg font-medium ${
-                    selectedFacility ? 'text-[#0F172A]' : 'text-[#9CA3AF]'
-                  }`}>
+                  className={`ml-4 text-lg font-medium ${selectedFacility ? 'text-[#0F172A]' : 'text-[#9CA3AF]'
+                    }`}>
                   {selectedService ? selectedService.name : '* Chọn dịch vụ'}
                 </Text>
                 <Ionicons
@@ -562,9 +571,8 @@ export default function AppointmentScreen() {
                 activeOpacity={0.7}
                 onPress={handleDoctorSelect}
                 disabled={!selectedFacility || !selectedService}
-                className={`flex-row items-center rounded-xl border px-5 py-4 ${
-                  selectedFacility && selectedService ? 'border-[#E0F2FE]' : 'border-[#D1D5DB]'
-                }`}
+                className={`flex-row items-center rounded-xl border px-5 py-4 ${selectedFacility && selectedService ? 'border-[#E0F2FE]' : 'border-[#D1D5DB]'
+                  }`}
                 style={{
                   backgroundColor: selectedFacility && selectedService ? '#F0FDFA' : '#F9FAFB',
                   opacity: selectedFacility && selectedService ? 1 : 0.6,
@@ -575,9 +583,8 @@ export default function AppointmentScreen() {
                   color={selectedFacility && selectedService ? '#0284C7' : '#9CA3AF'}
                 />
                 <Text
-                  className={`ml-4 text-lg font-medium ${
-                    selectedFacility && selectedService ? 'text-[#0F172A]' : 'text-[#9CA3AF]'
-                  }`}>
+                  className={`ml-4 text-lg font-medium ${selectedFacility && selectedService ? 'text-[#0F172A]' : 'text-[#9CA3AF]'
+                    }`}>
                   {selectedDoctor ? selectedDoctor : '* Chọn bác sĩ'}
                 </Text>
                 <Ionicons
@@ -614,23 +621,20 @@ export default function AppointmentScreen() {
                     key={index}
                     activeOpacity={0.7}
                     onPress={() => handlePresetDateSelect(date)}
-                    className={`flex-1 rounded-xl px-4 py-4 ${
-                      selectedDate === date.fullDate ? 'bg-[#0284C7]' : 'bg-[#F0FDFA]'
-                    }`}
+                    className={`flex-1 rounded-xl px-4 py-4 ${selectedDate === date.fullDate ? 'bg-[#0284C7]' : 'bg-[#F0FDFA]'
+                      }`}
                     style={{
                       borderColor: selectedDate === date.fullDate ? '#0284C7' : '#E0F2FE',
                       borderWidth: selectedDate === date.fullDate ? 2 : 1,
                     }}>
                     <Text
-                      className={`text-center text-base font-medium ${
-                        selectedDate === date.fullDate ? 'text-white' : 'text-[#475569]'
-                      }`}>
+                      className={`text-center text-base font-medium ${selectedDate === date.fullDate ? 'text-white' : 'text-[#475569]'
+                        }`}>
                       {date.dayName} {date.day}/{date.month}
                     </Text>
                     <Text
-                      className={`mt-1 text-center text-sm ${
-                        selectedDate === date.fullDate ? 'text-blue-100' : 'text-[#475569]'
-                      }`}>
+                      className={`mt-1 text-center text-sm ${selectedDate === date.fullDate ? 'text-blue-100' : 'text-[#475569]'
+                        }`}>
                       {index === 0
                         ? 'Hôm nay'
                         : index === 1
@@ -673,7 +677,7 @@ export default function AppointmentScreen() {
             {selectedDate && (
               <View>
                 {/* Time Slots - chỉ hiển thị khi đã chọn đủ thông tin và có ngày */}
-                { selectedFacility &&
+                {selectedFacility &&
                   selectedService &&
                   selectedDoctor &&
                   selectedDate && (
@@ -681,7 +685,7 @@ export default function AppointmentScreen() {
                       <Text className="mb-4 text-lg font-semibold mt-4" style={{ color: '#0F172A' }}>
                         Giờ khám mong muốn*
                       </Text>
-                      
+
                       {isDoctorNotAvailable ? (
                         <View className="rounded-xl border border-blue-200 bg-blue-50 p-6">
                           <View className="mb-3 flex-row items-center justify-center space-x-3">
@@ -820,54 +824,50 @@ export default function AppointmentScreen() {
                           const selectedDate = new Date(date.year, date.month - 1, date.day);
                           handleCustomDateConfirm(selectedDate);
                         }}
-                        className={`w-20 rounded-xl border-2 px-2 py-3 ${
-                          selectedCustomDate &&
+                        className={`w-20 rounded-xl border-2 px-2 py-3 ${selectedCustomDate &&
                           selectedCustomDate.getDate() === date.day &&
                           selectedCustomDate.getMonth() === date.month - 1 &&
                           selectedCustomDate.getFullYear() === date.year
-                            ? 'border-[#0284C7]'
-                            : 'border-[#E0F2FE]'
-                        }`}
+                          ? 'border-[#0284C7]'
+                          : 'border-[#E0F2FE]'
+                          }`}
                         style={{
                           backgroundColor:
                             selectedCustomDate &&
-                            selectedCustomDate.getDate() === date.day &&
-                            selectedCustomDate.getMonth() === date.month - 1 &&
-                            selectedCustomDate.getFullYear() === date.year
+                              selectedCustomDate.getDate() === date.day &&
+                              selectedCustomDate.getMonth() === date.month - 1 &&
+                              selectedCustomDate.getFullYear() === date.year
                               ? '#E0F2FE'
                               : '#F9FAFB',
                         }}>
                         <Text
-                          className={`text-center text-sm font-medium ${
-                            selectedCustomDate &&
+                          className={`text-center text-sm font-medium ${selectedCustomDate &&
                             selectedCustomDate.getDate() === date.day &&
                             selectedCustomDate.getMonth() === date.month - 1 &&
                             selectedCustomDate.getFullYear() === date.year
-                              ? 'text-[#0284C7]'
-                              : 'text-[#475569]'
-                          }`}>
+                            ? 'text-[#0284C7]'
+                            : 'text-[#475569]'
+                            }`}>
                           {date.dayName}
                         </Text>
                         <Text
-                          className={`mt-1 text-center text-lg font-bold ${
-                            selectedCustomDate &&
+                          className={`mt-1 text-center text-lg font-bold ${selectedCustomDate &&
                             selectedCustomDate.getDate() === date.day &&
                             selectedCustomDate.getMonth() === date.month - 1 &&
                             selectedCustomDate.getFullYear() === date.year
-                              ? 'text-[#0284C7]'
-                              : 'text-[#0F172A]'
-                          }`}>
+                            ? 'text-[#0284C7]'
+                            : 'text-[#0F172A]'
+                            }`}>
                           {date.day}
                         </Text>
                         <Text
-                          className={`text-center text-xs ${
-                            selectedCustomDate &&
+                          className={`text-center text-xs ${selectedCustomDate &&
                             selectedCustomDate.getDate() === date.day &&
                             selectedCustomDate.getMonth() === date.month - 1 &&
                             selectedCustomDate.getFullYear() === date.year
-                              ? 'text-[#0284C7]'
-                              : 'text-[#475569]'
-                          }`}>
+                            ? 'text-[#0284C7]'
+                            : 'text-[#475569]'
+                            }`}>
                           Thg {date.month}
                         </Text>
                       </TouchableOpacity>
@@ -927,6 +927,6 @@ export default function AppointmentScreen() {
           </View>
         </Modal>
       )}
-    </SafeAreaView>
+    </View>
   );
 }

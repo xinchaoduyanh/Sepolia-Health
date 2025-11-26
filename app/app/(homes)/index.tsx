@@ -610,7 +610,10 @@ export default function HomeScreen() {
               </View>
 
               <View style={{ width: '22%', alignItems: 'center' }}>
-                <TouchableOpacity activeOpacity={0.7} style={{ alignItems: 'center' }}>
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  style={{ alignItems: 'center' }}
+                  onPress={() => router.push('/(homes)/(appointment)/history')}>
                   <View
                     style={{
                       height: 56,

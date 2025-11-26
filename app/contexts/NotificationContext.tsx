@@ -94,23 +94,77 @@ const NotificationProvider = ({ children }: { children: ReactNode }) => {
         user: !!user,
       });
       setIsReady(false);
+      // Cleanup old channel if exists
+      if (notificationChannel) {
+        try {
+          notificationChannel.off();
+          setNotificationChannel(undefined);
+        } catch (err) {
+          // Ignore cleanup errors
+        }
+      }
+      setNotifications([]);
       return;
     }
 
+    // Check if client is still connected and valid
+    if (chatClient.userID !== user.id.toString()) {
+      console.warn('⚠️ [NotificationContext] User mismatch, skipping initialization:', {
+        clientUserId: chatClient.userID,
+        expectedUserId: user.id.toString(),
+      });
+      setIsReady(false);
+      return;
+    }
+
+    let isCancelled = false;
+    let currentChannel: Channel | undefined;
+
     const initNotifications = async () => {
       try {
+        // Double check client is still valid
+        if (isCancelled || !chatClient || chatClient.userID !== user.id.toString()) {
+          console.log('🚫 [NotificationContext] Initialization cancelled or client invalid');
+          return;
+        }
+
         console.log('🔄 [NotificationContext] Initializing notifications...');
+
+        // Cleanup old channel first
+        if (notificationChannel) {
+          try {
+            console.log('🧹 [NotificationContext] Cleaning up old channel...');
+            notificationChannel.off();
+            setNotificationChannel(undefined);
+          } catch (err) {
+            console.warn('⚠️ [NotificationContext] Error cleaning up old channel:', err);
+          }
+        }
 
         // Create notification channel ID
         const channelId = `notifications_${user.id}`;
         console.log('📋 [NotificationContext] Channel ID:', channelId);
 
+        // Check again before creating channel
+        if (isCancelled || !chatClient || chatClient.userID !== user.id.toString()) {
+          console.log('🚫 [NotificationContext] Cancelled before channel creation');
+          return;
+        }
+
         // Get or create notification channel
         const channel = chatClient.channel('messaging', channelId);
+        currentChannel = channel;
 
         // Try to watch the channel (create if doesn't exist)
         console.log('👀 [NotificationContext] Watching channel...');
         await channel.watch();
+
+        // Final check after watch
+        if (isCancelled || !chatClient || chatClient.userID !== user.id.toString()) {
+          console.log('🚫 [NotificationContext] Cancelled after channel watch');
+          return;
+        }
+
         console.log('✅ [NotificationContext] Channel watched successfully');
 
         setNotificationChannel(channel);
@@ -119,8 +173,15 @@ const NotificationProvider = ({ children }: { children: ReactNode }) => {
         console.log('📥 [NotificationContext] Loading initial notifications...');
         await loadNotifications(channel);
 
+        // Final check before setting up listeners
+        if (isCancelled || !chatClient || chatClient.userID !== user.id.toString()) {
+          console.log('🚫 [NotificationContext] Cancelled before setting up listeners');
+          return;
+        }
+
         // Listen for new messages
         const handleNewMessage = (event: any) => {
+          if (isCancelled) return;
           console.log('📨 New message event received:', {
             channel_id: event.channel_id,
             expected_channel: channelId,
@@ -143,6 +204,7 @@ const NotificationProvider = ({ children }: { children: ReactNode }) => {
 
         // Listen for message updates (mark as read)
         const handleMessageUpdated = (event: any) => {
+          if (isCancelled) return;
           if (event.message && event.channel_id === channelId) {
             const updatedNotification = transformStreamMessageToNotification(event.message);
             setNotifications((prev) =>
@@ -156,24 +218,39 @@ const NotificationProvider = ({ children }: { children: ReactNode }) => {
         channel.on('message.updated', handleMessageUpdated);
         console.log('✅ [NotificationContext] Event listeners registered');
 
-        setIsReady(true);
-        console.log('✅ [NotificationContext] Notifications initialized successfully');
-
-        // Cleanup function
-        return () => {
-          channel.off('message.new', handleNewMessage);
-          channel.off('message.updated', handleMessageUpdated);
-        };
+        if (!isCancelled) {
+          setIsReady(true);
+          console.log('✅ [NotificationContext] Notifications initialized successfully');
+        }
       } catch (error) {
+        if (isCancelled) {
+          console.log('🚫 [NotificationContext] Error occurred but already cancelled');
+          return;
+        }
         console.error('❌ Failed to initialize notifications:', error);
         setIsReady(false);
       }
     };
 
-    const cleanup = initNotifications();
+    initNotifications();
 
     return () => {
-      cleanup?.then((cleanupFn) => cleanupFn?.());
+      isCancelled = true;
+      if (currentChannel) {
+        try {
+          currentChannel.off();
+        } catch (err) {
+          // Ignore cleanup errors
+        }
+      }
+      if (notificationChannel) {
+        try {
+          notificationChannel.off();
+          setNotificationChannel(undefined);
+        } catch (err) {
+          // Ignore cleanup errors
+        }
+      }
     };
   }, [chatClient, isChatReady, user, loadNotifications, transformStreamMessageToNotification]);
 

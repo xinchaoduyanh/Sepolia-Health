@@ -15,6 +15,15 @@ export class PatientDto {
 
   @ApiProperty()
   phone: string | null;
+
+  @ApiProperty({ required: false })
+  dateOfBirth?: string | null;
+
+  @ApiProperty({ required: false })
+  gender?: string | null;
+
+  @ApiProperty({ required: false })
+  relationship?: string | null;
 }
 
 export class DoctorDto {
@@ -26,6 +35,20 @@ export class DoctorDto {
 
   @ApiProperty()
   lastName: string;
+}
+
+export class SpecialtyDto {
+  @ApiProperty()
+  id: number;
+
+  @ApiProperty()
+  name: string;
+
+  @ApiProperty()
+  description?: string;
+
+  @ApiProperty()
+  icon?: string;
 }
 
 export class ServiceDto {
@@ -40,6 +63,9 @@ export class ServiceDto {
 
   @ApiProperty()
   duration: number;
+
+  @ApiProperty({ type: SpecialtyDto, required: false })
+  specialty?: SpecialtyDto;
 }
 
 export class ClinicDto {
@@ -68,6 +94,46 @@ export class BillingDto {
 
   @ApiProperty()
   createdAt: Date;
+}
+
+export class FeedbackDto {
+  @ApiProperty()
+  id: number;
+
+  @ApiProperty()
+  rating: number;
+
+  @ApiProperty()
+  comment?: string | null;
+
+  @ApiProperty()
+  createdAt: Date;
+}
+
+export class AppointmentResultDto {
+  @ApiProperty()
+  id: number;
+
+  @ApiProperty()
+  diagnosis?: string | null;
+
+  @ApiProperty()
+  notes?: string | null;
+
+  @ApiProperty()
+  prescription?: string | null;
+
+  @ApiProperty()
+  recommendations?: string | null;
+
+  @ApiProperty()
+  appointmentId: number;
+
+  @ApiProperty()
+  createdAt: Date;
+
+  @ApiProperty()
+  updatedAt: Date;
 }
 
 export class AppointmentDetailResponseDto {
@@ -100,6 +166,12 @@ export class AppointmentDetailResponseDto {
 
   @ApiProperty({ type: BillingDto })
   billing?: BillingDto | null;
+
+  @ApiProperty({ type: FeedbackDto })
+  feedback?: FeedbackDto | null;
+
+  @ApiProperty({ type: AppointmentResultDto })
+  result?: AppointmentResultDto | null;
 
   @ApiProperty()
   createdAt: Date;

@@ -1,5 +1,7 @@
 import { View, Text, TouchableOpacity, ScrollView, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Path } from 'react-native-svg';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { router, useLocalSearchParams } from 'expo-router';
 import { PatientProfile } from '@/types/auth';
@@ -38,38 +40,86 @@ export default function PersonalInfoScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#F9FAFB' }}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
+    <View style={{ flex: 1, backgroundColor: '#E0F2FE' }}>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
-      {/* Header */}
-      <View
-        style={{
-          backgroundColor: '#F0FDFA',
-          paddingTop: 60,
-          paddingBottom: 20,
-          paddingHorizontal: 24,
-          borderBottomWidth: 1,
-          borderBottomColor: '#E0F2FE',
-        }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <TouchableOpacity onPress={() => router.push('/(profile)/' as any)}>
-            <Ionicons name="arrow-back" size={24} color="#0F172A" />
-          </TouchableOpacity>
-          <Text
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: 100 }}>
+        {/* Background Gradient */}
+        <View style={{ height: 280, position: 'relative', marginTop: -60 }}>
+          <LinearGradient
+            colors={['#0284C7', '#06B6D4', '#10B981']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{ flex: 1 }}
+          />
+          {/* Curved bottom edge using SVG */}
+          <Svg
+            height="70"
+            width="200%"
+            viewBox="0 0 1440 120"
+            style={{ position: 'absolute', bottom: -1, left: 0, right: 0 }}>
+            <Path d="M0,0 Q720,120 1440,0 L1440,120 L0,120 Z" fill="#E0F2FE" />
+          </Svg>
+
+          {/* Decorative circles */}
+          <View
             style={{
-              fontSize: 18,
-              fontWeight: 'bold',
-              color: '#0F172A',
-              marginLeft: 16,
-              flex: 1,
-            }}>
-            Thông tin cá nhân
-          </Text>
-        </View>
-      </View>
+              position: 'absolute',
+              top: -40,
+              right: -40,
+              height: 120,
+              width: 120,
+              borderRadius: 60,
+              backgroundColor: 'rgba(255,255,255,0.12)',
+            }}
+          />
+          <View
+            style={{
+              position: 'absolute',
+              top: 80,
+              left: -30,
+              height: 100,
+              width: 100,
+              borderRadius: 50,
+              backgroundColor: 'rgba(255,255,255,0.08)',
+            }}
+          />
 
-      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
-        <View style={{ padding: 24 }}>
+          {/* Header positioned within gradient */}
+          <View
+            style={{
+              position: 'absolute',
+              top: 100,
+              left: 24,
+              right: 24,
+              flexDirection: 'row',
+              alignItems: 'center',
+            }}>
+            <TouchableOpacity
+              onPress={() => router.push('/(profile)/' as any)}
+              style={{
+                height: 40,
+                width: 40,
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: 20,
+                backgroundColor: 'rgba(255,255,255,0.25)',
+                marginRight: 12,
+              }}>
+              <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+            </TouchableOpacity>
+            <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#FFFFFF', flex: 1 }}>
+              Thông tin cá nhân
+            </Text>
+          </View>
+        </View>
+
+        {/* Content */}
+        <View style={{ paddingHorizontal: 24, marginTop: -80, marginBottom: 24 }}>
           {/* Thông tin cơ bản */}
           <View style={{ marginBottom: 24 }}>
             <View
@@ -224,7 +274,7 @@ export default function PersonalInfoScreen() {
                 lòng liên hệ hotline{' '}
                 <Text style={{ color: '#0284C7', fontWeight: '500' }}>1900 1234</Text> hoặc truy cập
                 website Vinmec.
-              </Text> 
+              </Text>
                <Text
                 style={{
                   fontSize: 12,

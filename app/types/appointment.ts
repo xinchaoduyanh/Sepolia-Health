@@ -11,18 +11,52 @@ export interface Billing {
   createdAt: string;
 }
 
+// Feedback information for appointments
+export interface Feedback {
+  id: number;
+  rating: number;
+  comment?: string | null;
+  createdAt: string;
+}
+
+// Appointment Result from doctor
+export interface AppointmentResult {
+  id: number;
+  diagnosis?: string | null;
+  notes?: string | null;
+  prescription?: string | null;
+  recommendations?: string | null;
+  appointmentId: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // Main Appointment interface matching backend response
 export interface Appointment {
   id: number;
   startTime: string; // ISO datetime
   status: AppointmentStatus;
   notes: string | null;
+  patient?: {
+    id: number;
+    firstName: string;
+    lastName: string;
+    email: string | null;
+    phone: string | null;
+    dateOfBirth?: string | null;
+    gender?: string | null;
+    relationship?: string | null;
+  };
+  // Alias for backward compatibility
   patientProfile?: {
     id: number;
     firstName: string;
     lastName: string;
-    email: string;
+    email: string | null;
     phone: string | null;
+    dateOfBirth?: string | null;
+    gender?: string | null;
+    relationship?: string | null;
   };
   doctor: {
     id: number;
@@ -34,6 +68,12 @@ export interface Appointment {
     name: string;
     price: number;
     duration: number;
+    specialty?: {
+      id: number;
+      name: string;
+      description?: string;
+      icon?: string;
+    };
   };
   clinic?: {
     id: number;
@@ -41,6 +81,8 @@ export interface Appointment {
   } | null;
   doctorServiceId?: number;
   billing?: Billing | null;
+  feedback?: Feedback | null;
+  result?: AppointmentResult | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -74,4 +116,10 @@ export interface AppointmentFilters {
   dateTo?: string; // ISO datetime
   sortBy?: 'date' | 'status' | 'billingStatus';
   sortOrder?: 'asc' | 'desc';
+}
+
+// Request to create feedback
+export interface CreateFeedbackRequest {
+  rating: number; // 1-5
+  comment?: string;
 }
