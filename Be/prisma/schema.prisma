@@ -279,6 +279,10 @@ model Appointment {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // Indexes for performance optimization
+  @@index([startTime, status, clinicId])
+  @@index([status, clinicId, startTime])
 }
 
 /// Đơn thuốc: Gắn với một hồ sơ bệnh nhân cụ thể.
@@ -397,6 +401,9 @@ model Billing {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // Indexes for performance optimization
+  @@index([status, appointmentId])
 }
 
 model Medicine {

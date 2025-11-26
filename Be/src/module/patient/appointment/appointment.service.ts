@@ -331,7 +331,13 @@ export class AppointmentService {
       },
       include: {
         patientProfile: true,
-        doctor: true,
+        doctor: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
         service: {
           include: {
             specialty: {
@@ -345,7 +351,12 @@ export class AppointmentService {
           },
         },
         billing: true,
-        clinic: true,
+        clinic: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
         feedback: true,
         result: {
           select: {
@@ -362,6 +373,54 @@ export class AppointmentService {
       },
     });
 
+    // Send notification to patient when they update appointment
+    // Only send if patient is the one updating (not doctor)
+    const isPatientUpdating = appointment.patientProfile?.managerId === userId;
+    if (isPatientUpdating) {
+      try {
+        const patientUserId = appointment.patientProfile?.managerId?.toString();
+        if (patientUserId) {
+          // Build changes object
+          const changes: Record<string, any> = {};
+          if (
+            body.startTime &&
+            body.startTime.getTime() !== appointment.startTime.getTime()
+          ) {
+            changes['Thời gian bắt đầu'] =
+              body.startTime.toLocaleString('vi-VN');
+          }
+          if (
+            body.endTime &&
+            body.endTime.getTime() !== appointment.endTime.getTime()
+          ) {
+            changes['Thời gian kết thúc'] =
+              body.endTime.toLocaleString('vi-VN');
+          }
+          if (body.notes !== undefined && body.notes !== appointment.notes) {
+            changes['Ghi chú'] = body.notes || 'Đã xóa ghi chú';
+          }
+
+          await this.notificationService.sendUpdateAppointmentPatientNotification(
+            {
+              appointmentId: appointment.id,
+              recipientId: patientUserId,
+              changes: Object.keys(changes).length > 0 ? changes : undefined,
+              notes: body.notes,
+              startTime: updatedAppointment.startTime,
+              doctorName: `${
+                updatedAppointment.doctor?.firstName || ''
+              } ${updatedAppointment.doctor?.lastName || ''}`.trim(),
+              serviceName: updatedAppointment.service?.name || '',
+              clinicName: updatedAppointment.clinic?.name || '',
+            },
+          );
+        }
+      } catch (error) {
+        console.error('Failed to send update notification to patient:', error);
+        // Don't throw error, just log it
+      }
+    }
+
     return this.formatAppointmentResponse(updatedAppointment);
   }
 
@@ -374,7 +433,28 @@ export class AppointmentService {
   ): Promise<SuccessResponseDto> {
     const appointment = await this.prisma.appointment.findUnique({
       where: { id },
-      include: { patientProfile: true },
+      include: {
+        patientProfile: true,
+        doctor: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+        service: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        clinic: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
     });
 
     if (!appointment) {
@@ -396,6 +476,31 @@ export class AppointmentService {
         status: AppointmentStatus.CANCELLED,
       },
     });
+
+    // Send notification to patient when they cancel appointment
+    try {
+      const patientUserId = appointment.patientProfile?.managerId?.toString();
+      if (patientUserId) {
+        await this.notificationService.sendDeleteAppointmentPatientNotification(
+          {
+            appointmentId: appointment.id,
+            startTime: appointment.startTime,
+            doctorName: `${
+              appointment.doctor?.firstName || ''
+            } ${appointment.doctor?.lastName || ''}`.trim(),
+            serviceName: appointment.service?.name || '',
+            recipientId: patientUserId,
+            reason: 'Bạn đã hủy lịch hẹn này',
+          },
+        );
+      }
+    } catch (error) {
+      console.error(
+        'Failed to send cancellation notification to patient:',
+        error,
+      );
+      // Don't throw error, just log it
+    }
 
     return new SuccessResponseDto();
   }
@@ -440,10 +545,12 @@ export class AppointmentService {
 
     // Ensure sortBy and sortOrder are properly set
     const finalSortBy = sortBy || 'date';
+    // Mặc định sort từ xa nhất đến gần nhất (DESC - appointment xa nhất có startTime lớn nhất)
     const finalSortOrder = sortOrder || SortOrder.DESC;
 
     const skip = (Number(page) - 1) * Number(limit);
 
+    const now = new Date();
     const where: any = {
       patientProfileId: { in: patientProfileIds }, // Query all patient profiles
     };
@@ -455,10 +562,19 @@ export class AppointmentService {
         status: billingStatus,
       };
     }
-    if (dateFrom || dateTo) {
-      where.date = {};
-      if (dateFrom) where.date.gte = new Date(dateFrom);
-      if (dateTo) where.date.lte = new Date(dateTo);
+
+    // Xử lý filter theo thời gian: chỉ lấy appointments trong tương lai
+    where.startTime = {};
+    if (dateFrom) {
+      const dateFromTime = new Date(dateFrom);
+      // Lấy max giữa dateFrom và now để đảm bảo chỉ lấy trong tương lai
+      where.startTime.gte = dateFromTime > now ? dateFromTime : now;
+    } else {
+      // Không có dateFrom thì mặc định chỉ lấy từ hiện tại trở đi
+      where.startTime.gte = now;
+    }
+    if (dateTo) {
+      where.startTime.lte = new Date(dateTo);
     }
 
     // Build orderBy based on sortBy and sortOrder
@@ -472,9 +588,10 @@ export class AppointmentService {
     } else if (finalSortBy === 'billingStatus') {
       // For billingStatus, we need to sort in memory
       shouldSortInMemory = true;
-      orderBy = { startTime: SortOrder.ASC }; // Temporary orderBy, will be overridden
+      // Sort by startTime DESC first (xa nhất đến gần nhất), then by billing status
+      orderBy = { startTime: SortOrder.DESC };
     } else {
-      // Default: sort by date
+      // Default: sort by startTime - từ xa nhất đến gần nhất (DESC)
       orderBy = { startTime: finalSortOrder };
     }
 
@@ -529,26 +646,34 @@ export class AppointmentService {
         },
       });
 
-      // Sort by billing status
-      // asc: PENDING -> PAID -> REFUNDED (Chưa thanh toán trước)
-      // desc: PAID -> PENDING -> REFUNDED (Đã thanh toán trước)
+      // Sort: đầu tiên theo billing status, sau đó trong cùng status thì sort theo startTime (xa nhất đến gần nhất - DESC)
       allAppointments.sort((a, b) => {
         const aStatus = a.billing?.status || PaymentStatus.PENDING;
         const bStatus = b.billing?.status || PaymentStatus.PENDING;
 
+        // Sort theo billing status trước
+        let statusComparison = 0;
         if (finalSortOrder === SortOrder.ASC) {
           // PENDING (1) -> PAID (2) -> REFUNDED (3)
           const statusOrder = { PENDING: 1, PAID: 2, REFUNDED: 3 };
           const aOrder = statusOrder[aStatus] || 0;
           const bOrder = statusOrder[bStatus] || 0;
-          return aOrder - bOrder;
+          statusComparison = aOrder - bOrder;
         } else {
           // PAID (1) -> PENDING (2) -> REFUNDED (3)
           const statusOrder = { PAID: 1, PENDING: 2, REFUNDED: 3 };
           const aOrder = statusOrder[aStatus] || 0;
           const bOrder = statusOrder[bStatus] || 0;
-          return aOrder - bOrder;
+          statusComparison = aOrder - bOrder;
         }
+
+        // Nếu billing status khác nhau, sort theo billing status
+        if (statusComparison !== 0) {
+          return statusComparison;
+        }
+
+        // Nếu billing status giống nhau, sort theo startTime từ xa nhất đến gần nhất (DESC)
+        return b.startTime.getTime() - a.startTime.getTime();
       });
 
       // Paginate after sorting

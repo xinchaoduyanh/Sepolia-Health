@@ -10,6 +10,7 @@ import { appConfig } from '@/common/config';
 import { TransactionStatus, PaymentStatus } from '@prisma/client';
 import { ERROR_MESSAGES } from '@/common/constants/error-messages';
 import { RedisService } from '@/common/modules/redis';
+import { NotificationService } from '@/module/notification/notification.service';
 import {
   CreateQrScanDto,
   QrScanResponseDto,
@@ -25,6 +26,7 @@ export class PaymentService {
     private readonly redis: RedisService,
     @Inject(appConfig.KEY)
     private readonly paymentConf: ConfigType<typeof appConfig>,
+    private readonly notificationService: NotificationService,
   ) {}
 
   /**
@@ -455,6 +457,60 @@ export class PaymentService {
 
     // Mark payment code as used in Redis
     await this.redis.markPaymentCodeAsUsed(paymentCode);
+
+    // Send notification to patient when payment is successful
+    try {
+      // Get appointment with patient and service info via billing
+      const appointment = await this.prisma.appointment.findFirst({
+        where: {
+          billing: {
+            id: paymentCodeData.billingId,
+          },
+        },
+        include: {
+          patientProfile: {
+            select: {
+              id: true,
+              managerId: true,
+            },
+          },
+          doctor: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+            },
+          },
+          service: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      });
+
+      if (appointment && appointment.patientProfile?.managerId) {
+        const patientUserId = appointment.patientProfile.managerId.toString();
+        await this.notificationService.sendPaymentSuccessNotification({
+          appointmentId: appointment.id,
+          billingId: paymentCodeData.billingId,
+          amount: billing.amount,
+          recipientId: patientUserId,
+          serviceName: appointment.service?.name,
+          doctorName:
+            `${appointment.doctor?.firstName || ''} ${appointment.doctor?.lastName || ''}`.trim(),
+          transactionId: transaction.id.toString(),
+          paymentMethod: 'SEPAY',
+        });
+      }
+    } catch (error) {
+      console.error(
+        'Failed to send payment success notification to patient:',
+        error,
+      );
+      // Don't throw error, just log it
+    }
 
     return {
       success: true,

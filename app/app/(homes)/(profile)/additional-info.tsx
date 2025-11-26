@@ -5,7 +5,6 @@ import Svg, { Path } from 'react-native-svg';
 import { router } from 'expo-router';
 
 export default function AdditionalInfoScreen() {
-
   return (
     <View style={{ flex: 1, backgroundColor: '#E0F2FE' }}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
@@ -209,32 +208,30 @@ export default function AdditionalInfoScreen() {
         </View>
       </ScrollView>
 
-          {/* Bottom Save Button */}
-          <View style={{ marginTop: 24 }}>
-            <TouchableOpacity
-              style={{
-                backgroundColor: '#0284C7',
-                paddingVertical: 16,
-                borderRadius: 12,
-                alignItems: 'center',
-                shadowColor: '#0284C7',
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.3,
-                shadowRadius: 8,
-                elevation: 4,
-              }}>
-              <Text
-                style={{
-                  color: 'white',
-                  fontSize: 16,
-                  fontWeight: 'bold',
-                }}>
-                LƯU
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </ScrollView>
+      {/* Bottom Save Button */}
+      <View style={{ paddingHorizontal: 24, paddingBottom: 24 }}>
+        <TouchableOpacity
+          style={{
+            backgroundColor: '#0284C7',
+            paddingVertical: 16,
+            borderRadius: 12,
+            alignItems: 'center',
+            shadowColor: '#0284C7',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.3,
+            shadowRadius: 8,
+            elevation: 4,
+          }}>
+          <Text
+            style={{
+              color: 'white',
+              fontSize: 16,
+              fontWeight: 'bold',
+            }}>
+            LƯU
+          </Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }

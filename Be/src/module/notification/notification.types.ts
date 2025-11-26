@@ -84,9 +84,8 @@ export interface StreamNotificationMessage {
   type: NotificationType;
   priority: NotificationPriority;
   status: NotificationStatus;
-  data:
-  BaseNotificationData
-  AppointmentNotificationData
+  data: BaseNotificationData;
+  AppointmentNotificationData;
   PaymentNotificationData;
   timestamp: Date;
 }
@@ -141,6 +140,17 @@ export interface DeleteAppointmentNotificationDoctor {
   serviceName: string;
   recipientId: string;
   reason?: string;
+}
+
+export interface PaymentSuccessNotificationPatient {
+  appointmentId: number;
+  billingId: number;
+  amount: number;
+  recipientId: string;
+  serviceName?: string;
+  doctorName?: string;
+  transactionId?: string;
+  paymentMethod?: string;
 }
 
 export interface NotificationResponse {

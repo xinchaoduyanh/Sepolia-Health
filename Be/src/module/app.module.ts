@@ -71,7 +71,7 @@ import { UserStatusGuard } from '@/common/guards/user-status.guard';
     {
       provide: APP_GUARD,
       useClass: UserStatusGuard,
-    }
+    },
   ],
 })
 export class AppModule {}

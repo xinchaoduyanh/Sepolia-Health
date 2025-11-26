@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/common/prisma/prisma.service';
+import { RedisService } from '@/common/modules/redis/redis.service';
 import { Role, AppointmentStatus, PaymentStatus } from '@prisma/client';
 import {
   UserStatisticsResponseDto,
@@ -16,7 +17,10 @@ import {
 
 @Injectable()
 export class AdminStatisticsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly redis: RedisService,
+  ) {}
 
   async getUserStatistics(
     startDate?: string,
@@ -686,13 +690,13 @@ export class AdminStatisticsService {
     ]);
 
     // 2. Appointments: Số appointment COMPLETED trong tháng này vs tháng trước
-    // Lấy theo thời điểm appointment được completed (updatedAt khi status = COMPLETED)
+    // Lấy theo thời điểm appointment diễn ra (startTime)
     const [appointmentsCurrentMonth, appointmentsPreviousMonth] =
       await Promise.all([
         this.prisma.appointment.count({
           where: {
             status: AppointmentStatus.COMPLETED,
-            updatedAt: {
+            startTime: {
               gte: currentMonthStart,
               lt: currentMonthEnd,
             },
@@ -701,7 +705,7 @@ export class AdminStatisticsService {
         this.prisma.appointment.count({
           where: {
             status: AppointmentStatus.COMPLETED,
-            updatedAt: {
+            startTime: {
               gte: previousMonthStart,
               lt: previousMonthEnd,
             },
@@ -732,7 +736,7 @@ export class AdminStatisticsService {
     ]);
 
     // 4. Revenue: Doanh thu từ các appointment COMPLETED trong tháng này vs tháng trước
-    // Lấy theo thời điểm appointment được completed (updatedAt khi status = COMPLETED)
+    // Lấy theo thời điểm appointment diễn ra (startTime)
     const [revenueCurrentMonthResult, revenuePreviousMonthResult] =
       await Promise.all([
         this.prisma.billing.aggregate({
@@ -740,7 +744,7 @@ export class AdminStatisticsService {
             status: PaymentStatus.PAID,
             appointment: {
               status: AppointmentStatus.COMPLETED,
-              updatedAt: {
+              startTime: {
                 gte: currentMonthStart,
                 lt: currentMonthEnd,
               },
@@ -755,7 +759,7 @@ export class AdminStatisticsService {
             status: PaymentStatus.PAID,
             appointment: {
               status: AppointmentStatus.COMPLETED,
-              updatedAt: {
+              startTime: {
                 gte: previousMonthStart,
                 lt: previousMonthEnd,
               },
@@ -835,7 +839,7 @@ export class AdminStatisticsService {
           where: {
             clinicId: clinic.id,
             status: AppointmentStatus.COMPLETED,
-            updatedAt: {
+            startTime: {
               gte: currentMonthStart,
               lt: currentMonthEnd,
             },
@@ -856,7 +860,7 @@ export class AdminStatisticsService {
             appointment: {
               clinicId: clinic.id,
               status: AppointmentStatus.COMPLETED,
-              updatedAt: {
+              startTime: {
                 gte: currentMonthStart,
                 lt: currentMonthEnd,
               },
@@ -884,6 +888,96 @@ export class AdminStatisticsService {
   }
 
   /**
+   * Optimized method for 1month period - single query approach
+   */
+  private async getRevenueChartByClinicOptimized(
+    startDate: Date,
+    endDate: Date,
+    clinics: Array<{ id: number; name: string }>,
+  ): Promise<RevenueChartResponseDto> {
+    // Single query to get all revenue data for the period
+    const revenueData = await this.prisma.billing.findMany({
+      where: {
+        status: PaymentStatus.PAID,
+        appointment: {
+          status: AppointmentStatus.COMPLETED,
+          startTime: {
+            gte: startDate,
+            lte: endDate,
+          },
+          clinicId: {
+            in: clinics.map((c) => c.id),
+          },
+        },
+      },
+      select: {
+        amount: true,
+        appointment: {
+          select: {
+            startTime: true,
+            clinicId: true,
+          },
+        },
+      },
+    });
+
+    // Group data by date and clinic in application
+    const dataMap = new Map<string, Map<number, number>>();
+
+    // Initialize all dates with 0 revenue for all clinics
+    const currentDate = new Date(startDate);
+    while (currentDate <= endDate) {
+      const dateKey = currentDate.toISOString().split('T')[0];
+      const clinicMap = new Map<number, number>();
+      clinics.forEach((clinic) => {
+        clinicMap.set(clinic.id, 0);
+      });
+      dataMap.set(dateKey, clinicMap);
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    // Populate actual revenue data
+    revenueData.forEach((billing) => {
+      const dateKey = billing.appointment.startTime.toISOString().split('T')[0];
+      const clinicId = billing.appointment.clinicId!;
+
+      if (dataMap.has(dateKey)) {
+        const clinicMap = dataMap.get(dateKey)!;
+        const currentRevenue = clinicMap.get(clinicId) || 0;
+        clinicMap.set(clinicId, currentRevenue + billing.amount);
+      }
+    });
+
+    // Transform to response format
+    const data: Array<{
+      label: string;
+      clinics: Array<{
+        clinicId: number;
+        clinicName: string;
+        revenue: number;
+      }>;
+    }> = [];
+
+    for (const [dateKey, clinicMap] of dataMap.entries()) {
+      const clinicRevenues = clinics.map((clinic) => ({
+        clinicId: clinic.id,
+        clinicName: clinic.name,
+        revenue: clinicMap.get(clinic.id) || 0,
+      }));
+
+      data.push({
+        label: dateKey,
+        clinics: clinicRevenues,
+      });
+    }
+
+    return {
+      data,
+      clinics: clinics.map((c) => ({ clinicId: c.id, clinicName: c.name })),
+    };
+  }
+
+  /**
    * Get revenue chart data by clinic with different periods
    * @param period - '1month' (by day), '3months' (by week), 'year' (by month)
    */
@@ -892,23 +986,54 @@ export class AdminStatisticsService {
   ): Promise<RevenueChartResponseDto> {
     const now = new Date();
     let startDate: Date;
-    const endDate: Date = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate(),
-    );
-    endDate.setHours(23, 59, 59, 999);
+    let endDate: Date;
 
-    // Calculate start date based on period
+    // Calculate date range based on period
     if (period === '1month') {
       startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
     } else if (period === '3months') {
       startDate = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+      endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
     } else {
       // year
       startDate = new Date(now.getFullYear(), 0, 1);
+      endDate = new Date(now.getFullYear(), 11, 31);
     }
     startDate.setHours(0, 0, 0, 0);
+    endDate.setHours(23, 59, 59, 999);
+
+    // Generate cache key based on period
+    let cacheKey: string;
+
+    if (period === '1month') {
+      const year = startDate.getFullYear();
+      const month = startDate.getMonth() + 1;
+      cacheKey = `revenue_chart_${period}_${year}_${month}`;
+    } else if (period === '3months') {
+      // Use end date for 3months period to ensure consistency
+      const endYear = endDate.getFullYear();
+      const endMonth = endDate.getMonth() + 1;
+      cacheKey = `revenue_chart_${period}_${endYear}_${endMonth}`;
+    } else {
+      // year period
+      const year = startDate.getFullYear();
+      cacheKey = `revenue_chart_${period}_${year}_1`;
+    }
+
+    // Check cache first
+    try {
+      const cached =
+        await this.redis.getJson<RevenueChartResponseDto>(cacheKey);
+      if (cached.exists && cached.value) {
+        console.log(`Cache hit for ${cacheKey}`);
+        return cached.value;
+      }
+      console.log(`Cache miss for ${cacheKey}, querying database...`);
+    } catch (error) {
+      // Log error but continue with database query
+      console.error('Redis cache error:', error);
+    }
 
     // Get all active clinics
     const clinics = await this.prisma.clinic.findMany({
@@ -921,117 +1046,261 @@ export class AdminStatisticsService {
       },
     });
 
-    const data: Array<{
-      label: string;
-      clinics: Array<{
-        clinicId: number;
-        clinicName: string;
-        revenue: number;
-      }>;
-    }> = [];
+    let result: RevenueChartResponseDto;
 
     if (period === '1month') {
-      // Group by day
-      const currentDate = new Date(startDate);
-      while (currentDate <= endDate) {
-        const dayStart = new Date(currentDate);
-        dayStart.setHours(0, 0, 0, 0);
-        const dayEnd = new Date(currentDate);
-        dayEnd.setHours(23, 59, 59, 999);
-
-        const clinicRevenues = await Promise.all(
-          clinics.map(async (clinic) => {
-            const result = await this.prisma.billing.aggregate({
-              where: {
-                status: PaymentStatus.PAID,
-                appointment: {
-                  clinicId: clinic.id,
-                  status: AppointmentStatus.COMPLETED,
-                  updatedAt: {
-                    gte: dayStart,
-                    lte: dayEnd,
-                  },
-                },
-              },
-              _sum: {
-                amount: true,
-              },
-            });
-            return {
-              clinicId: clinic.id,
-              clinicName: clinic.name,
-              revenue: result._sum.amount || 0,
-            };
-          }),
-        );
-
-        data.push({
-          label: dayStart.toISOString().split('T')[0],
-          clinics: clinicRevenues,
-        });
-
-        currentDate.setDate(currentDate.getDate() + 1);
-      }
+      // Use optimized single-query approach for 1month
+      result = await this.getRevenueChartByClinicOptimized(
+        startDate,
+        endDate,
+        clinics,
+      );
     } else if (period === '3months') {
-      // Group by week
-      const currentDate = new Date(startDate);
-      // Set to Monday of the first week
-      const dayOfWeek = currentDate.getDay();
-      const diff =
-        currentDate.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
-      currentDate.setDate(diff);
-      currentDate.setHours(0, 0, 0, 0);
+      // Use optimized single-query approach for 3months
+      result = await this.getRevenueChartBy3MonthsOptimized(
+        startDate,
+        endDate,
+        clinics,
+      );
+    } else {
+      // Use optimized single-query approach for year
+      result = await this.getRevenueChartByYearOptimized(
+        startDate,
+        endDate,
+        clinics,
+      );
+    }
 
-      while (currentDate <= endDate) {
-        const weekStart = new Date(currentDate);
-        const weekEnd = new Date(weekStart);
-        weekEnd.setDate(weekEnd.getDate() + 6);
-        weekEnd.setHours(23, 59, 59, 999);
+    // Cache the result
+    try {
+      // Determine TTL based on whether it's current month/period
+      const isCurrentPeriod = this.isCurrentPeriod(
+        period,
+        startDate,
+        endDate,
+        now,
+      );
+      const ttl = isCurrentPeriod ? 3600 : undefined; // 1 hour for current period, permanent for historical data
 
-        if (weekStart > endDate) {
-          break;
-        }
+      await this.redis.setJson(cacheKey, result, ttl ? { ex: ttl } : undefined);
+    } catch (error) {
+      // Log error but don't fail the request
+      console.error('Redis cache set error:', error);
+    }
 
-        if (weekEnd > endDate) {
-          weekEnd.setTime(endDate.getTime());
-        }
+    return result;
+  }
 
-        const clinicRevenues = await Promise.all(
-          clinics.map(async (clinic) => {
-            const result = await this.prisma.billing.aggregate({
-              where: {
-                status: PaymentStatus.PAID,
-                appointment: {
-                  clinicId: clinic.id,
-                  status: AppointmentStatus.COMPLETED,
-                  updatedAt: {
-                    gte: weekStart,
-                    lte: weekEnd,
-                  },
-                },
-              },
-              _sum: {
-                amount: true,
-              },
-            });
-            return {
-              clinicId: clinic.id,
-              clinicName: clinic.name,
-              revenue: result._sum.amount || 0,
-            };
-          }),
+  /**
+   * Check if the given period is current (contains today)
+   */
+  private isCurrentPeriod(
+    period: '1month' | '3months' | 'year',
+    startDate: Date,
+    endDate: Date,
+    now: Date,
+  ): boolean {
+    return now >= startDate && now <= endDate;
+  }
+
+  /**
+   * Generate week ranges for 3months period (Monday to Sunday)
+   */
+  private generateWeekRanges(
+    startDate: Date,
+    endDate: Date,
+  ): Array<{
+    weekStart: Date;
+    weekEnd: Date;
+    label: string;
+  }> {
+    const weeks: Array<{
+      weekStart: Date;
+      weekEnd: Date;
+      label: string;
+    }> = [];
+
+    // Set to Monday of the first week
+    const currentDate = new Date(startDate);
+    const dayOfWeek = currentDate.getDay();
+    const diff = currentDate.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+    currentDate.setDate(diff);
+    currentDate.setHours(0, 0, 0, 0);
+
+    while (currentDate <= endDate) {
+      const weekStart = new Date(currentDate);
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekEnd.getDate() + 6);
+      weekEnd.setHours(23, 59, 59, 999);
+
+      if (weekStart > endDate) {
+        break;
+      }
+
+      if (weekEnd > endDate) {
+        weekEnd.setTime(endDate.getTime());
+      }
+
+      weeks.push({
+        weekStart: new Date(weekStart),
+        weekEnd: new Date(weekEnd),
+        label: `${weekStart.toISOString().split('T')[0]} - ${weekEnd.toISOString().split('T')[0]}`,
+      });
+
+      // Move to next week (Monday)
+      currentDate.setDate(currentDate.getDate() + 7);
+    }
+
+    return weeks;
+  }
+
+  /**
+   * Optimized method for 3months period - single query approach
+   */
+  private async getRevenueChartBy3MonthsOptimized(
+    startDate: Date,
+    endDate: Date,
+    clinics: Array<{ id: number; name: string }>,
+  ): Promise<RevenueChartResponseDto> {
+    try {
+      // Single query to get all revenue data for 3 months
+      const revenueData = await this.prisma.billing.findMany({
+        where: {
+          status: PaymentStatus.PAID,
+          appointment: {
+            status: AppointmentStatus.COMPLETED,
+            startTime: {
+              gte: startDate,
+              lte: endDate,
+            },
+            clinicId: {
+              in: clinics.map((c) => c.id),
+            },
+          },
+        },
+        select: {
+          amount: true,
+          appointment: {
+            select: {
+              startTime: true,
+              clinicId: true,
+            },
+          },
+        },
+      });
+
+      console.log(
+        `3months query: Found ${revenueData.length} billing records between ${startDate.toISOString()} and ${endDate.toISOString()}`,
+      );
+
+      // Generate all week ranges
+      const weekRanges = this.generateWeekRanges(startDate, endDate);
+      console.log(`3months: Generated ${weekRanges.length} week ranges`);
+
+      // Initialize data map with all weeks and clinics
+      const dataMap = new Map<string, Map<number, number>>();
+      weekRanges.forEach(({ label }) => {
+        const clinicMap = new Map<number, number>();
+        clinics.forEach((clinic) => {
+          clinicMap.set(clinic.id, 0);
+        });
+        dataMap.set(label, clinicMap);
+      });
+
+      // Populate actual revenue data
+      revenueData.forEach((billing) => {
+        const appointmentDate = billing.appointment.startTime;
+        const clinicId = billing.appointment.clinicId!;
+
+        // Find which week this appointment belongs to
+        const weekRange = weekRanges.find(
+          ({ weekStart, weekEnd }) =>
+            appointmentDate >= weekStart && appointmentDate <= weekEnd,
         );
 
+        if (weekRange && dataMap.has(weekRange.label)) {
+          const clinicMap = dataMap.get(weekRange.label)!;
+          const currentRevenue = clinicMap.get(clinicId) || 0;
+          clinicMap.set(clinicId, currentRevenue + billing.amount);
+        }
+      });
+
+      // Transform to response format
+      const data: Array<{
+        label: string;
+        clinics: Array<{
+          clinicId: number;
+          clinicName: string;
+          revenue: number;
+        }>;
+      }> = [];
+
+      weekRanges.forEach(({ label }) => {
+        const clinicMap = dataMap.get(label)!;
+        const clinicRevenues = clinics.map((clinic) => ({
+          clinicId: clinic.id,
+          clinicName: clinic.name,
+          revenue: clinicMap.get(clinic.id) || 0,
+        }));
+
         data.push({
-          label: `${weekStart.toISOString().split('T')[0]} - ${weekEnd.toISOString().split('T')[0]}`,
+          label,
           clinics: clinicRevenues,
         });
+      });
 
-        // Move to next week (Monday)
-        currentDate.setDate(currentDate.getDate() + 7);
-      }
-    } else {
-      // year - Group by month
+      return {
+        data,
+        clinics: clinics.map((c) => ({ clinicId: c.id, clinicName: c.name })),
+      };
+    } catch (error) {
+      console.error('Error in getRevenueChartBy3MonthsOptimized:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Optimized method for year period - single query approach
+   */
+  private async getRevenueChartByYearOptimized(
+    startDate: Date,
+    endDate: Date,
+    clinics: Array<{ id: number; name: string }>,
+  ): Promise<RevenueChartResponseDto> {
+    try {
+      // Single query to get all revenue data for the year
+      const revenueData = await this.prisma.billing.findMany({
+        where: {
+          status: PaymentStatus.PAID,
+          appointment: {
+            status: AppointmentStatus.COMPLETED,
+            startTime: {
+              gte: startDate,
+              lte: endDate,
+            },
+            clinicId: {
+              in: clinics.map((c) => c.id),
+            },
+          },
+        },
+        select: {
+          amount: true,
+          appointment: {
+            select: {
+              startTime: true,
+              clinicId: true,
+            },
+          },
+        },
+      });
+
+      // Generate all month ranges for the year
+      const monthRanges: Array<{
+        monthStart: Date;
+        monthEnd: Date;
+        label: string;
+      }> = [];
+
       const currentDate = new Date(startDate);
       while (currentDate <= endDate) {
         const monthStart = new Date(
@@ -1051,46 +1320,108 @@ export class AdminStatisticsService {
           monthEnd.setTime(endDate.getTime());
         }
 
-        const clinicRevenues = await Promise.all(
-          clinics.map(async (clinic) => {
-            const result = await this.prisma.billing.aggregate({
-              where: {
-                status: PaymentStatus.PAID,
-                appointment: {
-                  clinicId: clinic.id,
-                  status: AppointmentStatus.COMPLETED,
-                  updatedAt: {
-                    gte: monthStart,
-                    lte: monthEnd,
-                  },
-                },
-              },
-              _sum: {
-                amount: true,
-              },
-            });
-            return {
-              clinicId: clinic.id,
-              clinicName: clinic.name,
-              revenue: result._sum.amount || 0,
-            };
-          }),
-        );
-
-        data.push({
+        monthRanges.push({
+          monthStart: new Date(monthStart),
+          monthEnd: new Date(monthEnd),
           label: monthStart.toISOString().substring(0, 7), // YYYY-MM
-          clinics: clinicRevenues,
         });
 
         currentDate.setMonth(currentDate.getMonth() + 1);
         currentDate.setDate(1);
       }
-    }
 
-    return {
-      data,
-      clinics: clinics.map((c) => ({ clinicId: c.id, clinicName: c.name })),
-    };
+      // Initialize data map with all months and clinics
+      const dataMap = new Map<string, Map<number, number>>();
+      monthRanges.forEach(({ label }) => {
+        const clinicMap = new Map<number, number>();
+        clinics.forEach((clinic) => {
+          clinicMap.set(clinic.id, 0);
+        });
+        dataMap.set(label, clinicMap);
+      });
+
+      // Populate actual revenue data
+      revenueData.forEach((billing) => {
+        const appointmentDate = billing.appointment.startTime;
+        const clinicId = billing.appointment.clinicId!;
+
+        // Find which month this appointment belongs to
+        const monthRange = monthRanges.find(
+          ({ monthStart, monthEnd }) =>
+            appointmentDate >= monthStart && appointmentDate <= monthEnd,
+        );
+
+        if (monthRange && dataMap.has(monthRange.label)) {
+          const clinicMap = dataMap.get(monthRange.label)!;
+          const currentRevenue = clinicMap.get(clinicId) || 0;
+          clinicMap.set(clinicId, currentRevenue + billing.amount);
+        }
+      });
+
+      // Transform to response format
+      const data: Array<{
+        label: string;
+        clinics: Array<{
+          clinicId: number;
+          clinicName: string;
+          revenue: number;
+        }>;
+      }> = [];
+
+      monthRanges.forEach(({ label }) => {
+        const clinicMap = dataMap.get(label)!;
+        const clinicRevenues = clinics.map((clinic) => ({
+          clinicId: clinic.id,
+          clinicName: clinic.name,
+          revenue: clinicMap.get(clinic.id) || 0,
+        }));
+
+        data.push({
+          label,
+          clinics: clinicRevenues,
+        });
+      });
+
+      return {
+        data,
+        clinics: clinics.map((c) => ({ clinicId: c.id, clinicName: c.name })),
+      };
+    } catch (error) {
+      console.error('Error in getRevenueChartByYearOptimized:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Clear revenue chart cache for current periods
+   * Call this when appointments are completed to invalidate cache
+   */
+  async clearRevenueChartCache(): Promise<void> {
+    try {
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const currentMonth = now.getMonth() + 1;
+
+      // Clear current month cache (1month period)
+      await this.redis.del(
+        `revenue_chart_1month_${currentYear}_${currentMonth}`,
+      );
+
+      // Clear 3months cache (current month as end month)
+      await this.redis.del(
+        `revenue_chart_3months_${currentYear}_${currentMonth}`,
+      );
+
+      // Clear year cache
+      await this.redis.del(`revenue_chart_year_${currentYear}_1`);
+
+      // Also clear previous month's 3months cache if needed
+      const prevMonth = currentMonth === 1 ? 12 : currentMonth - 1;
+      const prevYear = currentMonth === 1 ? currentYear - 1 : currentYear;
+      await this.redis.del(`revenue_chart_3months_${prevYear}_${prevMonth}`);
+    } catch (error) {
+      console.error('Error clearing revenue chart cache:', error);
+    }
   }
 
   /**
@@ -1156,7 +1487,7 @@ export class AdminStatisticsService {
             where: {
               clinicId: clinic.id,
               status: AppointmentStatus.COMPLETED,
-              updatedAt: {
+              startTime: {
                 gte: monthStart,
                 lte: monthEnd,
               },

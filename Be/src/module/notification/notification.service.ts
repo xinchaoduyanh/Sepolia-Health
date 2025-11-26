@@ -14,6 +14,7 @@ import {
   AppointmentNotificationDoctor,
   UpdateAppointmentNotificationDoctor,
   DeleteAppointmentNotificationDoctor,
+  PaymentSuccessNotificationPatient,
 } from './notification.types';
 
 @Injectable()
@@ -107,7 +108,10 @@ export class NotificationService {
     obj: AppointmentNotificationPatient,
   ): Promise<NotificationResponse> {
     const appointmentDate = obj.startTime.toLocaleDateString('vi-VN');
-    const appointmentTime = obj.startTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+    const appointmentTime = obj.startTime.toLocaleTimeString('vi-VN', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
 
     const title = 'Đặt lịch hẹn thành công';
     const message = `Bạn đã đặt lịch khám với Bác sĩ ${obj.doctorName} vào ${appointmentDate} lúc ${appointmentTime} tại ${obj.clinicName}. Dịch vụ: ${obj.serviceName}.`;
@@ -159,7 +163,10 @@ export class NotificationService {
     dto: DeleteAppointmentNotificationPatient,
   ): Promise<NotificationResponse> {
     const appointmentDate = dto.startTime.toLocaleDateString('vi-VN');
-    const appointmentTime = dto.startTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+    const appointmentTime = dto.startTime.toLocaleTimeString('vi-VN', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
 
     const title = 'Hủy lịch hẹn';
     const message = `Lịch hẹn #${dto.appointmentId} với Bác sĩ ${dto.doctorName} vào ${appointmentDate} lúc ${appointmentTime} đã được hủy.${dto.reason ? ` Lý do: ${dto.reason}` : ''}`;
@@ -184,7 +191,10 @@ export class NotificationService {
     dto: AppointmentNotificationDoctor,
   ): Promise<NotificationResponse> {
     const appointmentDate = dto.startTime.toLocaleDateString('vi-VN');
-    const appointmentTime = dto.startTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+    const appointmentTime = dto.startTime.toLocaleTimeString('vi-VN', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
 
     const title = 'Lịch hẹn mới';
     const message = `Bạn có lịch hẹn mới với bệnh nhân ${dto.patientName} vào ${appointmentDate} lúc ${appointmentTime} tại ${dto.clinicName}. Dịch vụ: ${dto.serviceName}.`;
@@ -239,7 +249,10 @@ export class NotificationService {
     dto: DeleteAppointmentNotificationDoctor,
   ): Promise<NotificationResponse> {
     const appointmentDate = dto.startTime.toLocaleDateString('vi-VN');
-    const appointmentTime = dto.startTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+    const appointmentTime = dto.startTime.toLocaleTimeString('vi-VN', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
 
     const title = 'Hủy lịch hẹn';
     const message = `Lịch hẹn #${dto.appointmentId} với bệnh nhân ${dto.patientName} vào ${appointmentDate} lúc ${appointmentTime} đã được hủy.${dto.reason ? ` Lý do: ${dto.reason}` : ''}`;
@@ -334,5 +347,48 @@ export class NotificationService {
     return state.messages.filter(
       (msg) => (msg as any).status === NotificationStatus.UNREAD,
     ).length;
+  }
+
+  /**
+   * Send notification when payment is successful for patient
+   */
+  async sendPaymentSuccessNotification(
+    dto: PaymentSuccessNotificationPatient,
+  ): Promise<NotificationResponse> {
+    const formattedAmount = new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+    }).format(dto.amount);
+
+    const title = 'Thanh toán thành công';
+    let message = `Thanh toán cho lịch hẹn #${dto.appointmentId} đã thành công. Số tiền: ${formattedAmount}.`;
+
+    if (dto.serviceName) {
+      message += ` Dịch vụ: ${dto.serviceName}.`;
+    }
+
+    if (dto.doctorName) {
+      message += ` Bác sĩ: ${dto.doctorName}.`;
+    }
+
+    if (dto.transactionId) {
+      message += ` Mã giao dịch: ${dto.transactionId}.`;
+    }
+
+    return this.sendNotification({
+      type: NotificationType.PAYMENT_SUCCESS,
+      priority: NotificationPriority.HIGH,
+      recipientId: dto.recipientId,
+      senderId: 'system',
+      title,
+      message,
+      metadata: {
+        appointmentId: dto.appointmentId,
+        billingId: dto.billingId,
+        amount: dto.amount,
+        transactionId: dto.transactionId,
+        paymentMethod: dto.paymentMethod,
+      },
+    });
   }
 }

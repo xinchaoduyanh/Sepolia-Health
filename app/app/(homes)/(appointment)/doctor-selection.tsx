@@ -280,7 +280,8 @@ export default function DoctorSelectionScreen() {
               {selectedFacility && (
                 <View style={{ marginBottom: 8, flexDirection: 'row', alignItems: 'center' }}>
                   <Ionicons name="location" size={16} color="#0284C7" />
-                  <Text style={{ marginLeft: 8, fontSize: 14, fontWeight: '600', color: '#0284C7' }}>
+                  <Text
+                    style={{ marginLeft: 8, fontSize: 14, fontWeight: '600', color: '#0284C7' }}>
                     Cơ sở: {selectedFacility.name}
                   </Text>
                 </View>
@@ -288,7 +289,8 @@ export default function DoctorSelectionScreen() {
               {selectedService && (
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                   <Ionicons name="medical" size={16} color="#0284C7" />
-                  <Text style={{ marginLeft: 8, fontSize: 14, fontWeight: '600', color: '#0284C7' }}>
+                  <Text
+                    style={{ marginLeft: 8, fontSize: 14, fontWeight: '600', color: '#0284C7' }}>
                     Dịch vụ: {selectedService.name}
                   </Text>
                 </View>
@@ -327,78 +329,79 @@ export default function DoctorSelectionScreen() {
 
           {/* Doctors List */}
           <View>
-        {filteredDoctors.length === 0 ? (
-          <View className="mt-8 items-center">
-            <Ionicons name="person-outline" size={48} color="#94A3B8" />
-            <Text className="mt-4 text-center text-base text-slate-600">
-              {searchQuery ? 'Không tìm thấy bác sĩ phù hợp' : 'Không có bác sĩ nào'}
-            </Text>
-          </View>
-        ) : (
-          filteredDoctors.map((doctor: any) => (
-            <TouchableOpacity
-              key={doctor.id}
-              onPress={() => handleDoctorSelect(doctor.id)}
-              className={`mb-3 rounded-xl p-4 ${
-                selectedDoctor === doctor.id
-                  ? 'border-2 border-blue-500 bg-blue-50'
-                  : 'border border-slate-200 bg-white'
-              }`}
-              style={{
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: 0.05,
-                shadowRadius: 3,
-                elevation: 1,
-              }}>
-              <View className="flex-row items-start">
-                <View className="mr-4">
-                  <View className="h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-blue-100">
-                    {doctor.avatar ? (
-                      <Image
-                        source={{ uri: doctor.avatar }}
-                        className="h-full w-full rounded-full"
-                        style={{ width: 48, height: 48 }}
-                      />
-                    ) : (
-                      <Ionicons name="person" size={24} color="#3B82F6" />
-                    )}
-                  </View>
-                </View>
-
-                <View className="flex-1">
-                  <View className="mb-1 flex-row items-center justify-between">
-                    <Text className="text-base font-semibold text-slate-900">
-                      Bác sĩ {doctor.firstName || ''} {doctor.lastName || ''}
-                    </Text>
-                    {selectedDoctor === doctor.id && (
-                      <View className="rounded-full bg-blue-600 p-1">
-                        <Ionicons name="checkmark" size={16} color="white" />
-                      </View>
-                    )}
-                  </View>
-
-                  {doctor.specialty && (
-                    <Text className="mb-1 text-sm font-medium text-blue-600">
-                      {doctor.specialty}
-                    </Text>
-                  )}
-
-                  {doctor.experience && (
-                    <Text className="mb-2 text-sm text-slate-600">{doctor.experience}</Text>
-                  )}
-
-                  <View className="flex-row items-center">
-                    <View className="mr-3 flex-row items-center">
-                      {renderStars(doctor.rating || 4.5)}
-                    </View>
-                    <Text className="text-sm text-slate-600">{doctor.rating || 4.5}/5</Text>
-                  </View>
-                </View>
+            {filteredDoctors.length === 0 ? (
+              <View className="mt-8 items-center">
+                <Ionicons name="person-outline" size={48} color="#94A3B8" />
+                <Text className="mt-4 text-center text-base text-slate-600">
+                  {searchQuery ? 'Không tìm thấy bác sĩ phù hợp' : 'Không có bác sĩ nào'}
+                </Text>
               </View>
-            </TouchableOpacity>
-            ))
-          )}
+            ) : (
+              filteredDoctors.map((doctor: any) => (
+                <TouchableOpacity
+                  key={doctor.id}
+                  onPress={() => handleDoctorSelect(doctor.id)}
+                  className={`mb-3 rounded-xl p-4 ${
+                    selectedDoctor === doctor.id
+                      ? 'border-2 border-blue-500 bg-blue-50'
+                      : 'border border-slate-200 bg-white'
+                  }`}
+                  style={{
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 1 },
+                    shadowOpacity: 0.05,
+                    shadowRadius: 3,
+                    elevation: 1,
+                  }}>
+                  <View className="flex-row items-start">
+                    <View className="mr-4">
+                      <View className="h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-blue-100">
+                        {doctor.avatar ? (
+                          <Image
+                            source={{ uri: doctor.avatar }}
+                            className="h-full w-full rounded-full"
+                            style={{ width: 48, height: 48 }}
+                          />
+                        ) : (
+                          <Ionicons name="person" size={24} color="#3B82F6" />
+                        )}
+                      </View>
+                    </View>
+
+                    <View className="flex-1">
+                      <View className="mb-1 flex-row items-center justify-between">
+                        <Text className="text-base font-semibold text-slate-900">
+                          Bác sĩ {doctor.firstName || ''} {doctor.lastName || ''}
+                        </Text>
+                        {selectedDoctor === doctor.id && (
+                          <View className="rounded-full bg-blue-600 p-1">
+                            <Ionicons name="checkmark" size={16} color="white" />
+                          </View>
+                        )}
+                      </View>
+
+                      {doctor.specialty && (
+                        <Text className="mb-1 text-sm font-medium text-blue-600">
+                          {doctor.specialty}
+                        </Text>
+                      )}
+
+                      {doctor.experience && (
+                        <Text className="mb-2 text-sm text-slate-600">{doctor.experience}</Text>
+                      )}
+
+                      <View className="flex-row items-center">
+                        <View className="mr-3 flex-row items-center">
+                          {renderStars(doctor.rating || 4.5)}
+                        </View>
+                        <Text className="text-sm text-slate-600">{doctor.rating || 4.5}/5</Text>
+                      </View>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              ))
+            )}
+          </View>
 
           {/* Continue Button */}
           {selectedDoctor && (
@@ -416,9 +419,7 @@ export default function DoctorSelectionScreen() {
                   shadowRadius: 8,
                   elevation: 4,
                 }}>
-                <Text style={{ color: 'white', fontSize: 16, fontWeight: 'bold' }}>
-                  Tiếp tục
-                </Text>
+                <Text style={{ color: 'white', fontSize: 16, fontWeight: 'bold' }}>Tiếp tục</Text>
               </TouchableOpacity>
             </View>
           )}
