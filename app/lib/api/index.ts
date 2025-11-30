@@ -7,4 +7,5 @@ export * from './app-terms';
 export * from '@/lib/config';
 export * from './appointments';
 export * from './notification';
+export * from './articles';
 export { default as apiClient } from '@/lib/api-client';

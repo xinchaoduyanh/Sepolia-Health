@@ -6,6 +6,7 @@ import { UploadModule } from './upload/upload.module';
 import { PromotionModule } from './promotion/promotion.module';
 import { FeedbackModule } from './feedback/feedback.module';
 import { DoctorAppointmentModule } from './doctor-appointment/doctor-appointment.module';
+import { PatientArticleModule } from './article/patient-article.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { DoctorAppointmentModule } from './doctor-appointment/doctor-appointment
     PromotionModule,
     FeedbackModule,
     DoctorAppointmentModule,
+    PatientArticleModule,
   ],
   exports: [
     UserModule,
@@ -25,6 +27,7 @@ import { DoctorAppointmentModule } from './doctor-appointment/doctor-appointment
     PromotionModule,
     FeedbackModule,
     DoctorAppointmentModule,
+    PatientArticleModule,
   ],
 })
 export class PatientModule {}

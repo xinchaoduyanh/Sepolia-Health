@@ -6,6 +6,9 @@ import {
     type ArticlesListResponse,
     type CreateArticleRequest,
     type UpdateArticleRequest,
+    type UploadArticleImageRequest,
+    type UpdateArticleImageRequest,
+    type AddArticleTagsRequest,
 } from '../lib/api-services/articles.service'
 import { queryKeys } from '../lib/query-keys'
 
@@ -118,6 +121,184 @@ export function useDeleteArticle() {
         },
         onError: (error: any) => {
             const message = error?.response?.data?.message || 'Có lỗi xảy ra khi xóa bài viết'
+            toast.error({
+                title: 'Lỗi',
+                description: message,
+            })
+        },
+    })
+}
+
+/**
+ * Hook to publish article
+ */
+export function usePublishArticle() {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: (id: number) => articlesService.publishArticle(id),
+        onSuccess: (_response, id) => {
+            queryClient.invalidateQueries({
+                queryKey: queryKeys.admin.articles.lists(),
+            })
+            queryClient.invalidateQueries({
+                queryKey: queryKeys.admin.articles.detail(id.toString()),
+            })
+
+            toast.success({
+                title: 'Thành công',
+                description: 'Publish bài viết thành công',
+            })
+        },
+        onError: (error: any) => {
+            const message = error?.response?.data?.message || 'Có lỗi xảy ra khi publish bài viết'
+            toast.error({
+                title: 'Lỗi',
+                description: message,
+            })
+        },
+    })
+}
+
+/**
+ * Hook to unpublish article
+ */
+export function useUnpublishArticle() {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: (id: number) => articlesService.unpublishArticle(id),
+        onSuccess: (_response, id) => {
+            queryClient.invalidateQueries({
+                queryKey: queryKeys.admin.articles.lists(),
+            })
+            queryClient.invalidateQueries({
+                queryKey: queryKeys.admin.articles.detail(id.toString()),
+            })
+
+            toast.success({
+                title: 'Thành công',
+                description: 'Unpublish bài viết thành công',
+            })
+        },
+        onError: (error: any) => {
+            const message = error?.response?.data?.message || 'Có lỗi xảy ra khi unpublish bài viết'
+            toast.error({
+                title: 'Lỗi',
+                description: message,
+            })
+        },
+    })
+}
+
+/**
+ * Hook to upload article image
+ */
+export function useUploadArticleImage() {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: ({ articleId, imageData }: { articleId: number; imageData: UploadArticleImageRequest }) =>
+            articlesService.uploadArticleImage(articleId, imageData),
+        onSuccess: (_response, { articleId }) => {
+            queryClient.invalidateQueries({
+                queryKey: queryKeys.admin.articles.detail(articleId.toString()),
+            })
+
+            toast.success({
+                title: 'Thành công',
+                description: 'Upload ảnh thành công',
+            })
+        },
+        onError: (error: any) => {
+            const message = error?.response?.data?.message || 'Có lỗi xảy ra khi upload ảnh'
+            toast.error({
+                title: 'Lỗi',
+                description: message,
+            })
+        },
+    })
+}
+
+/**
+ * Hook to delete article image
+ */
+export function useDeleteArticleImage() {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: ({ articleId, imageId }: { articleId: number; imageId: number }) =>
+            articlesService.deleteArticleImage(articleId, imageId),
+        onSuccess: (_response, { articleId }) => {
+            queryClient.invalidateQueries({
+                queryKey: queryKeys.admin.articles.detail(articleId.toString()),
+            })
+
+            toast.success({
+                title: 'Thành công',
+                description: 'Xóa ảnh thành công',
+            })
+        },
+        onError: (error: any) => {
+            const message = error?.response?.data?.message || 'Có lỗi xảy ra khi xóa ảnh'
+            toast.error({
+                title: 'Lỗi',
+                description: message,
+            })
+        },
+    })
+}
+
+/**
+ * Hook to add tags to article
+ */
+export function useAddArticleTags() {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: ({ articleId, tagsData }: { articleId: number; tagsData: AddArticleTagsRequest }) =>
+            articlesService.addTags(articleId, tagsData),
+        onSuccess: (_response, { articleId }) => {
+            queryClient.invalidateQueries({
+                queryKey: queryKeys.admin.articles.detail(articleId.toString()),
+            })
+
+            toast.success({
+                title: 'Thành công',
+                description: 'Thêm tags thành công',
+            })
+        },
+        onError: (error: any) => {
+            const message = error?.response?.data?.message || 'Có lỗi xảy ra khi thêm tags'
+            toast.error({
+                title: 'Lỗi',
+                description: message,
+            })
+        },
+    })
+}
+
+/**
+ * Hook to remove tag from article
+ */
+export function useRemoveArticleTag() {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: ({ articleId, tagId }: { articleId: number; tagId: number }) =>
+            articlesService.removeTag(articleId, tagId),
+        onSuccess: (_response, { articleId }) => {
+            queryClient.invalidateQueries({
+                queryKey: queryKeys.admin.articles.detail(articleId.toString()),
+            })
+
+            toast.success({
+                title: 'Thành công',
+                description: 'Xóa tag thành công',
+            })
+        },
+        onError: (error: any) => {
+            const message = error?.response?.data?.message || 'Có lỗi xảy ra khi xóa tag'
             toast.error({
                 title: 'Lỗi',
                 description: message,

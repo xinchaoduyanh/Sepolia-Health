@@ -1,13 +1,12 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useParams } from 'next/navigation'
 import { Button } from '@workspace/ui/components/Button'
-import { InputField, TextareaField } from '@workspace/ui/components/InputField'
 import { Label } from '@workspace/ui/components/Label'
 import { ArrowLeft, AlertCircle, Save } from 'lucide-react'
-import { useCreateArticle } from '@/shared/hooks'
-import type { CreateArticleRequest } from '@/shared/lib/api-services/articles.service'
+import { useArticle, useUpdateArticle } from '@/shared/hooks'
+import type { UpdateArticleRequest } from '@/shared/lib/api-services/articles.service'
 import { AvatarUpload } from './AvatarUpload'
 import { ArticleMarkdownEditor } from './ArticleMarkdownEditor'
 
@@ -17,9 +16,12 @@ interface FieldErrors {
     image?: string
 }
 
-export function ArticleCreateForm() {
+export function ArticleEditForm() {
     const router = useRouter()
-    const createArticle = useCreateArticle()
+    const params = useParams()
+    const articleId = params?.id ? parseInt(params.id as string) : 0
+    const updateArticle = useUpdateArticle()
+    const { data: article, isLoading } = useArticle(articleId)
 
     const [formData, setFormData] = useState({
         title: '',
@@ -28,6 +30,16 @@ export function ArticleCreateForm() {
     })
 
     const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
+
+    useEffect(() => {
+        if (article) {
+            setFormData({
+                title: article.title || '',
+                contentMarkdown: article.contentMarkdown || '',
+                image: article.image || '',
+            })
+        }
+    }, [article])
 
     const validateForm = (): boolean => {
         const errors: FieldErrors = {}
@@ -51,14 +63,14 @@ export function ArticleCreateForm() {
             return
         }
 
-        const requestData: CreateArticleRequest = {
+        const requestData: UpdateArticleRequest = {
             title: formData.title.trim(),
             contentMarkdown: formData.contentMarkdown.trim(),
             image: formData.image || undefined,
         }
 
         try {
-            await createArticle.mutateAsync(requestData)
+            await updateArticle.mutateAsync({ id: articleId, data: requestData })
             router.push('/dashboard/admin/articles/article-list')
         } catch (_error) {
             // Error is handled by the mutation
@@ -74,6 +86,38 @@ export function ArticleCreateForm() {
         }
     }
 
+    if (isLoading) {
+        return (
+            <div className="space-y-6">
+                <div className="flex items-center space-x-4">
+                    <Button variant="ghost" size="sm" onClick={() => router.back()} className="flex items-center space-x-2">
+                        <ArrowLeft className="h-4 w-4" />
+                        <span>Quay lại</span>
+                    </Button>
+                    <div>
+                        <h1 className="text-3xl font-bold text-foreground">Đang tải...</h1>
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
+    if (!article) {
+        return (
+            <div className="space-y-6">
+                <div className="flex items-center space-x-4">
+                    <Button variant="ghost" size="sm" onClick={() => router.back()} className="flex items-center space-x-2">
+                        <ArrowLeft className="h-4 w-4" />
+                        <span>Quay lại</span>
+                    </Button>
+                    <div>
+                        <h1 className="text-3xl font-bold text-foreground">Bài viết không tồn tại</h1>
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
     return (
         <div className="space-y-6">
             {/* Header */}
@@ -83,8 +127,8 @@ export function ArticleCreateForm() {
                     <span>Quay lại</span>
                 </Button>
                 <div>
-                    <h1 className="text-3xl font-bold text-foreground">Tạo bài viết mới</h1>
-                    <p className="text-sm text-muted-foreground mt-1">Thêm bài viết mới vào hệ thống</p>
+                    <h1 className="text-3xl font-bold text-foreground">Chỉnh sửa bài viết</h1>
+                    <p className="text-sm text-muted-foreground mt-1">Chỉnh sửa thông tin bài viết</p>
                 </div>
             </div>
 
@@ -102,13 +146,15 @@ export function ArticleCreateForm() {
                         <Label htmlFor="title">
                             Tiêu đề <span className="text-red-500">*</span>
                         </Label>
-                        <InputField
+                        <input
                             id="title"
                             type="text"
                             placeholder="Nhập tiêu đề bài viết"
                             value={formData.title}
                             onChange={e => handleInputChange('title', e.target.value)}
-                            className={fieldErrors.title ? 'border-red-500' : ''}
+                            className={`w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
+                                fieldErrors.title ? 'border-red-500' : ''
+                            }`}
                         />
                         {fieldErrors.title && (
                             <div className="flex items-center space-x-2 text-sm text-red-600">
@@ -129,7 +175,7 @@ export function ArticleCreateForm() {
                             onChange={value => handleInputChange('contentMarkdown', value)}
                             placeholder="Nhập nội dung bài viết dạng Markdown..."
                             error={fieldErrors.contentMarkdown}
-                            disabled={createArticle.isPending}
+                            disabled={updateArticle.isPending}
                         />
                     </div>
 
@@ -140,11 +186,11 @@ export function ArticleCreateForm() {
                         </Button>
                         <Button
                             type="submit"
-                            isDisabled={createArticle.isPending}
+                            disabled={updateArticle.isPending}
                             className="flex items-center space-x-2"
                         >
                             <Save className="h-4 w-4" />
-                            <span>{createArticle.isPending ? 'Đang tạo...' : 'Tạo bài viết'}</span>
+                            <span>{updateArticle.isPending ? 'Đang lưu...' : 'Lưu thay đổi'}</span>
                         </Button>
                     </div>
                 </form>

@@ -19,6 +19,7 @@ import { useClosestAppointment } from '@/lib/api/appointments';
 import Svg, { Path } from 'react-native-svg';
 import { formatTime } from '@/utils/datetime';
 import { useFeaturedPromotion, useClaimPromotion } from '@/lib/api/promotion';
+import { useArticles } from '@/lib/api/articles';
 
 export default function HomeScreen() {
   const { user } = useAuth();
@@ -26,6 +27,15 @@ export default function HomeScreen() {
   const { data: closestAppointment, isLoading: isLoadingAppointment } = useClosestAppointment();
   const { data: featuredPromotion } = useFeaturedPromotion();
   const claimPromotion = useClaimPromotion();
+
+  // Fetch articles for Tin tức & Sự kiện section
+  const { data: articlesResponse, isLoading: isLoadingArticles } = useArticles({
+    page: 1,
+    limit: 3, // Show only 3 latest articles on home page
+    isPublished: true
+  });
+
+  const articles = articlesResponse?.articles || [];
 
   // Lấy patientProfiles từ user data
   const patientProfiles = user?.patientProfiles || [];
@@ -39,6 +49,31 @@ export default function HomeScreen() {
     const day = date.getDate();
     const month = date.toLocaleDateString('vi-VN', { month: 'short' });
     return { day, month };
+  };
+
+  // Format article time helper
+  const formatArticleTime = (isoDateString: string) => {
+    const date = new Date(isoDateString);
+    const now = new Date();
+    const diffInMs = now.getTime() - date.getTime();
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+
+    if (diffInHours < 1) {
+      return 'Vừa xong';
+    } else if (diffInHours < 24) {
+      return `${diffInHours} giờ trước`;
+    } else if (diffInDays === 1) {
+      return 'Hôm qua';
+    } else if (diffInDays < 7) {
+      return `${diffInDays} ngày trước`;
+    } else {
+      return date.toLocaleDateString('vi-VN', {
+        day: 'numeric',
+        month: 'short',
+        year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
+      });
+    }
   };
 
   return (
@@ -874,98 +909,116 @@ export default function HomeScreen() {
             <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#0F172A' }}>
               Tin tức & Sự kiện
             </Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => router.push('/(main)/articles')}>
               <Text style={{ fontSize: 14, fontWeight: '600', color: '#0284C7' }}>Xem tất cả</Text>
             </TouchableOpacity>
           </View>
 
           <View style={{ gap: 12 }}>
-            <TouchableOpacity
-              style={{
-                borderRadius: 20,
-                backgroundColor: '#FFFFFF',
-              }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16 }}>
+            {isLoadingArticles ? (
+              // Loading skeleton
+              [1, 2, 3].map((index) => (
                 <View
+                  key={index}
                   style={{
-                    height: 48,
-                    width: 48,
-                    borderRadius: 14,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    backgroundColor: '#E0F2FE',
-                    marginRight: 16,
+                    borderRadius: 20,
+                    backgroundColor: '#FFFFFF',
+                    padding: 16,
                   }}>
-                  <Ionicons name="newspaper-outline" size={24} color="#0284C7" />
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <View
+                      style={{
+                        height: 48,
+                        width: 48,
+                        borderRadius: 14,
+                        backgroundColor: '#E5E7EB',
+                        marginRight: 16,
+                      }}
+                    />
+                    <View style={{ flex: 1 }}>
+                      <View
+                        style={{
+                          height: 14,
+                          backgroundColor: '#E5E7EB',
+                          borderRadius: 4,
+                          marginBottom: 4,
+                          width: '80%',
+                        }}
+                      />
+                      <View
+                        style={{
+                          height: 12,
+                          backgroundColor: '#E5E7EB',
+                          borderRadius: 4,
+                          width: '40%',
+                        }}
+                      />
+                    </View>
+                  </View>
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text
-                    style={{ fontSize: 14, fontWeight: '600', color: '#0F172A', marginBottom: 4 }}>
-                    Cập nhật quy trình khám bệnh mới
-                  </Text>
-                  <Text style={{ fontSize: 12, color: '#475569' }}>2 giờ trước</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={20} color="#0284C7" />
-              </View>
-            </TouchableOpacity>
+              ))
+            ) : articles.length > 0 ? (
+              articles.map((article) => {
+                // Get random icon and background color for variety
+                const icons = ['newspaper-outline', 'shield-checkmark-outline', 'gift-outline', 'heart-outline', 'star-outline'];
+                const bgColors = ['#E0F2FE', '#A7F3D0', '#FEF3C7', '#FCE7F3', '#E0E7FF'];
+                const iconColors = ['#0284C7', '#10B981', '#F59E0B', '#EC4899', '#6366F1'];
 
-            <TouchableOpacity
-              style={{
-                borderRadius: 20,
-                backgroundColor: '#FFFFFF',
-              }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16 }}>
-                <View
-                  style={{
-                    height: 48,
-                    width: 48,
-                    borderRadius: 14,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    backgroundColor: '#A7F3D0',
-                    marginRight: 16,
-                  }}>
-                  <Ionicons name="shield-checkmark-outline" size={24} color="#10B981" />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text
-                    style={{ fontSize: 14, fontWeight: '600', color: '#0F172A', marginBottom: 4 }}>
-                    Hướng dẫn phòng chống COVID-19
-                  </Text>
-                  <Text style={{ fontSize: 12, color: '#475569' }}>1 ngày trước</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={20} color="#0284C7" />
-              </View>
-            </TouchableOpacity>
+                const randomIndex = article.id % icons.length;
+                const icon = icons[randomIndex];
+                const bgColor = bgColors[randomIndex];
+                const iconColor = iconColors[randomIndex];
 
-            <TouchableOpacity
-              style={{
+                return (
+                  <TouchableOpacity
+                    key={article.id}
+                    style={{
+                      borderRadius: 20,
+                      backgroundColor: '#FFFFFF',
+                    }}
+                    onPress={() => router.push(`/article/${article.id}`)}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16 }}>
+                      <View
+                        style={{
+                          height: 48,
+                          width: 48,
+                          borderRadius: 14,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          backgroundColor: bgColor,
+                          marginRight: 16,
+                        }}>
+                        <Ionicons name={icon as any} size={24} color={iconColor} />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text
+                          style={{ fontSize: 14, fontWeight: '600', color: '#0F172A', marginBottom: 4 }}
+                          numberOfLines={2}>
+                          {article.title}
+                        </Text>
+                        <Text style={{ fontSize: 12, color: '#475569' }}>
+                          {formatArticleTime(article.createdAt)}
+                        </Text>
+                      </View>
+                      <Ionicons name="chevron-forward" size={20} color="#0284C7" />
+                    </View>
+                  </TouchableOpacity>
+                );
+              })
+            ) : (
+              // No articles state
+              <View style={{
                 borderRadius: 20,
                 backgroundColor: '#FFFFFF',
+                padding: 24,
+                alignItems: 'center',
               }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16 }}>
-                <View
-                  style={{
-                    height: 48,
-                    width: 48,
-                    borderRadius: 14,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    backgroundColor: '#E0F2FE',
-                    marginRight: 16,
-                  }}>
-                  <Ionicons name="gift-outline" size={24} color="#0284C7" />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text
-                    style={{ fontSize: 14, fontWeight: '600', color: '#0F172A', marginBottom: 4 }}>
-                    Chương trình ưu đãi tháng 1
-                  </Text>
-                  <Text style={{ fontSize: 12, color: '#475569' }}>3 ngày trước</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={20} color="#0284C7" />
+                <Ionicons name="newspaper-outline" size={32} color="#9CA3AF" />
+                <Text style={{ fontSize: 14, color: '#6B7280', marginTop: 8 }}>
+                  Chưa có tin tức nào
+                </Text>
               </View>
-            </TouchableOpacity>
+            )}
           </View>
         </View>
 

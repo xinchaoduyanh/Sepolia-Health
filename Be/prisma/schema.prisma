@@ -261,9 +261,9 @@ model Appointment {
   status    AppointmentStatus
   notes     String?
   joinUrl   String?
-  hostUrl   String? 
+  hostUrl   String?
   type      AppointmentType @default(OFFLINE)
-  
+
   patientProfileId Int
   patientProfile   PatientProfile @relation(fields: [patientProfileId], references: [id])
 
@@ -487,13 +487,28 @@ model Transaction {
 
 /// Bài viết do admin tạo (tin tức, bài sức khỏe, ...)
 model Article {
-  id      Int     @id @default(autoincrement())
-  title   String
-  content String
-  image   String?
+  id              Int            @id @default(autoincrement())
+  title           String
+  content         String         // Giữ lại cho backward compatibility
+  contentMarkdown String?        // Nội dung Markdown
+  excerpt         String?        // Mô tả ngắn
+  slug            String         @unique // URL thân thiện
+  isPublished     Boolean        @default(false)
+  publishedAt     DateTime?
+  authorId        Int?           // ID của admin tạo bài viết
+  views           Int            @default(0)
+  image           String?        // Ảnh đại diện/thumbnail
+
+  // Quan hệ
+  images ArticleImage[]
+  tags   ArticleTag[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([slug])
+  @@index([isPublished])
+  @@index([authorId])
 }
 
 /// Khuyến mãi / voucher
@@ -580,7 +595,7 @@ model Answer {
   @@index([createdAt])
 }
 
-/// Tag cho câu hỏi
+/// Tag cho câu hỏi và bài viết
 model Tag {
   id          Int     @id @default(autoincrement())
   name        String  @unique
@@ -589,6 +604,7 @@ model Tag {
   usageCount  Int     @default(0)
 
   questions QuestionTag[]
+  articles  ArticleTag[] @relation("ArticleTags")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -747,4 +763,33 @@ model UserPromotion {
   @@unique([userId, promotionId])
   @@index([userId])
   @@index([promotionId])
+}
+
+// ----------------- ARTICLE MODELS -----------------
+
+/// Ảnh trong bài viết
+model ArticleImage {
+  id        Int      @id @default(autoincrement())
+  articleId Int
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  url       String   // URL ảnh từ S3
+  alt       String?  // Alt text cho SEO
+  order     Int      @default(0) // Thứ tự hiển thị
+  createdAt DateTime @default(now())
+
+  @@index([articleId])
+}
+
+/// Quan hệ many-to-many giữa Article và Tag
+model ArticleTag {
+  id        Int      @id @default(autoincrement())
+  articleId Int
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  tagId     Int
+  tag       Tag      @relation("ArticleTags", fields: [tagId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([articleId, tagId])
+  @@index([articleId])
+  @@index([tagId])
 }

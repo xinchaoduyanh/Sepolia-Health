@@ -82,6 +82,16 @@ const ADMIN_MAIN_ITEMS: Array<SidebarNavigationMenuItem> = [
         icon: FileText,
     },
     {
+        title: 'Bài viết',
+        url: '/dashboard/admin/articles',
+        icon: ArticleIcon,
+    },
+    {
+        title: 'Tin tức & Sự kiện',
+        url: '/dashboard/admin/news-events',
+        icon: FileText,
+    },
+    {
         title: 'Khuyến mại',
         url: '/dashboard/admin/promotions',
         icon: Percent,

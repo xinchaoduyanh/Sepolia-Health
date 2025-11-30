@@ -40,10 +40,11 @@ export function ChatWindow({ channelId, onClose }: ChatWindowProps) {
         // Find the other member (not the current user)
         const otherMember = members.find(member => member.user_id !== String(user.id))
         const name = otherMember?.user?.name || otherMember?.user?.id || 'Cuộc trò chuyện'
+        const avatar = otherMember?.user?.image || null
         const memberIds = members.map(member => member.user_id).filter(id => id !== undefined)
         const isOnline = channel.state.watcher_count ? channel.state.watcher_count > 0 : false
 
-        return { name, members: memberIds, isOnline }
+        return { name, avatar, members: memberIds, isOnline }
     }, [channel, user])
 
     const handleAudioCall = async () => {
@@ -223,7 +224,10 @@ export function ChatWindow({ channelId, onClose }: ChatWindowProps) {
                         <div className="flex items-center justify-between px-4 py-3">
                             <div className="flex items-center gap-3 flex-1 min-w-0">
                                 <Avatar className="h-12 w-12 flex-shrink-0 ring-2 ring-white dark:ring-gray-700">
-                                    <AvatarImage src="" alt={channelInfo?.name} />
+                                    <AvatarImage
+                                        src={channelInfo?.avatar || undefined}
+                                        alt={channelInfo?.name}
+                                    />
                                     <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-600 text-white font-semibold text-base">
                                         {channelInfo ? getInitials(channelInfo.name) : 'NA'}
                                     </AvatarFallback>
