@@ -821,11 +821,10 @@ export class AppointmentService {
 
     const patientProfileIds = patientProfiles.map((p) => p.id);
     if (patientProfileIds.length === 0) {
-      // No patient profiles, return null
       return null;
     }
 
-    const appointments = await this.prisma.appointment.findMany({
+    const appointments = await this.prisma.appointment.findFirstOrThrow({
       where: {
         patientProfileId: { in: patientProfileIds },
         startTime: { gte: new Date() },
@@ -835,67 +834,21 @@ export class AppointmentService {
       },
       orderBy: { startTime: SortOrder.ASC },
       include: {
-        patientProfile: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            phone: true,
-          },
-        },
-        doctor: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-          },
-        },
+        patientProfile: true,
+        doctor: true,
         service: {
           include: {
-            specialty: {
-              select: {
-                id: true,
-                name: true,
-                description: true,
-                icon: true,
-              },
-            },
+            specialty: true,
           },
         },
-        clinic: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-        billing: {
-          select: {
-            id: true,
-            amount: true,
-            status: true,
-            paymentMethod: true,
-            notes: true,
-            createdAt: true,
-          },
-        },
-        feedback: {
-          select: {
-            id: true,
-            rating: true,
-            comment: true,
-            createdAt: true,
-          },
-        },
+        clinic: true,
+        billing: true,
+        feedback: true,
       },
     });
 
-    // If no appointments found, return null (frontend will handle display)
-    if (!appointments || appointments.length === 0) {
-      return null;
-    }
-
     // Return the closest appointment (already sorted by date and startTime)
-    return this.formatAppointmentResponse(appointments[0]);
+    return this.formatAppointmentResponse(appointments);
   }
 
   /**
@@ -1117,14 +1070,7 @@ export class AppointmentService {
         doctor: true,
         service: {
           include: {
-            specialty: {
-              select: {
-                id: true,
-                name: true,
-                description: true,
-                icon: true,
-              },
-            },
+            specialty: true,
           },
         },
         clinic: true,
@@ -1212,6 +1158,8 @@ export class AppointmentService {
       startTime: appointment.startTime,
       status: appointment.status,
       notes: appointment.notes,
+      type: appointment.type,
+      joinUrl: appointment.joinUrl,
       patient: appointment.patientProfile
         ? {
             id: appointment.patientProfile.id,

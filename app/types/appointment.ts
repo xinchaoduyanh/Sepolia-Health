@@ -1,6 +1,7 @@
 // Appointment Types
 export type AppointmentStatus = 'UPCOMING' | 'ON_GOING' | 'COMPLETED' | 'CANCELLED';
 export type PaymentStatus = 'PENDING' | 'PAID' | 'REFUNDED';
+export type AppointmentType = 'ONLINE' | 'OFFLINE';
 // Billing information for appointments
 export interface Billing {
   id: number;
@@ -83,6 +84,8 @@ export interface Appointment {
   billing?: Billing | null;
   feedback?: Feedback | null;
   result?: AppointmentResult | null;
+  type?: AppointmentType; // ONLINE or OFFLINE
+  joinUrl?: string | null; // Zoom meeting link for patient (online appointments)
   createdAt: string;
   updatedAt: string;
 }
@@ -94,6 +97,7 @@ export interface CreateAppointmentRequest {
   startTime: string; // ISO datetime
   endTime: string; // ISO datetime
   notes?: string;
+  type?: AppointmentType; // ONLINE or OFFLINE (defaults to OFFLINE)
 }
 
 // Request to update an existing appointment

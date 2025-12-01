@@ -136,6 +136,15 @@ export const appointmentApi = {
     return response.data;
   },
 
+  // Get doctors by service only (for online appointments - no location required)
+  getDoctorByService: async (serviceId: number) => {
+    const response = await apiClient.get<{
+      data: any[];
+      total: number;
+    }>(`${API_ENDPOINTS.APPOINTMENTS.DOCTOR}?serviceId=${serviceId}`);
+    return response.data;
+  },
+
   getAvailableDates: async (doctorServiceId: number, startDate: string, endDate: string) => {
     const response = await apiClient.get<{
       doctorId: number;
@@ -303,6 +312,16 @@ export const useDoctorServices = (locationId: number, serviceId: number) => {
     queryKey: ['appointments', 'doctor-services', locationId, serviceId],
     queryFn: () => appointmentApi.getDoctor(locationId, serviceId),
     enabled: !!locationId && !!serviceId,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  });
+};
+
+// Hook for online appointments - gets doctors by service only (no location required)
+export const useOnlineDoctorServices = (serviceId: number) => {
+  return useQuery({
+    queryKey: ['appointments', 'online-doctor-services', serviceId],
+    queryFn: () => appointmentApi.getDoctorByService(serviceId),
+    enabled: !!serviceId,
     staleTime: 2 * 60 * 1000, // 2 minutes
   });
 };

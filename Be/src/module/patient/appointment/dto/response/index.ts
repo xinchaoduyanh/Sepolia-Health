@@ -149,6 +149,12 @@ export class AppointmentDetailResponseDto {
   @ApiProperty()
   notes?: string | null;
 
+  @ApiProperty()
+  type: string;
+
+  @ApiProperty()
+  joinUrl?: string | null;
+
   @ApiProperty({ type: PatientDto })
   patient?: PatientDto;
 

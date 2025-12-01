@@ -57,7 +57,6 @@ export default function TimeSlotPicker({
 
   return (
     <View className="gap-4">
-
       {/* Period Selection */}
       <View className="flex-row gap-4">
         <TouchableOpacity
@@ -111,8 +110,8 @@ export default function TimeSlotPicker({
 
       {/* Time Slots */}
       {filteredSlots.length === 0 ? (
-        <View className="rounded-xl border border-blue-200 bg-blue-50 p-1" >
-          <View className="flex-row items-center justify-center mb-1">
+        <View className="rounded-xl border border-blue-200 bg-blue-50 p-1">
+          <View className="mb-1 flex-row items-center justify-center">
             <Ionicons name="time-outline" size={20} color="#3B82F6" />
             <Text className="text-lg font-semibold text-blue-800">Không có lịch trống</Text>
           </View>
@@ -129,6 +128,7 @@ export default function TimeSlotPicker({
           contentContainerStyle={{ paddingHorizontal: 4 }}>
           {filteredSlots.map((slot, index) => (
             <TouchableOpacity
+              activeOpacity={1}
               key={index}
               onPress={() => onTimeSlotSelect(slot.startTime)}
               className={`min-w-[120px] rounded-xl px-4 py-3 ${

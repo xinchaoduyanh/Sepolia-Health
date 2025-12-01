@@ -1,5 +1,13 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StatusBar, Animated } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  StatusBar,
+  Animated,
+  Linking,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -272,10 +280,49 @@ export default function AppointmentDetailScreen() {
           </View>
           <View style={{ marginBottom: 8 }}>
             <Text style={{ fontSize: 14, color: '#6B7280' }}>Địa điểm</Text>
-            <Text style={{ fontSize: 16, fontWeight: '600', color: '#1F2937' }}>
-              {appointment.clinic?.name || 'Bệnh viện'}
-            </Text>
+            {appointment.type === 'ONLINE' ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' }}>
+                <Ionicons name="videocam" size={18} color="#10B981" style={{ marginRight: 6 }} />
+                <Text style={{ fontSize: 16, fontWeight: '600', color: '#10B981' }}>
+                  Khám trực tuyến (Online)
+                </Text>
+              </View>
+            ) : (
+              <Text style={{ fontSize: 16, fontWeight: '600', color: '#1F2937' }}>
+                {appointment.clinic?.name || 'Bệnh viện'}
+              </Text>
+            )}
           </View>
+          {/* Zoom Meeting Link for Online Appointments */}
+          {appointment.type === 'ONLINE' && appointment.joinUrl && (
+            <View style={{ marginBottom: 8 }}>
+              <Text style={{ fontSize: 14, color: '#6B7280' }}>Link tham gia cuộc họp</Text>
+              <TouchableOpacity
+                onPress={() => Linking.openURL(appointment.joinUrl!)}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: '#ECFDF5',
+                  borderRadius: 8,
+                  padding: 12,
+                  marginTop: 4,
+                }}>
+                <Ionicons name="videocam" size={20} color="#10B981" style={{ marginRight: 8 }} />
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: '600',
+                    color: '#10B981',
+                    flex: 1,
+                  }}
+                  numberOfLines={1}
+                  ellipsizeMode="middle">
+                  {appointment.joinUrl}
+                </Text>
+                <Ionicons name="open-outline" size={16} color="#10B981" />
+              </TouchableOpacity>
+            </View>
+          )}
           <View style={{ marginBottom: 8 }}>
             <Text style={{ fontSize: 14, color: '#6B7280' }}>Chuyên khoa</Text>
             <Text style={{ fontSize: 16, fontWeight: '600', color: '#1F2937' }}>

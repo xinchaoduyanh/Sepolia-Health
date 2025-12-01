@@ -32,7 +32,7 @@ export default function HomeScreen() {
   const { data: articlesResponse, isLoading: isLoadingArticles } = useArticles({
     page: 1,
     limit: 3, // Show only 3 latest articles on home page
-    isPublished: true
+    isPublished: true,
   });
 
   const articles = articlesResponse?.articles || [];
@@ -71,7 +71,7 @@ export default function HomeScreen() {
       return date.toLocaleDateString('vi-VN', {
         day: 'numeric',
         month: 'short',
-        year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
+        year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
       });
     }
   };
@@ -508,13 +508,22 @@ export default function HomeScreen() {
                       {closestAppointment.doctor.lastName}
                     </Text>
                   </View>
-                  {closestAppointment.clinic && (
+                  {closestAppointment.type === 'ONLINE' ? (
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                      <Ionicons name="location-outline" size={16} color="#475569" />
-                      <Text style={{ fontSize: 14, color: '#475569', marginLeft: 8 }}>
-                        {closestAppointment.clinic.name}
+                      <Ionicons name="videocam-outline" size={16} color="#10B981" />
+                      <Text style={{ fontSize: 14, color: '#10B981', marginLeft: 8 }}>
+                        Khám trực tuyến (Online)
                       </Text>
                     </View>
+                  ) : (
+                    closestAppointment.clinic && (
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Ionicons name="location-outline" size={16} color="#475569" />
+                        <Text style={{ fontSize: 14, color: '#475569', marginLeft: 8 }}>
+                          {closestAppointment.clinic.name}
+                        </Text>
+                      </View>
+                    )
                   )}
                 </View>
               </View>
@@ -640,6 +649,29 @@ export default function HomeScreen() {
                   </View>
                   <Text style={{ fontSize: 12, color: '#0F172A', textAlign: 'center' }}>
                     Đặt lịch
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={{ width: '22%', alignItems: 'center' }}>
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  style={{ alignItems: 'center' }}
+                  onPress={() => router.push('/(homes)/(appointment)/create-online')}>
+                  <View
+                    style={{
+                      height: 56,
+                      width: 56,
+                      borderRadius: 16,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backgroundColor: '#A7F3D0',
+                      marginBottom: 8,
+                    }}>
+                    <Ionicons name="videocam-outline" size={26} color="#10B981" />
+                  </View>
+                  <Text style={{ fontSize: 12, color: '#0F172A', textAlign: 'center' }}>
+                    Khám Online
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -960,7 +992,13 @@ export default function HomeScreen() {
             ) : articles.length > 0 ? (
               articles.map((article) => {
                 // Get random icon and background color for variety
-                const icons = ['newspaper-outline', 'shield-checkmark-outline', 'gift-outline', 'heart-outline', 'star-outline'];
+                const icons = [
+                  'newspaper-outline',
+                  'shield-checkmark-outline',
+                  'gift-outline',
+                  'heart-outline',
+                  'star-outline',
+                ];
                 const bgColors = ['#E0F2FE', '#A7F3D0', '#FEF3C7', '#FCE7F3', '#E0E7FF'];
                 const iconColors = ['#0284C7', '#10B981', '#F59E0B', '#EC4899', '#6366F1'];
 
@@ -992,7 +1030,12 @@ export default function HomeScreen() {
                       </View>
                       <View style={{ flex: 1 }}>
                         <Text
-                          style={{ fontSize: 14, fontWeight: '600', color: '#0F172A', marginBottom: 4 }}
+                          style={{
+                            fontSize: 14,
+                            fontWeight: '600',
+                            color: '#0F172A',
+                            marginBottom: 4,
+                          }}
                           numberOfLines={2}>
                           {article.title}
                         </Text>
@@ -1007,12 +1050,13 @@ export default function HomeScreen() {
               })
             ) : (
               // No articles state
-              <View style={{
-                borderRadius: 20,
-                backgroundColor: '#FFFFFF',
-                padding: 24,
-                alignItems: 'center',
-              }}>
+              <View
+                style={{
+                  borderRadius: 20,
+                  backgroundColor: '#FFFFFF',
+                  padding: 24,
+                  alignItems: 'center',
+                }}>
                 <Ionicons name="newspaper-outline" size={32} color="#9CA3AF" />
                 <Text style={{ fontSize: 14, color: '#6B7280', marginTop: 8 }}>
                   Chưa có tin tức nào
