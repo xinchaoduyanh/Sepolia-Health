@@ -24,6 +24,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "seed": "ts-node prisma/seed-coverage.ts",
     "seed:voucher": "ts-node prisma/seed-voucher.ts",
+    "seed:faq": "ts-node prisma/seed-faq.ts",
     "db:seed": "npm run seed",
     "db:reset": "npx prisma migrate reset",
     "db:push": "npx prisma db push"
