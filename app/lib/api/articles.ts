@@ -62,7 +62,7 @@ export const articlesApi = {
     if (params.isPublished !== undefined) queryParams.append('isPublished', params.isPublished.toString())
     if (params.tagId) queryParams.append('tagId', params.tagId.toString())
 
-    const response = await apiClient.get(`/api/patient/articles?${queryParams.toString()}`)
+    const response = await apiClient.get(`/patient/articles?${queryParams.toString()}`)
     return response.data
   },
 
@@ -70,7 +70,7 @@ export const articlesApi = {
    * Get article detail by ID
    */
   getArticleById: async (id: number): Promise<ArticleDetailResponse> => {
-    const response = await apiClient.get(`/api/patient/articles/${id}`)
+    const response = await apiClient.get(`/patient/articles/${id}`)
     return response.data
   },
 
@@ -78,7 +78,7 @@ export const articlesApi = {
    * Increment view count for an article
    */
   incrementViews: async (id: number): Promise<{ message: string }> => {
-    const response = await apiClient.post(`/api/patient/articles/${id}/views`)
+    const response = await apiClient.post(`/patient/articles/${id}/views`)
     return response.data
   },
 }
