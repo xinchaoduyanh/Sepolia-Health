@@ -3,12 +3,12 @@
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 
-export default function ReceptionistDashboardPage() {
+export default function AdminDashboardPage() {
     const router = useRouter()
 
     useEffect(() => {
-        // Redirect to schedule appointment page
-        router.replace('/dashboard/receptionist/schedule-appointment')
+        // Redirect to overview page
+        router.replace('/admin/overview')
     }, [router])
 
     return null

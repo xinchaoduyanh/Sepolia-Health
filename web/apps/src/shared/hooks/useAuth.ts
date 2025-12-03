@@ -74,8 +74,20 @@ export function useAdminLogin() {
             queryClient.setQueryData(queryKeys.auth.me(), admin)
             queryClient.setQueryData(queryKeys.auth.profile(), admin)
 
-            // Redirect to dashboard immediately
-            router.push('/dashboard')
+            // Redirect based on role
+            switch (admin.role) {
+                case 'ADMIN':
+                    router.push('/admin')
+                    break
+                case 'DOCTOR':
+                    router.push('/doctor')
+                    break
+                case 'RECEPTIONIST':
+                    router.push('/receptionist')
+                    break
+                default:
+                    router.push('/admin')
+            }
         },
     })
 }

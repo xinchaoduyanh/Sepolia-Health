@@ -6,7 +6,7 @@ import { useAuthStore } from '@/shared/stores/auth.store'
 
 export default function HomePage() {
     const router = useRouter()
-    const { isAuthenticated, hasHydrated } = useAuthStore()
+    const { isAuthenticated, hasHydrated, user } = useAuthStore()
 
     useEffect(() => {
         // Wait for rehydration to complete
@@ -14,13 +14,25 @@ export default function HomePage() {
             return
         }
 
-        // Redirect based on authentication status
-        if (isAuthenticated) {
-            router.replace('/dashboard')
+        // Redirect based on authentication status and role
+        if (isAuthenticated && user) {
+            switch (user.role) {
+                case 'ADMIN':
+                    router.replace('/admin')
+                    break
+                case 'DOCTOR':
+                    router.replace('/doctor')
+                    break
+                case 'RECEPTIONIST':
+                    router.replace('/receptionist')
+                    break
+                default:
+                    router.replace('/admin')
+            }
         } else {
             router.replace('/login')
         }
-    }, [router, isAuthenticated, hasHydrated])
+    }, [router, isAuthenticated, hasHydrated, user])
 
     // Show loading while redirecting
     return (

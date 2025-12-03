@@ -32,60 +32,60 @@ import { SidebarNavigationMenu } from '@workspace/ui/components/Sidebar.helpers'
 const adminMenuItems = [
     {
         title: 'Tổng quan',
-        url: '/dashboard/admin/overview',
+        url: '/admin/overview',
         icon: BarChart3,
     },
     {
         title: 'Sản phẩm',
-        url: '/dashboard/admin/products',
+        url: '/admin/products',
         icon: Package,
     },
     {
         title: 'Doanh thu',
-        url: '/dashboard/admin/revenue',
+        url: '/admin/revenue',
         icon: DollarSign,
     },
     {
         title: 'Thông tin & Chương trình',
-        url: '/dashboard/admin/info-programs',
+        url: '/admin/info-programs',
         icon: FileText,
     },
     {
         title: 'Khuyến mại',
-        url: '/dashboard/admin/promotion-management',
+        url: '/admin/promotion-management',
         icon: Percent,
         items: [
             {
                 title: 'Quản lý voucher',
-                url: '/dashboard/admin/promotion-management',
+                url: '/admin/promotion-management',
             },
             {
                 title: 'Quản lý Voucher hiển thị',
-                url: '/dashboard/admin/promotion-display-management',
+                url: '/admin/promotion-display-management',
             },
         ],
     },
     {
         title: 'Câu hỏi thường gặp',
-        url: '/dashboard/admin/faq',
+        url: '/admin/faq',
         icon: HelpCircle,
     },
     {
         title: 'Chăm sóc sức khỏe từ xa',
-        url: '/dashboard/admin/remote-healthcare',
+        url: '/admin/remote-healthcare',
         icon: Monitor,
         items: [
             {
                 title: 'Danh sách đặt khám',
-                url: '/dashboard/admin/remote-healthcare/appointments',
+                url: '/admin/remote-healthcare/appointments',
             },
             {
                 title: 'Đặt lịch khám',
-                url: '/dashboard/admin/remote-healthcare/schedule-appointment',
+                url: '/admin/remote-healthcare/schedule-appointment',
             },
             {
                 title: 'Danh sách khách hàng',
-                url: '/dashboard/admin/remote-healthcare/customers',
+                url: '/admin/remote-healthcare/customers',
             },
         ],
     },
@@ -95,74 +95,74 @@ const adminMenuItems = [
 const adminManagementItems = [
     {
         title: 'Quản lý sản phẩm',
-        url: '/dashboard/admin/product-management',
+        url: '/admin/product-management',
         icon: Package,
     },
     {
         title: 'Quản lý bác sĩ',
-        url: '/dashboard/admin/doctor-management',
+        url: '/admin/doctor-management',
         icon: Stethoscope,
     },
     {
         title: 'Quản lý bệnh nhân',
-        url: '/dashboard/admin/customer-management',
+        url: '/admin/customer-management',
         icon: UserCheck,
     },
     {
         title: 'Quản lý lễ tân',
-        url: '/dashboard/admin/receptionist-management',
+        url: '/admin/receptionist-management',
         icon: UserCheck,
     },
     {
         title: 'Quản lý khuyến mại',
-        url: '/dashboard/admin/promotion-management',
+        url: '/admin/promotion-management',
         icon: Percent,
     },
     {
         title: 'Quản lý cộng đồng hỏi đáp',
-        url: '/dashboard/admin/article-management',
+        url: '/admin/article-management',
         icon: ArticleIcon,
         items: [
             {
                 title: 'Quản lý bài viết',
-                url: '/dashboard/admin/article-management/article-list',
+                url: '/admin/article-management/article-list',
             },
             {
                 title: 'Quản lý Tags',
-                url: '/dashboard/admin/tag-management/tag-list',
+                url: '/admin/tag-management/tag-list',
             },
         ],
     },
     {
         title: 'Quản lý dịch vụ',
-        url: '/dashboard/admin/service-management',
+        url: '/admin/service-management',
         icon: Wrench,
     },
     {
         title: 'Quản lý phòng khám1',
-        url: '/dashboard/admin/clinic-management',
+        url: '/admin/clinic-management',
         icon: Building2,
     },
     {
         title: 'Quản lý Ứng dụng',
-        url: '/dashboard/admin/app-management',
+        url: '/admin/app-management',
         icon: Smartphone,
         items: [
             {
                 title: 'Quy định sử dụng',
-                url: '/dashboard/admin/app-management/usage-regulations',
+                url: '/admin/app-management/usage-regulations',
             },
             {
                 title: 'Chính sách giải quyết',
-                url: '/dashboard/admin/app-management/dispute-resolution',
+                url: '/admin/app-management/dispute-resolution',
             },
             {
                 title: 'Chính sách bảo vệ dữ liệu',
-                url: '/dashboard/admin/app-management/privacy-policy',
+                url: '/admin/app-management/privacy-policy',
             },
             {
                 title: 'Hỏi đáp về ứng dụng',
-                url: '/dashboard/admin/app-management/app-faq',
+                url: '/admin/app-management/app-faq',
             },
         ],
     },
@@ -172,32 +172,32 @@ const adminManagementItems = [
 const doctorMenuItems = [
     {
         title: 'Lịch khám',
-        url: '/dashboard/doctor/schedule/appointments',
+        url: '/doctor/schedule/appointments',
         icon: Monitor,
     },
     {
         title: 'Hồ sơ cá nhân',
-        url: '/dashboard/doctor/profile',
+        url: '/doctor/profile',
         icon: UserCheck,
     },
     {
         title: 'Quản lý lịch khám',
-        url: '/dashboard/doctor/schedule',
+        url: '/doctor/schedule',
         icon: Monitor,
         items: [
             {
                 title: 'Lịch cá nhân',
-                url: '/dashboard/doctor/schedule/personal',
+                url: '/doctor/schedule/personal',
             },
             {
                 title: 'Danh sách khám',
-                url: '/dashboard/doctor/schedule/appointments',
+                url: '/doctor/schedule/appointments',
             },
         ],
     },
     {
         title: 'Câu hỏi cộng đồng',
-        url: '/dashboard/doctor/qna',
+        url: '/doctor/qna',
         icon: MessageSquare,
     },
 ]
@@ -206,12 +206,12 @@ const doctorMenuItems = [
 const receptionistMenuItems = [
     {
         title: 'Đặt lịch cho bệnh nhân',
-        url: '/dashboard/receptionist/schedule-appointment',
+        url: '/receptionist/schedule-appointment',
         icon: Monitor,
     },
     {
         title: 'Tin nhắn',
-        url: '/dashboard/receptionist/messages',
+        url: '/receptionist/messages',
         icon: FileText,
     },
 ]
