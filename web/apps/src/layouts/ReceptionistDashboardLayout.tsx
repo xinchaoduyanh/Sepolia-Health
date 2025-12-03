@@ -46,12 +46,12 @@ function ToggleLogo() {
 const RECEPTIONIST_MAIN_ITEMS: Array<SidebarNavigationMenuItem> = [
     {
         title: 'Đặt lịch cho bệnh nhân',
-        url: '/dashboard/receptionist/schedule-appointment',
+        url: '/receptionist/schedule-appointment',
         icon: Monitor,
     },
     {
         title: 'Tin nhắn',
-        url: '/dashboard/receptionist/messages',
+        url: '/receptionist/messages',
         icon: FileText,
     },
 ]

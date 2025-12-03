@@ -1,11 +1,11 @@
 'use client'
 
-import { ReceptionistDashboardLayout } from '@/layouts/ReceptionistDashboardLayout'
+import { DoctorDashboardLayout } from '@/layouts/DoctorDashboardLayout'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { useCheckAuth } from '@/shared/hooks/useAuth'
 import { useEffect, useState, useRef } from 'react'
 
-export default function ReceptionistLayout({ children }: { children: React.ReactNode }) {
+export default function DoctorLayout({ children }: { children: React.ReactNode }) {
     const [defaultOpen, setDefaultOpen] = useState(true)
     const { checkAuth } = useCheckAuth()
     const authChecked = useRef(false)
@@ -23,8 +23,8 @@ export default function ReceptionistLayout({ children }: { children: React.React
     }, [checkAuth])
 
     return (
-        <ProtectedRoute requiredRole="RECEPTIONIST">
-            <ReceptionistDashboardLayout defaultOpen={defaultOpen}>{children}</ReceptionistDashboardLayout>
+        <ProtectedRoute requiredRole="DOCTOR">
+            <DoctorDashboardLayout defaultOpen={defaultOpen}>{children}</DoctorDashboardLayout>
         </ProtectedRoute>
     )
 }

@@ -47,27 +47,27 @@ function ToggleLogo() {
 const DOCTOR_MAIN_ITEMS: Array<SidebarNavigationMenuItem> = [
     {
         title: 'Hồ sơ cá nhân',
-        url: '/dashboard/doctor/profile',
+        url: '/doctor/profile',
         icon: UserCheck,
     },
     {
         title: 'Quản lý lịch khám',
-        url: '/dashboard/doctor/schedule',
+        url: '/doctor/schedule',
         icon: Monitor,
         items: [
             {
                 title: 'Lịch cá nhân',
-                url: '/dashboard/doctor/schedule/personal',
+                url: '/doctor/schedule/personal',
             },
             {
                 title: 'Danh sách khám',
-                url: '/dashboard/doctor/schedule/appointments',
+                url: '/doctor/schedule/appointments',
             },
         ],
     },
     {
         title: 'Câu hỏi cộng đồng',
-        url: '/dashboard/doctor/qna',
+        url: '/doctor/qna',
         icon: MessageSquare,
     },
 ]

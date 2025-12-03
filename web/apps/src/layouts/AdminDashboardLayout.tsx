@@ -63,60 +63,60 @@ function ToggleLogo() {
 const ADMIN_MAIN_ITEMS: Array<SidebarNavigationMenuItem> = [
     {
         title: 'Tổng quan',
-        url: '/dashboard/admin/overview',
+        url: '/admin/overview',
         icon: BarChart3,
     },
     {
         title: 'Sản phẩm',
-        url: '/dashboard/admin/products',
+        url: '/admin/products',
         icon: Package,
     },
     {
         title: 'Doanh thu',
-        url: '/dashboard/admin/revenue',
+        url: '/admin/revenue',
         icon: DollarSign,
     },
     {
         title: 'Thông tin & Chương trình',
-        url: '/dashboard/admin/info-programs',
+        url: '/admin/info-programs',
         icon: FileText,
     },
     {
         title: 'Bài viết',
-        url: '/dashboard/admin/articles',
+        url: '/admin/articles',
         icon: ArticleIcon,
     },
     {
         title: 'Tin tức & Sự kiện',
-        url: '/dashboard/admin/news-events',
+        url: '/admin/news-events',
         icon: FileText,
     },
     {
         title: 'Khuyến mại',
-        url: '/dashboard/admin/promotions',
+        url: '/admin/promotions',
         icon: Percent,
     },
     {
         title: 'Câu hỏi thường gặp',
-        url: '/dashboard/admin/faq',
+        url: '/admin/faq',
         icon: HelpCircle,
     },
     {
         title: 'Chăm sóc sức khỏe từ xa',
-        url: '/dashboard/admin/remote-healthcare',
+        url: '/admin/remote-healthcare',
         icon: Monitor,
         items: [
             {
                 title: 'Danh sách đặt khám',
-                url: '/dashboard/admin/remote-healthcare/appointments',
+                url: '/admin/remote-healthcare/appointments',
             },
             {
                 title: 'Đặt lịch khám',
-                url: '/dashboard/admin/remote-healthcare/schedule-appointment',
+                url: '/admin/remote-healthcare/schedule-appointment',
             },
             {
                 title: 'Danh sách khách hàng',
-                url: '/dashboard/admin/remote-healthcare/customers',
+                url: '/admin/remote-healthcare/customers',
             },
         ],
     },
@@ -126,104 +126,104 @@ const ADMIN_MAIN_ITEMS: Array<SidebarNavigationMenuItem> = [
 const ADMIN_MANAGEMENT_ITEMS: Array<SidebarNavigationMenuItem> = [
     {
         title: 'Quản lý sản phẩm',
-        url: '/dashboard/admin/product-management',
+        url: '/admin/product-management',
         icon: Package,
     },
     {
         title: 'Quản lý khuyến mại',
-        url: '/dashboard/admin/promotion-management',
+        url: '/admin/promotion-management',
         icon: Percent,
     },
     {
         title: 'Quản lý bác sĩ',
-        url: '/dashboard/admin/doctor-management',
+        url: '/admin/doctor-management',
         icon: Stethoscope,
         items: [
             {
                 title: 'Tạo lập hồ sơ',
-                url: '/dashboard/admin/doctor-management/create',
+                url: '/admin/doctor-management/create',
             },
             {
                 title: 'Quản lý danh sách',
-                url: '/dashboard/admin/doctor-management/doctor-list',
+                url: '/admin/doctor-management/doctor-list',
             },
         ],
     },
     {
         title: 'Quản lý lễ tân',
-        url: '/dashboard/admin/receptionist-management',
+        url: '/admin/receptionist-management',
         icon: Users,
         items: [
             {
                 title: 'Tạo lập hồ sơ',
-                url: '/dashboard/admin/receptionist-management/create',
+                url: '/admin/receptionist-management/create',
             },
             {
                 title: 'Quản lý danh sách',
-                url: '/dashboard/admin/receptionist-management/receptionist-list',
+                url: '/admin/receptionist-management/receptionist-list',
             },
         ],
     },
     {
         title: 'Quản lý khách hàng',
-        url: '/dashboard/admin/customer-management',
+        url: '/admin/customer-management',
         icon: UserCheck,
         items: [
             {
                 title: 'Tạo lập hồ sơ',
-                url: '/dashboard/admin/customer-management/create',
+                url: '/admin/customer-management/create',
             },
             {
                 title: 'Quản lý danh sách',
-                url: '/dashboard/admin/customer-management/customer-list',
+                url: '/admin/customer-management/customer-list',
             },
         ],
     },
     {
         title: 'Quản lý cộng đồng hỏi đáp',
-        url: '/dashboard/admin/article-management',
+        url: '/admin/article-management',
         icon: ArticleIcon,
         items: [
             {
                 title: 'Quản lý bài viết',
-                url: '/dashboard/admin/article-management/article-list',
+                url: '/admin/article-management/article-list',
             },
             {
                 title: 'Quản lý Tags',
-                url: '/dashboard/admin/tag-management/tag-list',
+                url: '/admin/tag-management/tag-list',
             },
         ],
     },
     {
         title: 'Quản lý dịch vụ',
-        url: '/dashboard/admin/service-management',
+        url: '/admin/service-management',
         icon: Wrench,
     },
     {
         title: 'Quản lý phòng khám',
-        url: '/dashboard/admin/clinic-management',
+        url: '/admin/clinic-management',
         icon: Building2,
     },
     {
         title: 'Quản lý Ứng dụng',
-        url: '/dashboard/admin/app-management',
+        url: '/admin/app-management',
         icon: Smartphone,
         items: [
             {
                 title: 'Quy định sử dụng',
-                url: '/dashboard/admin/app-management/usage-regulations',
+                url: '/admin/app-management/usage-regulations',
             },
             {
                 title: 'Chính sách giải quyết',
-                url: '/dashboard/admin/app-management/dispute-resolution',
+                url: '/admin/app-management/dispute-resolution',
             },
             {
                 title: 'Chính sách bảo vệ dữ liệu',
-                url: '/dashboard/admin/app-management/privacy-policy',
+                url: '/admin/app-management/privacy-policy',
             },
             {
                 title: 'Hỏi đáp về ứng dụng',
-                url: '/dashboard/admin/app-management/app-faq',
+                url: '/admin/app-management/app-faq',
             },
         ],
     },
