@@ -34,9 +34,9 @@ function decodeJWT(token: string): any {
 }
 
 /**
- * Hook for admin login
+ * Hook for login
  */
-export function useAdminLogin() {
+export function useLogin() {
     const queryClient = useQueryClient()
     const router = useRouter()
     const { login } = useAuthStore()

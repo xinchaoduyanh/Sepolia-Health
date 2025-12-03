@@ -1,4 +1,4 @@
 packages:
   - "Be"
-  - "web/apps/*"
+  - "web/apps"
   - "web/packages/*"

@@ -1,20 +1,20 @@
 'use client'
 
 import { useState } from 'react'
-import { useAdminLogin } from '@/shared/hooks/useAuth'
 import { Button } from '@workspace/ui/components/Button'
 import { InputField } from '@workspace/ui/components/InputField'
 import { Label } from '@workspace/ui/components/Label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@workspace/ui/components/Card'
 import { AlertMessage } from '@workspace/ui/components/AlertMessage'
 import { Loader2 } from 'lucide-react'
+import { useLogin } from '@/shared/hooks'
 
 export default function LoginPage() {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [error, setError] = useState('')
 
-    const loginMutation = useAdminLogin()
+    const loginMutation = useLogin()
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
