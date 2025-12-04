@@ -169,9 +169,9 @@ export default function EditProfileScreen() {
 
       {/* Header */}
       <View className="flex-row items-center justify-between border-b border-gray-200 px-4 py-3">
-        <TouchableOpacity onPress={() => router.back()}>
+        <Pressable onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#1F2937" />
-        </TouchableOpacity>
+        </Pressable>
         <Text className="text-lg font-bold text-gray-900">Thông tin cơ bản</Text>
         <View className="w-6" />
       </View>
@@ -198,10 +198,7 @@ export default function EditProfileScreen() {
 
             {/* Avatar Section */}
             <View className="mt-6">
-              <TouchableOpacity
-                onPress={handleUploadAvatar}
-                disabled={isUploading}
-                className="relative">
+              <Pressable onPress={handleUploadAvatar} disabled={isUploading} className="relative">
                 <View className="h-24 w-24 items-center justify-center rounded-full bg-gray-100">
                   {watchedAvatar ? (
                     <Image source={{ uri: watchedAvatar }} className="h-full w-full rounded-full" />
@@ -212,7 +209,7 @@ export default function EditProfileScreen() {
                 <View className="absolute -bottom-1 -right-1 h-8 w-8 items-center justify-center rounded-full bg-cyan-500">
                   <Ionicons name="camera" size={16} color="white" />
                 </View>
-              </TouchableOpacity>
+              </Pressable>
             </View>
           </View>
 
@@ -404,8 +401,7 @@ export default function EditProfileScreen() {
                             style={({ pressed }) => [
                               {
                                 opacity: pressed ? 0.7 : 1,
-                                backgroundColor:
-                                  value === option.value ? '#D1FAE5' : '#F9FAFB',
+                                backgroundColor: value === option.value ? '#D1FAE5' : '#F9FAFB',
                               },
                             ]}
                             onPress={() => onChange(option.value)}>
@@ -435,8 +431,7 @@ export default function EditProfileScreen() {
                             style={({ pressed }) => [
                               {
                                 opacity: pressed ? 0.7 : 1,
-                                backgroundColor:
-                                  value === option.value ? '#D1FAE5' : '#F9FAFB',
+                                backgroundColor: value === option.value ? '#D1FAE5' : '#F9FAFB',
                               },
                             ]}
                             onPress={() => onChange(option.value)}>
@@ -466,8 +461,7 @@ export default function EditProfileScreen() {
                             style={({ pressed }) => [
                               { width: '100%', opacity: pressed ? 0.7 : 1 },
                               {
-                                backgroundColor:
-                                  value === option.value ? '#D1FAE5' : '#F9FAFB',
+                                backgroundColor: value === option.value ? '#D1FAE5' : '#F9FAFB',
                               },
                             ]}
                             onPress={() => onChange(option.value)}>
@@ -496,14 +490,14 @@ export default function EditProfileScreen() {
 
       {/* Submit Button */}
       <View className="px-6 pb-6">
-        <TouchableOpacity
+        <Pressable
           className={`rounded-lg py-4 ${isSubmitting ? 'bg-gray-400' : 'bg-cyan-500'}`}
           onPress={handleSubmit(onSubmit)}
           disabled={isSubmitting}>
           <Text className="text-center text-lg font-bold text-white">
             {isSubmitting ? 'ĐANG CẬP NHẬT...' : 'HOÀN TẤT'}
           </Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
     </SafeAreaView>
   );

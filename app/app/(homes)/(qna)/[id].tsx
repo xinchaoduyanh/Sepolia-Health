@@ -25,6 +25,7 @@ import {
 } from '@/lib/api/qna';
 import { Answer, VoteType } from '@/types/qna';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { formatDate } from '@/utils/datetime';
 
 export default function QuestionDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -176,17 +177,6 @@ export default function QuestionDetailScreen() {
     inputRange: [0, 1],
     outputRange: ['0deg', '360deg'],
   });
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('vi-VN', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
 
   const getRoleBadgeColor = (role: string) => {
     switch (role) {

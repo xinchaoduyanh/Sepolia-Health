@@ -20,6 +20,7 @@ import BirthDatePicker from '@/components/BirthDatePicker';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { Relationship } from '@/constants/enum';
+import { validatePhone } from '@/lib/utils';
 
 const AddPatientProfileScreen = () => {
   const { refreshProfile } = useAuth();
@@ -31,7 +32,7 @@ const AddPatientProfileScreen = () => {
     relationship: '' as Relationship | '',
   });
   const [dateOfBirth, setDateOfBirth] = useState<Date | null>(null);
-  const [gender, setGender] = useState<'MALE' | 'FEMALE' | 'OTHER' | null>(null);
+  const [gender, setGender] = useState<'MALE' | 'FEMALE' | null>(null);
   const [avatar, setAvatar] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -80,12 +81,6 @@ const AddPatientProfileScreen = () => {
       console.error('Upload avatar error:', error);
       Alert.alert('Lỗi', 'Không thể chọn ảnh. Vui lòng thử lại.');
     }
-  };
-
-  // Phone validation function
-  const validatePhone = (phone: string): boolean => {
-    const phoneRegex = /^[0-9]{10,11}$/;
-    return phoneRegex.test(phone);
   };
 
   // Handle form submission

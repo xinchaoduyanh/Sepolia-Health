@@ -3,7 +3,6 @@ import {
   View,
   Text,
   TouchableOpacity,
-  SafeAreaView,
   StatusBar,
   ScrollView,
   ActivityIndicator,
@@ -17,6 +16,7 @@ import { useAppointment } from '@/lib/api/appointments';
 import { useMyVouchers } from '@/lib/api/promotion';
 import { useApplyVoucher } from '@/lib/api/payment';
 import { UserPromotion } from '@/types/promotion';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function VoucherSelectScreen() {
   const { id } = useLocalSearchParams();

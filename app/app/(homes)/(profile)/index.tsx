@@ -6,26 +6,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path } from 'react-native-svg';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { router } from 'expo-router';
-import { PatientProfile, Relationship } from '@/types/auth';
+import { PatientProfile } from '@/types/auth';
 import * as ImagePicker from 'expo-image-picker';
 import { useUploadPatientProfileAvatar, useUploadUserAvatar } from '@/lib/api/user';
-
-// Helper function để chuyển đổi relationship enum sang text tiếng Việt
-const getRelationshipText = (relationship: Relationship): string => {
-  const relationshipMap: Record<Relationship, string> = {
-    SELF: 'Bản thân',
-    SPOUSE: 'Vợ/Chồng',
-    CHILD: 'Con',
-    PARENT: 'Bố/Mẹ',
-    SIBLING: 'Anh/Chị/Em',
-    RELATIVE: 'Họ hàng',
-    FRIEND: 'Bạn bè',
-    OTHER: 'Khác',
-  };
-  return relationshipMap[relationship] || 'Khác';
-};
-
-// ================== Main Screen Component ==================
+import { getRelationshipLabel } from '@/utils/relationshipTranslator';
 
 const ProfileScreen = () => {
   const { user } = useAuth();
@@ -356,7 +340,7 @@ const ProfileScreen = () => {
                         {profile.firstName} {profile.lastName}
                       </Text>
                       <Text className="text-sm text-slate-500">
-                        {getRelationshipText(profile.relationship)}
+                        {getRelationshipLabel(profile.relationship)}
                       </Text>
                     </TouchableOpacity>
                     <Ionicons name="chevron-forward" size={20} color="#06B6D4" />

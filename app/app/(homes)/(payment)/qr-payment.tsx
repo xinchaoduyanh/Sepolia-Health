@@ -3,7 +3,6 @@ import {
   View,
   Text,
   TouchableOpacity,
-  SafeAreaView,
   StatusBar,
   Alert,
   ActivityIndicator,
@@ -19,6 +18,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useCreateQrScan, useCancelPayment, checkPaymentStatus } from '@/lib/api/payment';
 import { usePayment } from '@/contexts/PaymentContext';
 import { QrScanResponse } from '@/types';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const COUNTDOWN_DURATION = 300; // 5 minutes
 const POLLING_INTERVAL = 3000; // 3 seconds

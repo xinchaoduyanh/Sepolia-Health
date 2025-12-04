@@ -12,8 +12,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path } from 'react-native-svg';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useAppointment } from '@/lib/api/appointments';
-import { formatDate, formatTime } from '@/lib/utils';
-import { getAppointmentEndTime } from '@/utils/datetime';
+import { formatDate, formatTime, getAppointmentEndTime } from '@/utils/datetime';
 
 export default function PaymentScreen() {
   const { id } = useLocalSearchParams();
