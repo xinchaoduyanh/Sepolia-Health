@@ -93,9 +93,19 @@ export default function AppointmentScreen() {
       setSelectedProfile(profile);
       setFirstName(profile.firstName);
       setLastName(profile.lastName);
-      setDateOfBirth(new Date(profile.dateOfBirth));
       setPhoneNumber(profile.phone);
-      setGender(profile.gender === 'OTHER' ? null : profile.gender);
+
+      // Batch state updates to prevent multiple re-renders
+      const updates: {
+        dateOfBirth: Date | null;
+        gender: 'MALE' | 'FEMALE' | null;
+      } = {
+        dateOfBirth: new Date(profile.dateOfBirth),
+        gender: profile.gender === 'OTHER' ? null : profile.gender
+      };
+
+      setDateOfBirth(updates.dateOfBirth);
+      setGender(updates.gender);
     } else if (customerId === 'add') {
       // Clear form for new customer (profile will be created on booking)
       setSelectedProfile(primaryProfile!);

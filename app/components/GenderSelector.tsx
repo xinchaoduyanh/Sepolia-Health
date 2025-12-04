@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 interface GenderSelectorProps {
@@ -40,11 +40,24 @@ export default function GenderSelector({
 
       <View className="flex-row gap-3">
         {genderOptions.map((option) => (
-          <TouchableOpacity
-            activeOpacity={1}
+          <Pressable
             key={option.value}
             onPress={() => !disabled && onGenderSelect(option.value)}
             disabled={disabled}
+            style={({ pressed }) => [
+              {
+                opacity: pressed && !disabled ? 0.7 : 1,
+                backgroundColor: disabled
+                  ? '#F3F4F6'
+                  : selectedGender === option.value
+                    ? option.value === 'FEMALE'
+                      ? '#FCE7F3'
+                      : '#E0F2FE'
+                    : error
+                      ? '#FEF2F2'
+                      : '#F0FDFA',
+              },
+            ]}
             className={`flex-1 flex-row items-center justify-center rounded-xl border-2 px-5 py-4 ${
               selectedGender === option.value
                 ? option.value === 'FEMALE'
@@ -53,18 +66,7 @@ export default function GenderSelector({
                 : error
                   ? 'border-red-200'
                   : 'border-cyan-100'
-            }`}
-            style={{
-              backgroundColor: disabled
-                ? '#F3F4F6'
-                : selectedGender === option.value
-                  ? option.value === 'FEMALE'
-                    ? '#FCE7F3'
-                    : '#E0F2FE'
-                  : error
-                    ? '#FEF2F2'
-                    : '#F0FDFA',
-            }}>
+            }`}>
             <Ionicons
               name={option.icon}
               size={22}
@@ -92,7 +94,7 @@ export default function GenderSelector({
               }`}>
               {option.label}
             </Text>
-          </TouchableOpacity>
+          </Pressable>
         ))}
       </View>
 

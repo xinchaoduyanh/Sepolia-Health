@@ -4,7 +4,7 @@ import React from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
+  Pressable,
   ScrollView,
   StatusBar,
   Image,
@@ -329,15 +329,17 @@ export default function EditProfileScreen() {
                 <View>
                   <Text className="mb-4 text-lg font-bold text-slate-900">Giới tính *</Text>
                   <View className="flex-row gap-5">
-                    <TouchableOpacity
-                      activeOpacity={1}
+                    <Pressable
                       onPress={() => onChange('MALE')}
                       className={`flex-1 flex-row items-center justify-center rounded-xl border-2 px-5 py-4 ${
                         value === 'MALE' ? 'border-blue-600' : 'border-gray-200'
                       }`}
-                      style={{
-                        backgroundColor: value === 'MALE' ? '#DBEAFE' : '#F9FAFB',
-                      }}>
+                      style={({ pressed }) => [
+                        {
+                          opacity: pressed ? 0.7 : 1,
+                          backgroundColor: value === 'MALE' ? '#DBEAFE' : '#F9FAFB',
+                        },
+                      ]}>
                       <Ionicons
                         name="male"
                         size={22}
@@ -349,17 +351,19 @@ export default function EditProfileScreen() {
                         }`}>
                         Nam
                       </Text>
-                    </TouchableOpacity>
+                    </Pressable>
 
-                    <TouchableOpacity
-                      activeOpacity={1}
+                    <Pressable
                       onPress={() => onChange('FEMALE')}
                       className={`flex-1 flex-row items-center justify-center rounded-xl border-2 px-5 py-4 ${
                         value === 'FEMALE' ? 'border-pink-600' : 'border-gray-200'
                       }`}
-                      style={{
-                        backgroundColor: value === 'FEMALE' ? '#FCE7F3' : '#F9FAFB',
-                      }}>
+                      style={({ pressed }) => [
+                        {
+                          opacity: pressed ? 0.7 : 1,
+                          backgroundColor: value === 'FEMALE' ? '#FCE7F3' : '#F9FAFB',
+                        },
+                      ]}>
                       <Ionicons
                         name="female"
                         size={22}
@@ -371,7 +375,7 @@ export default function EditProfileScreen() {
                         }`}>
                         Nữ
                       </Text>
-                    </TouchableOpacity>
+                    </Pressable>
                   </View>
                 </View>
               )}
@@ -390,14 +394,20 @@ export default function EditProfileScreen() {
                     <View className="gap-3">
                       <View className="flex-row gap-3">
                         {relationshipOptions.slice(0, 3).map((option) => (
-                          <TouchableOpacity
-                            activeOpacity={1}
+                          <Pressable
                             key={option.value}
                             className={`flex-1 rounded-lg border-2 px-4 py-3 ${
                               value === option.value
                                 ? 'border-emerald-500 bg-emerald-100'
                                 : 'border-gray-200 bg-gray-50'
                             }`}
+                            style={({ pressed }) => [
+                              {
+                                opacity: pressed ? 0.7 : 1,
+                                backgroundColor:
+                                  value === option.value ? '#D1FAE5' : '#F9FAFB',
+                              },
+                            ]}
                             onPress={() => onChange(option.value)}>
                             <Text
                               className={`text-center text-base font-semibold ${
@@ -410,18 +420,25 @@ export default function EditProfileScreen() {
                                 <Ionicons name="checkmark" size={12} color="white" />
                               </View>
                             )}
-                          </TouchableOpacity>
+                          </Pressable>
                         ))}
                       </View>
                       <View className="flex-row gap-3">
                         {relationshipOptions.slice(3, 6).map((option) => (
-                          <TouchableOpacity
+                          <Pressable
                             key={option.value}
                             className={`flex-1 rounded-lg border-2 px-4 py-3 ${
                               value === option.value
                                 ? 'border-emerald-500 bg-emerald-100'
                                 : 'border-gray-200 bg-gray-50'
                             }`}
+                            style={({ pressed }) => [
+                              {
+                                opacity: pressed ? 0.7 : 1,
+                                backgroundColor:
+                                  value === option.value ? '#D1FAE5' : '#F9FAFB',
+                              },
+                            ]}
                             onPress={() => onChange(option.value)}>
                             <Text
                               className={`text-center text-base font-semibold ${
@@ -434,19 +451,25 @@ export default function EditProfileScreen() {
                                 <Ionicons name="checkmark" size={12} color="white" />
                               </View>
                             )}
-                          </TouchableOpacity>
+                          </Pressable>
                         ))}
                       </View>
                       <View className="flex-row space-x-3">
                         {relationshipOptions.slice(6).map((option) => (
-                          <TouchableOpacity
+                          <Pressable
                             key={option.value}
                             className={`rounded-lg border-2 px-4 py-3 ${
                               value === option.value
                                 ? 'border-emerald-500 bg-emerald-100'
                                 : 'border-gray-200 bg-gray-50'
                             }`}
-                            style={{ width: '100%' }}
+                            style={({ pressed }) => [
+                              { width: '100%', opacity: pressed ? 0.7 : 1 },
+                              {
+                                backgroundColor:
+                                  value === option.value ? '#D1FAE5' : '#F9FAFB',
+                              },
+                            ]}
                             onPress={() => onChange(option.value)}>
                             <Text
                               className={`text-center text-base font-semibold ${
@@ -459,7 +482,7 @@ export default function EditProfileScreen() {
                                 <Ionicons name="checkmark" size={12} color="white" />
                               </View>
                             )}
-                          </TouchableOpacity>
+                          </Pressable>
                         ))}
                       </View>
                     </View>

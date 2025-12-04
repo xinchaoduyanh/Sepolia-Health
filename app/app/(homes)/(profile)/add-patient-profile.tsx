@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
+  Pressable,
   ScrollView,
   StatusBar,
   Image,
@@ -190,9 +190,9 @@ const AddPatientProfileScreen = () => {
 
       {/* Header */}
       <View className="flex-row items-center justify-between border-b border-gray-200 px-4 py-3">
-        <TouchableOpacity onPress={() => router.back()}>
+        <Pressable onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#1F2937" />
-        </TouchableOpacity>
+        </Pressable>
         <Text className="text-lg font-bold text-gray-900">Thông tin cơ bản</Text>
         <View className="w-6" />
       </View>
@@ -219,10 +219,15 @@ const AddPatientProfileScreen = () => {
 
             {/* Avatar Section */}
             <View className="mt-6">
-              <TouchableOpacity
+              <Pressable
                 onPress={handleUploadAvatar}
                 disabled={isUploading}
-                className="relative">
+                className="relative"
+                style={({ pressed }) => [
+                  {
+                    opacity: pressed && !isUploading ? 0.7 : 1,
+                  },
+                ]}>
                 <View className="h-24 w-24 items-center justify-center rounded-full bg-gray-100">
                   {avatar ? (
                     <Image source={{ uri: avatar }} className="h-full w-full rounded-full" />
@@ -233,7 +238,7 @@ const AddPatientProfileScreen = () => {
                 <View className="absolute -bottom-1 -right-1 h-8 w-8 items-center justify-center rounded-full bg-cyan-500">
                   <Ionicons name="camera" size={16} color="white" />
                 </View>
-              </TouchableOpacity>
+              </Pressable>
             </View>
           </View>
 
@@ -325,7 +330,7 @@ const AddPatientProfileScreen = () => {
             <View>
               <Text className="mb-4 text-lg font-bold text-slate-900">Giới tính *</Text>
               <View className="flex-row space-x-4">
-                <TouchableOpacity
+                <Pressable
                   onPress={() => {
                     setGender('MALE');
                     if (genderError) setGenderError('');
@@ -337,10 +342,13 @@ const AddPatientProfileScreen = () => {
                         ? 'border-red-200'
                         : 'border-gray-200'
                   }`}
-                  style={{
-                    backgroundColor:
-                      gender === 'MALE' ? '#DBEAFE' : genderError ? '#FEF2F2' : '#F9FAFB',
-                  }}>
+                  style={({ pressed }) => [
+                    {
+                      opacity: pressed ? 0.7 : 1,
+                      backgroundColor:
+                        gender === 'MALE' ? '#DBEAFE' : genderError ? '#FEF2F2' : '#F9FAFB',
+                    },
+                  ]}>
                   <Ionicons
                     name="male"
                     size={22}
@@ -356,9 +364,9 @@ const AddPatientProfileScreen = () => {
                     }`}>
                     Nam
                   </Text>
-                </TouchableOpacity>
+                </Pressable>
 
-                <TouchableOpacity
+                <Pressable
                   onPress={() => {
                     setGender('FEMALE');
                     if (genderError) setGenderError('');
@@ -370,10 +378,13 @@ const AddPatientProfileScreen = () => {
                         ? 'border-red-200'
                         : 'border-gray-200'
                   }`}
-                  style={{
-                    backgroundColor:
-                      gender === 'FEMALE' ? '#FCE7F3' : genderError ? '#FEF2F2' : '#F9FAFB',
-                  }}>
+                  style={({ pressed }) => [
+                    {
+                      opacity: pressed ? 0.7 : 1,
+                      backgroundColor:
+                        gender === 'FEMALE' ? '#FCE7F3' : genderError ? '#FEF2F2' : '#F9FAFB',
+                    },
+                  ]}>
                   <Ionicons
                     name="female"
                     size={22}
@@ -389,7 +400,7 @@ const AddPatientProfileScreen = () => {
                     }`}>
                     Nữ
                   </Text>
-                </TouchableOpacity>
+                </Pressable>
               </View>
               {genderError && <Text className="mt-1 text-xs text-red-600">{genderError}</Text>}
             </View>
@@ -402,7 +413,7 @@ const AddPatientProfileScreen = () => {
               <View className="space-y-3">
                 <View className="flex-row space-x-3">
                   {relationshipOptions.slice(0, 3).map((option) => (
-                    <TouchableOpacity
+                    <Pressable
                       key={option.value}
                       className={`flex-1 rounded-lg border-2 px-4 py-3 ${
                         formData.relationship === option.value
@@ -411,6 +422,17 @@ const AddPatientProfileScreen = () => {
                             ? 'border-red-200 bg-red-50'
                             : 'border-gray-200 bg-gray-50'
                       }`}
+                      style={({ pressed }) => [
+                        {
+                          opacity: pressed ? 0.7 : 1,
+                          backgroundColor:
+                            formData.relationship === option.value
+                              ? '#D1FAE5'
+                              : relationshipError
+                                ? '#FEF2F2'
+                                : '#F9FAFB',
+                        },
+                      ]}
                       onPress={() => {
                         setFormData((prev) => ({ ...prev, relationship: option.value }));
                         if (relationshipError) setRelationshipError('');
@@ -430,12 +452,12 @@ const AddPatientProfileScreen = () => {
                           <Ionicons name="checkmark" size={12} color="white" />
                         </View>
                       )}
-                    </TouchableOpacity>
+                    </Pressable>
                   ))}
                 </View>
                 <View className="flex-row space-x-3">
                   {relationshipOptions.slice(3, 6).map((option) => (
-                    <TouchableOpacity
+                    <Pressable
                       key={option.value}
                       className={`flex-1 rounded-lg border-2 px-4 py-3 ${
                         formData.relationship === option.value
@@ -444,6 +466,17 @@ const AddPatientProfileScreen = () => {
                             ? 'border-red-200 bg-red-50'
                             : 'border-gray-200 bg-gray-50'
                       }`}
+                      style={({ pressed }) => [
+                        {
+                          opacity: pressed ? 0.7 : 1,
+                          backgroundColor:
+                            formData.relationship === option.value
+                              ? '#D1FAE5'
+                              : relationshipError
+                                ? '#FEF2F2'
+                                : '#F9FAFB',
+                        },
+                      ]}
                       onPress={() => {
                         setFormData((prev) => ({ ...prev, relationship: option.value }));
                         if (relationshipError) setRelationshipError('');
@@ -463,12 +496,12 @@ const AddPatientProfileScreen = () => {
                           <Ionicons name="checkmark" size={12} color="white" />
                         </View>
                       )}
-                    </TouchableOpacity>
+                    </Pressable>
                   ))}
                 </View>
                 <View className="flex-row space-x-3">
                   {relationshipOptions.slice(6).map((option) => (
-                    <TouchableOpacity
+                    <Pressable
                       key={option.value}
                       className={`rounded-lg border-2 px-4 py-3 ${
                         formData.relationship === option.value
@@ -477,7 +510,17 @@ const AddPatientProfileScreen = () => {
                             ? 'border-red-200 bg-red-50'
                             : 'border-gray-200 bg-gray-50'
                       }`}
-                      style={{ width: '100%' }}
+                      style={({ pressed }) => [
+                        { width: '100%', opacity: pressed ? 0.7 : 1 },
+                        {
+                          backgroundColor:
+                            formData.relationship === option.value
+                              ? '#D1FAE5'
+                              : relationshipError
+                                ? '#FEF2F2'
+                                : '#F9FAFB',
+                        },
+                      ]}
                       onPress={() => {
                         setFormData((prev) => ({ ...prev, relationship: option.value }));
                         if (relationshipError) setRelationshipError('');
@@ -497,7 +540,7 @@ const AddPatientProfileScreen = () => {
                           <Ionicons name="checkmark" size={12} color="white" />
                         </View>
                       )}
-                    </TouchableOpacity>
+                    </Pressable>
                   ))}
                 </View>
               </View>
@@ -511,14 +554,19 @@ const AddPatientProfileScreen = () => {
 
       {/* Submit Button */}
       <View className="px-6 pb-6">
-        <TouchableOpacity
+        <Pressable
           className={`rounded-lg py-4 ${isSubmitting ? 'bg-gray-400' : 'bg-cyan-500'}`}
           onPress={handleSubmit}
-          disabled={isSubmitting}>
+          disabled={isSubmitting}
+          style={({ pressed }) => [
+            {
+              opacity: pressed && !isSubmitting ? 0.7 : 1,
+            },
+          ]}>
           <Text className="text-center text-lg font-bold text-white">
             {isSubmitting ? 'ĐANG TẠO...' : 'HOÀN TẤT'}
           </Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
     </SafeAreaView>
   );

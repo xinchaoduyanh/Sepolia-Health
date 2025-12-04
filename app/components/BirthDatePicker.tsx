@@ -107,6 +107,7 @@ export default function BirthDatePicker({
       <TouchableOpacity
         onPress={() => !disabled && setIsVisible(true)}
         disabled={disabled}
+        activeOpacity={0.7}
         className={`flex-row items-center rounded-xl border px-5 py-4 ${
           error
             ? 'border-red-200 bg-red-50'
@@ -158,6 +159,7 @@ export default function BirthDatePicker({
                       <TouchableOpacity
                         key={day}
                         onPress={() => handleDayChange(day)}
+                        activeOpacity={0.7}
                         className={`rounded-lg p-2 ${
                           tempDate.getDate() === day ? 'bg-cyan-100' : 'bg-cyan-50'
                         }`}>
@@ -180,6 +182,7 @@ export default function BirthDatePicker({
                       <TouchableOpacity
                         key={month.value}
                         onPress={() => handleMonthChange(month.value)}
+                        activeOpacity={0.7}
                         className={`rounded-lg p-2 ${
                           tempDate.getMonth() + 1 === month.value ? 'bg-cyan-100' : 'bg-cyan-50'
                         }`}>
@@ -204,6 +207,7 @@ export default function BirthDatePicker({
                       <TouchableOpacity
                         key={year}
                         onPress={() => handleYearChange(year)}
+                        activeOpacity={0.7}
                         className={`rounded-lg p-2 ${
                           tempDate.getFullYear() === year ? 'bg-cyan-100' : 'bg-cyan-50'
                         }`}>
