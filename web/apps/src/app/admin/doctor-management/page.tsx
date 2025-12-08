@@ -7,7 +7,7 @@ export default function DoctorManagementPage() {
     const router = useRouter()
 
     useEffect(() => {
-        router.replace('/dashboard/admin/doctor-management/doctor-list')
+        router.replace('/admin/doctor-management/doctor-list')
     }, [router])
 
     return (

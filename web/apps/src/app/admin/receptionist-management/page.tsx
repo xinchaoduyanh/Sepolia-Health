@@ -7,7 +7,7 @@ export default function ReceptionistManagementPage() {
     const router = useRouter()
 
     useEffect(() => {
-        router.replace('/dashboard/admin/receptionist-management/receptionist-list')
+        router.replace('/admin/receptionist-management/receptionist-list')
     }, [router])
 
     return (

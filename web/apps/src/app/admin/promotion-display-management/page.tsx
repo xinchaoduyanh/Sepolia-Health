@@ -47,7 +47,7 @@ export default function PromotionDisplayManagementPage() {
                 </div>
                 <Button
                     className="flex items-center space-x-2"
-                    onClick={() => (window.location.href = '/dashboard/admin/promotion-display-management/edit')}
+                    onClick={() => (window.location.href = '/admin/promotion-display-management/edit')}
                 >
                     <Plus className="h-4 w-4" />
                     <span>{activeDisplay ? 'Chỉnh sửa UI' : 'Tạo cấu hình mới'}</span>
@@ -103,7 +103,7 @@ export default function PromotionDisplayManagementPage() {
                                     variant="outline"
                                     size="sm"
                                     onClick={() =>
-                                        (window.location.href = `/dashboard/admin/promotion-display-management/edit?id=${activeDisplay.id}`)
+                                        (window.location.href = `/admin/promotion-display-management/edit?id=${activeDisplay.id}`)
                                     }
                                 >
                                     <Edit className="h-4 w-4 mr-2" />
@@ -208,9 +208,7 @@ export default function PromotionDisplayManagementPage() {
                         <Button
                             variant="outline"
                             className="mt-4"
-                            onClick={() =>
-                                (window.location.href = '/dashboard/admin/promotion-display-management/edit')
-                            }
+                            onClick={() => (window.location.href = '/admin/promotion-display-management/edit')}
                         >
                             Tạo cấu hình mới
                         </Button>
@@ -268,7 +266,7 @@ export default function PromotionDisplayManagementPage() {
                                             size="sm"
                                             className="mt-3"
                                             onClick={() =>
-                                                (window.location.href = `/dashboard/admin/promotion-display-management/edit?id=${display.id}`)
+                                                (window.location.href = `/admin/promotion-display-management/edit?id=${display.id}`)
                                             }
                                         >
                                             <Eye className="h-4 w-4 mr-2" />

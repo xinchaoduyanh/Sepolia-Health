@@ -47,6 +47,7 @@ export interface DoctorAppointmentDetail {
     status: string
     notes?: string | null
     type: string
+    hostUrl?: string | null
     patient?: PatientInfo
     service?: ServiceInfo
     clinic?: ClinicInfo | null

@@ -59,7 +59,7 @@ export function ArticleCreateForm() {
 
         try {
             await createArticle.mutateAsync(requestData)
-            router.push('/dashboard/admin/articles/article-list')
+            router.push('/admin/articles/article-list')
         } catch (_error) {
             // Error is handled by the mutation
         }

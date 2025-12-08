@@ -50,7 +50,7 @@ export function TagCreateForm() {
 
         try {
             await createTag.mutateAsync(requestData)
-            router.push('/dashboard/admin/tag-management/tag-list')
+            router.push('/admin/tag-management/tag-list')
         } catch (error) {
             // Error is handled by the mutation
         }

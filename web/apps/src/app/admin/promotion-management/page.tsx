@@ -74,7 +74,7 @@ function ActionCell({ promotion }: { promotion: any }) {
                 variant="ghost"
                 size="sm"
                 className="h-8 w-8 p-0"
-                onClick={() => (window.location.href = `/dashboard/admin/promotion-management/${promotion.id}`)}
+                onClick={() => (window.location.href = `/admin/promotion-management/${promotion.id}`)}
             >
                 <Eye className="h-4 w-4" />
             </Button>
@@ -229,14 +229,14 @@ export default function PromotionManagementPage() {
                     <Button
                         variant="outline"
                         className="flex items-center space-x-2"
-                        onClick={() => (window.location.href = '/dashboard/admin/promotion-display-management')}
+                        onClick={() => (window.location.href = '/admin/promotion-display-management')}
                     >
                         <Settings className="h-4 w-4" />
                         <span>Quản lý hiển thị</span>
                     </Button>
                     <Button
                         className="flex items-center space-x-2"
-                        onClick={() => (window.location.href = '/dashboard/admin/promotion-management/create')}
+                        onClick={() => (window.location.href = '/admin/promotion-management/create')}
                     >
                         <Plus className="h-4 w-4" />
                         <span>Thêm voucher mới</span>

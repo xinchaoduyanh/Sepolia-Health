@@ -87,7 +87,7 @@ function ActionCell({ clinic }: { clinic: any }) {
                 variant="ghost"
                 size="sm"
                 className="h-8 w-8 p-0"
-                onClick={() => (window.location.href = `/dashboard/admin/clinic-management/${clinic.id}`)}
+                onClick={() => (window.location.href = `/admin/clinic-management/${clinic.id}`)}
             >
                 <Eye className="h-4 w-4" />
             </Button>
@@ -251,7 +251,7 @@ export default function ClinicListPage() {
                 </div>
                 <Button
                     className="flex items-center space-x-2"
-                    onClick={() => (window.location.href = '/dashboard/admin/clinic-management/create')}
+                    onClick={() => (window.location.href = '/admin/clinic-management/create')}
                 >
                     <Plus className="h-4 w-4" />
                     <span>Thêm phòng khám mới</span>

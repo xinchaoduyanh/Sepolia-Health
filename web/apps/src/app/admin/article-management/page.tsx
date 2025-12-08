@@ -7,7 +7,7 @@ export default function ArticleManagementPage() {
     const router = useRouter()
 
     useEffect(() => {
-        router.replace('/dashboard/admin/article-management/article-list')
+        router.replace('/admin/article-management/article-list')
     }, [router])
 
     return (

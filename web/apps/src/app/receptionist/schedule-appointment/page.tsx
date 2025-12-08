@@ -828,7 +828,7 @@ export default function ScheduleAppointmentPage() {
                                         <Plus className="h-4 w-4" />
                                         Đặt lịch hẹn mới
                                     </Button>
-                                    <Button onClick={() => router.push('/dashboard/receptionist')} variant="outline">
+                                    <Button onClick={() => router.push('/receptionist')} variant="outline">
                                         Về trang chủ
                                     </Button>
                                 </div>

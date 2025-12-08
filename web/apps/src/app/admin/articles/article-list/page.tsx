@@ -83,7 +83,7 @@ function ActionCell({ article }: { article: any }) {
                 variant="ghost"
                 size="sm"
                 className="h-8 w-8 p-0"
-                onClick={() => (window.location.href = `/dashboard/admin/articles/${article.id}`)}
+                onClick={() => (window.location.href = `/admin/articles/${article.id}`)}
             >
                 <Eye className="h-4 w-4" />
             </Button>
@@ -219,11 +219,13 @@ export default function ArticleListPage() {
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-3xl font-bold text-foreground">Quản lý Bài viết</h1>
-                    <p className="text-sm text-muted-foreground mt-1">Quản lý các bài viết sẽ hiển thị trên trang Home của ứng dụng</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                        Quản lý các bài viết sẽ hiển thị trên trang Home của ứng dụng
+                    </p>
                 </div>
                 <Button
                     className="flex items-center space-x-2"
-                    onClick={() => (window.location.href = '/dashboard/admin/articles/create')}
+                    onClick={() => (window.location.href = '/admin/articles/create')}
                 >
                     <Plus className="h-4 w-4" />
                     <span>Viết bài mới</span>

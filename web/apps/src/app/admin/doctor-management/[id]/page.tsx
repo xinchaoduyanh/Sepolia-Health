@@ -13,7 +13,7 @@ export default function DoctorDetailPage() {
     const { data: doctor, isLoading, error } = useDoctor(doctorId)
 
     const handleBack = () => {
-        router.push('/dashboard/admin/doctor-management')
+        router.push('/admin/doctor-management')
     }
 
     const handleEdit = (id: string) => {

@@ -84,7 +84,7 @@ export function ReceptionistCreateForm() {
 
             // Redirect to receptionist detail page with the new receptionist ID
             if (response?.id) {
-                router.push(`/dashboard/receptionist-management/${response.id}`)
+                router.push(`/receptionist-management/${response.id}`)
             }
         } catch (error: any) {
             // Parse error message from backend
@@ -138,9 +138,7 @@ export function ReceptionistCreateForm() {
                 <div className="bg-card rounded-lg shadow-sm border border-border p-6">
                     <div className="mb-4">
                         <h3 className="text-lg font-semibold text-foreground">Thông tin tài khoản</h3>
-                        <p className="text-sm text-muted-foreground mt-1">
-                            Thông tin đăng nhập của lễ tân
-                        </p>
+                        <p className="text-sm text-muted-foreground mt-1">Thông tin đăng nhập của lễ tân</p>
                     </div>
                     <div className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -215,9 +213,7 @@ export function ReceptionistCreateForm() {
                 <div className="bg-card rounded-lg shadow-sm border border-border p-6">
                     <div className="mb-4">
                         <h3 className="text-lg font-semibold text-foreground">Thông tin cá nhân</h3>
-                        <p className="text-sm text-muted-foreground mt-1">
-                            Thông tin cá nhân của lễ tân
-                        </p>
+                        <p className="text-sm text-muted-foreground mt-1">Thông tin cá nhân của lễ tân</p>
                     </div>
 
                     {/* Avatar with Name Fields */}
@@ -233,10 +229,7 @@ export function ReceptionistCreateForm() {
                         {/* Name Fields */}
                         <div className="flex-1 grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <label
-                                    htmlFor="lastName"
-                                    className="block text-sm font-medium text-foreground"
-                                >
+                                <label htmlFor="lastName" className="block text-sm font-medium text-foreground">
                                     Họ lễ tân *
                                 </label>
                                 <input
@@ -249,10 +242,7 @@ export function ReceptionistCreateForm() {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label
-                                    htmlFor="gender"
-                                    className="block text-sm font-medium text-foreground"
-                                >
+                                <label htmlFor="gender" className="block text-sm font-medium text-foreground">
                                     Giới tính *
                                 </label>
                                 <select
@@ -272,10 +262,7 @@ export function ReceptionistCreateForm() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <label
-                                htmlFor="firstName"
-                                className="block text-sm font-medium text-foreground"
-                            >
+                            <label htmlFor="firstName" className="block text-sm font-medium text-foreground">
                                 Tên lễ tân *
                             </label>
                             <input
@@ -288,10 +275,7 @@ export function ReceptionistCreateForm() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <label
-                                htmlFor="dateOfBirth"
-                                className="block text-sm font-medium text-foreground"
-                            >
+                            <label htmlFor="dateOfBirth" className="block text-sm font-medium text-foreground">
                                 Ngày sinh
                             </label>
                             <input
@@ -306,10 +290,7 @@ export function ReceptionistCreateForm() {
                     </div>
 
                     <div className="space-y-2">
-                        <label
-                            htmlFor="shift"
-                            className="block text-sm font-medium text-foreground"
-                        >
+                        <label htmlFor="shift" className="block text-sm font-medium text-foreground">
                             Ca làm việc (Tùy chọn)
                         </label>
                         <select

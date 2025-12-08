@@ -86,7 +86,7 @@ function ActionCell({ tag }: { tag: any }) {
                 variant="ghost"
                 size="sm"
                 className="h-8 w-8 p-0"
-                onClick={() => (window.location.href = `/dashboard/admin/tag-management/${tag.id}`)}
+                onClick={() => (window.location.href = `/admin/tag-management/${tag.id}`)}
             >
                 <Eye className="h-4 w-4" />
             </Button>
@@ -237,7 +237,7 @@ export default function TagListPage() {
                 </div>
                 <Button
                     className="flex items-center space-x-2"
-                    onClick={() => (window.location.href = '/dashboard/admin/tag-management/create')}
+                    onClick={() => (window.location.href = '/admin/tag-management/create')}
                 >
                     <Plus className="h-4 w-4" />
                     <span>Thêm tag mới</span>

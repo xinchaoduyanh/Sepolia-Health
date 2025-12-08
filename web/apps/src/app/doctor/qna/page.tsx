@@ -235,7 +235,7 @@ export default function QnaListPage() {
                             <div
                                 key={question.id}
                                 className="bg-card rounded-lg border border-border p-6 hover:shadow-md transition-shadow cursor-pointer"
-                                onClick={() => router.push(`/dashboard/doctor/qna/${question.id}`)}
+                                onClick={() => router.push(`/doctor/qna/${question.id}`)}
                             >
                                 {/* Author Info */}
                                 <div className="flex items-start gap-3 mb-4">

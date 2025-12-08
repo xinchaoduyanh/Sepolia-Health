@@ -7,7 +7,7 @@ export default function TagManagementPage() {
     const router = useRouter()
 
     useEffect(() => {
-        router.replace('/dashboard/admin/tag-management/tag-list')
+        router.replace('/admin/tag-management/tag-list')
     }, [router])
 
     return (

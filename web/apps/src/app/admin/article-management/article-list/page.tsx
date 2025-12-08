@@ -83,7 +83,7 @@ function ActionCell({ article }: { article: any }) {
                 variant="ghost"
                 size="sm"
                 className="h-8 w-8 p-0"
-                onClick={() => (window.location.href = `/dashboard/admin/article-management/${article.id}`)}
+                onClick={() => (window.location.href = `/admin/article-management/${article.id}`)}
             >
                 <Eye className="h-4 w-4" />
             </Button>
@@ -210,7 +210,7 @@ export default function ArticleListPage() {
                 </div>
                 <Button
                     className="flex items-center space-x-2"
-                    onClick={() => (window.location.href = '/dashboard/admin/article-management/create')}
+                    onClick={() => (window.location.href = '/admin/article-management/create')}
                 >
                     <Plus className="h-4 w-4" />
                     <span>Thêm bài viết mới</span>

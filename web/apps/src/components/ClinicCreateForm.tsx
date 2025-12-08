@@ -70,7 +70,7 @@ export function ClinicCreateForm() {
 
         try {
             await createClinic.mutateAsync(requestData)
-            router.push('/dashboard/clinic-management/clinic-list')
+            router.push('/clinic-management/clinic-list')
         } catch (_error) {
             // Error is handled by the mutation
         }
@@ -204,7 +204,11 @@ export function ClinicCreateForm() {
                         <Button type="button" variant="outline" onClick={() => router.back()}>
                             Hủy
                         </Button>
-                        <Button type="submit" isDisabled={createClinic.isPending} className="flex items-center space-x-2">
+                        <Button
+                            type="submit"
+                            isDisabled={createClinic.isPending}
+                            className="flex items-center space-x-2"
+                        >
                             <Save className="h-4 w-4" />
                             <span>{createClinic.isPending ? 'Đang tạo...' : 'Tạo phòng khám'}</span>
                         </Button>

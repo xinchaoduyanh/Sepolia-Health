@@ -125,6 +125,7 @@ export class DoctorAppointmentService {
       status: apt.status,
       notes: apt.notes,
       type: apt.type,
+      hostUrl: apt.hostUrl,
       patient: apt.patientProfile
         ? {
             id: apt.patientProfile.id,
@@ -268,6 +269,7 @@ export class DoctorAppointmentService {
       status: appointment.status,
       notes: appointment.notes,
       type: appointment.type,
+      hostUrl: appointment.hostUrl,
       patient: appointment.patientProfile
         ? {
             id: appointment.patientProfile.id,

@@ -121,7 +121,7 @@ export function PatientCreateForm() {
 
             // Redirect to patient detail page with the new patient ID
             if (response?.id) {
-                router.push(`/dashboard/customer-management/${response.id}`)
+                router.push(`/customer-management/${response.id}`)
             }
         } catch (error: any) {
             // Parse error message from backend

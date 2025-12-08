@@ -121,6 +121,13 @@ export class DoctorAppointmentDetailDto {
   })
   result?: AppointmentResultDto | null;
 
+  @ApiProperty({
+    description: 'Host URL for online appointments',
+    example: 'https://zoom.us/s/xxx/u/xxx',
+    nullable: true,
+  })
+  hostUrl?: string | null;
+
   @ApiProperty()
   createdAt: Date;
 

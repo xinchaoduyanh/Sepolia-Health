@@ -7,7 +7,7 @@ export default function ServiceManagementPage() {
     const router = useRouter()
 
     useEffect(() => {
-        router.replace('/dashboard/admin/service-management/service-list')
+        router.replace('/admin/service-management/service-list')
     }, [router])
 
     return (

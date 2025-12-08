@@ -7,7 +7,7 @@ export default function CustomerManagementPage() {
     const router = useRouter()
 
     useEffect(() => {
-        router.replace('/dashboard/admin/customer-management/customer-list')
+        router.replace('/admin/customer-management/customer-list')
     }, [router])
 
     // Loading state while redirecting

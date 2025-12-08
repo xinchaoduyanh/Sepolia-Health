@@ -7,7 +7,7 @@ export default function AppManagementPage() {
     const router = useRouter()
 
     useEffect(() => {
-        router.replace('/dashboard/admin/app-management/usage-regulations')
+        router.replace('/admin/app-management/usage-regulations')
     }, [router])
 
     return (

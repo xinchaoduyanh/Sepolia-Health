@@ -97,7 +97,7 @@ function ActionCell({ doctor }: { doctor: any }) {
                     variant="ghost"
                     size="sm"
                     className="h-8 w-8 p-0"
-                    onClick={() => (window.location.href = `/dashboard/admin/doctor-management/${doctor.id}`)}
+                    onClick={() => (window.location.href = `/admin/doctor-management/${doctor.id}`)}
                 >
                     <Eye className="h-4 w-4" />
                 </Button>
@@ -319,7 +319,7 @@ export default function DoctorListPage() {
                 </div>
                 <Button
                     className="flex items-center space-x-2"
-                    onClick={() => (window.location.href = '/dashboard/admin/doctor-management/create')}
+                    onClick={() => (window.location.href = '/admin/doctor-management/create')}
                 >
                     <Plus className="h-4 w-4" />
                     <span>Thêm bác sĩ mới</span>

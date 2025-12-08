@@ -19,7 +19,6 @@ import { QnaModule } from '@/module/qna/qna.module';
 import { ChatbotModule } from '@/module/chatbot/chatbot.module';
 import { BullModule } from '@nestjs/bullmq';
 import IORedis from 'ioredis';
-import { MeetingModule } from './meeting/meeting.module';
 import { DoctorModule } from './doctor/doctor.module';
 import { AppTermsModule } from './app-terms/app-terms.module';
 import { UserStatusGuard } from '@/common/guards/user-status.guard';
@@ -51,7 +50,6 @@ import { REDIS_CLIENT } from '@/common/modules';
     NotificationModule,
     QnaModule,
     ChatbotModule,
-    MeetingModule,
     AppTermsModule,
   ],
   controllers: [AppController],
@@ -75,4 +73,4 @@ import { REDIS_CLIENT } from '@/common/modules';
     },
   ],
 })
-export class AppModule { }
+export class AppModule {}

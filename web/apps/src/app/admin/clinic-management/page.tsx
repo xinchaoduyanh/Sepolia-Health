@@ -7,7 +7,7 @@ export default function ClinicManagementPage() {
     const router = useRouter()
 
     useEffect(() => {
-        router.replace('/dashboard/admin/clinic-management/clinic-list')
+        router.replace('/admin/clinic-management/clinic-list')
     }, [router])
 
     return (

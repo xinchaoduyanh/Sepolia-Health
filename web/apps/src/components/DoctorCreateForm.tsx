@@ -154,7 +154,7 @@ export function DoctorCreateForm() {
 
             // Redirect to doctor detail page with the new doctor ID
             if (response?.id) {
-                router.push(`/dashboard/doctor-management/${response.id}`)
+                router.push(`/doctor-management/${response.id}`)
             }
         } catch (error: any) {
             // Parse error message from backend

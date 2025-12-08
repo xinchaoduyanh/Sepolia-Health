@@ -88,9 +88,7 @@ function ActionCell({ receptionist }: { receptionist: any }) {
                     variant="ghost"
                     size="sm"
                     className="h-8 w-8 p-0"
-                    onClick={() =>
-                        (window.location.href = `/dashboard/admin/receptionist-management/${receptionist.id}`)
-                    }
+                    onClick={() => (window.location.href = `/admin/receptionist-management/${receptionist.id}`)}
                 >
                     <Eye className="h-4 w-4" />
                 </Button>
@@ -245,7 +243,7 @@ export default function ReceptionistListPage() {
                 </div>
                 <Button
                     className="flex items-center space-x-2"
-                    onClick={() => (window.location.href = '/dashboard/admin/receptionist-management/create')}
+                    onClick={() => (window.location.href = '/admin/receptionist-management/create')}
                 >
                     <Plus className="h-4 w-4" />
                     <span>Thêm lễ tân mới</span>

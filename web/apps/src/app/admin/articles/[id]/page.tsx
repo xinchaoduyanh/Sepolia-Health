@@ -24,7 +24,7 @@ export default function ArticleDetailPage() {
         if (confirm('Bạn có chắc chắn muốn xóa bài viết này?')) {
             deleteArticle.mutate(articleId, {
                 onSuccess: () => {
-                    router.push('/dashboard/admin/articles/article-list')
+                    router.push('/admin/articles/article-list')
                 },
             })
         }
@@ -92,7 +92,7 @@ export default function ArticleDetailPage() {
                         <Button
                             variant="secondary"
                             onClick={handleUnpublish}
-                            disabled={unpublishArticle.isPending}
+                            isDisabled={unpublishArticle.isPending}
                             className="flex items-center space-x-2"
                         >
                             <span>{unpublishArticle.isPending ? 'Đang xử lý...' : 'Ẩn bài viết'}</span>
@@ -101,7 +101,7 @@ export default function ArticleDetailPage() {
                         <Button
                             variant="default"
                             onClick={handlePublish}
-                            disabled={publishArticle.isPending}
+                            isDisabled={publishArticle.isPending}
                             className="flex items-center space-x-2"
                         >
                             <span>{publishArticle.isPending ? 'Đang xử lý...' : 'Công khai bài viết'}</span>
@@ -111,7 +111,7 @@ export default function ArticleDetailPage() {
                         variant="destructive"
                         onClick={handleDelete}
                         className="flex items-center space-x-2"
-                        disabled={deleteArticle.isPending}
+                        isDisabled={deleteArticle.isPending}
                     >
                         <Trash2 className="h-4 w-4" />
                         <span>{deleteArticle.isPending ? 'Đang xóa...' : 'Xóa bài viết'}</span>

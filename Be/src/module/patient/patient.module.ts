@@ -5,7 +5,6 @@ import { DoctorModule } from './doctor/doctor.module';
 import { UploadModule } from './upload/upload.module';
 import { PromotionModule } from './promotion/promotion.module';
 import { FeedbackModule } from './feedback/feedback.module';
-import { DoctorAppointmentModule } from './doctor-appointment/doctor-appointment.module';
 import { PatientArticleModule } from './article/patient-article.module';
 
 @Module({
@@ -16,7 +15,6 @@ import { PatientArticleModule } from './article/patient-article.module';
     UploadModule,
     PromotionModule,
     FeedbackModule,
-    DoctorAppointmentModule,
     PatientArticleModule,
   ],
   exports: [
@@ -26,7 +24,6 @@ import { PatientArticleModule } from './article/patient-article.module';
     UploadModule,
     PromotionModule,
     FeedbackModule,
-    DoctorAppointmentModule,
     PatientArticleModule,
   ],
 })

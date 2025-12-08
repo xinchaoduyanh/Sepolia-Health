@@ -71,7 +71,7 @@ export function ArticleEditForm() {
 
         try {
             await updateArticle.mutateAsync({ id: articleId, data: requestData })
-            router.push('/dashboard/admin/articles/article-list')
+            router.push('/admin/articles/article-list')
         } catch (_error) {
             // Error is handled by the mutation
         }
@@ -90,7 +90,12 @@ export function ArticleEditForm() {
         return (
             <div className="space-y-6">
                 <div className="flex items-center space-x-4">
-                    <Button variant="ghost" size="sm" onClick={() => router.back()} className="flex items-center space-x-2">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => router.back()}
+                        className="flex items-center space-x-2"
+                    >
                         <ArrowLeft className="h-4 w-4" />
                         <span>Quay lại</span>
                     </Button>
@@ -106,7 +111,12 @@ export function ArticleEditForm() {
         return (
             <div className="space-y-6">
                 <div className="flex items-center space-x-4">
-                    <Button variant="ghost" size="sm" onClick={() => router.back()} className="flex items-center space-x-2">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => router.back()}
+                        className="flex items-center space-x-2"
+                    >
                         <ArrowLeft className="h-4 w-4" />
                         <span>Quay lại</span>
                     </Button>

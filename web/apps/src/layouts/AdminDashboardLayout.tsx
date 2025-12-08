@@ -252,7 +252,7 @@ export function AdminDashboardLayout({ children, defaultOpen = true }: AdminDash
         console.log('Navigate to account info')
         setIsDropdownOpen(false)
         setIsSidebarDropdownOpen(false)
-        // router.push('/dashboard/account')
+        // router.push('/account')
     }
 
     const { user } = useAuth()

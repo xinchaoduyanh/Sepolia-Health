@@ -79,7 +79,7 @@ export function ReceptionistDashboardLayout({ children, defaultOpen = true }: Re
         console.log('Navigate to account info')
         setIsDropdownOpen(false)
         setIsSidebarDropdownOpen(false)
-        // router.push('/dashboard/account')
+        // router.push('/account')
     }
 
     const { user } = useAuth()

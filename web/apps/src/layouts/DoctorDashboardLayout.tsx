@@ -98,7 +98,7 @@ export function DoctorDashboardLayout({ children, defaultOpen = true }: DoctorDa
         console.log('Navigate to account info')
         setIsDropdownOpen(false)
         setIsSidebarDropdownOpen(false)
-        // router.push('/dashboard/account')
+        // router.push('/account')
     }
 
     const { user } = useAuth()

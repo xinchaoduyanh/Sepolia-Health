@@ -184,7 +184,7 @@ export default function PromotionDisplayEditPage() {
                     // For now, we'll just redirect and let user activate manually
                 }
             }
-            router.push('/dashboard/admin/promotion-display-management')
+            router.push('/admin/promotion-display-management')
         } catch (_error) {
             // Error is handled by the mutation
         }

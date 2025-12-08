@@ -19,7 +19,7 @@ export default function ArticleDetailPage() {
         if (confirm('Bạn có chắc chắn muốn xóa bài viết này?')) {
             deleteArticle.mutate(articleId, {
                 onSuccess: () => {
-                    router.push('/dashboard/admin/article-management/article-list')
+                    router.push('/admin/article-management/article-list')
                 },
             })
         }

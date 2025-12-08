@@ -145,7 +145,7 @@ export default function DoctorScheduleAppointmentsPage() {
 
     const handleViewDetail = useCallback(
         (id: number) => {
-            router.push(`/dashboard/doctor/schedule/appointments/${id}`)
+            router.push(`/doctor/schedule/appointments/${id}`)
         },
         [router],
     )

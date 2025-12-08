@@ -85,7 +85,7 @@ function ActionCell({ service }: { service: any }) {
                 variant="ghost"
                 size="sm"
                 className="h-8 w-8 p-0"
-                onClick={() => (window.location.href = `/dashboard/admin/service-management/${service.id}`)}
+                onClick={() => (window.location.href = `/admin/service-management/${service.id}`)}
             >
                 <Eye className="h-4 w-4" />
             </Button>
@@ -232,7 +232,7 @@ export default function ServiceListPage() {
                 </div>
                 <Button
                     className="flex items-center space-x-2"
-                    onClick={() => (window.location.href = '/dashboard/admin/service-management/create')}
+                    onClick={() => (window.location.href = '/admin/service-management/create')}
                 >
                     <Plus className="h-4 w-4" />
                     <span>Thêm dịch vụ mới</span>

@@ -22,6 +22,31 @@ import {
 import Link from 'next/link'
 import { usePatient } from '@/shared/hooks'
 
+// Helper function to translate relationship types
+const getRelationshipLabel = (relationship: string): string => {
+    const relationshipMap: Record<string, string> = {
+        SELF: 'Bản thân',
+        MOTHER: 'Mẹ',
+        FATHER: 'Bố',
+        SPOUSE: 'Vợ/Chồng',
+        CHILD: 'Con',
+        SIBLING: 'Anh/Chị/Em',
+        GRANDPARENT: 'Ông/Bà',
+        GRANDCHILD: 'Cháu',
+        OTHER: 'Khác',
+    }
+    return relationshipMap[relationship] || relationship
+}
+
+const getGenderLabel = (gender: string): string => {
+    const genderMap: Record<string, string> = {
+        MALE: 'Nam',
+        FEMALE: 'Nữ',
+        OTHER: 'Khác',
+    }
+    return genderMap[gender] || gender
+}
+
 export default function UserDetailPage() {
     const params = useParams()
     const patientId = params?.id ? Number(params.id) : 0
@@ -33,7 +58,7 @@ export default function UserDetailPage() {
             <div className="space-y-6">
                 <div className="flex items-center space-x-4">
                     <Button variant="ghost" size="sm" asChild>
-                        <Link href="/dashboard/admin/customer-management/customer-list">
+                        <Link href="/admin/customer-management/customer-list">
                             <ArrowLeft className="h-4 w-4 mr-2" />
                             Quay lại
                         </Link>
@@ -51,7 +76,7 @@ export default function UserDetailPage() {
             <div className="space-y-6">
                 <div className="flex items-center space-x-4">
                     <Button variant="ghost" size="sm" asChild>
-                        <Link href="/dashboard/admin/customer-management/customer-list">
+                        <Link href="/admin/customer-management/customer-list">
                             <ArrowLeft className="h-4 w-4 mr-2" />
                             Quay lại
                         </Link>
@@ -65,7 +90,7 @@ export default function UserDetailPage() {
                             {(error as any)?.response?.data?.message || 'Bệnh nhân không tồn tại hoặc đã bị xóa'}
                         </p>
                         <Button asChild>
-                            <Link href="/dashboard/admin/customer-management/customer-list">Quay lại danh sách</Link>
+                            <Link href="/admin/customer-management/customer-list">Quay lại danh sách</Link>
                         </Button>
                     </CardContent>
                 </Card>
@@ -79,7 +104,7 @@ export default function UserDetailPage() {
             <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
                     <Button variant="ghost" size="sm" asChild>
-                        <Link href="/dashboard/admin/customer-management/customer-list">
+                        <Link href="/admin/customer-management/customer-list">
                             <ArrowLeft className="h-4 w-4 mr-2" />
                             Quay lại
                         </Link>
@@ -183,25 +208,7 @@ export default function UserDetailPage() {
                                                     variant={profile.relationship === 'SELF' ? 'default' : 'secondary'}
                                                     className="text-xs"
                                                 >
-                                                    {profile.relationship === 'SELF'
-                                                        ? 'Bản thân'
-                                                        : profile.relationship === 'MOTHER'
-                                                          ? 'Mẹ'
-                                                          : profile.relationship === 'FATHER'
-                                                            ? 'Bố'
-                                                            : profile.relationship === 'SPOUSE'
-                                                              ? 'Vợ/Chồng'
-                                                              : profile.relationship === 'CHILD'
-                                                                ? 'Con'
-                                                                : profile.relationship === 'SIBLING'
-                                                                  ? 'Anh/Chị/Em'
-                                                                  : profile.relationship === 'GRANDPARENT'
-                                                                    ? 'Ông/Bà'
-                                                                    : profile.relationship === 'GRANDCHILD'
-                                                                      ? 'Cháu'
-                                                                      : profile.relationship === 'OTHER'
-                                                                        ? 'Khác'
-                                                                        : profile.relationship}
+                                                    {getRelationshipLabel(profile.relationship)}
                                                 </Badge>
                                             </CardDescription>
                                         </div>
@@ -213,13 +220,7 @@ export default function UserDetailPage() {
                                             <label className="text-xs font-medium text-muted-foreground">
                                                 Giới tính
                                             </label>
-                                            <p className="text-sm">
-                                                {profile.gender === 'MALE'
-                                                    ? 'Nam'
-                                                    : profile.gender === 'FEMALE'
-                                                      ? 'Nữ'
-                                                      : 'Khác'}
-                                            </p>
+                                            <p className="text-sm">{getGenderLabel(profile.gender)}</p>
                                         </div>
                                         <div>
                                             <label className="text-xs font-medium text-muted-foreground">

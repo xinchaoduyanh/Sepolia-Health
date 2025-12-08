@@ -126,7 +126,7 @@ export function PromotionCreateForm({ promotionId }: PromotionCreateFormProps) {
             } else {
                 await createPromotion.mutateAsync(requestData as CreatePromotionRequest)
             }
-            router.push('/dashboard/admin/promotion-management')
+            router.push('/admin/promotion-management')
         } catch (_error) {
             // Error is handled by the mutation
         }

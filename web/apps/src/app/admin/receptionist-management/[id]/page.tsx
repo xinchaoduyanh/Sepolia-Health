@@ -13,7 +13,7 @@ export default function ReceptionistDetailPage() {
     const { data: receptionist, isLoading, error } = useReceptionist(receptionistId)
 
     const handleBack = () => {
-        router.push('/dashboard/admin/receptionist-management')
+        router.push('/admin/receptionist-management')
     }
 
     const handleEdit = (id: string) => {

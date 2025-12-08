@@ -78,7 +78,7 @@ function ActionCell({ article }: { article: any }) {
                 variant="ghost"
                 size="sm"
                 className="h-8 w-8 p-0"
-                onClick={() => (window.location.href = `/dashboard/admin/articles/${article.id}`)}
+                onClick={() => (window.location.href = `/admin/articles/${article.id}`)}
             >
                 <Eye className="h-4 w-4" />
             </Button>
@@ -86,7 +86,7 @@ function ActionCell({ article }: { article: any }) {
                 variant="ghost"
                 size="sm"
                 className="h-8 w-8 p-0"
-                onClick={() => (window.location.href = `/dashboard/admin/articles/${article.id}/edit`)}
+                onClick={() => (window.location.href = `/admin/articles/${article.id}/edit`)}
             >
                 <Edit className="h-4 w-4" />
             </Button>
@@ -238,7 +238,7 @@ export default function NewsEventsPage() {
                 </div>
                 <Button
                     className="flex items-center space-x-2"
-                    onClick={() => (window.location.href = '/dashboard/admin/articles/create')}
+                    onClick={() => (window.location.href = '/admin/articles/create')}
                 >
                     <ExternalLink className="h-4 w-4" />
                     <span>Viết bài mới</span>
