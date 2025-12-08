@@ -12,7 +12,7 @@ import {
     useSidebar,
 } from '@workspace/ui/components/Sidebar'
 import { ThemeSwitcher } from '@/shared/components/ThemeSwitcher'
-import { useAuth, useAdminLogout } from '@/shared/hooks/useAuth'
+import { useAuth, useLogout } from '@/shared/hooks/useAuth'
 import Image from 'next/image'
 import { Monitor, FileText, User, LogOut } from 'lucide-react'
 import Link from 'next/link'
@@ -83,7 +83,7 @@ export function ReceptionistDashboardLayout({ children, defaultOpen = true }: Re
     }
 
     const { user } = useAuth()
-    const logoutMutation = useAdminLogout()
+    const logoutMutation = useLogout()
 
     const handleLogout = () => {
         logoutMutation.mutate()

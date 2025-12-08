@@ -104,6 +104,7 @@ export class AuthController {
     return this.authService.completeRegister(completeRegisterDto);
   }
 
+  @Public()
   @Post('refresh-token')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Làm mới access token' })

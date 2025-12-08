@@ -10,13 +10,6 @@ export interface TokenPayload {
   iat: number;
 }
 
-export interface JwtConfig {
-  secret: string;
-  expiresIn: string;
-  refreshSecret: string;
-  refreshExpiresIn: string;
-}
-
 export interface GenerateTokenOptions {
   userId: number;
   role: string;

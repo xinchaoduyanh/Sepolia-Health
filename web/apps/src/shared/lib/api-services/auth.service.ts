@@ -1,20 +1,18 @@
 import { apiClient } from '../api-client'
-import { config } from '../config'
-import { normalizeApiResponse, normalizeApiError } from '../api-response-normalizer'
 import { Role } from '@/types/role'
 
 // Types for auth API - matching BE DTOs
-export interface AdminLoginRequest {
+export interface LoginRequest {
     email: string
     password: string
 }
 
-export interface AdminLoginResponse {
+export interface LoginResponse {
     accessToken: string
     refreshToken: string
 }
 
-export interface AdminProfile {
+export interface UserProfile {
     id: number
     email: string
     phone: string | null
@@ -45,59 +43,28 @@ export interface ForgotPasswordRequest {
 
 export class AuthService {
     /**
-     * Admin login - gọi thẳng tới backend API
+     * Login - gọi thẳng tới backend API
      */
-    async login(credentials: AdminLoginRequest): Promise<AdminLoginResponse> {
-        const response = await fetch(`${config.apiUrl}/auth/login`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(credentials),
-        })
-
-        if (!response.ok) {
-            const errorData = await response.json()
-            throw new Error(normalizeApiError(errorData))
-        }
-
-        const responseData = await response.json()
-
-        // Normalize response structure using utility
-        return normalizeApiResponse<AdminLoginResponse>(responseData)
+    async login(credentials: LoginRequest): Promise<LoginResponse> {
+        return await apiClient.post('/auth/login', credentials)
     }
 
     /**
-     * Refresh access token - gọi thẳng tới backend API
+     * Get current user profile - gọi thẳng tới backend API
      */
-    async refreshToken(): Promise<RefreshTokenResponse> {
-        // This method should be called with the refresh token from the store
-        // The actual implementation will be handled by the API client interceptor
-        throw new Error('This method should not be called directly. Use API client instead.')
+    async getProfile(): Promise<UserProfile> {
+        return await apiClient.get('/auth/me')
     }
 
     /**
-     * Get current admin profile - gọi thẳng tới backend API
-     */
-    async getProfile(): Promise<AdminProfile> {
-        return apiClient.get('/auth/me')
-    }
-
-    /**
-     * Admin logout - gọi thẳng tới backend API
+     * Logout - gọi thẳng tới backend API
      */
     async logout(): Promise<LogoutResponse> {
-        try {
-            return await apiClient.post('/auth/logout')
-        } catch (error) {
-            // Even if logout fails on server, we should still clear local state
-            console.error('Logout API call failed:', error)
-            return { message: 'Logged out locally' }
-        }
+        return await apiClient.post('/auth/logout')
     }
 
     async resetPassword(data: ForgotPasswordRequest): Promise<any> {
-        return apiClient.post('/auth/reset-password', data)
+        return await apiClient.post('/auth/reset-password', data)
     }
 }
 

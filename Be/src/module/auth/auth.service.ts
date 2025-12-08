@@ -87,13 +87,13 @@ export class AuthService {
     await this.redisService.setToken(
       accessTokenKey,
       tokens.accessToken,
-      this.tokenConf.accessTokenExpiresInSeconds,
+      this.tokenConf.accessTokenExpiresIn,
     );
     // Store refresh token with configured expiration
     await this.redisService.setToken(
       refreshTokenKey,
       tokens.refreshToken,
-      this.tokenConf.refreshTokenExpiresInSeconds,
+      this.tokenConf.refreshTokenExpiresIn,
     );
 
     return tokens;
@@ -260,13 +260,13 @@ export class AuthService {
     await this.redisService.setToken(
       accessTokenKey,
       tokens.accessToken,
-      this.tokenConf.accessTokenExpiresInSeconds,
+      this.tokenConf.accessTokenExpiresIn,
     );
     // Store refresh token with configured expiration
     await this.redisService.setToken(
       refreshTokenKey,
       tokens.refreshToken,
-      this.tokenConf.refreshTokenExpiresInSeconds,
+      this.tokenConf.refreshTokenExpiresIn,
     );
 
     return tokens;

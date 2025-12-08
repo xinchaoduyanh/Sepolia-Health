@@ -12,7 +12,7 @@ import {
     useSidebar,
 } from '@workspace/ui/components/Sidebar'
 import { ThemeSwitcher } from '@/shared/components/ThemeSwitcher'
-import { useAuth, useAdminLogout } from '@/shared/hooks/useAuth'
+import { useAuth, useLogout } from '@/shared/hooks/useAuth'
 import { useDoctorProfile } from '@/shared/hooks/useDoctorProfile'
 import Image from 'next/image'
 import { Monitor, UserCheck, User, LogOut, MessageSquare } from 'lucide-react'
@@ -102,7 +102,7 @@ export function DoctorDashboardLayout({ children, defaultOpen = true }: DoctorDa
     }
 
     const { user } = useAuth()
-    const logoutMutation = useAdminLogout()
+    const logoutMutation = useLogout()
 
     const handleLogout = () => {
         logoutMutation.mutate()

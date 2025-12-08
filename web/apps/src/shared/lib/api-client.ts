@@ -1,5 +1,6 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
 import { config } from './config'
+import { RefreshTokenResponse } from './api-services/auth.service'
 
 /**
  * Enhanced API client with interceptors for error handling
@@ -8,7 +9,6 @@ import { config } from './config'
 export class ApiClient {
     private client: AxiosInstance
     private isRefreshing = false
-    private refreshPromise: Promise<any> | null = null
     private authStore: any = null
 
     constructor() {
@@ -26,44 +26,29 @@ export class ApiClient {
     // Set auth store reference for token management
     setAuthStore(authStore: any) {
         this.authStore = authStore
-        console.log('🔧 API Client initialized with auth store:', {
-            hasAuthStore: !!authStore,
-            hasAccessToken: !!authStore?.accessToken,
-            hasRefreshToken: !!authStore?.refreshToken,
-            isAuthenticated: authStore?.isAuthenticated,
-            user: authStore?.user,
-        })
+    }
+
+    private getTokenFromStorage(type: 'access' | 'refresh' = 'access'): string | null {
+        try {
+            const authStorage = localStorage.getItem('auth-storage')
+            if (authStorage) {
+                const parsed = JSON.parse(authStorage)
+                return type === 'access' ? parsed.state?.accessToken || null : parsed.state?.refreshToken || null
+            }
+        } catch (error) {
+            console.error(`Error reading ${type} token from localStorage:`, error)
+        }
+        return null
     }
 
     private setupInterceptors() {
         // Request interceptor to add auth token
         this.client.interceptors.request.use(
             config => {
-                // Get token from localStorage directly - simple and reliable!
-                let token = null
-                try {
-                    const authStorage = localStorage.getItem('auth-storage')
-                    if (authStorage) {
-                        const parsed = JSON.parse(authStorage)
-                        token = parsed.state?.accessToken
-                    }
-                } catch (error) {
-                    console.error('Error reading token from localStorage:', error)
-                }
+                const token = this.getTokenFromStorage()
 
                 if (token) {
                     config.headers.Authorization = `Bearer ${token}`
-                    console.log('🔑 Adding token to request (from localStorage):', {
-                        url: config.url,
-                        method: config.method,
-                        hasToken: !!token,
-                        tokenPreview: token?.substring(0, 20) + '...',
-                    })
-                } else {
-                    console.log('❌ No token found in localStorage for request:', {
-                        url: config.url,
-                        method: config.method,
-                    })
                 }
                 return config
             },
@@ -72,36 +57,34 @@ export class ApiClient {
             },
         )
 
-        // Response interceptor for error handling
+        // Response interceptor for error handling and auto token refresh
         this.client.interceptors.response.use(
-            (response: AxiosResponse) => {
-                console.log('✅ API Response:', {
-                    url: response.config.url,
-                    method: response.config.method,
-                    status: response.status,
-                    statusText: response.statusText,
-                })
-                return response
-            },
+            (response: AxiosResponse) => response,
             async error => {
-                console.log('❌ API Error:', {
-                    url: error.config?.url,
-                    method: error.config?.method,
-                    status: error.response?.status,
-                    statusText: error.response?.statusText,
-                    message: error.message,
-                    data: error.response?.data,
-                })
+                // Handle 401 - try to refresh and retry
+                if (error.response?.status === 401 && error.config && !this.isRefreshing) {
+                    this.isRefreshing = true
 
-                // Just log 401 errors, don't handle them automatically
-                if (error.response?.status === 401) {
-                    console.log('🔒 401 Unauthorized - Token may be invalid or expired')
-                    console.log('🔍 Current auth store state:', {
-                        hasAuthStore: !!this.authStore,
-                        hasAccessToken: !!this.authStore?.accessToken,
-                        hasRefreshToken: !!this.authStore?.refreshToken,
-                        isAuthenticated: this.authStore?.isAuthenticated,
-                    })
+                    try {
+                        await this.performRefresh()
+                        const newToken = this.getTokenFromStorage()
+
+                        if (newToken && error.config) {
+                            error.config.headers.Authorization = `Bearer ${newToken}`
+                            this.isRefreshing = false
+                            return this.client(error.config) // Retry request
+                        }
+                    } catch (err) {
+                        console.error('❌ Token refresh failed:', err)
+                        this.isRefreshing = false
+                        this.authStore?.logout()
+
+                        if (typeof window !== 'undefined') {
+                            window.location.href = '/login'
+                        }
+
+                        return Promise.reject(err)
+                    }
                 }
 
                 return Promise.reject(error)
@@ -109,67 +92,41 @@ export class ApiClient {
         )
     }
 
-    private async performRefresh(): Promise<void> {
-        // Get refresh token from localStorage directly
-        let refreshToken = null
+    private updateTokensInStorage(accessToken: string, refreshToken: string): void {
         try {
             const authStorage = localStorage.getItem('auth-storage')
             if (authStorage) {
                 const parsed = JSON.parse(authStorage)
-                refreshToken = parsed.state?.refreshToken
+                parsed.state.accessToken = accessToken
+                parsed.state.refreshToken = refreshToken
+                localStorage.setItem('auth-storage', JSON.stringify(parsed))
             }
         } catch (error) {
-            console.error('Error reading refresh token from localStorage:', error)
+            console.error('Error updating tokens in localStorage:', error)
         }
+    }
+
+    private async performRefresh(): Promise<void> {
+        const refreshToken = this.getTokenFromStorage('refresh')
 
         if (!refreshToken) {
             throw new Error('No refresh token available')
         }
 
         try {
-            const response = await fetch(`${config.apiUrl}/auth/refresh`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${refreshToken}`,
-                },
-            })
+            const response = await this.client.post<any>('/auth/refresh-token', { refreshToken })
 
-            if (!response.ok) {
-                throw new Error('Token refresh failed')
-            }
+            const data = this.unwrapResponse<RefreshTokenResponse>(response.data)
 
-            const data = await response.json()
-
-            // Update tokens in localStorage directly
-            try {
-                const authStorage = localStorage.getItem('auth-storage')
-                if (authStorage) {
-                    const parsed = JSON.parse(authStorage)
-                    if (data.accessToken) {
-                        parsed.state.accessToken = data.accessToken
-                    }
-                    if (data.refreshToken) {
-                        parsed.state.refreshToken = data.refreshToken
-                    }
-                    localStorage.setItem('auth-storage', JSON.stringify(parsed))
-                    console.log('✅ Tokens updated in localStorage')
-                }
-            } catch (error) {
-                console.error('Error updating tokens in localStorage:', error)
-            }
+            // Update tokens in localStorage
+            this.updateTokensInStorage(data.accessToken, data.refreshToken)
 
             // Also update auth store if available
             if (this.authStore) {
-                if (data.accessToken) {
-                    this.authStore.setAccessToken(data.accessToken)
-                }
-                if (data.accessToken && data.refreshToken) {
-                    this.authStore.setTokens({
-                        accessToken: data.accessToken,
-                        refreshToken: data.refreshToken,
-                    })
-                }
+                this.authStore.setTokens({
+                    accessToken: data.accessToken,
+                    refreshToken: data.refreshToken,
+                })
             }
         } catch (error) {
             console.error('Refresh token failed:', error)
@@ -193,11 +150,6 @@ export class ApiClient {
     }
 
     async post<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
-        console.log('🚀 Posting to API:', {
-            url,
-            data,
-            config,
-        })
         const response = await this.client.post(url, data, config)
         return this.unwrapResponse<T>(response.data)
     }

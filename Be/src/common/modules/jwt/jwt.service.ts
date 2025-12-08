@@ -30,7 +30,7 @@ export class CustomJwtService {
   generateRefreshToken(payload: Omit<TokenPayload, 'exp' | 'iat'>): string {
     return this.jwtService.sign(payload, {
       secret: this.jwtConf.refreshSecret,
-      expiresIn: this.jwtConf.refreshExpiresIn,
+      expiresIn: this.jwtConf.refreshTokenExpiresIn,
     });
   }
 

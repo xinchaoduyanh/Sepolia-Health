@@ -22,7 +22,6 @@ export default function LoginPage() {
 
         try {
             await loginMutation.mutateAsync({ email, password })
-            // Navigation is handled by the login mutation
         } catch (err: any) {
             // Lấy message từ error object
             const errorMessage = err?.message || 'Login failed'

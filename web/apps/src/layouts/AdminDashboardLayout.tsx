@@ -12,7 +12,7 @@ import {
     useSidebar,
 } from '@workspace/ui/components/Sidebar'
 import { ThemeSwitcher } from '@/shared/components/ThemeSwitcher'
-import { useAuth, useAdminLogout } from '@/shared/hooks/useAuth'
+import { useAuth, useLogout } from '@/shared/hooks/useAuth'
 import Image from 'next/image'
 import {
     BarChart3,
@@ -256,7 +256,7 @@ export function AdminDashboardLayout({ children, defaultOpen = true }: AdminDash
     }
 
     const { user } = useAuth()
-    const logoutMutation = useAdminLogout()
+    const logoutMutation = useLogout()
 
     const handleLogout = () => {
         logoutMutation.mutate()

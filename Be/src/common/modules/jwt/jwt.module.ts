@@ -13,7 +13,7 @@ import { JwtStrategy } from './jwt.strategy';
       inject: [appConfig.KEY],
       useFactory: async (jwtConf: ConfigType<typeof appConfig>) => ({
         secret: jwtConf.secret,
-        signOptions: { expiresIn: jwtConf.expiresIn },
+        signOptions: { expiresIn: jwtConf.accessTokenExpiresIn },
       }),
     }),
   ],

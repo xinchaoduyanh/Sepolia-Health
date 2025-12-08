@@ -14,15 +14,10 @@ export default registerAs('app', () => {
     resendApiKey: parsed.RESEND_API_KEY,
     frontendUrl: parsed.FRONTEND_URL,
     secret: parsed.JWT_SECRET,
-    expiresIn: parsed.JWT_EXPIRES_IN as `${number}${'s' | 'm' | 'h' | 'd'}`,
+    accessTokenExpiresIn: Number(parsed.TOKEN_ACCESS_EXPIRES_IN_SECONDS),
     refreshSecret: parsed.JWT_REFRESH_SECRET,
-    refreshExpiresIn:
-      parsed.JWT_REFRESH_EXPIRES_IN as `${number}${'s' | 'm' | 'h' | 'd'}`,
+    refreshTokenExpiresIn: Number(parsed.TOKEN_REFRESH_EXPIRES_IN_SECONDS),
     redisUrl: parsed.REDIS_URL,
-    accessTokenExpiresInSeconds: Number(parsed.TOKEN_ACCESS_EXPIRES_IN_SECONDS),
-    refreshTokenExpiresInSeconds: Number(
-      parsed.TOKEN_REFRESH_EXPIRES_IN_SECONDS,
-    ),
     // sepay
     sepayApiKey: parsed.SEPAY_API_KEY,
     sepayAccountNumber: parsed.SEPAY_ACCOUNT_NUMBER,
