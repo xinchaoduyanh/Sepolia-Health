@@ -14,14 +14,13 @@ Sepolia-Health là một giải pháp quản lý phòng khám hiện đại, cun
 - **Đặt lịch khám** trực tuyến với lựa chọn chuyên khoa và bác sĩ
 - **Quản lý hồ sơ cá nhân** và thông tin sức khỏe
 - **Quét QR code** để check-in nhanh chóng
-- **Xem lịch sử khám bệnh** và đơn thuốc
+- **Xem lịch sử khám bệnh**
 - **Thanh toán trực tuyến** và theo dõi giao dịch
 
 ### 👨‍⚕️ Dành cho Bác sĩ
 
 - **Quản lý lịch làm việc** ca khám
 - **Xem danh sách bệnh nhân** đã đặt lịch
-- **Kê đơn thuốc** điện tử
 - **Theo dõi phản hồi** từ bệnh nhân
 
 ### 🏢 Dành cho Lễ tân
