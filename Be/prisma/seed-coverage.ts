@@ -340,6 +340,7 @@ async function main() {
   await prisma.tag.deleteMany({});
   await prisma.appTerms.deleteMany({});
   await prisma.feedback.deleteMany({});
+  await prisma.appointmentResult.deleteMany({});
   await prisma.billing.deleteMany({});
   await prisma.doctorAvailability.deleteMany({});
   await prisma.doctorService.deleteMany({});
@@ -810,6 +811,7 @@ async function main() {
   let appointmentsCreated = 0;
   let billingsCreated = 0;
   let feedbacksCreated = 0;
+  let appointmentResultsCreated = 0;
 
   for (let i = 0; i < appointmentData.length; i += BATCH_SIZE) {
     const batch = appointmentData.slice(i, i + BATCH_SIZE);
@@ -878,6 +880,15 @@ async function main() {
       comment: string;
     }> = [];
 
+    const appointmentResultsToInsert: Array<{
+      appointmentId: number;
+      doctorId: number;
+      diagnosis: string;
+      notes: string;
+      prescription: string;
+      recommendations: string;
+    }> = [];
+
     for (const data of batch) {
       const key = `${data.doctorId}-${data.patientProfileId}-${data.serviceId}-${data.startTime.getTime()}-${data.endTime.getTime()}`;
       const appointment = appointmentMap.get(key);
@@ -905,6 +916,114 @@ async function main() {
             rating: faker.number.int({ min: 3, max: 5 }),
             comment: faker.lorem.sentence(),
           });
+
+          // Tạo appointment result cho completed appointments
+          const specialties = ['Mắt', 'Tai - Mũi - Họng', 'Sản phụ khoa', 'Tiêm chủng'];
+          const randomSpecialty = faker.helpers.arrayElement(specialties);
+
+          // Tạo diagnosis theo chuyên khoa
+          let diagnosis = '';
+          let prescription = '';
+          let recommendations = '';
+
+          switch (randomSpecialty) {
+            case 'Mắt':
+              diagnosis = faker.helpers.arrayElement([
+                'Cận thị độ nhẹ',
+                'Viêm kết mạc dị ứng',
+                'Khô mắt',
+                'Đục thủy tinh thể giai đoạn đầu',
+                'Loạn thị'
+              ]);
+              prescription = faker.helpers.arrayElement([
+                'Kháng sinh nhỏ mắt 5 ngày',
+                'Nước mắt nhân tạo 3 lần/ngày',
+                'Vitamin A, E',
+                'Thuốc nhỏ mắt chống viêm'
+              ]);
+              recommendations = faker.helpers.arrayElement([
+                'Hạn chế nhìn màn hình điện tử',
+                'Đeo kính bảo hộ khi ra đường',
+                'Tái khám sau 3 tháng',
+                'Ngủ đủ 8 tiếng mỗi ngày'
+              ]);
+              break;
+
+            case 'Tai - Mũi - Họng':
+              diagnosis = faker.helpers.arrayElement([
+                'Viêm xoang mạn tính',
+                'Viêm amidan cấp',
+                'Viêm tai giữa ứ dịch',
+                'Viêm mũi dị ứng',
+                'Trào ngược viễn thực quản'
+              ]);
+              prescription = faker.helpers.arrayElement([
+                'Kháng sinh 7 ngày',
+                'Thuốc chống viêm',
+                'Thuốc giảm đau',
+                'Nước rửa mũi sinh lý'
+              ]);
+              recommendations = faker.helpers.arrayElement([
+                'Tránh môi trường ô nhiễm',
+                'Uống đủ nước ấm',
+                'Súc miệng nước muối',
+                'Tái khám sau 1 tuần'
+              ]);
+              break;
+
+            case 'Sản phụ khoa':
+              diagnosis = faker.helpers.arrayElement([
+                'Viêm nhiễm phụ khoa nhẹ',
+                'Rối loạn kinh nguyệt',
+                'Mang thai 8 tuần',
+                'U nang buồng trứng nhỏ',
+                'Lạc nội mạc tử cung'
+              ]);
+              prescription = faker.helpers.arrayElement([
+                'Kháng sinh phổ rộng',
+                'Thuốc cân bằng nội tiết',
+                'Axit folic',
+                'Canxi và Vitamin D'
+              ]);
+              recommendations = faker.helpers.arrayElement([
+                'Vệ sinh vùng kín đúng cách',
+                'Quan hệ tình dục an toàn',
+                'Tầm soát ung thư định kỳ',
+                'Theo dõi chu kỳ kinh nguyệt'
+              ]);
+              break;
+
+            case 'Tiêm chủng':
+              diagnosis = faker.helpers.arrayElement([
+                'Tiêm chủng đủ lịch',
+                'Cần tiêm nhắc lại vắc-xin',
+                'Phản ứng nhẹ sau tiêm',
+                'Miễn dịch tốt',
+                'Cần tiêm vắc-xin cúm hàng năm'
+              ]);
+              prescription = faker.helpers.arrayElement([
+                'Paracetamol khi sốt nhẹ',
+                'Chườm lạnh nơi tiêm',
+                'Uống nhiều nước',
+                'Không cần thuốc đặc hiệu'
+              ]);
+              recommendations = faker.helpers.arrayElement([
+                'Ở lại theo dõi 30 phút sau tiêm',
+                'Không gãi vào vùng tiêm',
+                'Theo dõi phản ứng sau tiêm 24h',
+                'Ghi nhớ lịch tiêm lần sau'
+              ]);
+              break;
+          }
+
+          appointmentResultsToInsert.push({
+            appointmentId: appointment.id,
+            doctorId: appointment.doctorId,
+            diagnosis: diagnosis,
+            notes: faker.lorem.paragraph(2),
+            prescription: prescription,
+            recommendations: recommendations
+          });
         }
       }
     }
@@ -926,13 +1045,22 @@ async function main() {
       feedbacksCreated += feedbacksToInsert.length;
     }
 
+    // Insert appointment results
+    if (appointmentResultsToInsert.length > 0) {
+      await prisma.appointmentResult.createMany({
+        data: appointmentResultsToInsert,
+        skipDuplicates: true,
+      });
+      appointmentResultsCreated += appointmentResultsToInsert.length;
+    }
+
     if (appointmentsCreated % 500 === 0 && appointmentsCreated > 0) {
       console.log(`   ... đã tạo ${appointmentsCreated} appointments`);
     }
   }
 
   console.log(
-    `✅ Đã tạo ${appointmentsCreated} appointments, ${billingsCreated} billings, ${feedbacksCreated} feedbacks`,
+    `✅ Đã tạo ${appointmentsCreated} appointments, ${billingsCreated} billings, ${feedbacksCreated} feedbacks, ${appointmentResultsCreated} appointment results`,
   );
 
   // ---- BƯỚC 10: TẠO TAGS CHO Q&A ----
@@ -1072,6 +1200,7 @@ async function main() {
      - ${appointmentsCreated} lịch hẹn
      - ${billingsCreated} hóa đơn
      - ${feedbacksCreated} feedbacks
+     - ${appointmentResultsCreated} kết quả khám (AppointmentResult)
      - ${tagsData.length} tags
      - ${questionsCreated} questions
      - ${answersCreated} answers
