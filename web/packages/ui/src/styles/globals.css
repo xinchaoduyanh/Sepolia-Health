@@ -10,93 +10,138 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-    /* Light Theme - Background nhạt, Content đậm */
-    --background: #e0f2fe;
-    --background-secondary: #d1ecfd;
-    --background-tertiary: #7dd3fc;
-    --foreground: #0f172a;
-    --card: #bae6fd;
-    --card-foreground: #0f172a;
-    --popover: #bae6fd;
-    --popover-foreground: #0f172a;
-    --popover-shadow: 0 10px 25px 0 rgb(0 0 0 / 0.15);
-    --primary: #0284c7;
-    --primary-light: #bae6fd;
-    --primary-dark: #0369a1;
-    --primary-foreground: #ffffff;
-    --secondary: #10b981;
-    --secondary-light: #6ee7b7;
-    --secondary-foreground: #ffffff;
-    --muted: #d1ecfd;
-    --muted-foreground: #475569;
-    --accent: #06b6d4;
-    --accent-foreground: #ffffff;
-    --destructive: #ef4444;
-    --destructive-foreground: #ffffff;
-    --success: #10b981;
-    --success-foreground: #ffffff;
-    --border: #93d5f8;
-    --input: #bae6fd;
-    --ring: #0284c7;
-    --chart-1: #0284c7;
-    --chart-2: #10b981;
-    --chart-3: #06b6d4;
-    --chart-4: #f59e0b;
-    --chart-5: #ef4444;
-    --radius: 0.625rem;
-    /* Sidebar with gradient - giống App */
-    --sidebar: linear-gradient(180deg, #0284c7 0%, #06b6d4 50%, #10b981 100%);
-    --sidebar-foreground: #ffffff;
-    --sidebar-primary: #ffffff;
-    --sidebar-accent: rgba(255, 255, 255, 0.15);
-    --sidebar-accent-foreground: #ffffff;
-    --sidebar-border: rgba(255, 255, 255, 0.2);
-    --sidebar-ring: #ffffff;
+    /* Light Theme - Warm White Modern Healthcare Theme */
+    --background: #FEFDFB;
+    --background-secondary: #F8F7F5;
+    --background-tertiary: #F3F0EB;
+    --foreground: #1A1A1A;
+    --card: #FFFFFF;
+    --card-foreground: #1A1A1A;
+    --popover: #FFFFFF;
+    --popover-foreground: #1A1A1A;
+    --popover-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --primary: #14B8A6;
+    --primary-light: #5EEAD4;
+    --primary-dark: #0F766E;
+    --primary-foreground: #FFFFFF;
+    --secondary: #3B82F6;
+    --secondary-light: #60A5FA;
+    --secondary-dark: #1D4ED8;
+    --secondary-foreground: #FFFFFF;
+    --muted: #F3F0EB;
+    --muted-foreground: #6B7280;
+    --accent: #8B5CF6;
+    --accent-foreground: #FFFFFF;
+    --destructive: #B91C1C;
+    --destructive-foreground: #FFFFFF;
+    --success: #059669;
+    --success-foreground: #FFFFFF;
+    /* Extended color palette for more variety */
+    --warning: #F59E0B;
+    --warning-foreground: #FFFFFF;
+    --info: #06B6D4;
+    --info-foreground: #FFFFFF;
+    --pink: #EC4899;
+    --pink-foreground: #FFFFFF;
+    --orange: #F97316;
+    --orange-foreground: #FFFFFF;
+    --yellow: #EAB308;
+    --yellow-foreground: #000000;
+    --light-blue: #0EA5E9;
+    --light-blue-foreground: #FFFFFF;
+    --light-red: #F87171;
+    --light-red-foreground: #FFFFFF;
+    --light-green: #34D399;
+    --light-green-foreground: #000000;
+    --indigo: #6366F1;
+    --indigo-foreground: #FFFFFF;
+    --border: #E5E5E5;
+    --input: #FFFFFF;
+    --ring: #1A1A1A;
+    --chart-1: #14B8A6;
+    --chart-2: #3B82F6;
+    --chart-3: #F59E0B;
+    --chart-4: #EC4899;
+    --chart-5: #F97316;
+    --chart-6: #0EA5E9;
+    --chart-7: #34D399;
+    --chart-8: #8B5CF6;
+    --radius: 0.75rem;
+    /* Light sidebar colors */
+    --sidebar: #FFFFFF;
+    --sidebar-foreground: #1A1A1A;
+    --sidebar-primary: #14B8A6;
+    --sidebar-accent: rgba(20, 184, 166, 0.1);
+    --sidebar-accent-foreground: #1A1A1A;
+    --sidebar-border: #E5E5E5;
+    --sidebar-ring: #14B8A6;
 }
 
 .dark {
-    /* Dark Theme - navy-slate tối sang trọng */
-    --background: #0f172a;
-    --background-secondary: #1e293b;
-    --background-tertiary: #273549;
-    --foreground: #f8fafc;
-    --card: #1e293b;
-    --card-foreground: #f8fafc;
-    --popover: #1e293b;
-    --popover-foreground: #f8fafc;
-    --popover-shadow: 0 10px 25px 0 rgb(0 0 0 / 0.4);
-    --primary: #0ea5e9;
-    --primary-light: #bae6fd;
-    --primary-dark: #0c4a6e;
-    --primary-foreground: #ffffff;
-    --secondary: #34d399;
-    --secondary-light: #a7f3d0;
-    --secondary-dark: #065f46;
-    --secondary-foreground: #ffffff;
-    --muted: #64748b;
-    --muted-foreground: #94a3b8;
-    --accent: #22d3ee;
-    --accent-foreground: #ffffff;
-    --destructive: #ef4444;
-    --destructive-foreground: #ffffff;
-    --success: #22c55e;
-    --success-foreground: #ffffff;
-    --border: #334155;
-    --input: #334155;
-    --ring: #0ea5e9;
-    --chart-1: #0ea5e9;
-    --chart-2: #34d399;
-    --chart-3: #22d3ee;
-    --chart-4: #fbbf24;
-    --chart-5: #f87171;
-    /* Sidebar gradient - Dark mode sang trọng */
-    --sidebar: linear-gradient(180deg, #1e293b 0%, #0c4a6e 50%, #065f46 100%);
-    --sidebar-foreground: #f8fafc;
-    --sidebar-primary: #f8fafc;
-    --sidebar-accent: rgba(255, 255, 255, 0.1);
-    --sidebar-accent-foreground: #f8fafc;
-    --sidebar-border: rgba(255, 255, 255, 0.15);
-    --sidebar-ring: #f8fafc;
+    /* Dark Theme - Soft Black Modern Healthcare Theme */
+    --background: #0F0F0F;
+    --background-secondary: #1A1A1A;
+    --background-tertiary: #252525;
+    --foreground: #F8F6F3;
+    --card: #1A1A1A;
+    --card-foreground: #F8F6F3;
+    --popover: #1A1A1A;
+    --popover-foreground: #F8F6F3;
+    --popover-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.5);
+    --primary: #14B8A6;
+    --primary-light: #5EEAD4;
+    --primary-dark: #0F766E;
+    --primary-foreground: #FFFFFF;
+    --secondary: #60A5FA;
+    --secondary-light: #93C5FD;
+    --secondary-dark: #3B82F6;
+    --secondary-foreground: #0F0F0F;
+    --muted: #252525;
+    --muted-foreground: #A0A0A0;
+    --accent: #A78BFA;
+    --accent-foreground: #0F0F0F;
+    --destructive: #EF4444;
+    --destructive-foreground: #FFFFFF;
+    --success: #10B981;
+    --success-foreground: #FFFFFF;
+    /* Extended color palette for dark mode */
+    --warning: #F59E0B;
+    --warning-foreground: #000000;
+    --info: #06B6D4;
+    --info-foreground: #FFFFFF;
+    --pink: #EC4899;
+    --pink-foreground: #FFFFFF;
+    --orange: #F97316;
+    --orange-foreground: #FFFFFF;
+    --yellow: #EAB308;
+    --yellow-foreground: #000000;
+    --light-blue: #0EA5E9;
+    --light-blue-foreground: #FFFFFF;
+    --light-red: #F87171;
+    --light-red-foreground: #FFFFFF;
+    --light-green: #34D399;
+    --light-green-foreground: #000000;
+    --indigo: #6366F1;
+    --indigo-foreground: #FFFFFF;
+    --border: #333333;
+    --input: #1A1A1A;
+    --ring: #F8F6F3;
+    --chart-1: #14B8A6;
+    --chart-2: #60A5FA;
+    --chart-3: #F59E0B;
+    --chart-4: #EC4899;
+    --chart-5: #F97316;
+    --chart-6: #0EA5E9;
+    --chart-7: #10B981;
+    --chart-8: #A78BFA;
+    /* Clean dark sidebar */
+    --sidebar: #1A1A1A;
+    --sidebar-foreground: #F8F6F3;
+    --sidebar-primary: #F8F6F3;
+    --sidebar-accent: rgba(255, 255, 255, 0.05);
+    --sidebar-accent-foreground: #F8F6F3;
+    --sidebar-border: rgba(255, 255, 255, 0.05);
+    --sidebar-ring: #F8F6F3;
 }
 
 @theme inline {
@@ -124,6 +169,24 @@
     --color-destructive-foreground: var(--destructive-foreground);
     --color-success: var(--success);
     --color-success-foreground: var(--success-foreground);
+    --color-warning: var(--warning);
+    --color-warning-foreground: var(--warning-foreground);
+    --color-info: var(--info);
+    --color-info-foreground: var(--info-foreground);
+    --color-pink: var(--pink);
+    --color-pink-foreground: var(--pink-foreground);
+    --color-orange: var(--orange);
+    --color-orange-foreground: var(--orange-foreground);
+    --color-yellow: var(--yellow);
+    --color-yellow-foreground: var(--yellow-foreground);
+    --color-light-blue: var(--light-blue);
+    --color-light-blue-foreground: var(--light-blue-foreground);
+    --color-light-red: var(--light-red);
+    --color-light-red-foreground: var(--light-red-foreground);
+    --color-light-green: var(--light-green);
+    --color-light-green-foreground: var(--light-green-foreground);
+    --color-indigo: var(--indigo);
+    --color-indigo-foreground: var(--indigo-foreground);
     --color-border: var(--border);
     --color-input: var(--input);
     --color-ring: var(--ring);
@@ -132,6 +195,9 @@
     --color-chart-3: var(--chart-3);
     --color-chart-4: var(--chart-4);
     --color-chart-5: var(--chart-5);
+    --color-chart-6: var(--chart-6);
+    --color-chart-7: var(--chart-7);
+    --color-chart-8: var(--chart-8);
     --radius-sm: calc(var(--radius) - 4px);
     --radius-md: calc(var(--radius) - 2px);
     --radius-lg: var(--radius);
@@ -170,13 +236,60 @@
         @apply border border-black/10 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1),0_1px_3px_0_rgba(0,0,0,0.15)] dark:border-none dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)];
     }
 
-    /* Sidebar gradient - giống App */
+    /* Clean solid sidebar background */
     .sidebar-gradient {
-        background: linear-gradient(180deg, #0284c7 0%, #06b6d4 50%, #10b981 100%);
+        background: var(--sidebar);
     }
 
-    /* Dark mode sidebar gradient */
+    /* Force light theme sidebar background */
+    .light .sidebar-gradient,
+    :not(.dark) .sidebar-gradient {
+        background: #FFFFFF !important;
+    }
+
+    /* Force dark theme sidebar background */
     .dark .sidebar-gradient {
-        background: linear-gradient(180deg, #1e293b 0%, #0c4a6e 50%, #065f46 100%);
+        background: #1A1A1A !important;
+    }
+
+    /* Light theme sidebar text colors */
+    .light [data-sidebar="sidebar"],
+    :not(.dark) [data-sidebar="sidebar"] {
+        color: #1A1A1A !important;
+    }
+
+    .light .text-sidebar-foreground,
+    :not(.dark) .text-sidebar-foreground {
+        color: #1A1A1A !important;
+    }
+
+    /* Dark theme sidebar text colors */
+    .dark [data-sidebar="sidebar"],
+    .dark .text-sidebar-foreground {
+        color: #FFFFFF !important;
+    }
+
+    /* Better placeholder visibility */
+    input::placeholder,
+    textarea::placeholder {
+        color: #6B7280 !important;
+        opacity: 1 !important;
+    }
+
+    .dark input::placeholder,
+    .dark textarea::placeholder {
+        color: #9CA3AF !important;
+        opacity: 1 !important;
+    }
+
+    /* Light theme sidebar border */
+    .light .border-sidebar-border,
+    :not(.dark) .border-sidebar-border {
+        border-color: #E5E5E5 !important;
+    }
+
+    /* Dark theme sidebar border */
+    .dark .border-sidebar-border {
+        border-color: rgba(255, 255, 255, 0.1) !important;
     }
 }

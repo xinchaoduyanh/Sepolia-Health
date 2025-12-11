@@ -138,7 +138,7 @@ export function ReceptionistDashboardLayout({ children, defaultOpen = true }: Re
                     <div className="relative" ref={sidebarDropdownRef}>
                         <button
                             onClick={() => setIsSidebarDropdownOpen(!isSidebarDropdownOpen)}
-                            className="w-full flex items-center gap-3 px-2 py-2 hover:bg-white/15 rounded-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2"
+                            className="w-full flex items-center gap-3 px-2 py-2 hover:bg-sidebar-accent rounded-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2"
                         >
                             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
                                 <span className="text-sm font-medium">HP</span>

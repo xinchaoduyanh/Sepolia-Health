@@ -32,7 +32,7 @@ function SearchFieldInput({ className, ...props }: AriaInputProps) {
             aria-label="Search"
             className={composeRenderProps(className, className =>
                 cn(
-                    'min-w-0 flex-1 px-2 py-1.5 outline outline-0 placeholder:text-muted-foreground [&::-webkit-search-cancel-button]:hidden',
+                    'min-w-0 flex-1 px-2 py-1.5 outline outline-0 placeholder:text-gray-500 dark:placeholder:text-gray-400 [&::-webkit-search-cancel-button]:hidden',
                     className,
                 ),
             )}
@@ -88,7 +88,7 @@ function BsSearchField({ className, placeholder = 'Search...', containerClassNam
     return (
         <SearchField className={cn('group flex flex-col gap-2', containerClassName)} {...props}>
             <FieldGroup className={() => cn('px-2', className)}>
-                <SearchIcon aria-hidden className="size-4 text-muted-foreground pointer-events-none" />
+                <SearchIcon aria-hidden className="size-4 text-gray-500 dark:text-gray-400 pointer-events-none" />
                 <SearchFieldInput placeholder={placeholder} />
                 <SearchFieldClear>
                     <XIcon aria-hidden className="size-4" />

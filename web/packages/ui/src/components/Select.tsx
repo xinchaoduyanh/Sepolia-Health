@@ -115,7 +115,7 @@ export function BsSelect<T extends BsSelectOption, M extends 'single' | 'multipl
                                 )
                             }
 
-                            return <div className="text-muted-foreground">{placeholder}</div>
+                            return <div className="text-gray-500 dark:text-gray-400">{placeholder}</div>
                         }
 
                         if (selectionMode === 'single') {
@@ -157,7 +157,7 @@ export function BsSelect<T extends BsSelectOption, M extends 'single' | 'multipl
                         }
                     }}
                 </SelectValue>
-                <ChevronDownIcon className="w-4 h-4 text-muted-foreground" />
+                <ChevronDownIcon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
             </Button>
             {isClearable && <SelectClearButton />}
             <Popover className={cn('!max-h-[350px] w-(--trigger-width) flex flex-col p-1.5 gap-1', popoverClassName)}>
@@ -234,7 +234,7 @@ function SelectClearButton() {
                 state?.setValue(null)
             }}
             className={cn(
-                'size-6! flex items-center justify-center z-10 rounded bg-background-secondary text-muted-foreground hover:bg-background-tertiary',
+                'size-6! flex items-center justify-center z-10 rounded bg-background-secondary text-gray-500 dark:text-gray-400 hover:bg-background-tertiary',
                 'absolute right-1 top-1/2 -translate-y-1/2',
                 'transition-opacity opacity-0 group-hover:opacity-100',
             )}

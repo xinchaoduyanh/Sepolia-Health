@@ -7,7 +7,7 @@ import { Button as AriaButton, type ButtonProps as AriaButtonProps } from 'react
 
 const buttonVariants = cva(
     [
-        'cursor-pointer font-medium inline-flex items-center gap-1.5 justify-center whitespace-nowrap rounded-sm text-sm ring-offset-background transition-all no-underline',
+        'cursor-pointer font-medium inline-flex items-center gap-1.5 justify-center whitespace-nowrap text-sm ring-offset-background transition-all no-underline',
         'hover:opacity-90 active:opacity-100',
         /* SVGs */
         '[&_svg]:pointer-events-none [&_svg]:size-[14px] [&_svg]:shrink-0 [&_svg]:stroke-2',
@@ -21,22 +21,22 @@ const buttonVariants = cva(
     {
         variants: {
             variant: {
-                default: 'bg-primary text-primary-foreground button-3d',
-                destructive: 'bg-destructive text-destructive-foreground button-3d',
-                outline: 'bg-background-secondary shadow-sm border text-foreground hover:bg-background-tertiary/70 ',
+                default: 'bg-primary text-primary-foreground button-3d shadow-md hover:shadow-lg',
+                destructive: 'bg-destructive text-destructive-foreground button-3d shadow-md hover:shadow-lg',
+                outline: 'border-2 text-foreground hover:bg-primary hover:text-primary-foreground shadow-sm transition-all',
                 outlineDestructive:
-                    'bg-background-secondary shadow-sm border text-destructive-foreground hover:bg-background-tertiary/70 ',
-                secondary: 'hover:opacity-80 border-transparent bg-neutral-500/15 text-secondary-foreground',
-                ghost: 'hover:bg-neutral-500/10 hover:text-accent-foreground active:bg-accent/50 text-secondary-foreground',
-                link: 'text-primary-foreground underline-offset-4 hover:underline px-0! py-0! h-auto! underline',
+                    'border-2 border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground shadow-sm transition-all',
+                secondary: 'bg-secondary text-secondary-foreground shadow-md hover:bg-secondary/80',
+                ghost: 'hover:bg-primary/10 hover:text-primary text-muted-foreground transition-colors',
+                link: 'text-primary underline-offset-4 hover:underline px-0! py-0! h-auto! font-medium',
                 unstyled: '',
             },
             size: {
-                default: 'h-8 px-3 py-2',
-                sm: 'h-7 px-2 text-[13px]',
-                lg: 'h-9 px-4 rounded-md gap-2',
-                xl: 'h-11 px-5 text-base rounded-md gap-2',
-                icon: 'size-8',
+                default: 'h-9 px-4 py-2 rounded-lg',
+                sm: 'h-8 px-3 text-[13px] rounded-md',
+                lg: 'h-10 px-5 rounded-lg text-base gap-2',
+                xl: 'h-12 px-6 text-base rounded-lg gap-2',
+                icon: 'size-9 rounded-lg',
                 iconSm: 'size-6',
             },
         },

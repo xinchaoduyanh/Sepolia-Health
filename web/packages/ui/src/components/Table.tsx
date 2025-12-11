@@ -36,7 +36,7 @@ function Table({ className, containerClassName, ...props }: TableProps) {
     }, [])
 
     return (
-        <div className="relative grid bg-background-secondary rounded-md overflow-hidden border">
+        <div className="relative grid bg-card rounded-lg overflow-hidden border-2 border-border shadow-lg">
             <div
                 ref={tableContainerRef}
                 data-slot="table-container"
@@ -46,7 +46,7 @@ function Table({ className, containerClassName, ...props }: TableProps) {
                 <table
                     ref={tableRef}
                     data-slot="table"
-                    className={cn('group w-full caption-bottom text-sm', className)}
+                    className={cn('group w-full caption-bottom text-sm border-collapse', className)}
                     {...props}
                 />
             </div>
@@ -63,7 +63,7 @@ function TableBody({ className, ...props }: React.ComponentProps<'tbody'>) {
         <tbody
             data-slot="table-body"
             className={cn(
-                '[&_tr:nth-child(odd)]:bg-background-secondary [&_tr:nth-child(even)]:bg-background-tertiary',
+                '[&_tr]:border-b [&_tr:last-child]:border-0 [&_tr:hover]:bg-primary/10 [&_tr:nth-child(odd)]:bg-background/50 [&_tr:nth-child(even)]:bg-muted/30',
                 className,
             )}
             {...props}
@@ -85,7 +85,7 @@ function TableRow({ className, ...props }: React.ComponentProps<'tr'>) {
     return (
         <tr
             data-slot="table-row"
-            className={cn('data-[state=selected]:bg-blue-200! dark:data-[state=selected]:bg-blue-900!', className)}
+            className={cn('data-[state=selected]:bg-primary/30 dark:data-[state=selected]:bg-primary/20', className)}
             {...props}
         />
     )
@@ -96,7 +96,7 @@ function TableHead({ className, ...props }: React.ComponentProps<'th'>) {
         <th
             data-slot="table-head"
             className={cn(
-                'px-3 text-foreground bg-background-tertiary h-10 text-left align-middle font-medium whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]',
+                'px-4 py-3 text-primary-foreground bg-primary h-12 text-left align-middle font-semibold whitespace-nowrap border-r border-border last:border-r-0 [&:has([role=checkbox])]:pr-0 *:[&>[role=checkbox]]:translate-y-0.5',
                 className,
             )}
             {...props}
@@ -109,7 +109,7 @@ function TableCell({ className, ...props }: React.ComponentProps<'td'>) {
         <td
             data-slot="table-cell"
             className={cn(
-                'p-3 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] truncate bg-inherit',
+                'px-4 py-3 align-middle whitespace-nowrap border-r border-border last:border-r-0 [&:has([role=checkbox])]:pr-0 *:*:[&>[role=checkbox]]:translate-y-0.5 truncate bg-inherit',
                 className,
             )}
             {...props}

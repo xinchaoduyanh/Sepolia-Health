@@ -18,7 +18,7 @@ import { cn } from '@workspace/ui/lib/utils'
 // Input variants
 const inputVariants = cva([
     'shadow-sm flex h-10 w-full rounded-md bg-background px-3 py-2 text-sm ring-offset-background',
-    'file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground',
+    'file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-500 dark:placeholder:text-gray-400',
     'ring-inset ring ring-border transition-all',
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
     'disabled:cursor-not-allowed disabled:opacity-50',
@@ -28,7 +28,7 @@ const inputVariants = cva([
 // Textarea variants
 const textareaVariants = cva([
     'flex min-h-[80px] w-full rounded-md bg-background px-3 py-2 text-sm ring-offset-background',
-    'placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2',
+    'placeholder:text-gray-500 dark:placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2',
     'focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
     'aria-invalid:ring-destructive aria-invalid:focus-visible:ring-destructive',
 ])
@@ -151,7 +151,7 @@ const PasswordField = React.forwardRef<HTMLInputElement, PasswordFieldProps>(
                     <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-primary transition-colors"
                         aria-label={showPassword ? hidePasswordLabel : showPasswordLabel}
                     >
                         {showPassword ? <EyeOffIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
