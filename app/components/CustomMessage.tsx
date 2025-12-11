@@ -7,6 +7,7 @@ import { format, isToday, isYesterday } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import Markdown from 'react-native-markdown-display';
 import { ChatbotAPI } from '@/lib/api/chatbot';
+import { getUserInfoFromChannel } from '@/lib/chat-utils';
 
 // Format timestamp for better readability
 const formatMessageTime = (date: Date) => {
@@ -89,48 +90,27 @@ export const CustomMessage = () => {
     setShowActions(true);
   };
 
-  // Get user info with fallback from channel members
+  // Get user info using shared function for consistency
   const getUserInfo = () => {
     const userId = message.user?.id;
-    const botUserId = ChatbotAPI.getAIBotUserId();
-    const isBotMessage = userId === botUserId;
 
-    // First try to get from message.user
-    if (message.user?.name && message.user?.image) {
+    // For AI bot messages, use bot user ID
+    const isBotMessage = userId === ChatbotAPI.getAIBotUserId();
+    const targetUserId = isBotMessage ? ChatbotAPI.getAIBotUserId() : userId;
+
+    // Use shared function to get user info from channel state
+    const channelUserInfo = getUserInfoFromChannel(channel, targetUserId);
+
+    // Prioritize message.user data as it's the most recent/accurate
+    if (message.user?.name || message.user?.image) {
       return {
-        name: message.user.name,
-        image: message.user.image,
+        name: message.user.name || channelUserInfo.name,
+        image: message.user.image || channelUserInfo.image,
       };
     }
 
-    // Fallback to channel members if available
-    if (userId && channel?.state?.members) {
-      const member = channel.state.members[userId];
-      if (member?.user) {
-        return {
-          name: member.user.name || message.user?.name || 'Unknown',
-          image: member.user.image || message.user?.image,
-        };
-      }
-    }
-
-    // For bot messages, try to query members if not found
-    if (isBotMessage && channel) {
-      // Try to get from channel data or query members
-      const botMember = channel.state?.members?.[botUserId];
-      if (botMember?.user?.image) {
-        return {
-          name: botMember.user.name || 'Trợ lý Y tế Thông minh',
-          image: botMember.user.image,
-        };
-      }
-    }
-
-    // Final fallback
-    return {
-      name: message.user?.name || (isBotMessage ? 'Trợ lý Y tế Thông minh' : 'Unknown'),
-      image: message.user?.image,
-    };
+    // Fallback to channel-based info
+    return channelUserInfo;
   };
 
   const { name: userName, image: userImage } = getUserInfo();

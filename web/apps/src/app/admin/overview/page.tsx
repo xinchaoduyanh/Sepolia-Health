@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Card, CardContent, CardHeader, CardTitle } from '@workspace/ui/components/Card'
 import { statisticsService } from '@/shared/lib/api-services/statistics.service'
 import { queryKeys } from '@/shared/lib/query-keys'
-import { ClinicStatisticsChart } from '@/app/dashboard/admin/overview/ClinicStatisticsChart'
+import { ClinicStatisticsChart } from './ClinicStatisticsChart'
 
 function formatNumber(num: number): string {
     return new Intl.NumberFormat('vi-VN').format(num)

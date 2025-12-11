@@ -11,7 +11,7 @@ import {
     SidebarProvider,
     useSidebar,
 } from '@workspace/ui/components/Sidebar'
-import { ThemeSwitcher } from '@/shared/components/ThemeSwitcher'
+import { ThemeToggle } from '@workspace/ui/src/components/theme-toggle'
 import { useAuth, useAdminLogout } from '@/shared/hooks/useAuth'
 import Image from 'next/image'
 import {
@@ -360,7 +360,7 @@ export function AdminDashboardLayout({ children, defaultOpen = true }: AdminDash
                             <ToggleLogo />
                         </div>
                         <div className="flex items-center space-x-4">
-                            <ThemeSwitcher />
+                            <ThemeToggle />
                             <div className="relative" ref={dropdownRef}>
                                 <button
                                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}

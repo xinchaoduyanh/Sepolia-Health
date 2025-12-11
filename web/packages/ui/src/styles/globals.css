@@ -8,175 +8,577 @@
 @plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
+@custom-variant clinical (&:is(.clinical *));
+@custom-variant emergency (&:is(.emergency *));
 
+/* Enhanced Healthcare Color System */
 :root {
-    /* Light Theme - Background nhạt, Content đậm */
-    --background: #e0f2fe;
-    --background-secondary: #d1ecfd;
-    --background-tertiary: #7dd3fc;
-    --foreground: #0f172a;
-    --card: #bae6fd;
-    --card-foreground: #0f172a;
-    --popover: #bae6fd;
-    --popover-foreground: #0f172a;
-    --popover-shadow: 0 10px 25px 0 rgb(0 0 0 / 0.15);
-    --primary: #0284c7;
-    --primary-light: #bae6fd;
-    --primary-dark: #0369a1;
-    --primary-foreground: #ffffff;
-    --secondary: #10b981;
-    --secondary-light: #6ee7b7;
-    --secondary-foreground: #ffffff;
-    --muted: #d1ecfd;
-    --muted-foreground: #475569;
-    --accent: #06b6d4;
-    --accent-foreground: #ffffff;
-    --destructive: #ef4444;
-    --destructive-foreground: #ffffff;
-    --success: #10b981;
-    --success-foreground: #ffffff;
-    --border: #93d5f8;
-    --input: #bae6fd;
-    --ring: #0284c7;
-    --chart-1: #0284c7;
-    --chart-2: #10b981;
-    --chart-3: #06b6d4;
-    --chart-4: #f59e0b;
-    --chart-5: #ef4444;
-    --radius: 0.625rem;
-    /* Sidebar with gradient - giống App */
-    --sidebar: linear-gradient(180deg, #0284c7 0%, #06b6d4 50%, #10b981 100%);
-    --sidebar-foreground: #ffffff;
-    --sidebar-primary: #ffffff;
-    --sidebar-accent: rgba(255, 255, 255, 0.15);
-    --sidebar-accent-foreground: #ffffff;
-    --sidebar-border: rgba(255, 255, 255, 0.2);
-    --sidebar-ring: #ffffff;
+  /* Light Theme - Healthcare Professional */
+  --background: 255 255 255;
+  --background-secondary: 248 250 252;
+  --background-tertiary: 241 245 249;
+  --foreground: 15 23 42;
+
+  /* Medical Blue System */
+  --primary: 2 132 199;
+  --primary-foreground: 255 255 255;
+  --primary-light: 186 230 253;
+  --primary-dark: 3 105 161;
+
+  /* Health Green System */
+  --success: 16 185 129;
+  --success-foreground: 255 255 255;
+  --success-light: 110 231 183;
+  --success-dark: 5 150 105;
+
+  /* Clinical Warning System */
+  --warning: 245 158 11;
+  --warning-foreground: 255 255 255;
+  --warning-light: 252 211 77;
+  --warning-dark: 217 119 6;
+
+  /* Emergency Red System */
+  --destructive: 239 68 68;
+  --destructive-foreground: 255 255 255;
+  --destructive-light: 252 165 165;
+  --destructive-dark: 220 38 38;
+
+  /* Medical Purple System */
+  --accent: 139 92 246;
+  --accent-foreground: 255 255 255;
+  --accent-light: 196 181 253;
+  --accent-dark: 124 58 237;
+
+  /* Legacy Color Mappings */
+  --secondary: var(--success);
+  --secondary-foreground: var(--success-foreground);
+  --secondary-light: var(--success-light);
+  --secondary-dark: var(--success-dark);
+
+  /* Card and Surface Colors */
+  --card: 255 255 255;
+  --card-foreground: 15 23 42;
+  --popover: 255 255 255;
+  --popover-foreground: 15 23 42;
+
+  /* Input and Field Colors */
+  --border: 226 232 240;
+  --input: 255 255 255;
+  --ring: 2 132 199;
+
+  /* Muted Colors */
+  --muted: 241 245 249;
+  --muted-foreground: 100 116 139;
+
+  /* Healthcare-Specific Colors */
+  --vital-normal: var(--success);
+  --vital-warning: var(--warning);
+  --vital-critical: var(--destructive);
+  --patient-stable: var(--success);
+  --patient-critical: var(--destructive);
+
+  /* Typography */
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-size-scale: 1;
+
+  /* Spacing System */
+  --spacing-unit: 0.25rem;
+
+  /* Border Radius */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+
+  /* Shadow System */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
+  /* Chart Colors */
+  --chart-1: var(--primary);
+  --chart-2: var(--success);
+  --chart-3: var(--accent);
+  --chart-4: var(--warning);
+  --chart-5: var(--destructive);
+
+  /* Sidebar with gradient - Medical Professional */
+  --sidebar: linear-gradient(180deg, #0284c7 0%, #06b6d4 50%, #10b981 100%);
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #ffffff;
+  --sidebar-accent: rgba(255, 255, 255, 0.15);
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgba(255, 255, 255, 0.2);
+  --sidebar-ring: #ffffff;
 }
 
+/* Dark Theme - Healthcare Professional */
 .dark {
-    /* Dark Theme - navy-slate tối sang trọng */
-    --background: #0f172a;
-    --background-secondary: #1e293b;
-    --background-tertiary: #273549;
-    --foreground: #f8fafc;
-    --card: #1e293b;
-    --card-foreground: #f8fafc;
-    --popover: #1e293b;
-    --popover-foreground: #f8fafc;
-    --popover-shadow: 0 10px 25px 0 rgb(0 0 0 / 0.4);
-    --primary: #0ea5e9;
-    --primary-light: #bae6fd;
-    --primary-dark: #0c4a6e;
-    --primary-foreground: #ffffff;
-    --secondary: #34d399;
-    --secondary-light: #a7f3d0;
-    --secondary-dark: #065f46;
-    --secondary-foreground: #ffffff;
-    --muted: #64748b;
-    --muted-foreground: #94a3b8;
-    --accent: #22d3ee;
-    --accent-foreground: #ffffff;
-    --destructive: #ef4444;
-    --destructive-foreground: #ffffff;
-    --success: #22c55e;
-    --success-foreground: #ffffff;
-    --border: #334155;
-    --input: #334155;
-    --ring: #0ea5e9;
-    --chart-1: #0ea5e9;
-    --chart-2: #34d399;
-    --chart-3: #22d3ee;
-    --chart-4: #fbbf24;
-    --chart-5: #f87171;
-    /* Sidebar gradient - Dark mode sang trọng */
-    --sidebar: linear-gradient(180deg, #1e293b 0%, #0c4a6e 50%, #065f46 100%);
-    --sidebar-foreground: #f8fafc;
-    --sidebar-primary: #f8fafc;
-    --sidebar-accent: rgba(255, 255, 255, 0.1);
-    --sidebar-accent-foreground: #f8fafc;
-    --sidebar-border: rgba(255, 255, 255, 0.15);
-    --sidebar-ring: #f8fafc;
+  --background: 15 23 42;
+  --background-secondary: 30 41 59;
+  --background-tertiary: 51 65 85;
+  --foreground: 248 250 252;
+
+  --primary: 14 165 233;
+  --primary-light: 56 189 248;
+  --primary-dark: 2 132 199;
+
+  --success: 52 211 153;
+  --success-light: 110 231 183;
+
+  --warning: 251 191 36;
+  --warning-light: 252 211 77;
+
+  --destructive: 248 113 113;
+  --destructive-light: 252 165 165;
+
+  --accent: 167 139 250;
+  --accent-light: 196 181 253;
+
+  --card: 30 41 59;
+  --card-foreground: 248 250 252;
+  --popover: 30 41 59;
+  --popover-foreground: 248 250 252;
+
+  --border: 51 65 85;
+  --input: 51 65 85;
+  --ring: 14 165 233;
+
+  --muted: 100 116 139;
+  --muted-foreground: 148 163 184;
+
+  /* Enhanced dark mode shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.4);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.5);
+
+  /* Dark mode sidebar gradient */
+  --sidebar: linear-gradient(180deg, #1e293b 0%, #0c4a6e 50%, #065f46 100%);
+  --sidebar-foreground: #f8fafc;
+  --sidebar-primary: #f8fafc;
+  --sidebar-accent: rgba(255, 255, 255, 0.1);
+  --sidebar-accent-foreground: #f8fafc;
+  --sidebar-border: rgba(255, 255, 255, 0.15);
+  --sidebar-ring: #f8fafc;
 }
 
+/* Clinical Theme - Optimized for Clinical Environments */
+.clinical {
+  --background: 250 250 250;
+  --foreground: 0 0 0;
+  --primary: 0 100 200;
+  --success: 0 150 100;
+  --warning: 200 150 0;
+  --destructive: 200 0 0;
+  --border: 200 200 200;
+  --muted: 240 240 240;
+
+  --sidebar: linear-gradient(180deg, #f0f0f0 0%, #e0e0e0 100%);
+  --sidebar-foreground: #000000;
+}
+
+/* Emergency Theme - High Contrast for Critical Situations */
+.emergency {
+  --background: 255 255 255;
+  --foreground: 0 0 0;
+  --primary: 220 0 0;
+  --success: 0 150 0;
+  --warning: 200 100 0;
+  --destructive: 255 0 0;
+  --border: 0 0 0;
+  --muted: 240 240 240;
+
+  --sidebar: linear-gradient(180deg, #ff0000 0%, #cc0000 100%);
+  --sidebar-foreground: #ffffff;
+}
+
+/* Emergency Department Theme - High Energy Red */
+.emergency-department {
+  --background: 255 253 253;
+  --foreground: 127 29 29;
+  --primary: 220 38 38;
+  --success: 34 197 94;
+  --warning: 251 146 60;
+  --destructive: 185 28 28;
+  --border: 254 226 226;
+  --muted: 254 242 242;
+
+  --sidebar: linear-gradient(180deg, #fef2f2 0%, #fee2e2 100%);
+  --sidebar-foreground: #991b1b;
+}
+
+/* Pediatrics Department Theme - Soft Blue Green */
+.pediatrics {
+  --background: 240 253 255;
+  --foreground: 7 89 133;
+  --primary: 6 182 212;
+  --success: 52 211 153;
+  --warning: 251 191 36;
+  --destructive: 245 158 11;
+  --border: 207 250 254;
+  --muted: 234 254 255;
+
+  --sidebar: linear-gradient(180deg, #ecfeff 0%, #cffafe 100%);
+  --sidebar-foreground: #164e63;
+}
+
+/* Surgery Department Theme - Precise Blue */
+.surgery {
+  --background: 248 250 252;
+  --foreground: 30 58 138;
+  --primary: 37 99 235;
+  --success: 16 185 129;
+  --warning: 59 130 246;
+  --destructive: 239 68 68;
+  --border: 224 242 254;
+  --muted: 241 245 249;
+
+  --sidebar: linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%);
+  --sidebar-foreground: #1e3a8a;
+}
+
+/* Cardiology Department Theme - Deep Red */
+.cardiology {
+  --background: 255 248 248;
+  --foreground: 131 24 67;
+  --primary: 190 18 60;
+  --success: 34 197 94;
+  --warning: 217 119 6;
+  --destructive: 159 18 57;
+  --border: 254 226 226;
+  --muted: 253 242 242;
+
+  --sidebar: linear-gradient(180deg, #fef7f7 0%, #fee2e2 100%);
+  --sidebar-foreground: #7f1d1d;
+}
+
+/* Radiology Department Theme - Cool Purple */
+.radiology {
+  --background: 250 245 255;
+  --foreground: 91 33 182;
+  --primary: 124 58 237;
+  --success: 52 211 153;
+  --warning: 168 85 247;
+  --destructive: 217 70 239;
+  --border: 243 232 255;
+  --muted: 249 239 255;
+
+  --sidebar: linear-gradient(180deg, #f5f3ff 0%, #ede9fe 100%);
+  --sidebar-foreground: #5b21b6;
+}
+
+/* Laboratory Theme - Scientific Teal */
+.laboratory {
+  --background: 240 253 250;
+  --foreground: 19 78 74;
+  --primary: 13 148 136;
+  --success: 5 150 105;
+  --warning: 245 158 11;
+  --destructive: 239 68 68;
+  --border: 209 250 229;
+  --muted: 236 253 245;
+
+  --sidebar: linear-gradient(180deg, #ecfdf5 0%, #d1fae5 100%);
+  --sidebar-foreground: #134e4a;
+}
+
+/* Pharmacy Theme - Medical Green */
+.pharmacy {
+  --background: 240 253 244;
+  --foreground: 21 128 61;
+  --primary: 22 163 74;
+  --success: 34 197 94;
+  --warning: 217 119 6;
+  --destructive: 239 68 68;
+  --border: 220 252 231;
+  --muted: 232 245 233;
+
+  --sidebar: linear-gradient(180deg, #f0fdf4 0%, #dcfce7 100%);
+  --sidebar-foreground: #15803d;
+}
+
+/* Night Shift Theme - Reduced Blue Light */
+.night-shift {
+  --background: 41 37 36;
+  --foreground: 213 196 161;
+  --primary: 180 83 9;
+  --success: 74 222 128;
+  --warning: 217 119 6;
+  --destructive: 248 113 113;
+  --border: 68 64 60;
+  --muted: 68 64 60;
+
+  --sidebar: linear-gradient(180deg, #292324 0%, #44403c 100%);
+  --sidebar-foreground: #d6c3a1;
+
+  /* Reduced blue light for eye health */
+  filter: sepia(20%) saturate(80%);
+}
+
+/* High Contrast Mode */
+.high-contrast {
+  --background: 255 255 255 !important;
+  --foreground: 0 0 0 !important;
+  --primary: 0 0 255 !important;
+  --success: 0 128 0 !important;
+  --warning: 255 165 0 !important;
+  --destructive: 255 0 0 !important;
+  --border: 0 0 0 !important;
+}
+
+.dark.high-contrast {
+  --background: 0 0 0 !important;
+  --foreground: 255 255 255 !important;
+  --border: 255 255 255 !important;
+}
+
+/* Reduced Motion */
+.reduce-motion *,
+.reduce-motion *::before,
+.reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* Large Text Mode */
+.large-text {
+  --font-size-scale: 1.2;
+}
+
+.large-text body {
+  font-size: calc(1rem * var(--font-size-scale));
+}
+
+.large-text .text-xs { font-size: calc(0.75rem * var(--font-size-scale)) !important; }
+.large-text .text-sm { font-size: calc(0.875rem * var(--font-size-scale)) !important; }
+.large-text .text-base { font-size: calc(1rem * var(--font-size-scale)) !important; }
+.large-text .text-lg { font-size: calc(1.125rem * var(--font-size-scale)) !important; }
+.large-text .text-xl { font-size: calc(1.25rem * var(--font-size-scale)) !important; }
+
+/* Color Blind Support */
+.color-blind-protanopia {
+  --primary: 0 150 200; /* Red-blind friendly blue */
+}
+
+.color-blind-deuteranopia {
+  --primary: 0 100 200; /* Green-blind friendly blue */
+}
+
+.color-blind-tritanopia {
+  --primary: 200 0 150; /* Blue-blind friendly magenta */
+}
+
+/* Compact Mode */
+.compact-mode {
+  --spacing-unit: 0.1875rem; /* Reduced spacing */
+}
+
+.compact-mode .p-4 { padding: calc(var(--spacing-unit) * 3) !important; }
+.compact-mode .p-6 { padding: calc(var(--spacing-unit) * 4) !important; }
+.compact-mode .p-8 { padding: calc(var(--spacing-unit) * 5) !important; }
+
+/* Theme Configuration */
 @theme inline {
-    --color-background: var(--background);
-    --color-background-secondary: var(--background-secondary);
-    --color-background-tertiary: var(--background-tertiary);
-    --color-foreground: var(--foreground);
-    --color-card: var(--card);
-    --color-card-foreground: var(--card-foreground);
-    --color-popover: var(--popover);
-    --color-popover-foreground: var(--popover-foreground);
-    --color-primary: var(--primary);
-    --color-primary-light: var(--primary-light);
-    --color-primary-dark: var(--primary-dark);
-    --color-primary-foreground: var(--primary-foreground);
-    --color-secondary: var(--secondary);
-    --color-secondary-light: var(--secondary-light);
-    --color-secondary-dark: var(--secondary-dark);
-    --color-secondary-foreground: var(--secondary-foreground);
-    --color-muted: var(--muted);
-    --color-muted-foreground: var(--muted-foreground);
-    --color-accent: var(--accent);
-    --color-accent-foreground: var(--accent-foreground);
-    --color-destructive: var(--destructive);
-    --color-destructive-foreground: var(--destructive-foreground);
-    --color-success: var(--success);
-    --color-success-foreground: var(--success-foreground);
-    --color-border: var(--border);
-    --color-input: var(--input);
-    --color-ring: var(--ring);
-    --color-chart-1: var(--chart-1);
-    --color-chart-2: var(--chart-2);
-    --color-chart-3: var(--chart-3);
-    --color-chart-4: var(--chart-4);
-    --color-chart-5: var(--chart-5);
-    --radius-sm: calc(var(--radius) - 4px);
-    --radius-md: calc(var(--radius) - 2px);
-    --radius-lg: var(--radius);
-    --radius-xl: calc(var(--radius) + 4px);
-    --color-sidebar: var(--sidebar);
-    --color-sidebar-foreground: var(--sidebar-foreground);
-    --color-sidebar-primary: var(--sidebar-primary);
-    --color-sidebar-accent: var(--sidebar-accent);
-    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-    --color-sidebar-border: var(--sidebar-border);
-    --color-sidebar-ring: var(--sidebar-ring);
-    --shadow-sm: 0px 1px 2px 0px oklch(0 0 0 / 5%);
-    --shadow-popover: var(--popover-shadow);
+  /* Background Colors */
+  --color-background: rgb(var(--background));
+  --color-background-secondary: rgb(var(--background-secondary));
+  --color-background-tertiary: rgb(var(--background-tertiary));
+  --color-foreground: rgb(var(--foreground));
+
+  /* Primary Colors */
+  --color-primary: rgb(var(--primary));
+  --color-primary-foreground: rgb(var(--primary-foreground));
+  --color-primary-light: rgb(var(--primary-light));
+  --color-primary-dark: rgb(var(--primary-dark));
+
+  /* Success Colors */
+  --color-success: rgb(var(--success));
+  --color-success-foreground: rgb(var(--success-foreground));
+  --color-success-light: rgb(var(--success-light));
+  --color-success-dark: rgb(var(--success-dark));
+
+  /* Warning Colors */
+  --color-warning: rgb(var(--warning));
+  --color-warning-foreground: rgb(var(--warning-foreground));
+  --color-warning-light: rgb(var(--warning-light));
+  --color-warning-dark: rgb(var(--warning-dark));
+
+  /* Destructive Colors */
+  --color-destructive: rgb(var(--destructive));
+  --color-destructive-foreground: rgb(var(--destructive-foreground));
+  --color-destructive-light: rgb(var(--destructive-light));
+  --color-destructive-dark: rgb(var(--destructive-dark));
+
+  /* Accent Colors */
+  --color-accent: rgb(var(--accent));
+  --color-accent-foreground: rgb(var(--accent-foreground));
+  --color-accent-light: rgb(var(--accent-light));
+  --color-accent-dark: rgb(var(--accent-dark));
+
+  /* Legacy Color Mappings */
+  --color-secondary: var(--color-success);
+  --color-secondary-foreground: var(--color-success-foreground);
+  --color-secondary-light: var(--color-success-light);
+  --color-secondary-dark: var(--color-success-dark);
+
+  /* Card and Surface Colors */
+  --color-card: rgb(var(--card));
+  --color-card-foreground: rgb(var(--card-foreground));
+  --color-popover: rgb(var(--popover));
+  --color-popover-foreground: rgb(var(--popover-foreground));
+
+  /* Input and Border Colors */
+  --color-border: rgb(var(--border));
+  --color-input: rgb(var(--input));
+  --color-ring: rgb(var(--ring));
+
+  /* Muted Colors */
+  --color-muted: rgb(var(--muted));
+  --color-muted-foreground: rgb(var(--muted-foreground));
+
+  /* Healthcare-Specific Colors */
+  --color-vital-normal: rgb(var(--vital-normal));
+  --color-vital-warning: rgb(var(--vital-warning));
+  --color-vital-critical: rgb(var(--vital-critical));
+  --color-patient-stable: rgb(var(--patient-stable));
+  --color-patient-critical: rgb(var(--patient-critical));
+
+  /* Radius System */
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+
+  /* Shadow System */
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+
+  /* Chart Colors */
+  --color-chart-1: var(--color-primary);
+  --color-chart-2: var(--color-success);
+  --color-chart-3: var(--color-accent);
+  --color-chart-4: var(--color-warning);
+  --color-chart-5: var(--color-destructive);
+
+  /* Sidebar Colors */
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
 }
 
+/* Base Layer Styles */
 @layer base {
-    * {
-        @apply border-border outline-ring/50;
-    }
-    body {
-        @apply bg-background text-foreground;
-    }
+  * {
+    @apply border-border;
+  }
 
-    .dark .shiki,
-    .dark .shiki span {
-        color: var(--shiki-dark) !important;
-        background-color: var(--shiki-dark-bg) !important;
-        font-style: var(--shiki-dark-font-style) !important;
-        font-weight: var(--shiki-dark-font-weight) !important;
-        text-decoration: var(--shiki-dark-text-decoration) !important;
-    }
+  body {
+    @apply bg-background text-foreground font-sans;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Medical Typography Optimization */
+  .medical-data {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.01em;
+  }
+
+  .vital-signs {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Healthcare Focus Styles */
+  .medical-input:focus,
+  .medical-select:focus,
+  .medical-textarea:focus {
+    @apply outline-none ring-2 ring-ring ring-offset-2;
+  }
+
+  /* Emergency Mode Enhancements */
+  .emergency-mode .emergency-alert {
+    animation: pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  /* Code highlighting for dark mode */
+  .dark .shiki,
+  .dark .shiki span {
+    color: var(--shiki-dark) !important;
+    background-color: var(--shiki-dark-bg) !important;
+    font-style: var(--shiki-dark-font-style) !important;
+    font-weight: var(--shiki-dark-font-weight) !important;
+    text-decoration: var(--shiki-dark-text-decoration) !important;
+  }
 }
 
+/* Utility Layer */
 @layer utilities {
-    .button-3d {
-        @apply border border-black/10 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1),0_1px_3px_0_rgba(0,0,0,0.15)] dark:border-none dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)];
-    }
+  /* Medical Animation Classes */
+  .pulse-critical {
+    animation: pulse-critical 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
 
-    /* Sidebar gradient - giống App */
-    .sidebar-gradient {
-        background: linear-gradient(180deg, #0284c7 0%, #06b6d4 50%, #10b981 100%);
+  @keyframes pulse-critical {
+    0%, 100% {
+      opacity: 1;
     }
+    50% {
+      opacity: 0.7;
+    }
+  }
 
-    /* Dark mode sidebar gradient */
-    .dark .sidebar-gradient {
-        background: linear-gradient(180deg, #1e293b 0%, #0c4a6e 50%, #065f46 100%);
-    }
+  /* Healthcare Gradient Utilities */
+  .medical-gradient {
+    background: linear-gradient(135deg, rgb(var(--primary)) 0%, rgb(var(--accent)) 100%);
+  }
+
+  .vital-gradient-normal {
+    background: linear-gradient(135deg, rgb(var(--success)) 0%, rgb(var(--success-light)) 100%);
+  }
+
+  .vital-gradient-warning {
+    background: linear-gradient(135deg, rgb(var(--warning)) 0%, rgb(var(--warning-light)) 100%);
+  }
+
+  .vital-gradient-critical {
+    background: linear-gradient(135deg, rgb(var(--destructive)) 0%, rgb(var(--destructive-light)) 100%);
+  }
+
+  /* Accessibility Utilities */
+  .screen-reader-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* Healthcare Spacing Utilities */
+  .medical-spacing-xs { margin: calc(var(--spacing-unit) * 1); }
+  .medical-spacing-sm { margin: calc(var(--spacing-unit) * 2); }
+  .medical-spacing-md { margin: calc(var(--spacing-unit) * 4); }
+  .medical-spacing-lg { margin: calc(var(--spacing-unit) * 6); }
+  .medical-spacing-xl { margin: calc(var(--spacing-unit) * 8); }
+
+  /* Button utilities */
+  .button-3d {
+    @apply border border-black/10 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1),0_1px_3px_0_rgba(0,0,0,0.15)] dark:border-none dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)];
+  }
+
+  /* Sidebar gradient utilities */
+  .sidebar-gradient {
+    background: var(--sidebar);
+  }
 }

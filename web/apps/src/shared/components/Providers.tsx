@@ -1,13 +1,13 @@
 'use client'
 
 import React, { useEffect } from 'react'
-import { ThemeProvider } from 'next-themes'
 import { matchQuery, MutationCache, QueryClient } from '@tanstack/react-query'
 import dynamic from 'next/dynamic'
 import { Toaster } from '@workspace/ui/components/Sonner'
 import { ClientOnly } from './ClientOnly'
 import { initializeApiClient } from '../lib/api-client'
 import { useAuthStore } from '../stores/auth.store'
+import { HealthcareThemeProvider } from '@workspace/ui/src/providers/healthcare-theme-context'
 
 // Dynamic import để tránh hydration issues
 const QueryClientProvider = dynamic(() => import('@tanstack/react-query').then(d => d.QueryClientProvider), {
@@ -15,6 +15,7 @@ const QueryClientProvider = dynamic(() => import('@tanstack/react-query').then(d
 })
 
 const BsProvider = dynamic(() => import('@workspace/ui/components/Provider').then(d => d.BsProvider), { ssr: false })
+const ThemeProvider = dynamic(() => import('@workspace/ui/src/providers/theme-provider').then(d => d.ThemeProvider), { ssr: false })
 
 // Dynamic import để tránh hydration issues
 const ReactQueryDevtools = dynamic(() => import('@tanstack/react-query-devtools').then(d => d.ReactQueryDevtools), {
@@ -78,20 +79,16 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <div suppressHydrationWarning>
             <ClientOnly>
                 <BsProvider>
-                    <ThemeProvider
-                        attribute="class"
-                        defaultTheme="light"
-                        disableTransitionOnChange
-                        enableColorScheme
-                        storageKey="sepolia-theme"
-                    >
-                        <QueryClientProvider client={queryClient}>
-                            {children}
-                            <ClientOnly>
-                                <Toaster />
-                            </ClientOnly>
-                            <ReactQueryDevtools initialIsOpen={false} />
-                        </QueryClientProvider>
+                    <ThemeProvider>
+                        <HealthcareThemeProvider>
+                            <QueryClientProvider client={queryClient}>
+                                {children}
+                                <ClientOnly>
+                                    <Toaster />
+                                </ClientOnly>
+                                <ReactQueryDevtools initialIsOpen={false} />
+                            </QueryClientProvider>
+                        </HealthcareThemeProvider>
                     </ThemeProvider>
                 </BsProvider>
             </ClientOnly>

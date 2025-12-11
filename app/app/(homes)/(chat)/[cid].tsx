@@ -10,6 +10,7 @@ import { CustomDateSeparator } from '@/components/CustomDateSeparator';
 import { CustomMessageInput } from '@/components/CustomMessageInput';
 import Constants from 'expo-constants';
 import { ChatbotAPI } from '@/lib/api/chatbot';
+import { getLatestUserInfoFromMessages, getUserInfoFromChannel } from '@/lib/chat-utils';
 
 // Lazy import useVideoContext
 const isExpoGo = Constants.appOwnership === 'expo';
@@ -79,30 +80,57 @@ export default function ChannelScreen() {
     };
   }, [navigation]);
 
-  // Auto mark as read when new messages arrive while viewing the channel
+  // Auto update header avatar when new messages arrive
   useEffect(() => {
     if (!channel) return;
+
+    const updateHeaderAvatar = () => {
+      const currentUserId = currentUserIdRef.current;
+      const userInfo = getLatestUserInfoFromMessages(channel, currentUserId);
+
+      setOtherUserAvatar(userInfo.image);
+      setOtherUserName(userInfo.name);
+      console.log('Header avatar updated:', { name: userInfo.name, hasImage: !!userInfo.image });
+    };
 
     const handleNewMessage = async (event: any) => {
       // Only mark as read if it's a new message (not from current user)
       // Use StreamChat user ID from ref instead of user?.id
       const currentUserId = currentUserIdRef.current;
-      if (event.type === 'message.new' && event.user?.id !== currentUserId) {
-        try {
-          await channel.markRead();
-          console.log('Auto-marked channel as read after new message');
-        } catch (err) {
-          console.error('Failed to auto-mark channel as read:', err);
+      if (event.type === 'message.new') {
+        // Update header avatar for any new message (including our own messages)
+        // This ensures avatar is always up-to-date with latest user data
+        updateHeaderAvatar();
+
+        if (event.user?.id !== currentUserId) {
+          try {
+            await channel.markRead();
+            console.log('Auto-marked channel as read after new message');
+          } catch (err) {
+            console.error('Failed to auto-mark channel as read:', err);
+          }
         }
       }
     };
 
-    // Listen for new messages
+    const handleMessageUpdated = () => {
+      // Also update when messages are updated (user data changes)
+      updateHeaderAvatar();
+    };
+
+    // Listen for new messages and updates
     channel.on('message.new', handleNewMessage);
+    channel.on('message.updated', handleMessageUpdated);
+    channel.on('member.updated', updateHeaderAvatar); // When member info changes
+
+    // Initial update when channel is ready
+    updateHeaderAvatar();
 
     // Cleanup: mark as read when leaving the channel
     return () => {
       channel.off('message.new', handleNewMessage);
+      channel.off('message.updated', handleMessageUpdated);
+      channel.off('member.updated', updateHeaderAvatar);
 
       // Mark as read when component unmounts (user leaves the channel)
       channel.markRead().catch((err: unknown) => {
@@ -170,61 +198,8 @@ export default function ChannelScreen() {
               channel.data?.consultation_type === 'ai_assistant';
             setIsAIChannel(channelIsAI);
 
-            // Get other user's avatar and name
-            try {
-              const botUserId = ChatbotAPI.getAIBotUserId();
-              const members = await channel.queryMembers({});
-              console.log(
-                'Channel members:',
-                members.members.map((m) => ({
-                  user_id: m.user_id,
-                  name: m.user?.name,
-                  image: m.user?.image,
-                }))
-              );
-              // Use StreamChat user ID from ref
-              const currentUserId = currentUserIdRef.current;
-              console.log('Current user ID (StreamChat):', currentUserId);
-              console.log('Bot user ID:', botUserId);
-
-              if (members.members && members.members.length > 0) {
-                // For AI channels, find bot user
-                if (channelIsAI) {
-                  const botMember = members.members.find((m) => m.user_id === botUserId);
-                  console.log(
-                    'AI Bot member found:',
-                    botMember?.user?.name,
-                    'image:',
-                    botMember?.user?.image
-                  );
-
-                  if (botMember?.user?.image) {
-                    setOtherUserAvatar(botMember.user.image as string);
-                  }
-                  if (botMember?.user?.name) {
-                    setOtherUserName(botMember.user.name as string);
-                  }
-                } else {
-                  // For regular channels, find other member using StreamChat user ID
-                  const otherMember = members.members.find((m) => m.user_id !== currentUserId);
-                  console.log(
-                    'Other member found:',
-                    otherMember?.user?.name,
-                    'image:',
-                    otherMember?.user?.image
-                  );
-
-                  if (otherMember?.user?.image) {
-                    setOtherUserAvatar(otherMember.user.image as string);
-                  }
-                  if (otherMember?.user?.name) {
-                    setOtherUserName(otherMember.user.name as string);
-                  }
-                }
-              }
-            } catch (err: any) {
-              console.error('Failed to get channel members:', err);
-            }
+            // Avatar and name will be handled by the real-time update effect below
+            console.log('Channel ready, avatar will be updated by real-time effect');
 
             if (isMounted) {
               setChannel(channel);
@@ -265,61 +240,8 @@ export default function ChannelScreen() {
               channel.data?.consultation_type === 'ai_assistant';
             setIsAIChannel(channelIsAI);
 
-            // Get other user's avatar and name
-            try {
-              const botUserId = ChatbotAPI.getAIBotUserId();
-              const members = await channel.queryMembers({});
-              console.log(
-                'Fallback - Channel members:',
-                members.members.map((m) => ({
-                  user_id: m.user_id,
-                  name: m.user?.name,
-                  image: m.user?.image,
-                }))
-              );
-              // Use StreamChat user ID from ref
-              const currentUserId = currentUserIdRef.current;
-              console.log('Fallback - Current user ID (StreamChat):', currentUserId);
-              console.log('Fallback - Bot user ID:', botUserId);
-
-              if (members.members && members.members.length > 0) {
-                // For AI channels, find bot user
-                if (channelIsAI) {
-                  const botMember = members.members.find((m) => m.user_id === botUserId);
-                  console.log(
-                    'Fallback - AI Bot member found:',
-                    botMember?.user?.name,
-                    'image:',
-                    botMember?.user?.image
-                  );
-
-                  if (botMember?.user?.image) {
-                    setOtherUserAvatar(botMember.user.image as string);
-                  }
-                  if (botMember?.user?.name) {
-                    setOtherUserName(botMember.user.name as string);
-                  }
-                } else {
-                  // For regular channels, find other member using StreamChat user ID
-                  const otherMember = members.members.find((m) => m.user_id !== currentUserId);
-                  console.log(
-                    'Fallback - Other member found:',
-                    otherMember?.user?.name,
-                    'image:',
-                    otherMember?.user?.image
-                  );
-
-                  if (otherMember?.user?.image) {
-                    setOtherUserAvatar(otherMember.user.image as string);
-                  }
-                  if (otherMember?.user?.name) {
-                    setOtherUserName(otherMember.user.name as string);
-                  }
-                }
-              }
-            } catch (err: any) {
-              console.error('Failed to get channel members:', err);
-            }
+            // Avatar and name will be handled by the real-time update effect below
+            console.log('Fallback channel ready, avatar will be updated by real-time effect');
 
             if (isMounted) {
               setChannel(channel);
