@@ -38,5 +38,7 @@ export const ERROR_MESSAGES = {
   APPOINTMENT: {
     CAN_NOT_UPDATE: 'Không thể cập nhật lịch hẹn',
     CAN_NOT_CANCEL: 'Không thể hủy lịch hẹn',
+    INVALID_STATUS: 'Trạng thái không hợp lệ',
+    TIME_CONFLICT: 'Thời gian hẹn bị trùng hoặc không hợp lệ',
   },
 };

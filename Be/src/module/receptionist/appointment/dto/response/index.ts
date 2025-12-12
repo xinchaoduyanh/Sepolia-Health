@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Gender, Relationship } from '@prisma/client';
+import { AppointmentStatus, Gender, Relationship } from '@prisma/client';
 
 export class PatientProfileDto {
   @ApiProperty()
@@ -124,6 +124,42 @@ export class CreateAppointmentResponseDto {
     name: string;
   };
 
+  @ApiProperty({ required: false })
+  billing?: {
+    id: number;
+    amount: number;
+    status: string;
+    paymentMethod: string | null;
+  };
+
   @ApiProperty()
   createdAt: string;
 }
+
+export class AppointmentsListResponseDto {
+  @ApiProperty({ type: [CreateAppointmentResponseDto] })
+  data: CreateAppointmentResponseDto[];
+
+  @ApiProperty()
+  total: number;
+
+  @ApiProperty()
+  page: number;
+
+  @ApiProperty()
+  limit: number;
+
+  @ApiProperty()
+  totalPages: number;
+}
+
+export class AppointmentSummaryResponseDto {
+  @ApiProperty({
+    enum: AppointmentStatus,
+  })
+  appointmentStatus: AppointmentStatus;
+
+  @ApiProperty()
+  count: number;
+}
+

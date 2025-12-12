@@ -468,10 +468,10 @@ export default function AppointmentsListScreen() {
                               }}
                               disabled={!canCreatePayment}
                               className={`w-full items-center rounded-lg py-3 ${isPaymentPending
-                                  ? 'bg-green-500'
-                                  : canCreatePayment
-                                    ? 'bg-green-600'
-                                    : 'bg-gray-400'
+                                ? 'bg-green-500'
+                                : canCreatePayment
+                                  ? 'bg-green-600'
+                                  : 'bg-gray-400'
                                 }`}
                               style={{
                                 shadowColor: '#000',
@@ -620,8 +620,8 @@ export default function AppointmentsListScreen() {
                       key={pageNum}
                       onPress={() => setPage(pageNum)}
                       className={`rounded-lg border px-4 py-2 ${page === pageNum
-                          ? 'border-blue-500 bg-blue-500'
-                          : 'border-gray-300 bg-white'
+                        ? 'border-blue-500 bg-blue-500'
+                        : 'border-gray-300 bg-white'
                         }`}>
                       <Text
                         className={`text-sm font-medium ${page === pageNum ? 'text-white' : 'text-gray-700'
@@ -735,8 +735,8 @@ export default function AppointmentsListScreen() {
                   <View className="flex-1">
                     <Text
                       className={`text-base ${dateSortOrder === 'asc'
-                          ? 'font-bold text-blue-700'
-                          : 'font-medium text-gray-700'
+                        ? 'font-bold text-blue-700'
+                        : 'font-medium text-gray-700'
                         }`}>
                       Cũ nhất
                     </Text>
@@ -784,8 +784,8 @@ export default function AppointmentsListScreen() {
                   <View className="flex-1">
                     <Text
                       className={`text-base ${dateSortOrder === 'desc'
-                          ? 'font-bold text-blue-700'
-                          : 'font-medium text-gray-700'
+                        ? 'font-bold text-blue-700'
+                        : 'font-medium text-gray-700'
                         }`}>
                       Sớm nhất
                     </Text>
@@ -882,8 +882,8 @@ export default function AppointmentsListScreen() {
                   <View className="flex-1">
                     <Text
                       className={`text-base ${paymentFilter === 'all'
-                          ? 'font-bold text-green-700'
-                          : 'font-medium text-gray-700'
+                        ? 'font-bold text-green-700'
+                        : 'font-medium text-gray-700'
                         }`}>
                       Tất cả
                     </Text>
@@ -931,8 +931,8 @@ export default function AppointmentsListScreen() {
                   <View className="flex-1">
                     <Text
                       className={`text-base ${paymentFilter === 'PENDING'
-                          ? 'font-bold text-orange-700'
-                          : 'font-medium text-gray-700'
+                        ? 'font-bold text-orange-700'
+                        : 'font-medium text-gray-700'
                         }`}>
                       Chưa thanh toán
                     </Text>
@@ -982,8 +982,8 @@ export default function AppointmentsListScreen() {
                   <View className="flex-1">
                     <Text
                       className={`text-base ${paymentFilter === 'PAID'
-                          ? 'font-bold text-green-700'
-                          : 'font-medium text-gray-700'
+                        ? 'font-bold text-green-700'
+                        : 'font-medium text-gray-700'
                         }`}>
                       Đã thanh toán
                     </Text>
@@ -1027,7 +1027,7 @@ export default function AppointmentsListScreen() {
             <Text style={{ fontSize: 18, fontWeight: '700', marginBottom: 12 }}>Mã QR CheckIn</Text>
 
             <QRCode
-              value={`${process.env.EXPO_PUBLIC_WEB_URL}/appointment/${qrAppointmentId}`}
+              value={`${process.env.EXPO_PUBLIC_WEB_URL}/receptionist/appointment/${qrAppointmentId}`}
               size={200}
               color="black"
               backgroundColor="white"

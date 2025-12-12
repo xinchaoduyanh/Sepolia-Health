@@ -1,27 +1,49 @@
-import { ApiProperty } from '@nestjs/swagger';
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
-import { Gender, Relationship } from '@prisma/client';
+import { Gender, AppointmentStatus } from '@prisma/client';
 
-// Find patient by email DTO
+// Get appointments query DTO
+const GetAppointmentsQuerySchema = z.object({
+  page: z.coerce.number().min(1).default(1),
+  limit: z.coerce.number().min(1).max(100).default(10),
+  search: z.string().optional(),
+  status: z.enum(AppointmentStatus).optional(),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+});
+
+export class GetAppointmentsQueryDto extends createZodDto(
+  GetAppointmentsQuerySchema,
+) { }
+
+const UpdateAppointmentSchema = z.object({
+  startTime: z.iso.datetime().optional(),
+  notes: z.string().optional(),
+  doctorServiceId: z.number().optional(),
+});
+
+export class UpdateAppointmentDto extends createZodDto(
+  UpdateAppointmentSchema,
+) { }
+
 const FindPatientByEmailSchema = z.object({
-  email: z.string().email('Email không hợp lệ'),
+  email: z.email('Email không hợp lệ'),
 });
 
 export class FindPatientByEmailDto extends createZodDto(
   FindPatientByEmailSchema,
-) {}
+) { }
 
 // Create patient account DTO
 const CreatePatientAccountSchema = z.object({
-  email: z.string().email('Email không hợp lệ'),
+  email: z.email('Email không hợp lệ'),
   firstName: z.string().min(2, 'Tên phải có ít nhất 2 ký tự'),
   lastName: z.string().min(2, 'Họ phải có ít nhất 2 ký tự'),
   phone: z.string().min(10, 'Số điện thoại không hợp lệ'),
   dateOfBirth: z
     .string()
     .refine((val) => !isNaN(Date.parse(val)), 'Ngày sinh không hợp lệ'),
-  gender: z.nativeEnum(Gender, {
+  gender: z.enum(Gender, {
     message: 'Giới tính không hợp lệ',
   }),
   idCardNumber: z.string().optional(),
@@ -32,7 +54,7 @@ const CreatePatientAccountSchema = z.object({
 
 export class CreatePatientAccountDto extends createZodDto(
   CreatePatientAccountSchema,
-) {}
+) { }
 
 // Create appointment for patient DTO
 const CreateAppointmentForPatientSchema = z.object({
@@ -55,4 +77,4 @@ const CreateAppointmentForPatientSchema = z.object({
 
 export class CreateAppointmentForPatientDto extends createZodDto(
   CreateAppointmentForPatientSchema,
-) {}
+) { }

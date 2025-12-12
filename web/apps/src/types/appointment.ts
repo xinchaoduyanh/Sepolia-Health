@@ -3,7 +3,7 @@ export interface PatientProfile {
 	id: number
 	firstName: string
 	lastName: string
-	phone: string | null
+	phone: string
 }
 
 export interface Doctor {
@@ -36,6 +36,7 @@ export interface Billing {
 export interface AppointmentDetail {
 	id: number
 	startTime: string
+	endTime: string
 	status: string
 	notes?: string | null
 	patientProfile?: PatientProfile

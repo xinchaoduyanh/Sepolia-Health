@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Body,
   HttpStatus,
   Param,
@@ -22,12 +23,17 @@ import {
   FindPatientByEmailDto,
   CreatePatientAccountDto,
   CreateAppointmentForPatientDto,
+  GetAppointmentsQueryDto,
+  UpdateAppointmentDto,
 } from './dto/request';
 import {
   FindPatientResponseDto,
   CreatePatientAccountResponseDto,
   CreateAppointmentResponseDto,
+  AppointmentsListResponseDto,
+  AppointmentSummaryResponseDto,
 } from './dto/response';
+import { SuccessResponseDto } from '@/common/dto';
 
 @ApiBearerAuth()
 @Roles(Role.RECEPTIONIST)
@@ -36,7 +42,32 @@ import {
 export class ReceptionistAppointmentController {
   constructor(
     private readonly receptionistAppointmentService: ReceptionistAppointmentService,
-  ) {}
+  ) { }
+
+  @Get()
+  @ApiOperation({ summary: 'Lấy danh sách lịch hẹn' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Lấy danh sách lịch hẹn thành công',
+    type: AppointmentsListResponseDto,
+  })
+  async getAppointments(
+    @Query() query: GetAppointmentsQueryDto,
+  ): Promise<AppointmentsListResponseDto> {
+    return this.receptionistAppointmentService.getAppointments(query);
+  }
+
+  @Get('summary')
+  @ApiOperation({ summary: 'Lấy thông tin tổng hợp lịch hẹn' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Lấy thông tin tổng hợp lịch hẹn thành công',
+    type: [AppointmentSummaryResponseDto],
+  })
+  async getAppointmentSummary(): Promise<AppointmentSummaryResponseDto[]> {
+    return this.receptionistAppointmentService.getAppointmentSummary();
+  }
+
 
   @Get('locations')
   @ApiOperation({ summary: 'Lấy danh sách cơ sở phòng khám' })
@@ -88,6 +119,46 @@ export class ReceptionistAppointmentController {
       doctorServiceId,
       date,
     });
+  }
+
+  @Patch(':appointmentId/check-in')
+  @ApiOperation({ summary: 'Check in lịch hẹn' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Check in lịch hẹn thành công',
+    type: SuccessResponseDto,
+  })
+  async checkInAppointment(
+    @Param('appointmentId', ParseIntPipe) appointmentId: number,
+  ): Promise<SuccessResponseDto> {
+    return this.receptionistAppointmentService.checkInAppointment(appointmentId);
+  }
+
+  @Patch(':id/cancel')
+  @ApiOperation({ summary: 'Hủy lịch hẹn' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Hủy lịch hẹn thành công',
+    type: SuccessResponseDto,
+  })
+  async cancelAppointment(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<SuccessResponseDto> {
+    return this.receptionistAppointmentService.cancelAppointment(id);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Cập nhật lịch hẹn' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Cập nhật lịch hẹn thành công',
+    type: SuccessResponseDto,
+  })
+  async updateAppointment(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateDto: UpdateAppointmentDto,
+  ): Promise<SuccessResponseDto> {
+    return this.receptionistAppointmentService.updateAppointment(id, updateDto);
   }
 
   @Get(':id')

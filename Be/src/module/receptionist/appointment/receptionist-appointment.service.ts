@@ -19,16 +19,161 @@ import {
   FindPatientByEmailDto,
   CreatePatientAccountDto,
   CreateAppointmentForPatientDto,
+  GetAppointmentsQueryDto,
 } from './dto/request';
 import {
   FindPatientResponseDto,
   CreatePatientAccountResponseDto,
   CreateAppointmentResponseDto,
+  AppointmentsListResponseDto,
+  AppointmentSummaryResponseDto,
 } from './dto/response';
+import { SortOrder } from '@/common/enum';
 
 @Injectable()
 export class ReceptionistAppointmentService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
+
+  /**
+   * Get list of appointments with pagination and filters
+   */
+  async getAppointments(
+    query: GetAppointmentsQueryDto,
+  ): Promise<AppointmentsListResponseDto> {
+    const { page = 1, limit = 10, search, status, startDate, endDate } = query;
+
+    const skip = (page - 1) * limit;
+
+    // Build where clause
+    const where: any = {};
+
+    // Search by patient name, phone, or appointment ID
+    if (search) {
+      const searchConditions: any[] = [];
+
+      // Check if search is a number (for appointment ID search)
+      const searchAsNumber = parseInt(search, 10);
+      if (!isNaN(searchAsNumber)) {
+        searchConditions.push({ id: searchAsNumber });
+      }
+
+      // Always add text-based searches
+      searchConditions.push({
+        patientProfile: {
+          OR: [
+            { firstName: { contains: search, mode: 'insensitive' } },
+            { lastName: { contains: search, mode: 'insensitive' } },
+            { phone: { contains: search, mode: 'insensitive' } },
+          ],
+        },
+      });
+
+      where.OR = searchConditions;
+    }
+
+    // Filter by status
+    if (status) {
+      where.status = status;
+    }
+
+    // Filter by date range
+    if (startDate || endDate) {
+      where.startTime = {};
+      if (startDate) {
+        where.startTime.gte = new Date(startDate);
+      }
+      if (endDate) {
+        const endDateTime = new Date(endDate);
+        endDateTime.setHours(23, 59, 59, 999);
+        where.startTime.lte = endDateTime;
+      }
+    }
+
+    const [appointments, total] = await Promise.all([
+      this.prisma.appointment.findMany({
+        where,
+        include: {
+          patientProfile: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              phone: true,
+            },
+          },
+          doctor: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+            },
+          },
+          service: {
+            select: {
+              id: true,
+              name: true,
+              price: true,
+              duration: true,
+            },
+          },
+          clinic: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          billing: {
+            select: {
+              id: true,
+              amount: true,
+              status: true,
+              paymentMethod: true,
+            },
+          },
+        },
+        skip,
+        take: limit,
+        orderBy: { startTime: SortOrder.DESC },
+      }),
+      this.prisma.appointment.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      data: appointments.map((appointment) => ({
+        id: appointment.id,
+        startTime: appointment.startTime.toISOString(),
+        endTime: appointment.endTime.toISOString(),
+        status: appointment.status,
+        notes: appointment.notes || undefined,
+        patientProfile: appointment.patientProfile,
+        doctor: appointment.doctor,
+        service: appointment.service,
+        clinic: appointment.clinic || undefined,
+        createdAt: appointment.createdAt.toISOString(),
+        billing: appointment.billing || undefined,
+      })),
+      total,
+      page,
+      limit,
+      totalPages,
+    };
+  }
+
+  async getAppointmentSummary(): Promise<AppointmentSummaryResponseDto[]> {
+    const summary = await this.prisma.appointment.groupBy({
+      by: ['status'],
+      _count: {
+        status: true,
+      },
+    });
+
+    return summary.map((item) => ({
+      appointmentStatus: item.status,
+      count: item._count.status,
+    }));
+  }
 
   async getAppointmentDetail(
     id: number,
@@ -80,6 +225,18 @@ export class ReceptionistAppointmentService {
   }
 
   async checkInAppointment(id: number): Promise<SuccessResponseDto> {
+    const appointment = await this.prisma.appointment.findUnique({
+      where: { id },
+    });
+
+    if (!appointment) {
+      throw new NotFoundException(ERROR_MESSAGES.COMMON.RESOURCE_NOT_FOUND);
+    }
+
+    if (appointment.status !== AppointmentStatus.UPCOMING) {
+      throw new BadRequestException(ERROR_MESSAGES.APPOINTMENT.INVALID_STATUS);
+    }
+
     await this.prisma.appointment.update({
       where: { id },
       data: { status: AppointmentStatus.ON_GOING },
@@ -87,6 +244,153 @@ export class ReceptionistAppointmentService {
 
     return new SuccessResponseDto();
   }
+
+  async updateAppointment(
+    id: number,
+    updateData: { startTime?: string; notes?: string; doctorServiceId?: number },
+  ): Promise<SuccessResponseDto> {
+    const appointment = await this.prisma.appointment.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        status: true,
+        serviceId: true,
+        doctorId: true,
+        startTime: true,
+        endTime: true,
+      },
+    });
+
+    if (!appointment) {
+      throw new NotFoundException(ERROR_MESSAGES.COMMON.RESOURCE_NOT_FOUND);
+    }
+
+    // Only allow updating UPCOMING appointments
+    if (appointment.status !== AppointmentStatus.UPCOMING) {
+      throw new BadRequestException(ERROR_MESSAGES.APPOINTMENT.CAN_NOT_UPDATE);
+    }
+
+    const updatePayload: any = {};
+
+    // 1. Determine new details if doctorServiceId is provided
+    let newDoctorId = appointment.doctorId;
+    let newServiceId = appointment.serviceId;
+    let newDuration = 0;
+
+    if (updateData.doctorServiceId) {
+      const doctorService = await this.prisma.doctorService.findUnique({
+        where: { id: updateData.doctorServiceId },
+        include: {
+          doctor: true,
+          service: true,
+        },
+      });
+
+      if (!doctorService) {
+        throw new NotFoundException(ERROR_MESSAGES.COMMON.RESOURCE_NOT_FOUND);
+      }
+
+      newDoctorId = doctorService.doctorId;
+      newServiceId = doctorService.serviceId;
+      newDuration = doctorService.service.duration;
+
+      updatePayload.doctorId = newDoctorId;
+      updatePayload.serviceId = newServiceId;
+      updatePayload.clinicId = doctorService.doctor.clinicId;
+    } else {
+      // Find existing service duration if not changing service but changing time
+      if (updateData.startTime) {
+        const service = await this.prisma.service.findUnique({
+          where: { id: appointment.serviceId },
+        });
+        newDuration = service ? service.duration : 0;
+      }
+    }
+
+    // 2. Handle Time Updates & Conflict Checking
+    if (updateData.startTime) {
+      const startTime = new Date(updateData.startTime);
+      const endTime = new Date(startTime);
+      if (newDuration > 0) {
+        endTime.setMinutes(endTime.getMinutes() + newDuration);
+      }
+
+      updatePayload.startTime = startTime;
+      updatePayload.endTime = endTime;
+
+      // Check for conflicts
+      const conflictingAppointment = await this.prisma.appointment.findFirst({
+        where: {
+          doctorId: newDoctorId,
+          id: { not: id }, // Exclude current appointment
+          status: {
+            in: [AppointmentStatus.UPCOMING, AppointmentStatus.ON_GOING],
+          },
+          OR: [
+            {
+              AND: [
+                { startTime: { lte: startTime } },
+                { endTime: { gt: startTime } },
+              ],
+            },
+            {
+              AND: [
+                { startTime: { lt: endTime } },
+                { endTime: { gte: endTime } },
+              ],
+            },
+            {
+              AND: [
+                { startTime: { gte: startTime } },
+                { endTime: { lte: endTime } },
+              ]
+            }
+          ],
+        },
+      });
+
+      if (conflictingAppointment) {
+        throw new BadRequestException(ERROR_MESSAGES.APPOINTMENT.TIME_CONFLICT);
+      }
+    }
+
+    if (updateData.notes !== undefined) {
+      updatePayload.notes = updateData.notes;
+    }
+
+    await this.prisma.appointment.update({
+      where: { id },
+      data: updatePayload,
+    });
+
+    return new SuccessResponseDto();
+  }
+
+  async cancelAppointment(id: number): Promise<SuccessResponseDto> {
+    const appointment = await this.prisma.appointment.findUnique({
+      where: { id },
+    });
+
+    if (!appointment) {
+      throw new NotFoundException(ERROR_MESSAGES.COMMON.RESOURCE_NOT_FOUND);
+    }
+
+    // Only allow cancelling UPCOMING or ON_GOING appointments
+    if (
+      appointment.status !== AppointmentStatus.UPCOMING &&
+      appointment.status !== AppointmentStatus.ON_GOING
+    ) {
+      throw new BadRequestException(ERROR_MESSAGES.APPOINTMENT.CAN_NOT_CANCEL);
+    }
+
+    await this.prisma.appointment.update({
+      where: { id },
+      data: { status: AppointmentStatus.CANCELLED },
+    });
+
+    return new SuccessResponseDto();
+  }
+
 
   /**
    * Find patient by email
