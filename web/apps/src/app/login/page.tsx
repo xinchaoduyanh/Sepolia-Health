@@ -23,8 +23,17 @@ export default function LoginPage() {
         try {
             await loginMutation.mutateAsync({ email, password })
         } catch (err: any) {
-            // Lấy message từ error object
-            const errorMessage = err?.message || 'Login failed'
+            // Xử lý lỗi từ API response
+            let errorMessage = 'Đăng nhập thất bại'
+
+            if (err?.response?.data?.message) {
+                // Lấy message từ backend response
+                errorMessage = err.response.data.message
+            } else if (err?.message) {
+                // Fallback về message mặc định
+                errorMessage = err.message
+            }
+
             setError(errorMessage)
         }
     }
@@ -34,21 +43,21 @@ export default function LoginPage() {
             <div className="max-w-md w-full space-y-8">
                 <div className="text-center">
                     <img className="mx-auto h-12 w-auto" src="/image/sepolia-icon.png" alt="Sepolia Health" />
-                    <h2 className="mt-6 text-3xl font-extrabold text-foreground">Login</h2>
-                    <p className="mt-2 text-sm text-muted-foreground">Sign in to your account</p>
+                    <h2 className="mt-6 text-3xl font-extrabold text-foreground">Đăng Nhập</h2>
+                    <p className="mt-2 text-sm text-muted-foreground">Đăng nhập vào tài khoản của bạn</p>
                 </div>
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Sign In</CardTitle>
-                        <CardDescription>Enter your credentials to access the dashboard</CardDescription>
+                        <CardTitle>Đăng Nhập</CardTitle>
+                        <CardDescription>Nhập thông tin đăng nhập để truy cập hệ thống</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <form onSubmit={handleSubmit} className="space-y-4">
                             {error && <AlertMessage variant="error">{error}</AlertMessage>}
 
                             <div className="space-y-2">
-                                <Label htmlFor="email">Email Address</Label>
+                                <Label htmlFor="email">Địa chỉ Email</Label>
                                 <InputField
                                     id="email"
                                     type="email"
@@ -61,13 +70,13 @@ export default function LoginPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="password">Password</Label>
+                                <Label htmlFor="password">Mật khẩu</Label>
                                 <InputField
                                     id="password"
                                     type="password"
                                     value={password}
                                     onChange={e => setPassword(e.target.value)}
-                                    placeholder="Enter your password"
+                                    placeholder="Nhập mật khẩu của bạn"
                                     required
                                     disabled={loginMutation.isPending}
                                 />
@@ -77,10 +86,10 @@ export default function LoginPage() {
                                 {loginMutation.isPending ? (
                                     <>
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Signing in...
+                                        Đang đăng nhập...
                                     </>
                                 ) : (
-                                    'Sign In'
+                                    'Đăng Nhập'
                                 )}
                             </Button>
                         </form>
@@ -88,7 +97,7 @@ export default function LoginPage() {
                 </Card>
 
                 <div className="text-center">
-                    <p className="text-sm text-muted-foreground">Sepolia Health Management System</p>
+                    <p className="text-sm text-muted-foreground">Hệ Thống Quản Lý Sepolia Health</p>
                 </div>
             </div>
         </div>
