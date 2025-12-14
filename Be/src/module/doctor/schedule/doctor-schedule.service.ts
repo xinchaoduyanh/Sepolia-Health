@@ -54,24 +54,27 @@ export class DoctorScheduleService {
   }
 
   /**
-   * Format date to ISO string (YYYY-MM-DD)
+   * Format date to ISO string (YYYY-MM-DD) in local timezone
    */
   private formatDate(date: Date): string {
-    return date.toISOString().split('T')[0];
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 
   /**
-   * Get day name in Vietnamese
+   * Get day name in Vietnamese (Monday to Sunday)
    */
   private getDayName(dayOfWeek: number): string {
     const days = [
-      'Chủ nhật',
-      'Thứ 2',
-      'Thứ 3',
-      'Thứ 4',
-      'Thứ 5',
-      'Thứ 6',
-      'Thứ 7',
+      'Chủ nhật', // 0 = Sunday
+      'Thứ 2', // 1 = Monday
+      'Thứ 3', // 2 = Tuesday
+      'Thứ 4', // 3 = Wednesday
+      'Thứ 5', // 4 = Thursday
+      'Thứ 6', // 5 = Friday
+      'Thứ 7', // 6 = Saturday
     ];
     return days[dayOfWeek];
   }

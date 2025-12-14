@@ -110,7 +110,7 @@ model User {
   deletedAt DateTime?
 }
 
-/// Hồ sơ Bác sĩ: Chứa TẤT CẢ thông tin về một bác sĩ.
+// Hồ sơ Bác sĩ: Chứa TẤT CẢ thông tin về một bác sĩ.
 model DoctorProfile {
   id Int @id @default(autoincrement())
 
@@ -187,7 +187,7 @@ model AdminProfile {
   updatedAt DateTime @updatedAt
 }
 
-/// Hồ sơ Bệnh nhân: Chứa TẤT CẢ thông tin y tế và cá nhân của một bệnh nhân.
+// Hồ sơ Bệnh nhân: Chứa TẤT CẢ thông tin y tế và cá nhân của một bệnh nhân.
 model PatientProfile {
   id Int @id @default(autoincrement())
 
