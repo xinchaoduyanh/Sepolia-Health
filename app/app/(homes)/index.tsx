@@ -941,7 +941,7 @@ export default function HomeScreen() {
             <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#0F172A' }}>
               Tin tức & Sự kiện
             </Text>
-            <TouchableOpacity onPress={() => router.push('/(main)/articles')}>
+            <TouchableOpacity onPress={() => router.push('/articles')}>
               <Text style={{ fontSize: 14, fontWeight: '600', color: '#0284C7' }}>Xem tất cả</Text>
             </TouchableOpacity>
           </View>
