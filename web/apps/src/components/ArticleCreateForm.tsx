@@ -124,7 +124,6 @@ export function ArticleCreateForm() {
                             Nội dung <span className="text-red-500">*</span>
                         </Label>
                         <ArticleMarkdownEditor
-                            id="contentMarkdown"
                             value={formData.contentMarkdown}
                             onChange={value => handleInputChange('contentMarkdown', value)}
                             placeholder="Nhập nội dung bài viết dạng Markdown..."

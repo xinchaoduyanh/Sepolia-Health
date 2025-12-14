@@ -1,0 +1,14 @@
+node_modules
+logs
+*.log
+.env
+.env.*
+.DS_Store
+.vscode
+.idea
+coverage
+dist
+build
+.next
+.expo
+*.tgz

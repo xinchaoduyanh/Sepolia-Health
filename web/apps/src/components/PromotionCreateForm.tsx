@@ -52,10 +52,10 @@ export function PromotionCreateForm({ promotionId }: PromotionCreateFormProps) {
                 discountPercent: existingPromotion.discountPercent,
                 maxDiscountAmount: existingPromotion.maxDiscountAmount,
                 validFrom: existingPromotion.validFrom
-                    ? new Date(existingPromotion.validFrom).toISOString().split('T')[0]
+                    ? new Date(existingPromotion.validFrom).toISOString().split('T')[0] || ''
                     : '',
                 validTo: existingPromotion.validTo
-                    ? new Date(existingPromotion.validTo).toISOString().split('T')[0]
+                    ? new Date(existingPromotion.validTo).toISOString().split('T')[0] || ''
                     : '',
             })
         }

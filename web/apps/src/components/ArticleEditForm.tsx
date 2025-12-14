@@ -180,7 +180,6 @@ export function ArticleEditForm() {
                             Nội dung <span className="text-red-500">*</span>
                         </Label>
                         <ArticleMarkdownEditor
-                            id="contentMarkdown"
                             value={formData.contentMarkdown}
                             onChange={value => handleInputChange('contentMarkdown', value)}
                             placeholder="Nhập nội dung bài viết dạng Markdown..."
@@ -196,7 +195,7 @@ export function ArticleEditForm() {
                         </Button>
                         <Button
                             type="submit"
-                            disabled={updateArticle.isPending}
+                            isDisabled={updateArticle.isPending}
                             className="flex items-center space-x-2"
                         >
                             <Save className="h-4 w-4" />

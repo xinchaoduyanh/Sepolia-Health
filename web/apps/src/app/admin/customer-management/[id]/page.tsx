@@ -292,7 +292,7 @@ export default function UserDetailPage() {
                                                 </label>
                                                 <div className="flex flex-wrap gap-1 mt-1">
                                                     {profile.healthDetailsJson.allergies.map(
-                                                        (allergy, allergyIndex) => (
+                                                        (allergy: any, allergyIndex:any) => (
                                                             <Badge
                                                                 key={allergyIndex}
                                                                 variant="outline"

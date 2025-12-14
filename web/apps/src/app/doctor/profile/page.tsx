@@ -32,7 +32,7 @@ export default function DoctorProfilePage() {
                 lastName: profile.lastName || '',
                 phone: profile.phone || '',
                 address: profile.address || '',
-                dateOfBirth: profile.dateOfBirth ? profile.dateOfBirth.split('T')[0] : '',
+                dateOfBirth: profile.dateOfBirth?.split('T')[0] || '',
                 gender: (profile.gender as 'MALE' | 'FEMALE' | 'OTHER') || 'MALE',
                 avatar: profile.avatar || '',
             })
@@ -77,7 +77,7 @@ export default function DoctorProfilePage() {
                 lastName: profile.lastName || '',
                 phone: profile.phone || '',
                 address: profile.address || '',
-                dateOfBirth: profile.dateOfBirth ? profile.dateOfBirth.split('T')[0] : '',
+                dateOfBirth: profile.dateOfBirth?.split('T')[0] || '',
                 gender: (profile.gender as 'MALE' | 'FEMALE' | 'OTHER') || 'MALE',
                 avatar: profile.avatar || '',
             })
@@ -230,7 +230,7 @@ export default function DoctorProfilePage() {
                     {/* Action Buttons */}
                     {isEditing && (
                         <div className="flex items-center gap-3 pt-4 border-t border-border">
-                            <Button onClick={handleSave} disabled={updateProfile.isPending} className="flex-1">
+                            <Button onClick={handleSave} isDisabled={updateProfile.isPending} className="flex-1">
                                 {updateProfile.isPending ? (
                                     <>
                                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -243,7 +243,7 @@ export default function DoctorProfilePage() {
                                     </>
                                 )}
                             </Button>
-                            <Button onClick={handleCancel} variant="outline" disabled={updateProfile.isPending}>
+                            <Button onClick={handleCancel} variant="outline" isDisabled={updateProfile.isPending}>
                                 Hủy
                             </Button>
                         </div>

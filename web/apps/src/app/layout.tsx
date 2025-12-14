@@ -1,6 +1,8 @@
 import { Providers } from '@/shared/components/Providers'
 import '@workspace/ui/globals.css'
 
+export const dynamic = 'force-dynamic'
+
 export const metadata = {
     title: 'Sepolia Health Admin',
     description: 'Admin dashboard for Sepolia Health management system',

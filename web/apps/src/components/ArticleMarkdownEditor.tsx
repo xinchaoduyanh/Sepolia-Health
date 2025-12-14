@@ -117,7 +117,7 @@ export function ArticleMarkdownEditor({
             const items = e.clipboardData.items
             for (let i = 0; i < items.length; i++) {
                 const item = items[i]
-                if (item.type.startsWith('image/')) {
+                if (item && item.type.startsWith('image/')) {
                     e.preventDefault()
                     const file = item.getAsFile()
                     if (file) {
@@ -166,10 +166,10 @@ export function ArticleMarkdownEditor({
 
             if (imageFiles.length > 0) {
                 // Upload first image
-                await handleFileUpload(imageFiles[0])
+                await handleFileUpload(imageFiles[0]!)
                 // If multiple images, upload them sequentially
                 for (let i = 1; i < imageFiles.length; i++) {
-                    await handleFileUpload(imageFiles[i])
+                    await handleFileUpload(imageFiles[i]!)
                     insertTextAtCursor('\n\n') // Add line breaks between images
                 }
             }
@@ -238,9 +238,8 @@ export function ArticleMarkdownEditor({
                         variant="ghost"
                         size="sm"
                         onClick={() => insertMarkdown('**', '**', 'bold text')}
-                        disabled={disabled}
-                        title="Bold"
-                    >
+                        isDisabled={disabled}
+                        >
                         <strong>B</strong>
                     </Button>
                     <Button
@@ -248,8 +247,7 @@ export function ArticleMarkdownEditor({
                         variant="ghost"
                         size="sm"
                         onClick={() => insertMarkdown('*', '*', 'italic text')}
-                        disabled={disabled}
-                        title="Italic"
+                        isDisabled={disabled}
                     >
                         <em>I</em>
                     </Button>
@@ -258,8 +256,7 @@ export function ArticleMarkdownEditor({
                         variant="ghost"
                         size="sm"
                         onClick={() => insertMarkdown('## ', '', 'Heading')}
-                        disabled={disabled}
-                        title="Heading"
+                        isDisabled={disabled}
                     >
                         H
                     </Button>
@@ -268,8 +265,7 @@ export function ArticleMarkdownEditor({
                         variant="ghost"
                         size="sm"
                         onClick={() => insertMarkdown('[', '](url)', 'link text')}
-                        disabled={disabled}
-                        title="Link"
+                        isDisabled={disabled}
                     >
                         🔗
                     </Button>
@@ -278,8 +274,7 @@ export function ArticleMarkdownEditor({
                         variant="ghost"
                         size="sm"
                         onClick={handleImageButtonClick}
-                        disabled={disabled || isUploading}
-                        title="Insert Image"
+                        isDisabled={disabled || isUploading}
                     >
                         {isUploading ? <Upload className="h-4 w-4 animate-spin" /> : <Image className="h-4 w-4" />}
                     </Button>

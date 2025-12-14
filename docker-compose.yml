@@ -1,0 +1,58 @@
+version: '3.8'
+
+networks:
+  sepolia-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+
+services:
+  sepolia-health:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sepolia-health-app
+    ports:
+      - "3000:3000"  # Frontend
+      - "8000:8000"  # Backend API
+      volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/Be/node_modules
+      - /app/app/node_modules
+      - /app/web/node_modules
+      - /app/web/apps/node_modules
+    command: pnpm dev
+    restart: unless-stopped
+    # depends_on:
+      # - postgres
+      # - redis
+    networks:
+      - sepolia-network
+
+  # Database service (PostgreSQL)
+  # postgres:
+  #   image: postgres:15-alpine
+  #   container_name: sepolia-health-db
+  #   environment:
+  #     POSTGRES_USER: postgres
+  #     POSTGRES_PASSWORD: password
+  #     POSTGRES_DB: sepolia_health
+  #   ports:
+  #     - "5432:5432"
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   restart: unless-stopped
+  #   networks:
+  #     - sepolia-network
+
+  # # Redis service
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: sepolia-health-redis
+  #   ports:
+  #     - "6379:6379"
+  #   restart: unless-stopped
+  #   networks:
+  #     - sepolia-network

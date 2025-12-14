@@ -2,7 +2,14 @@
   "name": "Sepolia-Health",
   "private": true,
   "scripts": {
-    "dev": "turbo run dev"
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "pm2": "bash scripts/start-services.sh",
+    "pm2:start": "bash scripts/start-services.sh",
+    "pm2:stop": "bash scripts/stop-services.sh",
+    "pm2:restart": "pm2 restart all",
+    "pm2:status": "pm2 status",
+    "pm2:logs": "pm2 logs"
   },
   "dependencies": {
     "turbo": "^2.5.8"

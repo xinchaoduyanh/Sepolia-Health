@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useArticle, useDeleteArticle } from '@/shared/hooks'
 import { Spinner } from '@workspace/ui/components/Spinner'
@@ -8,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@work
 import { ArrowLeft, Trash2 } from 'lucide-react'
 import { Label } from '@workspace/ui/components/Label'
 
-export default function ArticleDetailPage() {
+export default function ArticleDetailPage(): React.JSX.Element {
     const params = useParams()
     const router = useRouter()
     const articleId = params?.id ? parseInt(params.id as string) : 0
