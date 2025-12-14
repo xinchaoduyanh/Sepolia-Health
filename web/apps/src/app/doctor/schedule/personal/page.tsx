@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import Link from 'next/link'
 import { Button } from '@workspace/ui/components/Button'
-import { Popover, PopoverTrigger, PopoverDialog } from '@workspace/ui/components/Popover'
 import { BsSelect } from '@workspace/ui/components/Select'
 import { Card, CardContent, CardHeader, CardTitle } from '@workspace/ui/components/Card'
 import { Skeleton } from '@workspace/ui/components/Skeleton'
@@ -30,7 +30,31 @@ import { useDoctorWeeklySchedule, useDoctorMonthlySchedule } from '@/shared/hook
 import type { BookedTimeSlot } from '@/shared/lib/api-services/doctor-schedule.service'
 import { getStatusColor } from './utils/status-colors'
 
-// Generate time slots from 7:00 to 18:00 (every hour)
+/**
+ * Configuration for appointment block styling
+ * Adjust these values to customize text sizes, spacing, and appearance
+ */
+const APPOINTMENT_BLOCK_CONFIG = {
+    // Text sizes (Tailwind classes)
+    timeTextSize: 'text-[10px]', // Time display in block
+    patientNameTextSize: 'text-[12px]', // Patient name
+    serviceTextSize: 'text-[12px]', // Service description
+    clickHintTextSize: 'text-[9px]', // "Click →" hint
+
+    // Icon sizes
+    timeIconSize: 'h-2.5 w-2.5', // Clock icon
+
+    // Spacing
+    timeGap: 'gap-0.5', // Gap between clock icon and time text
+    patientNameMargin: 'mt-0', // Margin above patient name
+    serviceMargin: 'mt-0', // Margin above service
+    clickHintMargin: 'mt-auto pt-0.5', // Margin for click hint
+
+    // Padding for small blocks (< 60px height)
+    smallBlockPadding: '0.25rem 0.375rem',
+    // Padding for larger blocks
+    normalBlockPadding: '0.375rem',
+}
 const generateTimeSlots = () => {
     const slots: string[] = []
     for (let hour = 7; hour <= 18; hour++) {
@@ -57,23 +81,44 @@ const isWithinWorkingHours = (timeSlot: string, startTime: string | null, endTim
     return slotMinutes >= startMinutes && slotMinutes < endMinutes
 }
 
-// Check if a time slot has a booked appointment
-const getBookedSlotForTime = (timeSlot: string, bookedSlots: BookedTimeSlot[]) => {
-    const slotParts = timeSlot.split(':')
-    if (slotParts.length !== 2) return undefined
-    const slotMinutes = parseInt(slotParts[0] || '0', 10) * 60 + parseInt(slotParts[1] || '0', 10)
-
-    return bookedSlots.find(slot => {
-        const startParts = slot.startTime.split(':')
-        if (startParts.length !== 2) return false
-        const startMinutes = parseInt(startParts[0] || '0', 10) * 60 + parseInt(startParts[1] || '0', 10)
-
-        const endParts = slot.endTime.split(':')
-        if (endParts.length !== 2) return false
-        const endMinutes = parseInt(endParts[0] || '0', 10) * 60 + parseInt(endParts[1] || '0', 10)
-
-        return slotMinutes >= startMinutes && slotMinutes < endMinutes
+// Get all unique appointments for a day (deduplicated)
+const getUniqueAppointmentsForDay = (bookedSlots: BookedTimeSlot[]) => {
+    const seen = new Set<number>()
+    return bookedSlots.filter(apt => {
+        if (seen.has(apt.appointmentId)) return false
+        seen.add(apt.appointmentId)
+        return true
     })
+}
+
+// Calculate vertical offset (in pixels) based on start time within the day
+const calculateAppointmentOffset = (startTime: string, dayStartTime: string = '07:00') => {
+    const startParts = startTime.split(':')
+    const startMinutes = parseInt(startParts[0] || '0', 10) * 60 + parseInt(startParts[1] || '0', 10)
+
+    const dayStartParts = dayStartTime.split(':')
+    const dayStartMinutes = parseInt(dayStartParts[0] || '0', 10) * 60 + parseInt(dayStartParts[1] || '0', 10)
+
+    const offsetMinutes = startMinutes - dayStartMinutes
+    const slotHeightPx = 120 // Each hour is 120px
+    const offsetPx = (offsetMinutes / 60) * slotHeightPx
+
+    return offsetPx
+}
+
+// Calculate height based on duration (in pixels)
+const calculateAppointmentHeightPx = (startTime: string, endTime: string) => {
+    const startParts = startTime.split(':')
+    const startMinutes = parseInt(startParts[0] || '0', 10) * 60 + parseInt(startParts[1] || '0', 10)
+
+    const endParts = endTime.split(':')
+    const endMinutes = parseInt(endParts[0] || '0', 10) * 60 + parseInt(endParts[1] || '0', 10)
+
+    const durationMinutes = endMinutes - startMinutes
+    const slotHeightPx = 120 // Each hour is 120px
+    const heightPx = (durationMinutes / 60) * slotHeightPx
+
+    return heightPx
 }
 
 type ViewMode = 'day' | 'week' | 'month'
@@ -488,13 +533,16 @@ export default function DoctorPersonalSchedulePage() {
                                         </thead>
                                         <tbody>
                                             {/* Time slots rows */}
-                                            {timeSlots.map(timeSlot => (
+                                            {timeSlots.map((timeSlot, slotIndex) => (
                                                 <tr
                                                     key={timeSlot}
                                                     className="group hover:bg-muted/30 transition-colors"
                                                 >
-                                                    <td className="border-r-2 border-b-2 p-2 text-xs font-medium text-muted-foreground text-center bg-background sticky left-0 z-10">
-                                                        {timeSlot}
+                                                    <td className="border-r-2 border-b-2 p-0 text-xs font-medium text-muted-foreground text-center bg-background sticky left-0 z-10 relative h-[120px]">
+                                                        {/* Hour label positioned at the bottom of the block */}
+                                                        <div className="absolute bottom-1 left-0 right-0 text-center">
+                                                            {timeSlot}
+                                                        </div>
                                                     </td>
                                                     {/* Day columns */}
                                                     {weeklySchedule.days.map(day => {
@@ -508,90 +556,113 @@ export default function DoctorPersonalSchedulePage() {
                                                                       day.actualSchedule.endTime,
                                                                   )
                                                                 : false
-                                                        const bookedSlot = getBookedSlotForTime(
-                                                            timeSlot,
+
+                                                        // Get unique appointments for this day
+                                                        const uniqueAppointments = getUniqueAppointmentsForDay(
                                                             day.bookedTimeSlots || [],
                                                         )
 
                                                         return (
                                                             <td
                                                                 key={day.date}
-                                                                className={`border-r border-b border-border p-1.5 align-top transition-all duration-200 h-[65px] ${
+                                                                className={`border-r border-b border-border p-1.5 align-top transition-all duration-200 h-[120px] relative ${
                                                                     isToday
                                                                         ? 'bg-primary/5 dark:bg-primary/10'
                                                                         : 'bg-background hover:bg-muted/20'
                                                                 } ${
-                                                                    isWorkingHour && !bookedSlot
+                                                                    isWorkingHour && uniqueAppointments.length === 0
                                                                         ? 'bg-gradient-to-br from-blue-50/80 to-blue-100/40 dark:from-blue-950/20 dark:to-blue-900/10'
-                                                                        : !isWorkingHour && !bookedSlot
+                                                                        : !isWorkingHour &&
+                                                                            uniqueAppointments.length === 0
                                                                           ? 'bg-muted/30 dark:bg-muted/20'
                                                                           : ''
                                                                 }`}
                                                             >
-                                                                {bookedSlot ? (
-                                                                    <PopoverTrigger>
-                                                                        <div className="group/appointment relative bg-gradient-to-br from-primary/20 via-primary/15 to-primary/10 dark:from-primary/25 dark:via-primary/20 dark:to-primary/15 border-2 border-primary/40 dark:border-primary/50 rounded-lg p-2.5 cursor-pointer hover:shadow-lg hover:scale-[1.03] transition-all duration-300 hover:border-primary/70 dark:hover:border-primary/80 h-full backdrop-blur-sm">
-                                                                            <div className="flex items-center gap-1.5 mb-1.5">
-                                                                                <Clock className="h-3 w-3 text-primary" />
-                                                                                <span className="text-xs font-bold text-primary dark:text-primary">
-                                                                                    {bookedSlot.displayTime}
-                                                                                </span>
-                                                                            </div>
-                                                                            <div className="text-xs font-semibold text-foreground truncate">
-                                                                                {bookedSlot.patientName}
-                                                                            </div>
-                                                                        </div>
-                                                                        <Popover placement="right" offset={8}>
-                                                                            <PopoverDialog className="w-80 p-4">
-                                                                                <div className="space-y-3">
-                                                                                    <div className="flex items-center gap-2 pb-2 border-b">
-                                                                                        <div className="p-2 bg-primary/10 rounded-lg">
-                                                                                            <Clock className="h-4 w-4 text-primary" />
-                                                                                        </div>
-                                                                                        <div>
-                                                                                            <div className="text-xs text-muted-foreground">
-                                                                                                Thời gian
-                                                                                            </div>
-                                                                                            <div className="text-sm font-semibold text-foreground">
-                                                                                                {bookedSlot.displayTime}
-                                                                                            </div>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                    <div className="flex items-center gap-2">
-                                                                                        <div className="p-2 bg-blue-500/10 rounded-lg">
-                                                                                            <User className="h-4 w-4 text-blue-500" />
-                                                                                        </div>
-                                                                                        <div className="flex-1">
-                                                                                            <div className="text-xs text-muted-foreground">
-                                                                                                Bệnh nhân
-                                                                                            </div>
-                                                                                            <div className="text-sm font-medium text-foreground">
-                                                                                                {bookedSlot.patientName}
-                                                                                            </div>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                    <div className="flex items-center gap-2">
-                                                                                        <div className="p-2 bg-green-500/10 rounded-lg">
-                                                                                            <Stethoscope className="h-4 w-4 text-green-500" />
-                                                                                        </div>
-                                                                                        <div className="flex-1">
-                                                                                            <div className="text-xs text-muted-foreground">
-                                                                                                Dịch vụ
-                                                                                            </div>
-                                                                                            <div className="text-sm font-medium text-foreground">
-                                                                                                {bookedSlot.serviceName}
-                                                                                            </div>
-                                                                                        </div>
-                                                                                    </div>
+                                                                {/* Appointments overlaid with absolute positioning */}
+                                                                {slotIndex === 0 &&
+                                                                    uniqueAppointments.map(apt => (
+                                                                        <Link
+                                                                            key={apt.appointmentId}
+                                                                            href={`/doctor/schedule/appointments/${apt.appointmentId}`}
+                                                                        >
+                                                                            <div
+                                                                                className="group/appointment absolute left-1.5 right-1.5 bg-gradient-to-br from-primary/20 via-primary/15 to-primary/10 dark:from-primary/25 dark:via-primary/20 dark:to-primary/15 border-2 border-primary/40 dark:border-primary/50 rounded-lg cursor-pointer hover:shadow-lg hover:scale-[1.02] transition-all duration-300 hover:border-primary/70 dark:hover:border-primary/80 backdrop-blur-sm flex flex-col"
+                                                                                style={{
+                                                                                    top: `${calculateAppointmentOffset(apt.startTime)}px`,
+                                                                                    height: `${Math.max(calculateAppointmentHeightPx(apt.startTime, apt.endTime), 50)}px`,
+                                                                                    zIndex: 20,
+                                                                                    minHeight: '50px',
+                                                                                    padding:
+                                                                                        calculateAppointmentHeightPx(
+                                                                                            apt.startTime,
+                                                                                            apt.endTime,
+                                                                                        ) < 60
+                                                                                            ? APPOINTMENT_BLOCK_CONFIG.smallBlockPadding
+                                                                                            : APPOINTMENT_BLOCK_CONFIG.normalBlockPadding,
+                                                                                }}
+                                                                            >
+                                                                                {/* Time - Always show */}
+                                                                                <div
+                                                                                    className={`flex items-center ${APPOINTMENT_BLOCK_CONFIG.timeGap} flex-shrink-0`}
+                                                                                >
+                                                                                    <Clock
+                                                                                        className={`${APPOINTMENT_BLOCK_CONFIG.timeIconSize} text-primary flex-shrink-0`}
+                                                                                    />
+                                                                                    <span
+                                                                                        className={`${APPOINTMENT_BLOCK_CONFIG.timeTextSize} font-bold text-primary dark:text-primary leading-tight`}
+                                                                                    >
+                                                                                        {apt.displayTime}
+                                                                                    </span>
                                                                                 </div>
-                                                                            </PopoverDialog>
-                                                                        </Popover>
-                                                                    </PopoverTrigger>
-                                                                ) : isWorkingHour ? (
-                                                                    <div className="h-full w-full group-hover:bg-primary/5 transition-colors rounded-sm" />
-                                                                ) : (
-                                                                    <div className="h-full w-full bg-muted/30 dark:bg-muted/20" />
-                                                                )}
+
+                                                                                {/* Patient Name - Show if >55px */}
+                                                                                {calculateAppointmentHeightPx(
+                                                                                    apt.startTime,
+                                                                                    apt.endTime,
+                                                                                ) > 55 && (
+                                                                                    <div
+                                                                                        className={`${APPOINTMENT_BLOCK_CONFIG.patientNameTextSize} font-semibold text-foreground truncate leading-tight ${APPOINTMENT_BLOCK_CONFIG.patientNameMargin}`}
+                                                                                    >
+                                                                                        {apt.patientName.length > 15
+                                                                                            ? apt.patientName.substring(
+                                                                                                  0,
+                                                                                                  12,
+                                                                                              ) + '...'
+                                                                                            : apt.patientName}
+                                                                                    </div>
+                                                                                )}
+
+                                                                                {/* Service - Show if >50px (includes 30min appointments) */}
+                                                                                {calculateAppointmentHeightPx(
+                                                                                    apt.startTime,
+                                                                                    apt.endTime,
+                                                                                ) > 50 && (
+                                                                                    <div
+                                                                                        className={`${APPOINTMENT_BLOCK_CONFIG.serviceTextSize} text-muted-foreground line-clamp-1 leading-tight ${APPOINTMENT_BLOCK_CONFIG.serviceMargin}`}
+                                                                                    >
+                                                                                        {apt.serviceName.length > 20
+                                                                                            ? apt.serviceName.substring(
+                                                                                                  0,
+                                                                                                  17,
+                                                                                              ) + '...'
+                                                                                            : apt.serviceName}
+                                                                                    </div>
+                                                                                )}
+
+                                                                                {/* Click hint for small blocks */}
+                                                                                {calculateAppointmentHeightPx(
+                                                                                    apt.startTime,
+                                                                                    apt.endTime,
+                                                                                ) <= 55 && (
+                                                                                    <div
+                                                                                        className={`${APPOINTMENT_BLOCK_CONFIG.clickHintTextSize} text-muted-foreground/50 ${APPOINTMENT_BLOCK_CONFIG.clickHintMargin} leading-tight`}
+                                                                                    >
+                                                                                        Click →
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                        </Link>
+                                                                    ))}
                                                             </td>
                                                         )
                                                     })}
@@ -605,7 +676,7 @@ export default function DoctorPersonalSchedulePage() {
                     )}
 
                     {/* Month View */}
-                    {viewMode === 'month' && monthlySchedule && (
+                    {viewMode === 'month' && monthlySchedule ? (
                         <Card className="border-2 shadow-xl bg-gradient-to-br from-card to-card/50 overflow-hidden">
                             <CardContent className="p-6">
                                 <div className="grid grid-cols-7 gap-1 bg-muted/30 rounded-xl overflow-hidden border-2 border-border p-1">
@@ -683,7 +754,7 @@ export default function DoctorPersonalSchedulePage() {
                                 </div>
                             </CardContent>
                         </Card>
-                    )}
+                    ) : null}
 
                     {/* Day View - Timeline Style */}
                     {viewMode === 'day' &&
@@ -696,7 +767,7 @@ export default function DoctorPersonalSchedulePage() {
                                 <Card className="border-2 shadow-lg overflow-hidden">
                                     <CardContent className="p-0">
                                         <div className="flex flex-col divide-y">
-                                            {timeSlots.map(timeSlot => {
+                                            {timeSlots.map((timeSlot, slotIndex) => {
                                                 // Nếu không có dữ liệu, tất cả slots đều trống
                                                 const isWorkingHour = todayData
                                                     ? !todayData.isOff && todayData.actualSchedule
@@ -707,16 +778,21 @@ export default function DoctorPersonalSchedulePage() {
                                                           )
                                                         : false
                                                     : false
-                                                const bookedSlot = todayData
-                                                    ? getBookedSlotForTime(timeSlot, todayData.bookedTimeSlots || [])
-                                                    : undefined
+
+                                                // Get unique appointments for today
+                                                const uniqueAppointments = todayData
+                                                    ? getUniqueAppointmentsForDay(todayData.bookedTimeSlots || [])
+                                                    : []
 
                                                 // Hiển thị tất cả các khung giờ để giữ layout timeline đẹp
                                                 return (
-                                                    <div key={timeSlot} className="flex min-h-[100px] group">
+                                                    <div key={timeSlot} className="flex min-h-[120px] group relative">
                                                         {/* Cột giờ bên trái */}
-                                                        <div className="w-24 flex-none p-4 border-r bg-muted/5 text-sm font-medium text-muted-foreground text-center pt-6">
-                                                            {timeSlot}
+                                                        <div className="w-24 flex-none p-0 border-r bg-muted/5 text-sm font-medium text-muted-foreground text-center relative h-[120px]">
+                                                            {/* Hour label positioned at the bottom */}
+                                                            <div className="absolute bottom-1 left-0 right-0">
+                                                                {timeSlot}
+                                                            </div>
                                                         </div>
 
                                                         {/* Khu vực nội dung bên phải */}
@@ -727,81 +803,93 @@ export default function DoctorPersonalSchedulePage() {
                                                                     : 'bg-muted/10'
                                                             }`}
                                                         >
-                                                            {bookedSlot ? (
-                                                                <PopoverTrigger>
-                                                                    <div className="absolute top-2 left-2 right-2 bottom-2 bg-primary/10 border-l-4 border-primary rounded-r-md p-3 cursor-pointer hover:bg-primary/15 transition-colors">
-                                                                        <div className="flex items-center gap-2 mb-1">
-                                                                            <span className="text-sm font-bold text-primary">
-                                                                                {bookedSlot.displayTime}
-                                                                            </span>
-                                                                            {(() => {
-                                                                                const statusColor = getStatusColor(
-                                                                                    bookedSlot.status,
-                                                                                )
-                                                                                return (
-                                                                                    <span
-                                                                                        className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${statusColor.bg} ${statusColor.text}`}
-                                                                                    >
-                                                                                        {statusColor.label}
-                                                                                    </span>
-                                                                                )
-                                                                            })()}
-                                                                        </div>
-                                                                        <div className="font-medium text-foreground">
-                                                                            {bookedSlot.patientName}
-                                                                        </div>
-                                                                        <div className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                                                                            <Stethoscope className="h-3 w-3" />
-                                                                            {bookedSlot.serviceName}
-                                                                        </div>
-                                                                    </div>
-                                                                    <Popover placement="right" offset={8}>
-                                                                        <PopoverDialog className="w-80 p-4">
-                                                                            <div className="space-y-3">
-                                                                                <div className="flex items-center gap-2 pb-2 border-b">
-                                                                                    <div className="p-2 bg-primary/10 rounded-lg">
-                                                                                        <Clock className="h-4 w-4 text-primary" />
-                                                                                    </div>
-                                                                                    <div>
-                                                                                        <div className="text-xs text-muted-foreground">
-                                                                                            Thời gian
-                                                                                        </div>
-                                                                                        <div className="text-sm font-semibold text-foreground">
-                                                                                            {bookedSlot.displayTime}
-                                                                                        </div>
-                                                                                    </div>
-                                                                                </div>
-                                                                                <div className="flex items-center gap-2">
-                                                                                    <div className="p-2 bg-blue-500/10 rounded-lg">
-                                                                                        <User className="h-4 w-4 text-blue-500" />
-                                                                                    </div>
-                                                                                    <div className="flex-1">
-                                                                                        <div className="text-xs text-muted-foreground">
-                                                                                            Bệnh nhân
-                                                                                        </div>
-                                                                                        <div className="text-sm font-medium text-foreground">
-                                                                                            {bookedSlot.patientName}
-                                                                                        </div>
-                                                                                    </div>
-                                                                                </div>
-                                                                                <div className="flex items-center gap-2">
-                                                                                    <div className="p-2 bg-green-500/10 rounded-lg">
-                                                                                        <Stethoscope className="h-4 w-4 text-green-500" />
-                                                                                    </div>
-                                                                                    <div className="flex-1">
-                                                                                        <div className="text-xs text-muted-foreground">
-                                                                                            Dịch vụ
-                                                                                        </div>
-                                                                                        <div className="text-sm font-medium text-foreground">
-                                                                                            {bookedSlot.serviceName}
-                                                                                        </div>
-                                                                                    </div>
-                                                                                </div>
+                                                            {/* Appointments overlaid with absolute positioning */}
+                                                            {slotIndex === 0 &&
+                                                                uniqueAppointments.map(apt => (
+                                                                    <Link
+                                                                        key={apt.appointmentId}
+                                                                        href={`/doctor/appointments/${apt.appointmentId}`}
+                                                                    >
+                                                                        <div
+                                                                            className="group/appointment absolute left-2 right-2 bg-primary/10 border-l-4 border-primary rounded-r-md cursor-pointer hover:bg-primary/15 transition-colors flex flex-col"
+                                                                            style={{
+                                                                                top: `${calculateAppointmentOffset(apt.startTime)}px`,
+                                                                                height: `${Math.max(calculateAppointmentHeightPx(apt.startTime, apt.endTime), 50)}px`,
+                                                                                zIndex: 20,
+                                                                                minHeight: '50px',
+                                                                                padding:
+                                                                                    calculateAppointmentHeightPx(
+                                                                                        apt.startTime,
+                                                                                        apt.endTime,
+                                                                                    ) < 65
+                                                                                        ? '0.5rem'
+                                                                                        : '0.75rem',
+                                                                            }}
+                                                                        >
+                                                                            {/* Time + Status */}
+                                                                            <div className="flex items-center gap-1 flex-shrink-0">
+                                                                                <span className="text-sm font-bold text-primary leading-tight">
+                                                                                    {apt.displayTime}
+                                                                                </span>
+                                                                                {(() => {
+                                                                                    const statusColor = getStatusColor(
+                                                                                        apt.status,
+                                                                                    )
+                                                                                    return (
+                                                                                        <span
+                                                                                            className={`text-[9px] px-1 py-0.5 rounded-full font-medium ${statusColor.bg} ${statusColor.text} leading-tight`}
+                                                                                        >
+                                                                                            {statusColor.label}
+                                                                                        </span>
+                                                                                    )
+                                                                                })()}
                                                                             </div>
-                                                                        </PopoverDialog>
-                                                                    </Popover>
-                                                                </PopoverTrigger>
-                                                            ) : null}
+
+                                                                            {/* Patient Name - Show if >60px */}
+                                                                            {calculateAppointmentHeightPx(
+                                                                                apt.startTime,
+                                                                                apt.endTime,
+                                                                            ) > 60 && (
+                                                                                <div className="font-semibold text-foreground text-xs truncate leading-tight mt-1">
+                                                                                    {apt.patientName.length > 20
+                                                                                        ? apt.patientName.substring(
+                                                                                              0,
+                                                                                              17,
+                                                                                          ) + '...'
+                                                                                        : apt.patientName}
+                                                                                </div>
+                                                                            )}
+
+                                                                            {/* Service - Show if >75px */}
+                                                                            {calculateAppointmentHeightPx(
+                                                                                apt.startTime,
+                                                                                apt.endTime,
+                                                                            ) > 75 && (
+                                                                                <div className="text-xs text-muted-foreground flex items-center gap-1 leading-tight mt-1">
+                                                                                    <Stethoscope className="h-3 w-3 flex-shrink-0" />
+                                                                                    <span className="truncate">
+                                                                                        {apt.serviceName.length > 15
+                                                                                            ? apt.serviceName.substring(
+                                                                                                  0,
+                                                                                                  12,
+                                                                                              ) + '...'
+                                                                                            : apt.serviceName}
+                                                                                    </span>
+                                                                                </div>
+                                                                            )}
+
+                                                                            {/* Click hint for small blocks */}
+                                                                            {calculateAppointmentHeightPx(
+                                                                                apt.startTime,
+                                                                                apt.endTime,
+                                                                            ) <= 60 && (
+                                                                                <div className="text-[9px] text-muted-foreground/50 mt-auto leading-tight">
+                                                                                    Click →
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    </Link>
+                                                                ))}
                                                         </div>
                                                     </div>
                                                 )
