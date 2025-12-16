@@ -78,6 +78,14 @@ export class AppointmentService {
 	async cancelAppointment(appointmentId: number): Promise<{ message: string }> {
 		return apiClient.patch<{ message: string }>(`/receptionist/appointment/${appointmentId}/cancel`)
 	}
+
+	/**
+	 * Find patient by email and their upcoming appointments
+	 * POST /receptionist/appointment/find-patient
+	 */
+	async findPatientByEmail(email: string): Promise<{ data: AppointmentDetailResponse[] }> {
+		return apiClient.post<{ data: AppointmentDetailResponse[] }>('/receptionist/appointment/find-patient', { email })
+	}
 }
 
 export const appointmentService = new AppointmentService()

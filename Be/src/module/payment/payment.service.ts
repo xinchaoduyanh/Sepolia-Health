@@ -11,6 +11,7 @@ import { TransactionStatus, PaymentStatus } from '@prisma/client';
 import { ERROR_MESSAGES } from '@/common/constants/error-messages';
 import { RedisService } from '@/common/modules/redis';
 import { NotificationService } from '@/module/notification/notification.service';
+import { NotificationType, NotificationPriority } from '@/module/notification/notification.types';
 import {
   CreateQrScanDto,
   QrScanResponseDto,
@@ -18,6 +19,7 @@ import {
   ApplyVoucherDto,
   ApplyVoucherResponseDto,
 } from './dto';
+import { MarkAsPaidDto } from './dto/request/mark-as-paid.dto';
 
 @Injectable()
 export class PaymentService {
@@ -627,6 +629,40 @@ export class PaymentService {
     return {
       success: true,
       message: 'Đã hủy mã thanh toán thành công',
+    };
+  }
+
+  /**
+   * Mark billing as paid (offline payment)
+   */
+  async markAsPaid(billingId: number, markAsPaidDto: MarkAsPaidDto): Promise<any> {
+    // Get billing
+    const billing = await this.prisma.billing.findUnique({
+      where: { id: billingId }
+    });
+
+    if (!billing) {
+      throw new NotFoundException('Không tìm thấy thông tin thanh toán');
+    }
+
+    if (billing.status !== PaymentStatus.PENDING) {
+      throw new BadRequestException('Chỉ có thể cập nhật trạng thái cho hóa đơn chưa thanh toán');
+    }
+
+    // Simply update billing status
+    const updatedBilling = await this.prisma.billing.update({
+      where: { id: billingId },
+      data: {
+        status: PaymentStatus.PAID,
+        paymentMethod: 'OFFLINE',
+        notes: markAsPaidDto.receiptNumber ? `Biên lai: ${markAsPaidDto.receiptNumber}` : 'Thanh toán tại quầy'
+      }
+    });
+
+    return {
+      success: true,
+      message: 'Đã cập nhật trạng thái thanh toán thành công',
+      data: updatedBilling
     };
   }
 }

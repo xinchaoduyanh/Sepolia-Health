@@ -1,10 +1,13 @@
 import {
   Controller,
   Post,
+  Patch,
   Body,
   HttpCode,
   HttpStatus,
   UseGuards,
+  Param,
+  ParseIntPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -14,7 +17,9 @@ import {
 } from '@nestjs/swagger';
 import { PaymentService } from './payment.service';
 import { SepayApiKeyGuard } from '@/common/guards';
-import { CurrentUser, Public } from '@/common/decorators';
+import { RolesGuard, JwtAuthGuard } from '@/common/guards';
+import { CurrentUser, Public, Roles } from '@/common/decorators';
+import { Role } from '@prisma/client';
 import {
   CreateQrScanDto,
   QrScanResponseDto,
@@ -27,6 +32,7 @@ import {
   ApplyVoucherDto,
   ApplyVoucherResponseDto,
 } from './dto';
+import { MarkAsPaidDto } from './dto/request/mark-as-paid.dto';
 
 @ApiTags('Payment')
 @Controller('payment')
@@ -148,5 +154,29 @@ export class PaymentController {
       cancelPaymentCodeDto.appointmentId,
       userId,
     );
+  }
+
+  @Patch('billing/:billingId/mark-as-paid')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.RECEPTIONIST, Role.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Đánh dấu hóa đơn đã thanh toán (thanh toán tại quầy)' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Cập nhật trạng thái thanh toán thành công',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Hóa đơn đã được thanh toán hoặc số tiền không khớp',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Không tìm thấy hóa đơn',
+  })
+  async markAsPaid(
+    @Param('billingId', ParseIntPipe) billingId: number,
+    @Body() markAsPaidDto: MarkAsPaidDto,
+  ): Promise<any> {
+    return this.paymentService.markAsPaid(billingId, markAsPaidDto);
   }
 }

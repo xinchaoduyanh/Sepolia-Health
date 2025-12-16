@@ -301,9 +301,9 @@ export default function AppointmentDetailPage() {
 
                         {appointment.type === 'ONLINE' && appointment.hostUrl ? (
                             <Card className="border-2 shadow-lg">
-                                <CardHeader className="border-b bg-gradient-to-r from-blue-500/5 to-blue-500/10">
+                                <CardHeader className="border-b bg-gradient-to-r from-purple-500/5 to-purple-500/10">
                                     <div className="flex items-center gap-2">
-                                        <Building2 className="h-5 w-5 text-blue-600" />
+                                        <Building2 className="h-5 w-5 text-purple-600" />
                                         <CardTitle className="text-lg font-bold">Liên kết trực tuyến</CardTitle>
                                     </div>
                                 </CardHeader>
@@ -312,7 +312,7 @@ export default function AppointmentDetailPage() {
                                         href={appointment.hostUrl}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors"
+                                        className="inline-flex items-center gap-2 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-medium transition-colors"
                                     >
                                         <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
                                             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />

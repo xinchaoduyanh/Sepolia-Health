@@ -14,7 +14,7 @@ import {
 import { ThemeSwitcher } from '@/shared/components/ThemeSwitcher'
 import { useAuth, useLogout } from '@/shared/hooks/useAuth'
 import Image from 'next/image'
-import { Monitor, FileText, User, LogOut, Calendar } from 'lucide-react'
+import { Monitor, FileText, User, LogOut, Calendar, ScanLine } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState, useRef, useEffect } from 'react'
@@ -44,6 +44,11 @@ function ToggleLogo() {
 
 // Menu items cho RECEPTIONIST
 const RECEPTIONIST_MAIN_ITEMS: Array<SidebarNavigationMenuItem> = [
+    {
+        title: 'Tiếp nhận bệnh nhân',
+        url: '/receptionist/checkin',
+        icon: ScanLine,
+    },
     {
         title: 'Quản lý lịch hẹn',
         url: '/receptionist/appointment',

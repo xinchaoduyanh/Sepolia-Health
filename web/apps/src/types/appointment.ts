@@ -39,6 +39,9 @@ export interface AppointmentDetail {
 	endTime: string
 	status: string
 	notes?: string | null
+	type: 'ONLINE' | 'OFFLINE'
+	joinUrl?: string | null
+	hostUrl?: string | null
 	patientProfile?: PatientProfile
 	doctor?: Doctor
 	service?: Service

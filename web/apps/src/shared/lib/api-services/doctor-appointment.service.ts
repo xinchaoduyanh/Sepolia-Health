@@ -46,7 +46,7 @@ export interface DoctorAppointmentDetail {
     endTime: Date
     status: string
     notes?: string | null
-    type: string
+    type: 'ONLINE' | 'OFFLINE'
     hostUrl?: string | null
     patient?: PatientInfo
     service?: ServiceInfo
