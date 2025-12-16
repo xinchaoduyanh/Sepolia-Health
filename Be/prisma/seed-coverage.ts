@@ -11,16 +11,84 @@ import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
+// Conflict-free scheduling algorithm
+class ConflictFreeScheduler {
+  private doctorAppointments: Map<number, Array<{ start: Date; end: Date }>> = new Map();
+  private patientAppointments: Map<number, Array<{ start: Date; end: Date }>> = new Map();
+
+  hasConflict(doctorId: number, patientId: number, start: Date, end: Date): boolean {
+    // Check doctor conflicts
+    const doctorSched = this.doctorAppointments.get(doctorId) || [];
+    for (const apt of doctorSched) {
+      if ((start < apt.end && end > apt.start)) {
+        return true; // Overlap
+      }
+    }
+
+    // Check patient conflicts
+    const patientSched = this.patientAppointments.get(patientId) || [];
+    for (const apt of patientSched) {
+      if ((start < apt.end && end > apt.start)) {
+        return true; // Overlap
+      }
+    }
+
+    return false; // No conflict
+  }
+
+  addAppointment(doctorId: number, patientId: number, start: Date, end: Date): void {
+    // Add to doctor schedule
+    if (!this.doctorAppointments.has(doctorId)) {
+      this.doctorAppointments.set(doctorId, []);
+    }
+    this.doctorAppointments.get(doctorId)!.push({ start, end });
+
+    // Add to patient schedule
+    if (!this.patientAppointments.has(patientId)) {
+      this.patientAppointments.set(patientId, []);
+    }
+    this.patientAppointments.get(patientId)!.push({ start, end });
+  }
+
+  findNextAvailableSlot(
+    doctorId: number,
+    patientId: number,
+    serviceDuration: number,
+    shiftStart: Date,
+    shiftEnd: Date,
+    maxAttempts: number = 50
+  ): { start: Date; end: Date } | null {
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      // Calculate available slots in the shift
+      const shiftDuration = (shiftEnd.getTime() - shiftStart.getTime()) / (1000 * 60); // in minutes
+      const possibleSlots = Math.floor(shiftDuration / serviceDuration);
+
+      if (possibleSlots <= 0) return null;
+
+      // Try random slot
+      const slotIndex = faker.number.int({ min: 0, max: possibleSlots - 1 });
+      const start = new Date(shiftStart.getTime() + slotIndex * serviceDuration * 60 * 1000);
+      const end = new Date(start.getTime() + serviceDuration * 60 * 1000);
+
+      if (!this.hasConflict(doctorId, patientId, start, end)) {
+        return { start, end };
+      }
+    }
+
+    return null; // Could not find available slot
+  }
+}
+
 // --- CẤU HÌNH ---
 const NUMBER_OF_CLINICS = 5; // ID từ 1 đến 5
 const DEFAULT_PASSWORD = 'password123';
 
 // Cấu hình dữ liệu mới
-const NUMBER_OF_PATIENT_USERS = 800; // 800 user bệnh nhân
+const NUMBER_OF_PATIENT_USERS = 200; // 200 user bệnh nhân
 const NUMBER_OF_ADMIN = 5; // 5 admin
 const NUMBER_OF_RECEPTIONISTS = 10; // 10 lễ tân
-const MIN_DOCTORS_PER_SPECIALTY_PER_CLINIC = 3; // Ít nhất 3 bác sĩ cho mỗi chuyên khoa tại mỗi clinic
-const MAX_DOCTORS_PER_SPECIALTY_PER_CLINIC = 5; // Tối đa 5 bác sĩ
+const MIN_DOCTORS_PER_CLINIC = 6; // 6-8 bác sĩ cho mỗi clinic
+const MAX_DOCTORS_PER_CLINIC = 8; // Tối đa 8 bác sĩ
 
 // Thời gian appointment: 01/01/2024 - 31/12/2025
 const APPOINTMENT_START_DATE = new Date('2024-01-01');
@@ -30,29 +98,21 @@ const APPOINTMENT_END_DATE = new Date('2025-12-31');
 const NUMBER_OF_POSTS = 20; // 20 bài viết cộng đồng
 // -----------------
 
-// Dữ liệu 4 chuyên khoa được giữ lại
+// Dữ liệu 2 chuyên khoa chính
 const specialties = [
   {
     name: 'Mắt',
     description: 'Chuyên khoa về các bệnh lý mắt và phẫu thuật mắt',
   },
   {
-    name: 'Tai - Mũi - Họng',
-    description: 'Chuyên khoa về tai, mũi và họng',
-  },
-  {
     name: 'Sản phụ khoa',
     description: 'Chuyên khoa về sản phụ khoa và chăm sóc sức khỏe phụ nữ',
   },
-  {
-    name: 'Tiêm chủng',
-    description: 'Chuyên khoa về tiêm chủng và phòng ngừa bệnh tật',
-  },
 ];
 
-// Dữ liệu dịch vụ - Mỗi chuyên khoa có 4-5 dịch vụ
+// Dịch vụ cho chuyên khoa Mắt (30, 60, 90, 120 phút)
 const servicesData = [
-  // Mắt (4 dịch vụ)
+  // Mắt (6 dịch vụ với các duration 30, 60, 90, 120 phút)
   {
     name: 'Khám mắt tổng quát',
     description:
@@ -65,14 +125,14 @@ const servicesData = [
     name: 'Điều trị tật khúc xạ',
     description: 'Điều trị cận thị, viễn thị, loạn thị, lão thị',
     price: 300000,
-    duration: 45,
+    duration: 60,
     specialtyIndex: 0,
   },
   {
     name: 'Phẫu thuật mắt',
     description: 'Phẫu thuật đục thủy tinh thể, glaucoma, võng mạc',
     price: 5000000,
-    duration: 90,
+    duration: 120,
     specialtyIndex: 0,
   },
   {
@@ -80,113 +140,66 @@ const servicesData = [
     description:
       'Điều trị thoái hóa hoàng điểm, bệnh lý võng mạc do tiểu đường',
     price: 800000,
-    duration: 60,
+    duration: 90,
+    specialtyIndex: 0,
+  },
+  {
+    name: 'Khám mắt cho trẻ em',
+    description: 'Khám và tầm soát các bệnh lý mắt ở trẻ em',
+    price: 250000,
+    duration: 30,
+    specialtyIndex: 0,
+  },
+  {
+    name: 'Tư vấn kính áp tròng',
+    description: 'Tư vấn và fitted kính áp tròng',
+    price: 150000,
+    duration: 30,
     specialtyIndex: 0,
   },
 
-  // Tai - Mũi - Họng (5 dịch vụ)
-  {
-    name: 'Khám Tai - Mũi - Họng tổng quát',
-    description: 'Khám và điều trị các bệnh lý về tai, mũi, họng',
-    price: 250000,
-    duration: 30,
-    specialtyIndex: 1,
-  },
-  {
-    name: 'Điều trị viêm xoang',
-    description: 'Điều trị viêm xoang cấp và mãn tính',
-    price: 350000,
-    duration: 45,
-    specialtyIndex: 1,
-  },
-  {
-    name: 'Điều trị viêm amidan',
-    description: 'Điều trị viêm amidan, phẫu thuật cắt amidan',
-    price: 400000,
-    duration: 60,
-    specialtyIndex: 1,
-  },
-  {
-    name: 'Điều trị viêm tai giữa',
-    description: 'Điều trị viêm tai giữa cấp và mãn tính',
-    price: 300000,
-    duration: 45,
-    specialtyIndex: 1,
-  },
-  {
-    name: 'Nội soi tai mũi họng',
-    description: 'Nội soi chẩn đoán và điều trị các bệnh lý tai mũi họng',
-    price: 500000,
-    duration: 60,
-    specialtyIndex: 1,
-  },
-
-  // Sản phụ khoa (5 dịch vụ)
+  // Sản phụ khoa (6 dịch vụ với các duration 30, 60, 90, 120 phút)
   {
     name: 'Khám sản phụ khoa tổng quát',
     description: 'Khám và tầm soát các bệnh lý phụ khoa',
     price: 300000,
     duration: 30,
-    specialtyIndex: 2,
+    specialtyIndex: 1,
   },
   {
     name: 'Khám thai định kỳ',
     description: 'Khám thai, siêu âm thai, theo dõi sức khỏe mẹ và bé',
     price: 350000,
-    duration: 45,
-    specialtyIndex: 2,
+    duration: 60,
+    specialtyIndex: 1,
   },
   {
     name: 'Tầm soát ung thư cổ tử cung',
     description: 'Xét nghiệm PAP, HPV test, soi cổ tử cung',
     price: 500000,
     duration: 60,
-    specialtyIndex: 2,
+    specialtyIndex: 1,
   },
   {
     name: 'Tư vấn kế hoạch hóa gia đình',
     description: 'Tư vấn các biện pháp tránh thai, đặt vòng, cấy que',
     price: 250000,
     duration: 30,
-    specialtyIndex: 2,
+    specialtyIndex: 1,
   },
   {
     name: 'Điều trị vô sinh',
     description: 'Khám và điều trị vô sinh nam nữ, hỗ trợ sinh sản',
     price: 800000,
-    duration: 60,
-    specialtyIndex: 2,
-  },
-
-  // Tiêm chủng (4 dịch vụ)
-  {
-    name: 'Tiêm chủng trẻ em',
-    description:
-      'Tiêm các loại vắc xin trong chương trình tiêm chủng mở rộng cho trẻ em',
-    price: 150000,
-    duration: 20,
-    specialtyIndex: 3,
+    duration: 90,
+    specialtyIndex: 1,
   },
   {
-    name: 'Tiêm chủng người lớn',
-    description: 'Tiêm phòng cúm, viêm gan, HPV, COVID-19 cho người lớn',
-    price: 200000,
-    duration: 20,
-    specialtyIndex: 3,
-  },
-  {
-    name: 'Tiêm phòng dại',
-    description: 'Tiêm phòng bệnh dại sau khi bị động vật cắn',
-    price: 300000,
-    duration: 30,
-    specialtyIndex: 3,
-  },
-  {
-    name: 'Tiêm phòng du lịch',
-    description: 'Tiêm các loại vắc xin cần thiết khi đi du lịch nước ngoài',
-    price: 250000,
-    duration: 30,
-    specialtyIndex: 3,
+    name: 'Phẫu thuật sản phụ khoa',
+    description: 'Phẫu thuật các bệnh lý phụ khoa',
+    price: 10000000,
+    duration: 120,
+    specialtyIndex: 1,
   },
 ];
 
@@ -400,25 +413,26 @@ async function main() {
   });
 
   // ---- BƯỚC 5: TẠO BÁC SĨ ----
-  console.log('\n--- Bước 5: Tạo bác sĩ...');
-  console.log('Mỗi chuyên khoa tại mỗi clinic có 3-5 bác sĩ');
+  console.log('\n--- Bước 5: Tạo bác sĩ (6-8 bác sĩ cho mỗi clinic)...');
 
   let doctorCount = 0;
   const allDoctors: any[] = [];
 
-  // Tạo bác sĩ cho mỗi chuyên khoa tại mỗi clinic
+  // Tạo bác sĩ cho mỗi clinic (random 6-8 bác sĩ, phân bổ đều cho 2 chuyên khoa)
   for (let clinicId = 1; clinicId <= NUMBER_OF_CLINICS; clinicId++) {
+    const totalDoctors = faker.number.int({ min: MIN_DOCTORS_PER_CLINIC, max: MAX_DOCTORS_PER_CLINIC });
+    const doctorsPerSpecialty = Math.floor(totalDoctors / 2); // Đều phân bổ cho 2 chuyên khoa
+    const remainingDoctors = totalDoctors - (doctorsPerSpecialty * 2);
+
+    console.log(`\n--> Tạo ${totalDoctors} bác sĩ cho [Clinic #${clinicId}] (${doctorsPerSpecialty + (remainingDoctors > 0 ? 1 : 0)} Mắt, ${doctorsPerSpecialty + (remainingDoctors > 1 ? 1 : 0)} Sản phụ khoa)`);
+
+    let specialtyIndex = 0;
     for (const specialty of specialtyRecords) {
-      const numDoctors = faker.number.int({
-        min: MIN_DOCTORS_PER_SPECIALTY_PER_CLINIC,
-        max: MAX_DOCTORS_PER_SPECIALTY_PER_CLINIC,
-      });
+      const numDoctorsForThisSpecialty = specialtyIndex === 0 && remainingDoctors > 0
+        ? doctorsPerSpecialty + 1
+        : doctorsPerSpecialty;
 
-      console.log(
-        `\n--> Tạo ${numDoctors} bác sĩ cho [${specialty.name}] tại [Clinic #${clinicId}]`,
-      );
-
-      for (let i = 0; i < numDoctors; i++) {
+      for (let i = 0; i < numDoctorsForThisSpecialty; i++) {
         doctorCount++;
         const firstName = faker.person.firstName();
         const lastName = faker.person.lastName();
@@ -481,8 +495,8 @@ async function main() {
           })),
         });
 
-        // Tạo lịch làm việc (Ít nhất 5 ngày/tuần)
-        const workDaysCount = faker.number.int({ min: 5, max: 6 });
+        // Tạo lịch làm việc (6/7 ngày)
+        const workDaysCount = 6; // Làm việc 6/7 ngày
         const workDays = faker.helpers
           .shuffle(daysOfWeek)
           .slice(0, workDaysCount);
@@ -502,9 +516,11 @@ async function main() {
         });
 
         console.log(
-          `   [${doctorCount}] Đã tạo: Dr. ${lastName} ${firstName} (${email})`,
+          `   [${doctorCount}] Đã tạo: Dr. ${lastName} ${firstName} (${specialty.name}) (${email})`,
         );
       }
+
+      specialtyIndex++;
     }
   }
   console.log(`✅ Đã tạo ${doctorCount} bác sĩ`);
@@ -653,9 +669,10 @@ async function main() {
     `✅ Đã tạo ${NUMBER_OF_PATIENT_USERS} user và ${totalProfilesCreated} patient profiles`,
   );
 
-  // ---- BƯỚC 9: TẠO LỊCH HẸN, HÓA ĐƠN, FEEDBACK ----
-  console.log('\n--- Bước 9: Tạo Lịch hẹn từ 01/01/2024 - 31/12/2025...');
+  // ---- BƯỚC 9: TẠO LỊCH HẸN VỚI THUẬT TOÁN KHÔNG TRÙNG LẶP ----
+  console.log('\n--- Bước 9: Tạo Lịch hẹn với thuật toán không trùng lặp...');
   const today = new Date();
+  const scheduler = new ConflictFreeScheduler();
 
   // Load tất cả availabilities và services một lần để tránh query lặp lại
   console.log('Đang load dữ liệu bác sĩ...');
@@ -679,8 +696,8 @@ async function main() {
     );
   }
 
-  // Thu thập tất cả appointment data vào mảng
-  console.log('Đang tạo dữ liệu appointments...');
+  // Tạo appointments với conflict-free scheduling
+  console.log('Đang tạo appointments với conflict-free scheduling...');
   const appointmentData: Array<{
     startTime: Date;
     endTime: Date;
@@ -714,8 +731,8 @@ async function main() {
       );
 
       if (availability) {
-        // Tạo vài cuộc hẹn trong ngày (2-4 appointments)
-        const numAppointments = faker.number.int({ min: 2, max: 4 });
+        // Tạo 1-3 cuộc hẹn trong ngày (giảm để tránh xung đột)
+        const numAppointments = faker.number.int({ min: 1, max: 3 });
 
         for (let i = 0; i < numAppointments; i++) {
           try {
@@ -742,55 +759,56 @@ async function main() {
             const shiftEnd = new Date(currentDate);
             shiftEnd.setHours(endHour, endMin, 0, 0);
 
-            const totalMinutes =
-              (shiftEnd.getTime() - shiftStart.getTime()) / 60000;
-            const maxSlots = Math.floor(totalMinutes / service.duration);
-
-            if (maxSlots <= 0) continue;
-
-            const randomSlot = faker.number.int({ min: 0, max: maxSlots - 1 });
-            const appointmentStart = new Date(
-              shiftStart.getTime() + randomSlot * service.duration * 60000,
-            );
-            const appointmentEnd = new Date(
-              appointmentStart.getTime() + service.duration * 60000,
-            );
-
-            // Xác định trạng thái
-            let status: AppointmentStatus;
-            if (appointmentEnd < today) {
-              // Random COMPLETED hoặc CANCELLED cho quá khứ
-              status = faker.helpers.arrayElement([
-                'COMPLETED',
-                'COMPLETED',
-                'COMPLETED',
-                'CANCELLED',
-              ]) as AppointmentStatus;
-            } else if (appointmentStart <= today && appointmentEnd > today) {
-              status = 'ON_GOING';
-            } else {
-              // Random UPCOMING hoặc CANCELLED cho tương lai
-              status = faker.helpers.arrayElement([
-                'UPCOMING',
-                'UPCOMING',
-                'UPCOMING',
-                'CANCELLED',
-              ]) as AppointmentStatus;
-            }
-
-            // Thêm vào mảng thay vì tạo ngay
-            appointmentData.push({
-              startTime: appointmentStart,
-              endTime: appointmentEnd,
-              status,
-              notes: faker.lorem.sentence(),
-              type: 'OFFLINE',
+            // Sử dụng conflict-free scheduler để tìm slot trống
+            const timeSlot = scheduler.findNextAvailableSlot(
+              doctor.id,
               patientProfileId,
-              doctorId: doctor.id,
-              serviceId: service.id,
-              clinicId: doctor.clinicId,
-              servicePrice: service.price,
-            });
+              service.duration,
+              shiftStart,
+              shiftEnd
+            );
+
+            if (timeSlot) {
+              // Thêm vào scheduler để track
+              scheduler.addAppointment(
+                doctor.id,
+                patientProfileId,
+                timeSlot.start,
+                timeSlot.end
+              );
+
+              // Xác định trạng thái
+              let status: AppointmentStatus;
+              if (timeSlot.end < today) {
+                status = faker.helpers.arrayElement([
+                  'COMPLETED',
+                  'COMPLETED',
+                  'CANCELLED',
+                ]) as AppointmentStatus;
+              } else if (timeSlot.start <= today && timeSlot.end > today) {
+                status = 'ON_GOING';
+              } else {
+                status = faker.helpers.arrayElement([
+                  'UPCOMING',
+                  'UPCOMING',
+                  'CANCELLED',
+                ]) as AppointmentStatus;
+              }
+
+              // Thêm vào mảng
+              appointmentData.push({
+                startTime: timeSlot.start,
+                endTime: timeSlot.end,
+                status,
+                notes: faker.lorem.sentence(),
+                type: 'OFFLINE',
+                patientProfileId,
+                doctorId: doctor.id,
+                serviceId: service.id,
+                clinicId: doctor.clinicId,
+                servicePrice: service.price,
+              });
+            }
           } catch {
             // Bỏ qua lỗi
           }
@@ -803,7 +821,7 @@ async function main() {
   }
 
   console.log(
-    `Đã chuẩn bị ${appointmentData.length} appointments. Đang insert...`,
+    `Đã chuẩn bị ${appointmentData.length} appointments (không trùng lặp). Đang insert...`,
   );
 
   // Batch insert appointments
@@ -918,102 +936,52 @@ async function main() {
           });
 
           // Tạo appointment result cho completed appointments
-          const specialties = ['Mắt', 'Tai - Mũi - Họng', 'Sản phụ khoa', 'Tiêm chủng'];
-          const randomSpecialty = faker.helpers.arrayElement(specialties);
+          const serviceSpecialty = serviceRecords.find(s => s.id === appointment.serviceId)?.specialty.name || '';
 
-          // Tạo diagnosis theo chuyên khoa
           let diagnosis = '';
           let prescription = '';
           let recommendations = '';
 
-          switch (randomSpecialty) {
-            case 'Mắt':
-              diagnosis = faker.helpers.arrayElement([
-                'Cận thị độ nhẹ',
-                'Viêm kết mạc dị ứng',
-                'Khô mắt',
-                'Đục thủy tinh thể giai đoạn đầu',
-                'Loạn thị'
-              ]);
-              prescription = faker.helpers.arrayElement([
-                'Kháng sinh nhỏ mắt 5 ngày',
-                'Nước mắt nhân tạo 3 lần/ngày',
-                'Vitamin A, E',
-                'Thuốc nhỏ mắt chống viêm'
-              ]);
-              recommendations = faker.helpers.arrayElement([
-                'Hạn chế nhìn màn hình điện tử',
-                'Đeo kính bảo hộ khi ra đường',
-                'Tái khám sau 3 tháng',
-                'Ngủ đủ 8 tiếng mỗi ngày'
-              ]);
-              break;
-
-            case 'Tai - Mũi - Họng':
-              diagnosis = faker.helpers.arrayElement([
-                'Viêm xoang mạn tính',
-                'Viêm amidan cấp',
-                'Viêm tai giữa ứ dịch',
-                'Viêm mũi dị ứng',
-                'Trào ngược viễn thực quản'
-              ]);
-              prescription = faker.helpers.arrayElement([
-                'Kháng sinh 7 ngày',
-                'Thuốc chống viêm',
-                'Thuốc giảm đau',
-                'Nước rửa mũi sinh lý'
-              ]);
-              recommendations = faker.helpers.arrayElement([
-                'Tránh môi trường ô nhiễm',
-                'Uống đủ nước ấm',
-                'Súc miệng nước muối',
-                'Tái khám sau 1 tuần'
-              ]);
-              break;
-
-            case 'Sản phụ khoa':
-              diagnosis = faker.helpers.arrayElement([
-                'Viêm nhiễm phụ khoa nhẹ',
-                'Rối loạn kinh nguyệt',
-                'Mang thai 8 tuần',
-                'U nang buồng trứng nhỏ',
-                'Lạc nội mạc tử cung'
-              ]);
-              prescription = faker.helpers.arrayElement([
-                'Kháng sinh phổ rộng',
-                'Thuốc cân bằng nội tiết',
-                'Axit folic',
-                'Canxi và Vitamin D'
-              ]);
-              recommendations = faker.helpers.arrayElement([
-                'Vệ sinh vùng kín đúng cách',
-                'Quan hệ tình dục an toàn',
-                'Tầm soát ung thư định kỳ',
-                'Theo dõi chu kỳ kinh nguyệt'
-              ]);
-              break;
-
-            case 'Tiêm chủng':
-              diagnosis = faker.helpers.arrayElement([
-                'Tiêm chủng đủ lịch',
-                'Cần tiêm nhắc lại vắc-xin',
-                'Phản ứng nhẹ sau tiêm',
-                'Miễn dịch tốt',
-                'Cần tiêm vắc-xin cúm hàng năm'
-              ]);
-              prescription = faker.helpers.arrayElement([
-                'Paracetamol khi sốt nhẹ',
-                'Chườm lạnh nơi tiêm',
-                'Uống nhiều nước',
-                'Không cần thuốc đặc hiệu'
-              ]);
-              recommendations = faker.helpers.arrayElement([
-                'Ở lại theo dõi 30 phút sau tiêm',
-                'Không gãi vào vùng tiêm',
-                'Theo dõi phản ứng sau tiêm 24h',
-                'Ghi nhớ lịch tiêm lần sau'
-              ]);
-              break;
+          if (serviceSpecialty === 'Mắt') {
+            diagnosis = faker.helpers.arrayElement([
+              'Cận thị độ nhẹ',
+              'Viêm kết mạc dị ứng',
+              'Khô mắt',
+              'Đục thủy tinh thể giai đoạn đầu',
+              'Loạn thị'
+            ]);
+            prescription = faker.helpers.arrayElement([
+              'Kháng sinh nhỏ mắt 5 ngày',
+              'Nước mắt nhân tạo 3 lần/ngày',
+              'Vitamin A, E',
+              'Thuốc nhỏ mắt chống viêm'
+            ]);
+            recommendations = faker.helpers.arrayElement([
+              'Hạn chế nhìn màn hình điện tử',
+              'Đeo kính bảo hộ khi ra đường',
+              'Tái khám sau 3 tháng',
+              'Ngủ đủ 8 tiếng mỗi ngày'
+            ]);
+          } else if (serviceSpecialty === 'Sản phụ khoa') {
+            diagnosis = faker.helpers.arrayElement([
+              'Viêm nhiễm phụ khoa nhẹ',
+              'Rối loạn kinh nguyệt',
+              'Mang thai 8 tuần',
+              'U nang buồng trứng nhỏ',
+              'Lạc nội mạc tử cung'
+            ]);
+            prescription = faker.helpers.arrayElement([
+              'Kháng sinh phổ rộng',
+              'Thuốc cân bằng nội tiết',
+              'Axit folic',
+              'Canxi và Vitamin D'
+            ]);
+            recommendations = faker.helpers.arrayElement([
+              'Vệ sinh vùng kín đúng cách',
+              'Quan hệ tình dục an toàn',
+              'Tầm soát ung thư định kỳ',
+              'Theo dõi chu kỳ kinh nguyệt'
+            ]);
           }
 
           appointmentResultsToInsert.push({
@@ -1188,19 +1156,19 @@ async function main() {
 
   // ---- SUMMARY ----
   console.log(
-    `\n✅ HOÀN THÀNH! Đã tạo thành công:
-     - ${specialties.length} chuyên khoa
-     - ${servicesData.length} dịch vụ
+    `\n✅ HOÀN THÀNH! Đã tạo thành công dữ liệu đơn giản:
+     - ${specialties.length} chuyên khoa (Mắt, Sản phụ khoa)
+     - ${servicesData.length} dịch vụ (30, 60, 90, 120 phút)
      - ${clinics.length} phòng khám
-     - ${doctorCount} bác sĩ
+     - ${doctorCount} bác sĩ (6-8/clinic, 6/7 ngày làm việc)
      - ${NUMBER_OF_ADMIN} admin
      - ${NUMBER_OF_RECEPTIONISTS} lễ tân
      - ${NUMBER_OF_PATIENT_USERS} user bệnh nhân
      - ${totalProfilesCreated} hồ sơ bệnh nhân
-     - ${appointmentsCreated} lịch hẹn
+     - ${appointmentsCreated} lịch hẹn (không trùng lặp)
      - ${billingsCreated} hóa đơn
      - ${feedbacksCreated} feedbacks
-     - ${appointmentResultsCreated} kết quả khám (AppointmentResult)
+     - ${appointmentResultsCreated} kết quả khám
      - ${tagsData.length} tags
      - ${questionsCreated} questions
      - ${answersCreated} answers
