@@ -15,7 +15,7 @@ import { ThemeSwitcher } from '@/shared/components/ThemeSwitcher'
 import { useAuth, useLogout } from '@/shared/hooks/useAuth'
 import { useDoctorProfile } from '@/shared/hooks/useDoctorProfile'
 import Image from 'next/image'
-import { Monitor, UserCheck, User, LogOut, MessageSquare } from 'lucide-react'
+import { Monitor, UserCheck, User, LogOut, MessageSquare, MoreHorizontal } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState, useRef, useEffect } from 'react'
@@ -31,13 +31,7 @@ function ToggleLogo() {
             aria-label="Toggle Sidebar"
         >
             <div className="w-8 h-8 relative">
-                <Image
-                    src="/image/sepolia-icon.png"
-                    alt="Sepolia Health Logo"
-                    width={32}
-                    height={32}
-                    className="object-contain"
-                />
+                <MoreHorizontal className="h-8 w-8" />
             </div>
         </button>
     )
@@ -151,11 +145,11 @@ export function DoctorDashboardLayout({ children, defaultOpen = true }: DoctorDa
         <SidebarProvider defaultOpen={defaultOpen}>
             <Sidebar collapsible="icon">
                 <SidebarHeader className="border-b-2 border-border bg-gradient-to-r from-primary/5 to-primary/10">
-                    <div className="flex items-center gap-3 px-4 py-4">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg">
+                    <div className="flex items-center gap-3 px-4 py-4 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg">
                             <Monitor className="h-5 w-5" />
                         </div>
-                        <div className="grid flex-1 text-left text-sm leading-tight">
+                        <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
                             <span className="truncate font-bold text-foreground">Sepolia Healthcare</span>
                         </div>
                     </div>
@@ -170,26 +164,26 @@ export function DoctorDashboardLayout({ children, defaultOpen = true }: DoctorDa
                     />
                 </SidebarContent>
 
-                <SidebarFooter className="border-t border-border p-2">
+                <SidebarFooter className="border-t border-border p-2 group-data-[collapsible=icon]:p-2">
                     <div className="relative" ref={sidebarDropdownRef}>
                         <button
                             onClick={() => setIsSidebarDropdownOpen(!isSidebarDropdownOpen)}
-                            className="w-full flex items-center gap-3 px-3 py-3 hover:bg-sidebar-accent rounded-lg transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 group"
+                            className="w-full flex items-center gap-3 px-3 py-3 hover:bg-sidebar-accent rounded-lg transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
                         >
-                            <Avatar className="h-10 w-10 border-2 border-primary/20">
+                            <Avatar className="h-10 w-10 shrink-0 border-2 border-primary/20 group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8">
                                 {doctorAvatar ? <AvatarImage src={doctorAvatar} alt={doctorFullName} /> : null}
                                 <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-bold">
                                     {doctorFullName.charAt(0).toUpperCase()}
                                 </AvatarFallback>
                             </Avatar>
-                            <div className="grid flex-1 text-left text-xs">
+                            <div className="grid flex-1 text-left text-xs group-data-[collapsible=icon]:hidden">
                                 <span className="truncate font-semibold text-sidebar-foreground">{doctorFullName}</span>
                                 <span className="truncate text-sidebar-foreground/70">{doctorEmail}</span>
                             </div>
                         </button>
 
                         {isMounted && isSidebarDropdownOpen && (
-                            <div className="absolute bottom-full right-0 mb-2 w-64 bg-popover border-2 border-border rounded-xl shadow-2xl z-50 overflow-hidden backdrop-blur-sm">
+                            <div className="absolute bottom-full mb-2 w-64 bg-popover border-2 border-border rounded-xl shadow-2xl z-50 overflow-hidden backdrop-blur-sm group-data-[collapsible=icon]:left-full group-data-[collapsible=icon]:bottom-0 group-data-[collapsible=icon]:mb-0 group-data-[collapsible=icon]:ml-2 right-0 group-data-[collapsible=icon]:right-auto">
                                 <div className="p-2">
                                     <div className="px-4 py-3 border-b border-border bg-gradient-to-r from-primary/5 to-primary/10 mb-1">
                                         <p className="text-sm font-semibold text-popover-foreground truncate">

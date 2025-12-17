@@ -164,7 +164,7 @@ function DataTable<TData extends Identifiable, TValue>({
         initialState: {
             columnPinning: columnPinning || {
                 left: ['select'],
-                right: ['actions'],
+                right: [],
             },
         },
     })
