@@ -26,6 +26,7 @@ import {
 import { Answer, VoteType } from '@/types/qna';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { formatDate } from '@/utils/datetime';
+import { Avatar } from '@/components/Avatar';
 
 export default function QuestionDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -310,20 +311,13 @@ export default function QuestionDetailScreen() {
             }}>
             {/* Author Info */}
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
-              <View
-                style={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: 24,
-                  backgroundColor: roleBadge.bg,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginRight: 12,
-                }}>
-                <Text style={{ fontSize: 20, fontWeight: 'bold', color: roleBadge.text }}>
-                  {question.author.fullName.charAt(0).toUpperCase()}
-                </Text>
-              </View>
+              <Avatar
+                source={question.author.avatar}
+                name={question.author.fullName}
+                size={48}
+                role={question.author.role}
+                style={{ marginRight: 12 }}
+              />
               <View style={{ flex: 1 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                   <Text style={{ fontSize: 16, fontWeight: '600', color: '#1F2937' }}>
@@ -589,21 +583,13 @@ export default function QuestionDetailScreen() {
 
                     {/* Author Info */}
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-                      <View
-                        style={{
-                          width: 40,
-                          height: 40,
-                          borderRadius: 20,
-                          backgroundColor: answerRoleBadge.bg,
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          marginRight: 12,
-                        }}>
-                        <Text
-                          style={{ fontSize: 16, fontWeight: 'bold', color: answerRoleBadge.text }}>
-                          {answer.author.fullName.charAt(0).toUpperCase()}
-                        </Text>
-                      </View>
+                      <Avatar
+                        source={answer.author.avatar}
+                        name={answer.author.fullName}
+                        size={40}
+                        role={answer.author.role}
+                        style={{ marginRight: 12 }}
+                      />
                       <View style={{ flex: 1 }}>
                         <View
                           style={{

@@ -240,9 +240,17 @@ export default function QnaListPage() {
                                 {/* Author Info */}
                                 <div className="flex items-start gap-3 mb-4">
                                     <Avatar className="h-10 w-10">
-                                        <AvatarFallback className={roleBadgeColor}>
-                                            {question.author.fullName.charAt(0).toUpperCase()}
-                                        </AvatarFallback>
+                                        {question.author.avatar ? (
+                                            <img
+                                                src={question.author.avatar}
+                                                alt={question.author.fullName}
+                                                className="h-full w-full rounded-full object-cover"
+                                            />
+                                        ) : (
+                                            <AvatarFallback className={roleBadgeColor}>
+                                                {question.author.fullName.charAt(0).toUpperCase()}
+                                            </AvatarFallback>
+                                        )}
                                     </Avatar>
                                     <div className="flex-1">
                                         <div className="flex items-center gap-2 flex-wrap">
