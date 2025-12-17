@@ -17,10 +17,10 @@ module.exports = {
         NODE_ENV: 'development',
         PORT: 8000
       },
-      log_file: './logs/backend.log',
-      out_file: './logs/backend-out.log',
-      error_file: './logs/backend-error.log',
-      log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
+      log_file: '/dev/null',
+      out_file: '/dev/null',
+      error_file: '/dev/null',
+      log_date_format: ''
     },
     {
       name: 'sepolia-frontend',
@@ -39,10 +39,10 @@ module.exports = {
         NODE_ENV: 'development',
         PORT: 3000
       },
-      log_file: './logs/frontend.log',
-      out_file: './logs/frontend-out.log',
-      error_file: './logs/frontend-error.log',
-      log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
+      log_file: '/dev/null',
+      out_file: '/dev/null',
+      error_file: '/dev/null',
+      log_date_format: ''
     }
   ],
 
