@@ -138,38 +138,38 @@ export class ChatService implements OnModuleInit {
     await channel.create();
     await channel.update({ name: clinic.name } as any);
 
-    // 7. Add members vào channel (bao gồm AI bot)
-    const aiBotUserId = this.streamChatConf.aiBotUserId;
-
-    // Đảm bảo AI bot user tồn tại
-    await this.streamClient.upsertUser({
-      id: aiBotUserId,
-      name: 'Trợ lý AI Sepolia',
-      role: 'user',
-      image: 'https://api.dicebear.com/7.x/bottts/svg?seed=ai-assistant',
-    });
-
-    // Add AI bot vào channel
-    const allMemberIds = [patientUserId.toString(), aiBotUserId];
+    // 7. Add members vào channel (chỉ có patient và receptionists)
+    const allMemberIds = [patientUserId.toString()];
     if (receptionistUserIds.length > 0) {
       allMemberIds.push(...receptionistUserIds);
     }
 
     await channel.addMembers(allMemberIds);
 
-    // 8. Gửi tin nhắn chào mừng từ AI bot
-    const welcomeMessage =
-      'Xin chào bạn! Tôi là Chatbot Assistants của Sepolia. Xin hỏi bạn cần giúp đỡ gì nhỉ?';
+    // 8. Gửi tin nhắn chào mừng từ lễ tân (chọn lễ tân đầu tiên trong danh sách)
+    let welcomeMessage = '';
+    let senderUserId = '';
+
+    if (receptionistUserIds.length > 0) {
+      // Lấy thông tin của lễ tân đầu tiên để gửi tin nhắn chào
+      const firstReceptionist = receptionists[0];
+      welcomeMessage = `Xin chào! Đây là tin nhắn tự động từ ${firstReceptionist.firstName} ${firstReceptionist.lastName}`;
+      senderUserId = receptionistUserIds[0]; // ID của lễ tân trong Stream Chat
+    } else {
+      // Fallback: gửi từ system nếu không có lễ tân
+      welcomeMessage = `Xin chào! Chào mừng bạn đến với ${clinic.name}`;
+      senderUserId = 'system';
+    }
 
     await channel.sendMessage({
       text: welcomeMessage,
-      user_id: aiBotUserId,
+      user_id: senderUserId,
     });
 
     return {
       channelId,
       clinicName: clinic.name,
-      members: 1 + receptionistUserIds.length + 1, // +1 for AI bot
+      members: 1 + receptionistUserIds.length, // patient + receptionists
     };
   }
 
