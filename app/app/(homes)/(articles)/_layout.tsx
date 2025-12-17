@@ -8,14 +8,13 @@ export default function ArticlesLayout() {
         name="index"
         options={{
           headerShown: false,
-          href: null // Ẩn khỏi tab bar
+
         }}
       />
       <Stack.Screen
         name="[id]"
         options={{
           headerShown: false,
-          href: null // Ẩn khỏi tab bar
         }}
       />
     </Stack>

@@ -720,7 +720,7 @@ export default function HomeScreen() {
                     Thanh toán
                   </Text>
                 </TouchableOpacity>
-              </View> */}
+              </View> */
 
               <View style={{ width: '22%', alignItems: 'center' }}>
                 <TouchableOpacity
@@ -789,7 +789,7 @@ export default function HomeScreen() {
                     Sức khỏe
                   </Text>
                 </TouchableOpacity>
-              </View> */}
+              </View> */
 
               <View style={{ width: '22%', alignItems: 'center' }}>
                 <TouchableOpacity
@@ -930,7 +930,9 @@ export default function HomeScreen() {
             <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#0F172A' }}>
               Tin tức & Sự kiện
             </Text>
-            <TouchableOpacity onPress={() => router.push('/(homes)/(article)')}>
+            <TouchableOpacity
+              onPress={() => router.push('/(homes)/(articles)')}
+              activeOpacity={0.7}>
               <Text style={{ fontSize: 14, fontWeight: '600', color: '#0284C7' }}>Xem tất cả</Text>
             </TouchableOpacity>
           </View>
@@ -1003,7 +1005,7 @@ export default function HomeScreen() {
                       borderRadius: 20,
                       backgroundColor: '#FFFFFF',
                     }}
-                    onPress={() => router.push(`/articles/${article.id}`)}>
+                    onPress={() => router.push(`/(homes)/(articles)/${article.id}`)}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16 }}>
                       <View
                         style={{

@@ -291,12 +291,11 @@ export default function ArticleIdPage() {
                   borderLeftWidth: 4,
                   borderLeftColor: '#0284C7',
                 }}>
-<<<<<<<< HEAD:app/app/(homes)/(articles)/[id]/page.tsx
-                <Text style={{ fontSize: 16, color: '#0C4A6E', fontStyle: 'italic', lineHeight: 24 }}>
-========
+
+            
                 <Text
                   style={{ fontSize: 16, color: '#0C4A6E', fontStyle: 'italic', lineHeight: 24 }}>
->>>>>>>> 93499306b1fad45635f05d528de084631d88a73b:app/app/(homes)/(article)/[id].tsx
+
                   {article.excerpt}
                 </Text>
               </View>
