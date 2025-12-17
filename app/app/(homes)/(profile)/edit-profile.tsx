@@ -19,6 +19,7 @@ import BirthDatePicker from '@/components/BirthDatePicker';
 import * as ImagePicker from 'expo-image-picker';
 import { useForm, Controller } from 'react-hook-form';
 import { Relationship } from '@/constants/enum';
+import { validateName, validatePhone } from '@/lib/utils/validation';
 
 interface EditProfileFormData {
   firstName: string;
@@ -101,10 +102,10 @@ export default function EditProfileScreen() {
     }
   };
 
-  // Phone validation function
-  const validatePhone = (phone: string): boolean => {
-    const phoneRegex = /^[0-9]{10,11}$/;
-    return phoneRegex.test(phone);
+  // Phone validation function (local override for react-hook-form)
+  const validatePhoneLocal = (phone: string): boolean => {
+    const validation = validatePhone(phone);
+    return validation.isValid;
   };
 
   // Handle form submission with react-hook-form
@@ -220,7 +221,10 @@ export default function EditProfileScreen() {
               name="firstName"
               rules={{
                 required: 'Vui lòng nhập tên',
-                validate: (value) => value.trim() !== '' || 'Tên không được để trống',
+                validate: (value) => {
+                  const validation = validateName(value);
+                  return validation.isValid || validation.message || 'Tên không hợp lệ';
+                },
               }}
               render={({ field: { onChange, value }, fieldState: { error } }) => (
                 <View>
@@ -250,7 +254,10 @@ export default function EditProfileScreen() {
               name="lastName"
               rules={{
                 required: 'Vui lòng nhập họ',
-                validate: (value) => value.trim() !== '' || 'Họ không được để trống',
+                validate: (value) => {
+                  const validation = validateName(value);
+                  return validation.isValid || validation.message || 'Họ không hợp lệ';
+                },
               }}
               render={({ field: { onChange, value }, fieldState: { error } }) => (
                 <View>
@@ -280,8 +287,10 @@ export default function EditProfileScreen() {
               name="phone"
               rules={{
                 required: 'Vui lòng nhập số điện thoại',
-                validate: (value) =>
-                  validatePhone(value.trim()) || 'Số điện thoại phải có 10-11 chữ số',
+                validate: (value) => {
+                  const validation = validatePhone(value.trim());
+                  return validation.isValid || validation.message || 'Số điện thoại không hợp lệ';
+                },
               }}
               render={({ field: { onChange, value }, fieldState: { error } }) => (
                 <View>

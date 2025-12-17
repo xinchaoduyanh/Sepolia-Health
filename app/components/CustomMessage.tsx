@@ -6,7 +6,7 @@ import * as Clipboard from 'expo-clipboard';
 import { format, isToday, isYesterday } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import Markdown from 'react-native-markdown-display';
-import { ChatbotAPI } from '@/lib/api/chatbot';
+import { getChatUserInfoSync, type ChatUserInfo } from '@/lib/utils/chat-user-data';
 
 // Format timestamp for better readability
 const formatMessageTime = (date: Date) => {
@@ -89,51 +89,17 @@ export const CustomMessage = () => {
     setShowActions(true);
   };
 
-  // Get user info with fallback from channel members
-  const getUserInfo = () => {
-    const userId = message.user?.id;
-    const botUserId = ChatbotAPI.getAIBotUserId();
-    const isBotMessage = userId === botUserId;
-
-    // First try to get from message.user
-    if (message.user?.name && message.user?.image) {
-      return {
-        name: message.user.name,
-        image: message.user.image,
-      };
+  // Get user info using standardized utility
+  const userInfo: ChatUserInfo = getChatUserInfoSync(
+    message.user?.id || '',
+    message.user,
+    {
+      channel,
+      // Note: We don't have currentUserId here, but the utility has fallbacks
     }
+  );
 
-    // Fallback to channel members if available
-    if (userId && channel?.state?.members) {
-      const member = channel.state.members[userId];
-      if (member?.user) {
-        return {
-          name: member.user.name || message.user?.name || 'Unknown',
-          image: member.user.image || message.user?.image,
-        };
-      }
-    }
-
-    // For bot messages, try to query members if not found
-    if (isBotMessage && channel) {
-      // Try to get from channel data or query members
-      const botMember = channel.state?.members?.[botUserId];
-      if (botMember?.user?.image) {
-        return {
-          name: botMember.user.name || 'Trợ lý Y tế Thông minh',
-          image: botMember.user.image,
-        };
-      }
-    }
-
-    // Final fallback
-    return {
-      name: message.user?.name || (isBotMessage ? 'Trợ lý Y tế Thông minh' : 'Unknown'),
-      image: message.user?.image,
-    };
-  };
-
-  const { name: userName, image: userImage } = getUserInfo();
+  const { name: userName, image: userImage } = userInfo;
 
   // Handle attachments
   if (message.attachments?.length) {

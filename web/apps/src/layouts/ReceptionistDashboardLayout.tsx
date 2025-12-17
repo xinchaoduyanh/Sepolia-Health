@@ -13,14 +13,15 @@ import {
 } from '@workspace/ui/components/Sidebar'
 import { ThemeSwitcher } from '@/shared/components/ThemeSwitcher'
 import { useAuth, useLogout } from '@/shared/hooks/useAuth'
+import { getUserProfile, getClinicInfo } from '@/shared/lib/user-profile'
 import Image from 'next/image'
 import { Monitor, FileText, User, LogOut, Calendar, ScanLine } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState, useRef, useEffect } from 'react'
 
-// Component cho logo có thể toggle sidebar
-function ToggleLogo() {
+// Component cho tên lễ tân có thể toggle sidebar
+function ToggleLogo({ userProfile }: { userProfile: { name: string } }) {
     const { toggleSidebar } = useSidebar()
 
     return (
@@ -29,14 +30,8 @@ function ToggleLogo() {
             className="flex items-center hover:opacity-80 transition-opacity cursor-pointer"
             aria-label="Toggle Sidebar"
         >
-            <div className="w-8 h-8 relative">
-                <Image
-                    src="/image/sepolia-icon.png"
-                    alt="Sepolia Health Logo"
-                    width={32}
-                    height={32}
-                    className="object-contain"
-                />
+            <div className="text-lg font-semibold text-foreground">
+                Lễ tân {userProfile.name}
             </div>
         </button>
     )
@@ -95,6 +90,10 @@ export function ReceptionistDashboardLayout({ children, defaultOpen = true }: Re
     const { user } = useAuth()
     const logoutMutation = useLogout()
 
+    // Get user profile and clinic information
+    const userProfile = getUserProfile(user)
+    const clinicInfo = getClinicInfo(user)
+
     const handleLogout = () => {
         logoutMutation.mutate()
         setIsDropdownOpen(false)
@@ -129,7 +128,9 @@ export function ReceptionistDashboardLayout({ children, defaultOpen = true }: Re
                             <Monitor className="h-4 w-4" />
                         </div>
                         <div className="grid flex-1 text-left text-sm leading-tight">
-                            <span className="truncate font-semibold">Sepolia Health</span>
+                            <span className="truncate font-semibold">
+                                {clinicInfo ? `Phòng khám ${clinicInfo.name}` : 'Phòng khám Sepolia'}
+                            </span>
                             <span className="truncate text-xs text-sidebar-foreground/70">RECEPTIONIST Dashboard</span>
                         </div>
                     </div>
@@ -150,12 +151,23 @@ export function ReceptionistDashboardLayout({ children, defaultOpen = true }: Re
                             onClick={() => setIsSidebarDropdownOpen(!isSidebarDropdownOpen)}
                             className="w-full flex items-center gap-3 px-2 py-2 hover:bg-sidebar-accent rounded-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2"
                         >
-                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                                <span className="text-sm font-medium">HP</span>
-                            </div>
+                            <Avatar className="h-8 w-8">
+                                <AvatarFallback className="bg-primary text-primary-foreground">
+                                    {userProfile.name ? userProfile.name.charAt(0).toUpperCase() : 'R'}
+                                </AvatarFallback>
+                                {userProfile.image && userProfile.image.startsWith('/') && (
+                                    <Image
+                                        src={userProfile.image}
+                                        alt={userProfile.name}
+                                        width={32}
+                                        height={32}
+                                        className="object-cover"
+                                    />
+                                )}
+                            </Avatar>
                             <div className="grid flex-1 text-left text-xs">
-                                <span className="truncate font-medium text-sidebar-foreground">Receptionist User</span>
-                                <span className="truncate text-sidebar-foreground/70">receptionist@sepolia.com</span>
+                                <span className="truncate font-medium text-sidebar-foreground">{userProfile.name || 'Receptionist'}</span>
+                                <span className="truncate text-sidebar-foreground/70">{user?.email || 'receptionist@sepolia.com'}</span>
                             </div>
                         </button>
 
@@ -187,7 +199,7 @@ export function ReceptionistDashboardLayout({ children, defaultOpen = true }: Re
                 <header className="sticky top-0 z-10 bg-background flex h-16 shrink-0 items-center gap-2 border-b w-full">
                     <div className="flex items-center justify-between px-6 w-full">
                         <div className="flex items-center space-x-4">
-                            <ToggleLogo />
+                            <ToggleLogo userProfile={userProfile} />
                         </div>
                         <div className="flex items-center space-x-4">
                             <ThemeSwitcher />
@@ -198,8 +210,17 @@ export function ReceptionistDashboardLayout({ children, defaultOpen = true }: Re
                                 >
                                     <Avatar>
                                         <AvatarFallback className="bg-primary text-primary-foreground">
-                                            {user?.email ? user.email.charAt(0).toUpperCase() : 'A'}
+                                            {userProfile.name ? userProfile.name.charAt(0).toUpperCase() : 'A'}
                                         </AvatarFallback>
+                                        {userProfile.image && userProfile.image.startsWith('/') && (
+                                            <Image
+                                                src={userProfile.image}
+                                                alt={userProfile.name}
+                                                width={32}
+                                                height={32}
+                                                className="object-cover"
+                                            />
+                                        )}
                                     </Avatar>
                                 </button>
 
@@ -208,7 +229,7 @@ export function ReceptionistDashboardLayout({ children, defaultOpen = true }: Re
                                         <div className="p-1">
                                             <div className="px-3 py-2 border-b border-border">
                                                 <p className="text-sm font-medium text-popover-foreground">
-                                                    {user?.email || 'receptionist@sepoliahealth.com'}
+                                                    {userProfile.name || 'Receptionist'}
                                                 </p>
                                                 <p className="text-xs text-muted-foreground">
                                                     {user?.email || 'receptionist@sepoliahealth.com'}

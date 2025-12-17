@@ -380,7 +380,11 @@ export class AuthService {
       include: {
         doctorProfile: true,
         patientProfiles: true,
-        receptionistProfile: true,
+        receptionistProfile: {
+          include: {
+            clinic: true,
+          },
+        },
         adminProfile: true,
       },
     });
@@ -443,6 +447,14 @@ export class AuthService {
               gender: user.receptionistProfile.gender || undefined,
               avatar: user.receptionistProfile.avatar || undefined,
               shift: user.receptionistProfile.shift || undefined,
+              clinic: user.receptionistProfile.clinic
+                ? {
+                    id: user.receptionistProfile.clinic.id,
+                    name: user.receptionistProfile.clinic.name,
+                    address: user.receptionistProfile.clinic.address || undefined,
+                    phone: user.receptionistProfile.clinic.phone || undefined,
+                  }
+                : undefined,
             }
           : undefined;
         break;

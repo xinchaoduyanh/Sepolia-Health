@@ -86,6 +86,14 @@ export class ReceptionistProfileDto {
 
   @ApiProperty({ required: false })
   shift?: string;
+
+  @ApiProperty({ required: false })
+  clinic?: {
+    id: number;
+    name: string;
+    address?: string;
+    phone?: string;
+  };
 }
 
 export class AdminProfileDto {

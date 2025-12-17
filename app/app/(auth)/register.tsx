@@ -17,7 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
-import { validatePassword } from '@/lib/utils/validation';
+import { validatePassword, validateName, validatePhone } from '@/lib/utils/validation';
 import BirthDatePicker from '@/components/BirthDatePicker';
 import GenderSelector from '@/components/GenderSelector';
 import OtpInput from '@/components/OtpInput';
@@ -110,27 +110,23 @@ export default function RegisterScreen() {
     setGenderError('');
 
     // Validate first name
-    if (!firstName.trim()) {
-      setFirstNameError('Vui lòng nhập tên');
+    const firstNameValidation = validateName(firstName);
+    if (!firstNameValidation.isValid) {
+      setFirstNameError(firstNameValidation.message || 'Tên không hợp lệ');
       return;
     }
 
     // Validate last name
-    if (!lastName.trim()) {
-      setLastNameError('Vui lòng nhập họ');
+    const lastNameValidation = validateName(lastName);
+    if (!lastNameValidation.isValid) {
+      setLastNameError(lastNameValidation.message || 'Họ không hợp lệ');
       return;
     }
 
     // Validate phone
-    if (!phone.trim()) {
-      setPhoneError('Vui lòng nhập số điện thoại');
-      return;
-    }
-
-    // Basic phone validation
-    const phoneRegex = /^[0-9]{10,11}$/;
-    if (!phoneRegex.test(phone.replace(/\s/g, ''))) {
-      setPhoneError('Số điện thoại không hợp lệ');
+    const phoneValidation = validatePhone(phone);
+    if (!phoneValidation.isValid) {
+      setPhoneError(phoneValidation.message || 'Số điện thoại không hợp lệ');
       return;
     }
 

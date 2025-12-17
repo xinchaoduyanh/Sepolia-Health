@@ -16,13 +16,26 @@ const relationshipValues = Object.values(Relationship) as [string, ...string[]];
 
 // PatientProfile schema
 const PatientProfileSchema = z.object({
-  firstName: z.string().min(1, 'Tên không được để trống'),
-  lastName: z.string().min(1, 'Họ không được để trống'),
+  firstName: z
+    .string()
+    .min(1, 'Tên không được để trống')
+    .regex(/^[A-Za-zÀ-ỹ\s]+$/, 'Tên chỉ được chứa chữ cái và khoảng trắng')
+    .min(2, 'Tên phải có ít nhất 2 ký tự')
+    .max(50, 'Tên không được quá 50 ký tự'),
+  lastName: z
+    .string()
+    .min(1, 'Họ không được để trống')
+    .regex(/^[A-Za-zÀ-ỹ\s]+$/, 'Họ chỉ được chứa chữ cái và khoảng trắng')
+    .min(2, 'Họ phải có ít nhất 2 ký tự')
+    .max(50, 'Họ không được quá 50 ký tự'),
   dateOfBirth: z.string().min(1, 'Ngày sinh không được để trống'),
   gender: z.enum(genderValues, {
     message: 'Giới tính không hợp lệ',
   }),
-  phone: z.string().min(1, 'Số điện thoại không được để trống'),
+  phone: z
+    .string()
+    .min(1, 'Số điện thoại không được để trống')
+    .regex(/^((0|\+84)[0-9]{9,10}|84[0-9]{9,10})$/, 'Số điện thoại không hợp lệ (ví dụ: 0912345678)'),
   relationship: z.enum(relationshipValues, {
     message: 'Mối quan hệ không hợp lệ',
   }),
@@ -30,7 +43,11 @@ const PatientProfileSchema = z.object({
   idCardNumber: z.string().optional(),
   occupation: z.string().optional(),
   nationality: z.string().optional(),
-  address: z.string().optional(),
+  address: z
+    .string()
+    .min(5, 'Địa chỉ phải có ít nhất 5 ký tự')
+    .max(200, 'Địa chỉ không được quá 200 ký tự')
+    .optional(),
   healthDetailsJson: z.record(z.string(), z.any()).optional(),
 });
 
@@ -77,7 +94,10 @@ export const CreatePatientSchema = z.object({
       passwordRefine,
       'Mật khẩu phải có ít nhất 6 ký tự, bao gồm chữ IN HOA, số và ký tự đặc biệt',
     ),
-  phone: z.string().min(1, 'Số điện thoại đăng nhập không được để trống'),
+  phone: z
+    .string()
+    .min(1, 'Số điện thoại đăng nhập không được để trống')
+    .regex(/^((0|\+84)[0-9]{9,10}|84[0-9]{9,10})$/, 'Số điện thoại không hợp lệ (ví dụ: 0912345678)'),
 
   // PatientProfiles - bắt buộc có ít nhất 1 profile với relationship SELF
   patientProfiles: z
@@ -226,6 +246,7 @@ export const UpdatePatientSchema = z.object({
   phone: z
     .string()
     .min(1, 'Số điện thoại đăng nhập không được để trống')
+    .regex(/^((0|\+84)[0-9]{9,10}|84[0-9]{9,10})$/, 'Số điện thoại không hợp lệ (ví dụ: 0912345678)')
     .optional(),
   status: z.enum(['UNVERIFIED', 'ACTIVE', 'DEACTIVE']).optional(),
 
@@ -249,6 +270,7 @@ export const UpdatePatientSchema = z.object({
             phone: z
               .string()
               .min(1, 'Số điện thoại không được để trống')
+              .regex(/^((0|\+84)[0-9]{9,10}|84[0-9]{9,10})$/, 'Số điện thoại không hợp lệ (ví dụ: 0912345678)')
               .optional(),
             relationship: z
               .enum(relationshipValues, { message: 'Mối quan hệ không hợp lệ' })
@@ -257,7 +279,11 @@ export const UpdatePatientSchema = z.object({
             idCardNumber: z.string().optional(),
             occupation: z.string().optional(),
             nationality: z.string().optional(),
-            address: z.string().optional(),
+            address: z
+              .string()
+              .min(5, 'Địa chỉ phải có ít nhất 5 ký tự')
+              .max(200, 'Địa chỉ không được quá 200 ký tự')
+              .optional(),
             healthDetailsJson: z.record(z.string(), z.any()).optional(),
           }),
         )

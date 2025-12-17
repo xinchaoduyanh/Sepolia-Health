@@ -20,6 +20,55 @@ export interface UserProfile {
     status: string
     createdAt: string
     updatedAt: string
+    // Profile data for authenticated user
+    receptionistProfile?: {
+        id: number
+        firstName: string
+        lastName: string
+        dateOfBirth?: Date
+        gender?: string
+        avatar?: string
+        shift?: string
+        clinic?: {
+            id: number
+            name: string
+            address?: string
+            phone?: string
+        }
+    }
+    doctorProfile?: {
+        id: number
+        firstName: string
+        lastName: string
+        dateOfBirth?: Date
+        gender?: string
+        avatar?: string
+        specialty?: string
+        experience?: string
+        contactInfo?: string
+    }
+    patientProfiles?: Array<{
+        id: number
+        firstName: string
+        lastName: string
+        dateOfBirth: Date
+        gender: string
+        phone: string
+        relationship: string
+        avatar?: string
+        idCardNumber?: string
+        occupation?: string
+        nationality?: string
+        address?: string
+    }>
+    adminProfile?: {
+        id: number
+        firstName: string
+        lastName: string
+        dateOfBirth?: Date
+        gender?: string
+        avatar?: string
+    }
 }
 
 export interface RefreshTokenRequest {

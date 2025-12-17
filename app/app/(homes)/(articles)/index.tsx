@@ -195,7 +195,7 @@ export default function ArticlesListScreen() {
             {articles.map((article: Article) => (
               <TouchableOpacity
                 key={article.id}
-                onPress={() => router.push(`/article/${article.id}`)}
+                onPress={() => router.push(`/articles/${article.id}`)}
                 style={{
                   backgroundColor: '#FFFFFF',
                   borderRadius: 16,

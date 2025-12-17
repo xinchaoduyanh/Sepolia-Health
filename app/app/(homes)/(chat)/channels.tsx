@@ -110,17 +110,41 @@ export default function ChannelsScreen() {
       return;
     }
 
-    const handleChannelEvent = (event: any) => {
+    const handleChannelEvent = async (event: any) => {
       console.log('Channel event received:', event.type, event.channel?.id);
 
-      // Only update the specific channel that changed, not refetch all channels
-      // Stream SDK already handles updating channel state automatically
+      // When new channel is created or user is added to channel, refresh the list
       if (
+        event.type === 'channel.visible' ||
+        event.type === 'channel.created' ||
+        event.type === 'member.added'
+      ) {
+        console.log('🔄 Channel list changed, refreshing...');
+        try {
+          const userChannels = await ChatService.fetchUserChannels();
+          const sortedChannels = [...userChannels].sort((a, b) => {
+            const aIsAI = isAIChannel(a);
+            const bIsAI = isAIChannel(b);
+
+            if (aIsAI && !bIsAI) return -1;
+            if (!aIsAI && bIsAI) return 1;
+
+            const aTime = a.state?.last_message_at?.getTime() || 0;
+            const bTime = b.state?.last_message_at?.getTime() || 0;
+            return bTime - aTime;
+          });
+          setChannels(sortedChannels);
+          console.log('✅ Channel list refreshed:', sortedChannels.length);
+        } catch (error) {
+          console.error('❌ Error refreshing channel list:', error);
+        }
+      }
+      // Update existing channels when messages change
+      else if (
         event.type === 'message.new' ||
         event.type === 'message.updated' ||
         event.type === 'message.deleted'
       ) {
-        // Find and update the specific channel in the list
         const updatedChannel = event.channel;
         if (updatedChannel) {
           setChannels((prevChannels) => {
@@ -133,8 +157,25 @@ export default function ChannelsScreen() {
               updated.splice(channelIndex, 1);
               updated.push(updatedChannel);
             } else {
-              // New channel
-              updated = [...prevChannels, updatedChannel];
+              // New channel, add to list and refresh from server
+              // This ensures we get the complete channel data
+              setTimeout(() => {
+                ChatService.fetchUserChannels().then(userChannels => {
+                  const sortedChannels = [...userChannels].sort((a, b) => {
+                    const aIsAI = isAIChannel(a);
+                    const bIsAI = isAIChannel(b);
+
+                    if (aIsAI && !bIsAI) return -1;
+                    if (!aIsAI && bIsAI) return 1;
+
+                    const aTime = a.state?.last_message_at?.getTime() || 0;
+                    const bTime = b.state?.last_message_at?.getTime() || 0;
+                    return bTime - aTime;
+                  });
+                  setChannels(sortedChannels);
+                }).catch(err => console.error('Error fetching channels after new message:', err));
+              }, 1000);
+              return [...prevChannels, updatedChannel];
             }
 
             // Sắp xếp lại: AI channel luôn đứng đầu

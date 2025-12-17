@@ -3,6 +3,26 @@ export interface UserProfile {
     image?: string
 }
 
+export interface ClinicInfo {
+    name: string
+    address?: string
+    phone?: string
+}
+
+/**
+ * Get clinic information for receptionist
+ */
+export function getClinicInfo(user: any): ClinicInfo | null {
+    if (user.role === 'RECEPTIONIST' && user.receptionistProfile?.clinic) {
+        return {
+            name: user.receptionistProfile.clinic.name,
+            address: user.receptionistProfile.clinic.address,
+            phone: user.receptionistProfile.clinic.phone,
+        }
+    }
+    return null
+}
+
 /**
  * Get user profile info (name and avatar) based on user role
  */

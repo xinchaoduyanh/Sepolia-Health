@@ -1,19 +1,22 @@
+import React, { useState } from 'react';
 import {
   View,
   Text,
-  FlatList,
   TouchableOpacity,
   ActivityIndicator,
   Alert,
-  RefreshControl,
+  ScrollView,
+  TextInput,
+  StatusBar,
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { ChatAPI } from '@/lib/api/chat';
-import { Stack, useRouter, useNavigation } from 'expo-router';
+import { useRouter, useNavigation } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Path } from 'react-native-svg';
 import { useChatContext } from '@/contexts/ChatContext';
-import React, { useState } from 'react';
 import { Clinic } from '@/types';
 
 const ClinicItem = ({
@@ -29,40 +32,50 @@ const ClinicItem = ({
     <TouchableOpacity
       onPress={() => onPress(item.id)}
       disabled={isLoading}
-      className="mb-4 rounded-xl border border-gray-100 bg-white p-4 shadow-sm"
+      className="mb-4 rounded-xl border border-slate-200 bg-white p-4"
       style={{
-        shadowColor: '#000',
+        shadowColor: '#0284C7',
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
         elevation: 3,
       }}>
       <View className="flex-row items-center">
-        {/* Clinic Icon */}
-        <View className="mr-4 h-12 w-12 items-center justify-center rounded-full bg-cyan-50">
-          <Ionicons name="medical" size={24} color="#06b6d4" />
+        {/* Clinic Icon - Smaller, rectangular style */}
+        <View className="mr-3 h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-50 to-blue-50">
+          <Ionicons name="medical" size={20} color="#0284C7" />
         </View>
 
         {/* Clinic Info */}
         <View className="flex-1">
-          <Text className="mb-1 text-lg font-semibold text-gray-900">{item.name}</Text>
-          <Text className="mb-1 text-sm text-gray-600" numberOfLines={2}>
-            {item.address}
-          </Text>
+          <View className="mb-1 flex-row items-center justify-between">
+            <Text className="text-base font-bold text-slate-900 flex-1 mr-2">{item.name}</Text>
+            <View className="h-2 w-2 rounded-full bg-green-500" />
+          </View>
+
+          <View className="mb-2 flex-row items-center">
+            <Ionicons name="location-outline" size={12} color="#64748b" style={{ marginRight: 4 }} />
+            <Text className="flex-1 text-sm text-slate-600 leading-4" numberOfLines={1}>
+              {item.address}
+            </Text>
+          </View>
+
           {item.phone && (
             <View className="flex-row items-center">
-              <Ionicons name="call-outline" size={14} color="#6b7280" />
-              <Text className="ml-1 text-sm text-gray-500">{item.phone}</Text>
+              <Ionicons name="call-outline" size={12} color="#64748b" style={{ marginRight: 4 }} />
+              <Text className="text-sm text-slate-600">{item.phone}</Text>
             </View>
           )}
         </View>
 
-        {/* Action Button */}
-        <View className="ml-4">
+        {/* Action Button - Smaller */}
+        <View className="ml-3">
           {isLoading ? (
-            <ActivityIndicator size="small" color="#06b6d4" />
+            <View className="h-8 w-8 items-center justify-center rounded-full bg-cyan-100">
+              <ActivityIndicator size="small" color="#0284C7" />
+            </View>
           ) : (
-            <View className="h-8 w-8 items-center justify-center rounded-full bg-cyan-500">
+            <View className="h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-blue-600">
               <Ionicons name="chatbubble-outline" size={16} color="white" />
             </View>
           )}
@@ -77,6 +90,7 @@ export default function ClinicsScreen() {
   const navigation = useNavigation();
   const { createChannel } = useChatContext();
   const [creatingChannelId, setCreatingChannelId] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Hide tab bar when entering clinics
   React.useEffect(() => {
@@ -104,6 +118,12 @@ export default function ClinicsScreen() {
   });
 
   const { isChatReady } = useChatContext();
+
+  // Filter clinics based on search query
+  const filteredClinics = clinics?.filter(clinic =>
+    clinic.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    clinic.address.toLowerCase().includes(searchQuery.toLowerCase())
+  ) || [];
 
   const handleSelectClinic = async (clinicId: number) => {
     if (creatingChannelId || !isChatReady) return; // Prevent multiple simultaneous requests and ensure chat is ready
@@ -138,172 +158,334 @@ export default function ClinicsScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-gray-100">
-        <Stack.Screen
-          options={{
-            title: 'Chọn cơ sở y tế',
-            headerLeft: () => (
-              <TouchableOpacity
-                onPress={() => router.back()}
-                className="ml-4 h-8 w-8 items-center justify-center rounded-full bg-white shadow-sm"
+      <View style={{ flex: 1, backgroundColor: '#E0F2FE' }}>
+        <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+        <SafeAreaView className="flex-1">
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            bounces={false}
+            style={{ flex: 1 }}
+            contentContainerStyle={{ paddingBottom: 100 }}>
+            {/* Background Gradient */}
+            <View style={{ height: 280, position: 'relative', marginTop: -60 }}>
+              <LinearGradient
+                colors={['#0284C7', '#06B6D4', '#10B981']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={{ flex: 1 }}
+              />
+              {/* Curved bottom edge using SVG */}
+              <Svg
+                height="70"
+                width="200%"
+                viewBox="0 0 1440 120"
+                style={{ position: 'absolute', bottom: -1, left: 0, right: 0 }}>
+                <Path d="M0,0 Q720,120 1440,0 L1440,120 L0,120 Z" fill="#E0F2FE" />
+              </Svg>
+
+              {/* Decorative circles */}
+              <View
                 style={{
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.1,
-                  shadowRadius: 4,
-                  elevation: 2,
+                  position: 'absolute',
+                  top: -40,
+                  right: -40,
+                  height: 120,
+                  width: 120,
+                  borderRadius: 60,
+                  backgroundColor: 'rgba(255,255,255,0.12)',
+                }}
+              />
+              <View
+                style={{
+                  position: 'absolute',
+                  top: 80,
+                  left: -30,
+                  height: 100,
+                  width: 100,
+                  borderRadius: 50,
+                  backgroundColor: 'rgba(255,255,255,0.08)',
+                }}
+              />
+
+              {/* Header positioned within gradient */}
+              <View
+                style={{
+                  position: 'absolute',
+                  top: 100,
+                  left: 24,
+                  right: 24,
+                  flexDirection: 'row',
+                  alignItems: 'center',
                 }}>
-                <Ionicons name="arrow-back" size={20} color="#06b6d4" />
-              </TouchableOpacity>
-            ),
-            headerStyle: {
-              backgroundColor: '#06b6d4',
-            },
-            headerTintColor: '#ffffff',
-            headerTitleStyle: {
-              fontWeight: 'bold',
-            },
-          }}
-        />
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#06b6d4" />
-          <Text className="mt-4 text-base text-gray-600">Đang tải danh sách cơ sở...</Text>
-        </View>
-      </SafeAreaView>
+                <TouchableOpacity
+                  onPress={() => router.back()}
+                  style={{
+                    height: 40,
+                    width: 40,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRadius: 20,
+                    backgroundColor: 'rgba(255,255,255,0.25)',
+                    marginRight: 12,
+                  }}>
+                  <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+                </TouchableOpacity>
+                <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#FFFFFF', flex: 1 }}>
+                  Chọn cơ sở y tế
+                </Text>
+              </View>
+            </View>
+
+            {/* Loading Content */}
+            <View style={{ paddingHorizontal: 24, marginTop: -80, marginBottom: 24 }}>
+              <View style={{ marginTop: 32, alignItems: 'center' }}>
+                <ActivityIndicator size="large" color="#0284C7" />
+                <Text className="text-base font-medium text-slate-600 mt-4">Đang tải danh sách cơ sở...</Text>
+              </View>
+            </View>
+          </ScrollView>
+        </SafeAreaView>
+      </View>
     );
   }
 
   if (isError) {
     return (
-      <SafeAreaView className="flex-1 bg-gray-100">
-        <Stack.Screen
-          options={{
-            title: 'Chọn cơ sở y tế',
-            headerLeft: () => (
-              <TouchableOpacity
-                onPress={() => router.back()}
-                className="ml-4 h-8 w-8 items-center justify-center rounded-full bg-white shadow-sm"
+      <View style={{ flex: 1, backgroundColor: '#E0F2FE' }}>
+        <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+        <SafeAreaView className="flex-1">
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            bounces={false}
+            style={{ flex: 1 }}
+            contentContainerStyle={{ paddingBottom: 100 }}>
+            {/* Background Gradient */}
+            <View style={{ height: 280, position: 'relative', marginTop: -60 }}>
+              <LinearGradient
+                colors={['#0284C7', '#06B6D4', '#10B981']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={{ flex: 1 }}
+              />
+              {/* Curved bottom edge using SVG */}
+              <Svg
+                height="70"
+                width="200%"
+                viewBox="0 0 1440 120"
+                style={{ position: 'absolute', bottom: -1, left: 0, right: 0 }}>
+                <Path d="M0,0 Q720,120 1440,0 L1440,120 L0,120 Z" fill="#E0F2FE" />
+              </Svg>
+
+              {/* Decorative circles */}
+              <View
                 style={{
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.1,
-                  shadowRadius: 4,
-                  elevation: 2,
+                  position: 'absolute',
+                  top: -40,
+                  right: -40,
+                  height: 120,
+                  width: 120,
+                  borderRadius: 60,
+                  backgroundColor: 'rgba(255,255,255,0.12)',
+                }}
+              />
+
+              {/* Header positioned within gradient */}
+              <View
+                style={{
+                  position: 'absolute',
+                  top: 100,
+                  left: 24,
+                  right: 24,
+                  flexDirection: 'row',
+                  alignItems: 'center',
                 }}>
-                <Ionicons name="arrow-back" size={20} color="#06b6d4" />
-              </TouchableOpacity>
-            ),
-            headerStyle: {
-              backgroundColor: '#06b6d4',
-            },
-            headerTintColor: '#ffffff',
-            headerTitleStyle: {
-              fontWeight: 'bold',
-            },
-          }}
-        />
-        <View className="flex-1 items-center justify-center p-8">
-          <View className="shadow-inner mb-6 items-center justify-center rounded-full bg-gradient-to-br from-red-50 to-orange-50 p-8">
-            <Ionicons name="alert-circle-outline" size={64} color="#ef4444" />
-          </View>
-          <Text className="mb-3 text-center text-2xl font-bold text-gray-900">
-            Không thể tải danh sách cơ sở
-          </Text>
-          <Text className="mb-8 text-center text-base leading-6 text-gray-600">
-            Vui lòng kiểm tra kết nối internet và thử lại.
-          </Text>
-          <TouchableOpacity
-            onPress={handleRefresh}
-            className="flex-row items-center rounded-xl bg-cyan-500 px-8 py-4 shadow-lg"
-            disabled={isRefetching}
-            style={{
-              shadowColor: '#06b6d4',
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.3,
-              shadowRadius: 8,
-              elevation: 6,
-            }}>
-            {isRefetching ? (
-              <ActivityIndicator size="small" color="white" />
-            ) : (
-              <Ionicons name="refresh" size={24} color="white" />
-            )}
-            <Text className="ml-3 text-lg font-semibold text-white">
-              {isRefetching ? 'Đang tải...' : 'Thử lại'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
+                <TouchableOpacity
+                  onPress={() => router.back()}
+                  style={{
+                    height: 40,
+                    width: 40,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRadius: 20,
+                    backgroundColor: 'rgba(255,255,255,0.25)',
+                    marginRight: 12,
+                  }}>
+                  <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+                </TouchableOpacity>
+                <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#FFFFFF', flex: 1 }}>
+                  Chọn cơ sở y tế
+                </Text>
+              </View>
+            </View>
+
+            {/* Error Content */}
+            <View style={{ paddingHorizontal: 24, marginTop: -80, marginBottom: 24 }}>
+              <View style={{ marginTop: 32, alignItems: 'center' }}>
+                <Ionicons name="wifi-outline" size={48} color="#EF4444" />
+                <Text className="text-center text-lg font-semibold text-slate-900 mt-4 mb-2">
+                  Không thể tải danh sách cơ sở
+                </Text>
+                <Text className="text-center text-sm text-slate-600 mb-6">
+                  Vui lòng kiểm tra kết nối internet và thử lại.
+                </Text>
+                <TouchableOpacity
+                  onPress={handleRefresh}
+                  className="rounded-lg bg-cyan-500 px-6 py-3"
+                  disabled={isRefetching}>
+                  <Text className="text-center text-sm font-semibold text-white">
+                    {isRefetching ? 'Đang tải...' : 'Thử lại'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </ScrollView>
+        </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-100">
-      <Stack.Screen
-        options={{
-          title: 'Chọn cơ sở y tế',
-          headerLeft: () => (
+    <View style={{ flex: 1, backgroundColor: '#E0F2FE' }}>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      <SafeAreaView className="flex-1">
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: 100 }}>
+        {/* Background Gradient */}
+        <View style={{ height: 280, position: 'relative', marginTop: -60 }}>
+          <LinearGradient
+            colors={['#0284C7', '#06B6D4', '#10B981']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{ flex: 1 }}
+          />
+          {/* Curved bottom edge using SVG */}
+          <Svg
+            height="70"
+            width="200%"
+            viewBox="0 0 1440 120"
+            style={{ position: 'absolute', bottom: -1, left: 0, right: 0 }}>
+            <Path d="M0,0 Q720,120 1440,0 L1440,120 L0,120 Z" fill="#E0F2FE" />
+          </Svg>
+
+          {/* Decorative circles */}
+          <View
+            style={{
+              position: 'absolute',
+              top: -40,
+              right: -40,
+              height: 120,
+              width: 120,
+              borderRadius: 60,
+              backgroundColor: 'rgba(255,255,255,0.12)',
+            }}
+          />
+          <View
+            style={{
+              position: 'absolute',
+              top: 80,
+              left: -30,
+              height: 100,
+              width: 100,
+              borderRadius: 50,
+              backgroundColor: 'rgba(255,255,255,0.08)',
+            }}
+          />
+
+          {/* Header positioned within gradient */}
+          <View
+            style={{
+              position: 'absolute',
+              top: 100,
+              left: 24,
+              right: 24,
+              flexDirection: 'row',
+              alignItems: 'center',
+            }}>
             <TouchableOpacity
               onPress={() => router.back()}
-              className="ml-4 h-8 w-8 items-center justify-center rounded-full bg-white shadow-sm"
               style={{
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.1,
-                shadowRadius: 4,
-                elevation: 2,
+                height: 40,
+                width: 40,
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: 20,
+                backgroundColor: 'rgba(255,255,255,0.25)',
+                marginRight: 12,
               }}>
-              <Ionicons name="arrow-back" size={20} color="#06b6d4" />
+              <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
             </TouchableOpacity>
-          ),
-          headerStyle: {
-            backgroundColor: '#06b6d4',
-          },
-          headerTintColor: '#ffffff',
-          headerTitleStyle: {
-            fontWeight: 'bold',
-          },
-        }}
-      />
-      <View className="flex-1 p-4">
-        {/* Clinics List */}
-        {clinics && clinics.length > 0 ? (
-          <FlatList
-            data={clinics}
-            renderItem={({ item }) => (
-              <ClinicItem
-                item={item}
-                onPress={handleSelectClinic}
-                isLoading={creatingChannelId === item.id}
-              />
-            )}
-            keyExtractor={(item) => item.id.toString()}
-            showsVerticalScrollIndicator={false}
-            refreshControl={
-              <RefreshControl
-                refreshing={isRefetching}
-                onRefresh={handleRefresh}
-                colors={['#06b6d4']}
-                tintColor="#06b6d4"
-              />
-            }
-            contentContainerStyle={{ paddingBottom: 20 }}
-          />
-        ) : (
-          <View className="flex-1 items-center justify-center px-8">
-            <View className="shadow-inner mb-6 items-center justify-center rounded-full bg-gradient-to-br from-red-50 to-orange-50 p-8">
-              <Ionicons name="medical" size={64} color="#ef4444" />
-            </View>
-            <Text className="mb-3 text-center text-xl font-bold text-gray-900">
-              Không có cơ sở nào
-            </Text>
-            <Text className="text-center text-base leading-6 text-gray-600">
-              Hiện tại chưa có cơ sở y tế nào khả dụng để tư vấn. Vui lòng thử lại sau.
+            <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#FFFFFF', flex: 1 }}>
+              Chọn cơ sở y tế
             </Text>
           </View>
-        )}
-      </View>
-    </SafeAreaView>
+        </View>
+
+        {/* Content */}
+        <View style={{ paddingHorizontal: 24, marginTop: -80, marginBottom: 24 }}>
+          {/* Search Bar */}
+          <View style={{ marginBottom: 16 }}>
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: 'white',
+                borderRadius: 12,
+                borderWidth: 1,
+                borderColor: '#E0F2FE',
+                paddingHorizontal: 16,
+                paddingVertical: 12,
+              }}>
+              <Ionicons name="search" size={20} color="#0284C7" />
+              <TextInput
+                style={{
+                  flex: 1,
+                  marginLeft: 12,
+                  fontSize: 16,
+                  color: '#0F172A',
+                }}
+                placeholder="Tìm cơ sở y tế..."
+                placeholderTextColor="#94A3B8"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+              />
+            </View>
+          </View>
+
+          {/* Clinics List */}
+          {filteredClinics.length === 0 ? (
+            <View className="mt-8 items-center">
+              <Ionicons
+                name={searchQuery ? "search-outline" : "medical-outline"}
+                size={64}
+                color="#64748b"
+              />
+              <Text className="text-center text-lg font-semibold text-slate-700 mb-2">
+                {searchQuery ? 'Không tìm thấy cơ sở phù hợp' : 'Không có cơ sở nào'}
+              </Text>
+              <Text className="text-center text-sm text-slate-500 px-8">
+                {searchQuery
+                  ? 'Thử tìm kiếm với từ khóa khác'
+                  : 'Hiện tại chưa có cơ sở y tế nào khả dụng để tư vấn'
+                }
+              </Text>
+            </View>
+          ) : (
+            filteredClinics.map((clinic) => (
+              <ClinicItem
+                key={clinic.id}
+                item={clinic}
+                onPress={handleSelectClinic}
+                isLoading={creatingChannelId === clinic.id}
+              />
+            ))
+          )}
+        </View>
+      </ScrollView>
+      </SafeAreaView>
+    </View>
   );
 };
 

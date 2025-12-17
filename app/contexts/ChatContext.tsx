@@ -14,6 +14,7 @@ interface ChatContextType {
   createChannel: (clinicId: number) => Promise<Channel | null>;
   createOrGetAIChannel: () => Promise<Channel | null>;
   isAIChannel: (channel: Channel) => boolean;
+  totalUnreadCount: number;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -189,6 +190,7 @@ const ChatProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
   const [chatClient, setChatClient] = useState<StreamChat>();
   const [isChatReady, setIsChatReady] = useState(false);
+  const [totalUnreadCount, setTotalUnreadCount] = useState(0);
   const chatClientRef = useRef<StreamChat | undefined>(undefined);
   const currentUserIdRef = useRef<number | undefined>(undefined);
 
@@ -198,6 +200,55 @@ const ChatProvider = ({ children }: { children: ReactNode }) => {
       chatClientRef.current = chatClient;
     }
   }, [chatClient]);
+
+  // Track total unread messages across all channels
+  useEffect(() => {
+    if (!chatClient || !isChatReady || !user) return;
+
+    const calculateTotalUnread = async () => {
+      try {
+        if (!user) return;
+
+        // Get all channels for the current user with proper members filter
+        const channels = await chatClient.queryChannels({
+          members: { $in: [user.id.toString()] }
+        });
+
+        // Sum up unread counts from all channels
+        const total = channels.reduce((sum, channel) => {
+          const unreadCount = channel.state?.unreadCount ?? 0;
+          return sum + unreadCount;
+        }, 0);
+
+        console.log(`🔢 Total unread messages: ${total} (from ${channels.length} channels)`);
+        setTotalUnreadCount(total);
+      } catch (error) {
+        console.error('Error calculating total unread count:', error);
+      }
+    };
+
+    // Initial calculation
+    calculateTotalUnread();
+
+    // Set up event listeners for real-time updates
+    const handleNewMessage = () => {
+      calculateTotalUnread();
+    };
+
+    const handleReadMessage = () => {
+      calculateTotalUnread();
+    };
+
+    // Subscribe to events
+    chatClient.on('message.new', handleNewMessage);
+    chatClient.on('message.read', handleReadMessage);
+
+    // Cleanup
+    return () => {
+      chatClient.off('message.new', handleNewMessage);
+      chatClient.off('message.read', handleReadMessage);
+    };
+  }, [chatClient, isChatReady, user]);
 
   // Initialize chat client when user is available or when user changes
   useEffect(() => {
@@ -471,6 +522,7 @@ const ChatProvider = ({ children }: { children: ReactNode }) => {
         createChannel,
         createOrGetAIChannel,
         isAIChannel,
+        totalUnreadCount,
       }}>
       <OverlayProvider>
         {isChatReady && chatClient ? (
@@ -497,6 +549,7 @@ const useChatContext = () => {
       createChannel: async () => null,
       createOrGetAIChannel: async () => null,
       isAIChannel: () => false,
+      totalUnreadCount: 0,
     };
   }
   return context;

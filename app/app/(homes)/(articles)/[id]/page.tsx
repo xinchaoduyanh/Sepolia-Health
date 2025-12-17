@@ -18,7 +18,7 @@ import { Article } from '@/lib/api/articles';
 
 const { width: screenWidth } = Dimensions.get('window');
 
-export default function ArticleDetailScreen() {
+export default function ArticleIdPage() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const articleId = parseInt(id || '0');
 
@@ -272,7 +272,7 @@ export default function ArticleDetailScreen() {
                   borderLeftWidth: 4,
                   borderLeftColor: '#0284C7',
                 }}>
-                <Text style={{ fontSize: 16, color: '#0C4A6E fontStyle: 'italic', lineHeight: 24 }}>
+                <Text style={{ fontSize: 16, color: '#0C4A6E', fontStyle: 'italic', lineHeight: 24 }}>
                   {article.excerpt}
                 </Text>
               </View>

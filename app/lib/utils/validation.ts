@@ -36,9 +36,64 @@ export const validatePassword = (password: string): { isValid: boolean; message?
   return { isValid: true };
 };
 
-export const validatePhone = (phone: string): boolean => {
-  const phoneRegex = /^[0-9]{10,11}$/;
-  return phoneRegex.test(phone.replace(/\s/g, ''));
+export const validatePhone = (phone: string): { isValid: boolean; message?: string } => {
+  // Clean phone number: remove spaces, dashes, dots, parentheses
+  const cleanedPhone = phone.replace(/[\s\-\.\(\)]/g, '');
+
+  // Support formats:
+  // - 0912345678 (10-11 digits with 0 prefix)
+  // - +84912345678 (12 digits with +84 prefix)
+  // - 84912345678 (11 digits with 84 prefix)
+  const phoneRegex = /^((0|\+84)[0-9]{9,10}|84[0-9]{9,10})$/;
+
+  if (!phone || phone.trim().length === 0) {
+    return { isValid: false, message: 'Số điện thoại không được để trống' };
+  }
+
+  if (!phoneRegex.test(cleanedPhone)) {
+    return { isValid: false, message: 'Số điện thoại không hợp lệ (ví dụ: 0912345678)' };
+  }
+
+  return { isValid: true };
+};
+
+export const validateName = (name: string): { isValid: boolean; message?: string } => {
+  // Cho phép chữ cái (Việt Nam và quốc tế) và khoảng trắng, không cho phép số
+  const nameRegex = /^[A-Za-zÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂÂÊÔƠưăâêôơ\s]+$/;
+
+  if (!name || name.trim().length === 0) {
+    return { isValid: false, message: 'Tên không được để trống' };
+  }
+
+  if (!nameRegex.test(name)) {
+    return { isValid: false, message: 'Tên chỉ được chứa chữ cái và khoảng trắng' };
+  }
+
+  if (name.trim().length < 2) {
+    return { isValid: false, message: 'Tên phải có ít nhất 2 ký tự' };
+  }
+
+  if (name.trim().length > 50) {
+    return { isValid: false, message: 'Tên không được quá 50 ký tự' };
+  }
+
+  return { isValid: true };
+};
+
+export const validateAddress = (address: string): { isValid: boolean; message?: string } => {
+  if (!address || address.trim().length === 0) {
+    return { isValid: false, message: 'Địa chỉ không được để trống' };
+  }
+
+  if (address.trim().length < 5) {
+    return { isValid: false, message: 'Địa chỉ phải có ít nhất 5 ký tự' };
+  }
+
+  if (address.trim().length > 200) {
+    return { isValid: false, message: 'Địa chỉ không được quá 200 ký tự' };
+  }
+
+  return { isValid: true };
 };
 
 export const validateOTP = (otp: string): boolean => {

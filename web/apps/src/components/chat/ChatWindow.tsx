@@ -11,6 +11,7 @@ import { Channel, MessageList, MessageInput, Window, Thread } from 'stream-chat-
 import type { Channel as StreamChannel, MessageResponse } from 'stream-chat'
 import { toast } from '@workspace/ui/components/Sonner'
 import { IncomingCallNotification } from '@/components/video/IncomingCallNotification'
+import { getWebChatUserInfo, getChatChannelNameFromLastMessage, getUserInitials } from '@/lib/chat-user-data'
 
 interface ChatWindowProps {
     channelId: string
@@ -32,19 +33,74 @@ export function ChatWindow({ channelId, onClose }: ChatWindowProps) {
         channelId: string
     } | null>(null)
 
-    // Get channel info
-    const channelInfo = useMemo(() => {
-        if (!channel || !user) return null
+    // Get channel info using shared utility
+    const [channelInfo, setChannelInfo] = useState<{ name: string; avatar: string | null; members: string[]; isOnline: boolean } | null>(null)
 
-        const members = channel.state.members ? Object.values(channel.state.members) : []
-        // Find the other member (not the current user)
-        const otherMember = members.find(member => member.user_id !== String(user.id))
-        const name = otherMember?.user?.name || otherMember?.user?.id || 'Cuộc trò chuyện'
-        const avatar = otherMember?.user?.image || null
-        const memberIds = members.map(member => member.user_id).filter(id => id !== undefined)
-        const isOnline = channel.state.watcher_count ? channel.state.watcher_count > 0 : false
+    useEffect(() => {
+        if (!channel || !user) {
+            setChannelInfo(null)
+            return
+        }
 
-        return { name, avatar, members: memberIds, isOnline }
+        const loadChannelInfo = async () => {
+            try {
+                // Priority: Get name from last message sender (patientProfile data)
+                const name = await getChatChannelNameFromLastMessage(channel, String(user.id))
+
+                // Get the actual user info from last message (NOT current user)
+                const lastMessage = channel.state?.messages?.[channel.state.messages.length - 1]
+                let userImage: string | null = null
+                let targetUserId = ''
+
+                // Find a message from the other user (not current user)
+                let otherUserMessage: MessageResponse | null = null
+                for (let i = channel.state.messages.length - 1; i >= 0; i--) {
+                    const msg = channel.state.messages[i]
+                    if (msg?.user?.id && msg.user.id !== String(user.id) && msg.user?.name) {
+                        otherUserMessage = msg
+                        break
+                    }
+                }
+
+                if (otherUserMessage?.user) {
+                    userImage = otherUserMessage.user.image || null
+                    targetUserId = otherUserMessage.user.id
+                    console.log('✅ ChatWindow using other user message:', otherUserMessage.user.name)
+                } else {
+                    // Fallback: get user info from channel members (other user)
+                    const userInfo = await getWebChatUserInfo(channel, String(user.id), undefined, undefined)
+                    userImage = userInfo.image
+                    targetUserId = userInfo.userId
+                    console.log('⚡ ChatWindow using channel member data:', userInfo.name)
+                }
+
+                const members = channel.state.members ? Object.values(channel.state.members) : []
+                const memberIds = members.map(member => member.user_id).filter(id => id !== undefined)
+                const isOnline = channel.state.watcher_count ? channel.state.watcher_count > 0 : false
+
+                console.log('✅ ChatWindow channel info loaded:', name)
+
+                setChannelInfo({
+                    name,
+                    avatar: userImage,
+                    members: memberIds,
+                    isOnline
+                })
+            } catch (error) {
+                console.warn('Failed to load channel info:', error)
+                // Fallback to cached data
+                const members = channel.state.members ? Object.values(channel.state.members) : []
+                const otherMember = members.find(member => member.user_id !== String(user.id))
+                const name = otherMember?.user?.name || otherMember?.user?.id || 'Cuộc trò chuyện'
+                const avatar = otherMember?.user?.image || null
+                const memberIds = members.map(member => member.user_id).filter(id => id !== undefined)
+                const isOnline = channel.state.watcher_count ? channel.state.watcher_count > 0 : false
+
+                setChannelInfo({ name, avatar, members: memberIds, isOnline })
+            }
+        }
+
+        loadChannelInfo()
     }, [channel, user])
 
     const handleAudioCall = async () => {
@@ -161,14 +217,7 @@ export function ChatWindow({ channelId, onClose }: ChatWindowProps) {
         }
     }, [channel, user, channelInfo, channelId])
 
-    const getInitials = (name: string) => {
-        return name
-            .split(' ')
-            .map(word => word.charAt(0))
-            .join('')
-            .toUpperCase()
-            .slice(0, 2)
-    }
+    // getInitials is now imported from @/lib/chat-user-data
 
     if (loading) {
         return (
@@ -229,7 +278,7 @@ export function ChatWindow({ channelId, onClose }: ChatWindowProps) {
                                         alt={channelInfo?.name}
                                     />
                                     <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-600 text-white font-semibold text-base">
-                                        {channelInfo ? getInitials(channelInfo.name) : 'NA'}
+                                        {channelInfo ? getUserInitials(channelInfo.name) : 'NA'}
                                     </AvatarFallback>
                                 </Avatar>
                                 <div className="flex-1 min-w-0">
@@ -319,7 +368,7 @@ export function ChatWindow({ channelId, onClose }: ChatWindowProps) {
 
                     {/* Message Input */}
                     <div className="flex-shrink-0">
-                        <MessageInput />
+                        <MessageInput placeholder="Nhập tin nhắn" />
                     </div>
                 </Window>
 

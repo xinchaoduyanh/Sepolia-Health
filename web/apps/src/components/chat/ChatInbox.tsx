@@ -13,6 +13,7 @@ import { useChat } from '@/contexts/ChatContext'
 import { useAuth } from '@/shared/hooks/useAuth'
 import type { Channel } from 'stream-chat'
 import { UserSearchModal } from './UserSearchModal'
+import { getWebChatUserInfo, getChatChannelNameFromLastMessage, getUserInitials } from '@/lib/chat-user-data'
 
 interface ChatInboxProps {
     onSelectChannel: (channelId: string) => void
@@ -23,6 +24,8 @@ export function ChatInbox({ onSelectChannel, selectedChannelId }: ChatInboxProps
     const { getUserChannels, isConnected, client } = useChat()
     const { user } = useAuth()
     const [channels, setChannels] = useState<Channel[]>([])
+    const [channelNames, setChannelNames] = useState<Map<string, string>>(new Map())
+    const [channelAvatars, setChannelAvatars] = useState<Map<string, string | null>>(new Map())
     const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState('')
     const [isSearching, setIsSearching] = useState(false)
@@ -52,6 +55,69 @@ export function ChatInbox({ onSelectChannel, selectedChannelId }: ChatInboxProps
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isConnected]) // Only depend on isConnected, not loadChannels to avoid re-fetching
 
+    // Load channel names when channels change
+    useEffect(() => {
+        if (!channels.length || !user) return
+
+        const loadChannelNames = async () => {
+            const names = new Map<string, string>()
+            const avatars = new Map<string, string | null>()
+
+            for (const channel of channels) {
+                try {
+                    const name = await getChannelName(channel)
+                    names.set(channel.id || '', name)
+
+                    // Get avatar from last message sender (not from name)
+                    const lastMessage = channel.state?.messages?.[channel.state.messages.length - 1]
+                    let avatarUrl: string | null = null
+
+                    if (lastMessage?.user?.image && lastMessage.user.id !== String(user.id)) {
+                        avatarUrl = lastMessage.user.image
+                        console.log('✅ Avatar from last message:', lastMessage.user.name, lastMessage.user.image)
+                    } else {
+                        // Fallback: Try to get user info from channel members
+                        try {
+                            const userInfo = await getWebChatUserInfo(channel, String(user.id), undefined, undefined)
+                            avatarUrl = userInfo.image
+                            if (avatarUrl) {
+                                console.log('⚡ Avatar from channel member data:', userInfo.name, avatarUrl)
+                            }
+                        } catch (error) {
+                            console.warn('Failed to get user avatar info:', error)
+                        }
+                    }
+
+                    avatars.set(channel.id || '', avatarUrl)
+                } catch (error) {
+                    console.warn('Failed to load channel name for:', channel.id, error)
+                    names.set(channel.id || '', 'Cuộc trò chuyện')
+                    avatars.set(channel.id || '', null)
+                }
+            }
+
+            setChannelNames(names)
+            setChannelAvatars(avatars)
+        }
+
+        loadChannelNames()
+
+        // Retry avatar loading after a delay to handle cases where channel data is still loading
+        const retryTimer = setTimeout(() => {
+            const channelsWithoutAvatars = channels.filter(channel => {
+                const channelId = channel.id || ''
+                return !channelAvatars.get(channelId) && channel.state?.messages?.length === 0
+            })
+
+            if (channelsWithoutAvatars.length > 0) {
+                console.log('🔄 Retrying avatar loading for', channelsWithoutAvatars.length, 'channels')
+                loadChannelNames()
+            }
+        }, 3000) // 3 seconds delay
+
+        return () => clearTimeout(retryTimer)
+    }, [channels, user])
+
     // Setup realtime updates when chat client is ready
     useEffect(() => {
         if (!client || !isConnected) {
@@ -66,6 +132,7 @@ export function ChatInbox({ onSelectChannel, selectedChannelId }: ChatInboxProps
             if (event.type === 'message.new' || event.type === 'message.updated' || event.type === 'message.deleted') {
                 const updatedChannel = event.channel
                 if (updatedChannel) {
+                    // Update channels list
                     setChannels(prevChannels => {
                         const channelIndex = prevChannels.findIndex(ch => ch.id === updatedChannel.id)
                         if (channelIndex >= 0) {
@@ -78,6 +145,30 @@ export function ChatInbox({ onSelectChannel, selectedChannelId }: ChatInboxProps
                             return [updatedChannel, ...prevChannels]
                         }
                     })
+
+                    // Update avatar when new message arrives
+                    if (event.type === 'message.new') {
+                        const lastMessage = updatedChannel.state?.messages?.[updatedChannel.state.messages.length - 1]
+                        if (lastMessage?.user?.image && lastMessage.user.id !== String(user.id)) {
+                            setChannelAvatars(prevAvatars => {
+                                const updated = new Map(prevAvatars)
+                                updated.set(updatedChannel.id || '', lastMessage.user.image)
+                                return updated
+                            })
+                            console.log('✅ Real-time avatar update for message:', lastMessage.user.name)
+                        }
+
+                        // Update channel name if needed
+                        const newChannelName = lastMessage?.user?.name
+                        if (newChannelName && lastMessage.user.id !== String(user.id)) {
+                            setChannelNames(prevNames => {
+                                const updated = new Map(prevNames)
+                                updated.set(updatedChannel.id || '', newChannelName)
+                                return updated
+                            })
+                            console.log('✅ Real-time name update for message:', newChannelName)
+                        }
+                    }
                 }
             }
         }
@@ -89,7 +180,42 @@ export function ChatInbox({ onSelectChannel, selectedChannelId }: ChatInboxProps
         return () => {
             client.off(handleChannelEvent)
         }
-    }, [client, isConnected])
+    }, [client, isConnected, user])
+
+    // Update channel names when channels change due to events
+    useEffect(() => {
+        if (!channels.length || !user) return
+
+        const updateChannelNames = async () => {
+            const names = new Map<string, string>()
+
+            for (const channel of channels) {
+                if (!channelNames.has(channel.id || '')) {
+                    try {
+                        const name = await getChannelName(channel)
+                        names.set(channel.id || '', name)
+                    } catch (error) {
+                        console.warn('Failed to load channel name for:', channel.id, error)
+                        names.set(channel.id || '', 'Cuộc trò chuyện')
+                    }
+                } else {
+                    // Keep existing name
+                    const existingName = channelNames.get(channel.id || '')
+                    if (existingName) {
+                        names.set(channel.id || '', existingName)
+                    }
+                }
+            }
+
+            // Only update if names actually changed
+            if (names.size !== channelNames.size ||
+                Array.from(names.entries()).some(([key, value]) => channelNames.get(key) !== value)) {
+                setChannelNames(names)
+            }
+        }
+
+        updateChannelNames()
+    }, [channels, user]) // Remove channelNames from dependencies
 
     const formatLastMessageTime = (timestamp?: string | Date) => {
         if (!timestamp) return ''
@@ -103,12 +229,20 @@ export function ChatInbox({ onSelectChannel, selectedChannelId }: ChatInboxProps
         }
     }
 
-    const getChannelName = (channel: Channel) => {
+    const getChannelName = async (channel: Channel) => {
         if (!user) return 'Cuộc trò chuyện'
 
-        const members = channel.state.members ? Object.values(channel.state.members) : []
-        const otherMember = members.find(member => member.user_id !== String(user.id))
-        return otherMember?.user?.name || otherMember?.user?.id || 'Cuộc trò chuyện'
+        try {
+            // Priority: Get name from last message sender (patientProfile data)
+            const name = await getChatChannelNameFromLastMessage(channel, String(user.id))
+            return name
+        } catch (error) {
+            console.warn('Failed to get channel name:', error)
+            // Fallback to cached data
+            const members = channel.state.members ? Object.values(channel.state.members) : []
+            const otherMember = members.find(member => member.user_id !== String(user.id))
+            return otherMember?.user?.name || otherMember?.user?.id || 'Cuộc trò chuyện'
+        }
     }
 
     const getLastMessage = (channel: Channel) => {
@@ -150,21 +284,15 @@ export function ChatInbox({ onSelectChannel, selectedChannelId }: ChatInboxProps
 
     const filteredChannels = searchQuery
         ? channels.filter(channel => {
-              const name = getChannelName(channel).toLowerCase()
+              const channelName = channelNames.get(channel.id || '') || 'Cuộc trò chuyện'
+              const name = channelName.toLowerCase()
               const lastMessage = getLastMessage(channel).toLowerCase()
               const query = searchQuery.toLowerCase()
               return name.includes(query) || lastMessage.includes(query)
           })
         : channels
 
-    const getInitials = (name: string) => {
-        return name
-            .split(' ')
-            .map(word => word.charAt(0))
-            .join('')
-            .toUpperCase()
-            .slice(0, 2)
-    }
+    // getInitials is now imported from @/lib/chat-user-data
 
     const handleSearchToggle = () => {
         setIsSearching(!isSearching)
@@ -236,7 +364,8 @@ export function ChatInbox({ onSelectChannel, selectedChannelId }: ChatInboxProps
                         </div>
                     ) : (
                         filteredChannels.map(channel => {
-                            const channelName = getChannelName(channel)
+                            const channelName = channelNames.get(channel.id || '') || 'Đang tải...'
+                            const channelAvatar = channelAvatars.get(channel.id || '')
                             const lastMessage = getLastMessage(channel)
                             const unreadCount = getUnreadCount(channel)
                             const lastMessageAt = channel.state.last_message_at
@@ -254,9 +383,9 @@ export function ChatInbox({ onSelectChannel, selectedChannelId }: ChatInboxProps
                                 >
                                     {/* Avatar */}
                                     <Avatar className="h-12 w-12 flex-shrink-0">
-                                        <AvatarImage src="" alt={channelName} />
+                                        <AvatarImage src={channelAvatar || ''} alt={channelName} />
                                         <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-600 text-white font-semibold">
-                                            {getInitials(channelName)}
+                                            {getUserInitials(channelName)}
                                         </AvatarFallback>
                                     </Avatar>
 

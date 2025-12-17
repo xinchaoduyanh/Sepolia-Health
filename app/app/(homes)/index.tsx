@@ -15,6 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useNotificationContext } from '@/contexts/NotificationContext';
+import { useChatContext } from '@/contexts/ChatContext';
 import { useClosestAppointment } from '@/lib/api/appointments';
 import Svg, { Path } from 'react-native-svg';
 import { formatTime } from '@/utils/datetime';
@@ -24,6 +25,7 @@ import { useArticles } from '@/lib/api/articles';
 export default function HomeScreen() {
   const { user } = useAuth();
   const { unreadCount } = useNotificationContext();
+  const { totalUnreadCount } = useChatContext();
   const { data: closestAppointment, isLoading: isLoadingAppointment } = useClosestAppointment();
   const { data: featuredPromotion } = useFeaturedPromotion();
   const claimPromotion = useClaimPromotion();
@@ -699,26 +701,7 @@ export default function HomeScreen() {
                 </TouchableOpacity>
               </View>
 
-              <View style={{ width: '22%', alignItems: 'center' }}>
-                <TouchableOpacity activeOpacity={0.7} style={{ alignItems: 'center' }}>
-                  <View
-                    style={{
-                      height: 56,
-                      width: 56,
-                      borderRadius: 16,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      backgroundColor: '#E0F2FE',
-                      marginBottom: 8,
-                    }}>
-                    <Ionicons name="document-text-outline" size={26} color="#0284C7" />
-                  </View>
-                  <Text style={{ fontSize: 12, color: '#0F172A', textAlign: 'center' }}>
-                    Đơn thuốc
-                  </Text>
-                </TouchableOpacity>
-              </View>
-
+              
               <View style={{ width: '22%', alignItems: 'center' }}>
                 <TouchableOpacity activeOpacity={0.7} style={{ alignItems: 'center' }}>
                   <View
@@ -755,6 +738,31 @@ export default function HomeScreen() {
                       marginBottom: 8,
                     }}>
                     <Ionicons name="chatbubbles-outline" size={26} color="#0284C7" />
+                    {/* Unread message badge */}
+                    {totalUnreadCount > 0 && (
+                      <View
+                        style={{
+                          position: 'absolute',
+                          top: -4,
+                          right: -4,
+                          backgroundColor: '#EF4444',
+                          borderRadius: 10,
+                          minWidth: 20,
+                          height: 20,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          paddingHorizontal: 6,
+                        }}>
+                        <Text
+                          style={{
+                            color: '#FFFFFF',
+                            fontSize: 11,
+                            fontWeight: '600',
+                          }}>
+                          {totalUnreadCount > 99 ? '99+' : totalUnreadCount}
+                        </Text>
+                      </View>
+                    )}
                   </View>
                   <Text style={{ fontSize: 12, color: '#0F172A', textAlign: 'center' }}>
                     Tin nhắn
@@ -762,26 +770,7 @@ export default function HomeScreen() {
                 </TouchableOpacity>
               </View>
 
-              <View style={{ width: '22%', alignItems: 'center' }}>
-                <TouchableOpacity activeOpacity={0.7} style={{ alignItems: 'center' }}>
-                  <View
-                    style={{
-                      height: 56,
-                      width: 56,
-                      borderRadius: 16,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      backgroundColor: '#E0F2FE',
-                      marginBottom: 8,
-                    }}>
-                    <Ionicons name="flask-outline" size={26} color="#0284C7" />
-                  </View>
-                  <Text style={{ fontSize: 12, color: '#0F172A', textAlign: 'center' }}>
-                    Xét nghiệm
-                  </Text>
-                </TouchableOpacity>
-              </View>
-
+              
               <View style={{ width: '22%', alignItems: 'center' }}>
                 <TouchableOpacity activeOpacity={0.7} style={{ alignItems: 'center' }}>
                   <View
@@ -1014,7 +1003,7 @@ export default function HomeScreen() {
                       borderRadius: 20,
                       backgroundColor: '#FFFFFF',
                     }}
-                    onPress={() => router.push(`/article/${article.id}`)}>
+                    onPress={() => router.push(`/articles/${article.id}`)}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16 }}>
                       <View
                         style={{
