@@ -51,6 +51,7 @@ import { REDIS_CLIENT } from '@/common/modules';
     QnaModule,
     ChatbotModule,
     AppTermsModule,
+    // CronJobModule,
   ],
   controllers: [AppController],
   providers: [
