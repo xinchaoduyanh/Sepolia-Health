@@ -25,20 +25,15 @@ import {
 } from './dto';
 import { NotificationService } from '@/module/notification/notification.service';
 import { MeetingService } from '@/module/meeting/meeting.service';
-import { Queue } from 'bullmq';
-import { InjectQueue } from '@nestjs/bullmq';
 import { DateUtil, TimeUtil } from '@/common/utils';
 import { SortOrder } from '@/common/enum/sort.enum';
 import { ERROR_MESSAGES, MESSAGES } from '@/common/constants';
 import { SuccessResponseDto } from '@/common/dto';
-import { AppointmentQueueName } from '@/common/enum';
 
 @Injectable()
 export class AppointmentService {
   constructor(
     private readonly prisma: PrismaService,
-    @InjectQueue(AppointmentQueueName.QUEUE_NAME)
-    private readonly appointmentQueue: Queue,
     private readonly notificationService: NotificationService,
     private readonly meetingService: MeetingService,
   ) {}
@@ -1125,16 +1120,6 @@ export class AppointmentService {
     } catch (error) {
       console.error('Failed to send notification to doctor:', error);
     }
-
-    await this.appointmentQueue.add(
-      AppointmentQueueName.QUEUE_NAME,
-      {
-        appointmentId: appointment.id,
-      },
-      {
-        delay: appointment.endTime.getTime() - Date.now(),
-      },
-    );
 
     // Return appointment response with all required data
     return this.formatAppointmentResponse({
