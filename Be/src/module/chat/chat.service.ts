@@ -237,7 +237,8 @@ export class ChatService implements OnModuleInit {
       name = `${user.adminProfile.firstName} ${user.adminProfile.lastName}`;
       avatar = user.adminProfile.avatar || undefined;
     } else if (user.patientProfiles.length > 0) {
-      const patientProfile = user.patientProfiles[0];
+      // Lấy patient profile với relationship: 'SELF' (hồ sơ chính của user)
+      const patientProfile = user.patientProfiles.find(profile => profile.relationship === 'SELF') || user.patientProfiles[0];
       name = `${patientProfile.firstName} ${patientProfile.lastName}`;
       avatar = patientProfile.avatar || undefined;
     }
@@ -365,7 +366,8 @@ export class ChatService implements OnModuleInit {
       name = `${user.adminProfile.firstName} ${user.adminProfile.lastName}`;
       avatar = user.adminProfile.avatar || undefined;
     } else if (user.patientProfiles.length > 0) {
-      const patientProfile = user.patientProfiles[0];
+      // Lấy patient profile với relationship: 'SELF' (hồ sơ chính của user)
+      const patientProfile = user.patientProfiles.find(profile => profile.relationship === 'SELF') || user.patientProfiles[0];
       name = `${patientProfile.firstName} ${patientProfile.lastName}`;
       avatar = patientProfile.avatar || undefined;
     }
