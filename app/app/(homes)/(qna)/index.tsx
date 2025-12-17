@@ -15,6 +15,7 @@ import Svg, { Path } from 'react-native-svg';
 import { router } from 'expo-router';
 import { useQuestions, usePopularTags } from '@/lib/api/qna';
 import { Question } from '@/types/qna';
+import { Avatar } from '@/components/Avatar';
 
 export default function QnaListScreen() {
   const [page, setPage] = useState(1);
@@ -299,20 +300,13 @@ export default function QnaListScreen() {
                     }}>
                     {/* Header */}
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-                      <View
-                        style={{
-                          width: 40,
-                          height: 40,
-                          borderRadius: 20,
-                          backgroundColor: roleBadge.bg,
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          marginRight: 12,
-                        }}>
-                        <Text style={{ fontSize: 16, fontWeight: 'bold', color: roleBadge.text }}>
-                          {question.author.fullName.charAt(0).toUpperCase()}
-                        </Text>
-                      </View>
+                      <Avatar
+                        source={question.author.avatar}
+                        name={question.author.fullName}
+                        size={40}
+                        role={question.author.role}
+                        style={{ marginRight: 12 }}
+                      />
                       <View style={{ flex: 1 }}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                           <Text style={{ fontSize: 14, fontWeight: '600', color: '#1F2937' }}>

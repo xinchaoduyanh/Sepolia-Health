@@ -217,9 +217,17 @@ export default function QuestionDetailPage({ params }: PageProps) {
                 {/* Author Info */}
                 <div className="flex items-start gap-4 mb-4">
                     <Avatar className="h-12 w-12">
-                        <AvatarFallback className={getRoleBadgeColor(question.author.role)}>
-                            {question.author.fullName.charAt(0).toUpperCase()}
-                        </AvatarFallback>
+                        {question.author.avatar ? (
+                            <img
+                                src={question.author.avatar}
+                                alt={question.author.fullName}
+                                className="h-full w-full rounded-full object-cover"
+                            />
+                        ) : (
+                            <AvatarFallback className={getRoleBadgeColor(question.author.role)}>
+                                {question.author.fullName.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                        )}
                     </Avatar>
                     <div className="flex-1">
                         <div className="flex items-center gap-2 flex-wrap mb-1">
@@ -363,9 +371,17 @@ export default function QuestionDetailPage({ params }: PageProps) {
                                 <div className="flex items-start justify-between mb-4">
                                     <div className="flex items-center gap-3">
                                         <Avatar className="h-10 w-10">
-                                            <AvatarFallback className={answerRoleBadge}>
-                                                {answer.author.fullName.charAt(0).toUpperCase()}
-                                            </AvatarFallback>
+                                            {answer.author.avatar ? (
+                                                <img
+                                                    src={answer.author.avatar}
+                                                    alt={answer.author.fullName}
+                                                    className="h-full w-full rounded-full object-cover"
+                                                />
+                                            ) : (
+                                                <AvatarFallback className={answerRoleBadge}>
+                                                    {answer.author.fullName.charAt(0).toUpperCase()}
+                                                </AvatarFallback>
+                                            )}
                                         </Avatar>
                                         <div>
                                             <div className="flex items-center gap-2 flex-wrap mb-1">
