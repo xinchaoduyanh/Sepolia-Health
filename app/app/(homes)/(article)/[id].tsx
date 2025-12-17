@@ -86,7 +86,13 @@ export default function ArticleDetailScreen() {
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#E0F2FE' }}>
+      <View
+        style={{
+          flex: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: '#E0F2FE',
+        }}>
         <ActivityIndicator size="large" color="#0284C7" />
       </View>
     );
@@ -94,9 +100,23 @@ export default function ArticleDetailScreen() {
 
   if (error || !article) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#E0F2FE', paddingHorizontal: 24 }}>
+      <View
+        style={{
+          flex: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: '#E0F2FE',
+          paddingHorizontal: 24,
+        }}>
         <Ionicons name="document-text-outline" size={64} color="#9CA3AF" />
-        <Text style={{ fontSize: 18, fontWeight: '600', color: '#6B7280', marginTop: 16, textAlign: 'center' }}>
+        <Text
+          style={{
+            fontSize: 18,
+            fontWeight: '600',
+            color: '#6B7280',
+            marginTop: 16,
+            textAlign: 'center',
+          }}>
           Không tìm thấy bài viết
         </Text>
         <Text style={{ fontSize: 14, color: '#9CA3AF', marginTop: 8, textAlign: 'center' }}>
@@ -197,7 +217,6 @@ export default function ArticleDetailScreen() {
               shadowRadius: 8,
               elevation: 3,
             }}>
-
             {/* Title */}
             <Text
               style={{
@@ -272,7 +291,8 @@ export default function ArticleDetailScreen() {
                   borderLeftWidth: 4,
                   borderLeftColor: '#0284C7',
                 }}>
-                <Text style={{ fontSize: 16, color: '#0C4A6E fontStyle: 'italic', lineHeight: 24 }}>
+                <Text
+                  style={{ fontSize: 16, color: '#0C4A6E', fontStyle: 'italic', lineHeight: 24 }}>
                   {article.excerpt}
                 </Text>
               </View>
@@ -302,7 +322,8 @@ export default function ArticleDetailScreen() {
             {/* Additional Images */}
             {article.images && article.images.length > 0 && (
               <View style={{ marginTop: 20 }}>
-                <Text style={{ fontSize: 18, fontWeight: '600', color: '#1F2937', marginBottom: 16 }}>
+                <Text
+                  style={{ fontSize: 18, fontWeight: '600', color: '#1F2937', marginBottom: 16 }}>
                   Hình ảnh bài viết
                 </Text>
                 {article.images

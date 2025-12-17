@@ -14,7 +14,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useArticles } from '@/lib/api/articles';
 import { Article } from '@/lib/api/articles';
-import { debounce } from 'lodash';
+
+const debounce = (func: Function, delay: number) => {
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+  return (...args: any[]) => {
+    if (timeoutId) clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => func(...args), delay);
+  };
+};
 
 export default function ArticlesListScreen() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -29,7 +36,7 @@ export default function ArticlesListScreen() {
   });
 
   const articles = data?.articles || [];
-  const hasMore = articles.length === 10 && data?.total > articles.length;
+  const hasMore = articles.length === 10 && (data?.total || 0) > articles.length;
 
   const handleSearch = debounce((query: string) => {
     setSearchQuery(query);
@@ -38,7 +45,7 @@ export default function ArticlesListScreen() {
 
   const handleLoadMore = () => {
     if (!isFetching && hasMore) {
-      setCurrentPage(prev => prev + 1);
+      setCurrentPage((prev) => prev + 1);
     }
   };
 
@@ -58,7 +65,13 @@ export default function ArticlesListScreen() {
 
   if (isLoading && currentPage === 1) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#E0F2FE' }}>
+      <View
+        style={{
+          flex: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: '#E0F2FE',
+        }}>
         <ActivityIndicator size="large" color="#0284C7" />
       </View>
     );
@@ -99,7 +112,7 @@ export default function ArticlesListScreen() {
             }}>
             Tất cả tin tức
           </Text>
-          <TouchableOpacity onPress={refetch} style={{ padding: 8 }}>
+          <TouchableOpacity onPress={() => refetch()} style={{ padding: 8 }}>
             <Ionicons name="refresh" size={24} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
@@ -195,7 +208,7 @@ export default function ArticlesListScreen() {
             {articles.map((article: Article) => (
               <TouchableOpacity
                 key={article.id}
-                onPress={() => router.push(`/article/${article.id}`)}
+                onPress={() => router.push(`/(article)/${article.id}`)}
                 style={{
                   backgroundColor: '#FFFFFF',
                   borderRadius: 16,

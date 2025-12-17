@@ -32,8 +32,7 @@ export default function TabLayout() {
             paddingTop: 5,
             height: 70,
           },
-        }}
-        >
+        }}>
         <Tabs.Screen
           name="index"
           options={{
@@ -48,12 +47,6 @@ export default function TabLayout() {
             tabBarIcon: ({ color, size }) => (
               <Ionicons name="calendar-outline" size={size} color={color} />
             ),
-          }}
-        />
-        <Tabs.Screen
-          name="(qna)"
-          options={{
-            href: null,
           }}
         />
 
@@ -145,7 +138,19 @@ export default function TabLayout() {
           }}
         />
 
-        {/* Hidden tabs - không hiển thị trong footer */}
+        {/* Hidden tabs - not shown in tab bar */}
+        <Tabs.Screen
+          name="(qna)"
+          options={{
+            href: null,
+          }}
+        />
+        <Tabs.Screen
+          name="(article)"
+          options={{
+            href: null,
+          }}
+        />
         <Tabs.Screen
           name="(payment)"
           options={{

@@ -699,7 +699,7 @@ export default function HomeScreen() {
                 </TouchableOpacity>
               </View>
 
-              <View style={{ width: '22%', alignItems: 'center' }}>
+              {/* <View style={{ width: '22%', alignItems: 'center' }}>
                 <TouchableOpacity activeOpacity={0.7} style={{ alignItems: 'center' }}>
                   <View
                     style={{
@@ -717,9 +717,9 @@ export default function HomeScreen() {
                     Đơn thuốc
                   </Text>
                 </TouchableOpacity>
-              </View>
+              </View> */}
 
-              <View style={{ width: '22%', alignItems: 'center' }}>
+              {/* <View style={{ width: '22%', alignItems: 'center' }}>
                 <TouchableOpacity activeOpacity={0.7} style={{ alignItems: 'center' }}>
                   <View
                     style={{
@@ -737,7 +737,7 @@ export default function HomeScreen() {
                     Thanh toán
                   </Text>
                 </TouchableOpacity>
-              </View>
+              </View> */}
 
               <View style={{ width: '22%', alignItems: 'center' }}>
                 <TouchableOpacity
@@ -762,7 +762,7 @@ export default function HomeScreen() {
                 </TouchableOpacity>
               </View>
 
-              <View style={{ width: '22%', alignItems: 'center' }}>
+              {/* <View style={{ width: '22%', alignItems: 'center' }}>
                 <TouchableOpacity activeOpacity={0.7} style={{ alignItems: 'center' }}>
                   <View
                     style={{
@@ -780,9 +780,9 @@ export default function HomeScreen() {
                     Xét nghiệm
                   </Text>
                 </TouchableOpacity>
-              </View>
+              </View> */}
 
-              <View style={{ width: '22%', alignItems: 'center' }}>
+              {/* <View style={{ width: '22%', alignItems: 'center' }}>
                 <TouchableOpacity activeOpacity={0.7} style={{ alignItems: 'center' }}>
                   <View
                     style={{
@@ -800,7 +800,7 @@ export default function HomeScreen() {
                     Sức khỏe
                   </Text>
                 </TouchableOpacity>
-              </View>
+              </View> */}
 
               <View style={{ width: '22%', alignItems: 'center' }}>
                 <TouchableOpacity
@@ -941,7 +941,7 @@ export default function HomeScreen() {
             <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#0F172A' }}>
               Tin tức & Sự kiện
             </Text>
-            <TouchableOpacity onPress={() => router.push('/articles')}>
+            <TouchableOpacity onPress={() => router.push('/(homes)/(article)')}>
               <Text style={{ fontSize: 14, fontWeight: '600', color: '#0284C7' }}>Xem tất cả</Text>
             </TouchableOpacity>
           </View>
@@ -1014,7 +1014,7 @@ export default function HomeScreen() {
                       borderRadius: 20,
                       backgroundColor: '#FFFFFF',
                     }}
-                    onPress={() => router.push(`/article/${article.id}`)}>
+                    onPress={() => router.push(`/(article)/${article.id}`)}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16 }}>
                       <View
                         style={{
