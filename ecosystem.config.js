@@ -2,7 +2,7 @@ module.exports = {
   apps: [
     {
       name: 'sepolia-backend',
-      script: 'dist/main.js',
+      script: 'dist/src/main.js',
       cwd: './Be',
       instances: 1,
       autorestart: true,
