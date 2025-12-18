@@ -6,7 +6,7 @@ import {
   WeeklyScheduleDayDto,
   BookedTimeSlotDto,
 } from './dto/doctor-schedule.dto';
-import { TimeUtil } from '@/common/utils/time';
+// import { TimeUtil } from '@/common/utils/time'; // No longer needed
 
 @Injectable()
 export class DoctorScheduleService {
@@ -121,27 +121,15 @@ export class DoctorScheduleService {
 
     // Convert appointments to booked time slots
     return appointments.map((apt) => {
-      const startTime = new Date(apt.startTime);
-      const endTime = new Date(apt.endTime);
-      const startTimeStr = TimeUtil.minutesToTime(
-        TimeUtil.dateToMinutes(startTime),
-      );
-      const endTimeStr = TimeUtil.minutesToTime(
-        TimeUtil.dateToMinutes(endTime),
-      );
-
       return {
-        startTime: startTimeStr,
-        endTime: endTimeStr,
-        displayTime: `${startTimeStr} - ${endTimeStr}`,
         appointmentId: apt.id,
         serviceName: apt.service.name,
         patientName: apt.patientProfile
           ? `${apt.patientProfile.firstName} ${apt.patientProfile.lastName}`
           : 'Khách vãng lai',
         status: apt.status,
-        startDateTime: apt.startTime,
-        endDateTime: apt.endTime,
+        startDateTime: apt.startTime.toISOString(),
+        endDateTime: apt.endTime.toISOString(),
       };
     });
   }
@@ -158,7 +146,10 @@ export class DoctorScheduleService {
     // Determine week start date
     let weekStart: Date;
     if (weekStartDate) {
-      weekStart = this.getWeekStartDate(new Date(weekStartDate));
+      // Parse YYYY-MM-DD as UTC to avoid timezone issues
+      const [year, month, day] = weekStartDate.split('-').map(Number);
+      const utcDate = new Date(Date.UTC(year, month - 1, day));
+      weekStart = this.getWeekStartDate(utcDate);
     } else {
       weekStart = this.getWeekStartDate(new Date());
     }
@@ -292,11 +283,19 @@ export class DoctorScheduleService {
 
     // Determine month start and end
     const monthStart = startDate
-      ? new Date(startDate)
+      ? (() => {
+          // Parse YYYY-MM-DD as UTC to avoid timezone issues
+          const [year, month, day] = startDate.split('-').map(Number);
+          return new Date(Date.UTC(year, month - 1, day));
+        })()
       : new Date(new Date().getFullYear(), new Date().getMonth(), 1); // First day of current month
 
     const monthEnd = endDate
-      ? new Date(endDate)
+      ? (() => {
+          // Parse YYYY-MM-DD as UTC to avoid timezone issues
+          const [year, month, day] = endDate.split('-').map(Number);
+          return new Date(Date.UTC(year, month - 1, day));
+        })()
       : new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0); // Last day of current month
 
     // Generate full calendar grid: from start of week containing month start to end of week containing month end

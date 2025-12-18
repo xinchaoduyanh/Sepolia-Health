@@ -129,7 +129,7 @@ export default function DoctorPersonalSchedulePage() {
                 if (dateA.getTime() !== dateB.getTime()) {
                     return dateA.getTime() - dateB.getTime()
                 }
-                return a.slot.startTime.localeCompare(b.slot.startTime)
+                return a.slot.startDateTime.localeCompare(b.slot.startDateTime)
             })
             .slice(0, 5) // Limit to 5 upcoming
     }, [weeklySchedule])

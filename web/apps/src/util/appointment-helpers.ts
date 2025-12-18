@@ -61,9 +61,10 @@ export const getUniqueAppointmentsForDay = (bookedSlots: any[]) => {
 }
 
 // Calculate vertical offset (in pixels) based on start time within the day
-export const calculateAppointmentOffset = (startTime: string, dayStartTime: string = '07:00') => {
-    const startParts = startTime.split(':')
-    const startMinutes = parseInt(startParts[0] || '0', 10) * 60 + parseInt(startParts[1] || '0', 10)
+export const calculateAppointmentOffset = (startDateTime: string, dayStartTime: string = '07:00') => {
+    // Parse ISO datetime string and get local time
+    const date = new Date(startDateTime)
+    const startMinutes = date.getHours() * 60 + date.getMinutes()
 
     const dayStartParts = dayStartTime.split(':')
     const dayStartMinutes = parseInt(dayStartParts[0] || '0', 10) * 60 + parseInt(dayStartParts[1] || '0', 10)
@@ -76,12 +77,13 @@ export const calculateAppointmentOffset = (startTime: string, dayStartTime: stri
 }
 
 // Calculate height based on duration (in pixels)
-export const calculateAppointmentHeightPx = (startTime: string, endTime: string) => {
-    const startParts = startTime.split(':')
-    const startMinutes = parseInt(startParts[0] || '0', 10) * 60 + parseInt(startParts[1] || '0', 10)
+export const calculateAppointmentHeightPx = (startDateTime: string, endDateTime: string) => {
+    // Parse ISO datetime strings and get local times
+    const startDate = new Date(startDateTime)
+    const endDate = new Date(endDateTime)
 
-    const endParts = endTime.split(':')
-    const endMinutes = parseInt(endParts[0] || '0', 10) * 60 + parseInt(endParts[1] || '0', 10)
+    const startMinutes = startDate.getHours() * 60 + startDate.getMinutes()
+    const endMinutes = endDate.getHours() * 60 + endDate.getMinutes()
 
     const durationMinutes = endMinutes - startMinutes
     const slotHeightPx = 120 // Each hour is 120px

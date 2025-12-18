@@ -57,15 +57,6 @@ export class AvailabilityOverrideDto {
 }
 
 export class BookedTimeSlotDto {
-  @ApiProperty({ description: 'Giờ bắt đầu', example: '09:00' })
-  startTime: string;
-
-  @ApiProperty({ description: 'Giờ kết thúc', example: '09:30' })
-  endTime: string;
-
-  @ApiProperty({ description: 'Thời gian hiển thị', example: '09:00 - 09:30' })
-  displayTime: string;
-
   @ApiProperty({ description: 'ID lịch hẹn', example: 1 })
   appointmentId: number;
 
@@ -83,10 +74,10 @@ export class BookedTimeSlotDto {
   status: 'UPCOMING' | 'ON_GOING' | 'COMPLETED' | 'CANCELLED';
 
   @ApiProperty({ description: 'Thời gian bắt đầu thực tế (ISO format)', example: '2025-01-15T10:00:00.000Z' })
-  startDateTime: Date;
+  startDateTime: string;
 
   @ApiProperty({ description: 'Thời gian kết thúc thực tế (ISO format)', example: '2025-01-15T10:30:00.000Z' })
-  endDateTime: Date;
+  endDateTime: string;
 }
 
 export class WeeklyScheduleDayDto {

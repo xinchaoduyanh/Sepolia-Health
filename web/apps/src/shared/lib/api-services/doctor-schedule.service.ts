@@ -4,9 +4,6 @@ import { apiClient } from '../api-client'
 export type AppointmentStatus = 'UPCOMING' | 'ON_GOING' | 'COMPLETED' | 'CANCELLED'
 
 export interface BookedTimeSlot {
-    startTime: string
-    endTime: string
-    displayTime: string
     appointmentId: number
     serviceName: string
     patientName: string

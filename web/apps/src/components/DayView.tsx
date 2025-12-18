@@ -11,6 +11,7 @@ import {
     getUniqueAppointmentsForDay,
     isWithinWorkingHours,
 } from '@/util/appointment-helpers'
+import { formatTime } from '@/util/datetime'
 
 interface DayViewProps {
     weeklySchedule: any
@@ -68,12 +69,12 @@ export default function DayView({ weeklySchedule, currentDate, timeSlots, today 
                                                 <div
                                                     className="group/appointment absolute left-2 right-2 bg-gradient-to-br from-primary/20 via-primary/15 to-primary/10 dark:from-primary/25 dark:via-primary/20 dark:to-primary/15 border-2 border-primary/40 dark:border-primary/50 rounded-lg cursor-pointer hover:shadow-lg hover:scale-[1.02] transition-all duration-300 hover:border-primary/70 dark:hover:border-primary/80 backdrop-blur-sm flex flex-col"
                                                     style={{
-                                                        top: `${calculateAppointmentOffset(apt.startTime)}px`,
-                                                        height: `${Math.max(calculateAppointmentHeightPx(apt.startTime, apt.endTime), 50)}px`,
+                                                        top: `${calculateAppointmentOffset(apt.startDateTime)}px`,
+                                                        height: `${Math.max(calculateAppointmentHeightPx(apt.startDateTime, apt.endDateTime), 50)}px`,
                                                         zIndex: 20,
                                                         minHeight: '50px',
                                                         padding:
-                                                            calculateAppointmentHeightPx(apt.startTime, apt.endTime) <
+                                                            calculateAppointmentHeightPx(apt.startDateTime, apt.endDateTime) <
                                                             60
                                                                 ? APPOINTMENT_BLOCK_CONFIG.smallBlockPadding
                                                                 : APPOINTMENT_BLOCK_CONFIG.normalBlockPadding,
@@ -89,12 +90,12 @@ export default function DayView({ weeklySchedule, currentDate, timeSlots, today 
                                                         <span
                                                             className={`${APPOINTMENT_BLOCK_CONFIG.timeTextSize} font-bold text-primary dark:text-primary leading-tight`}
                                                         >
-                                                            {apt.displayTime}
+                                                            {formatTime(apt.startDateTime)}
                                                         </span>
                                                     </div>
 
                                                     {/* Patient Name - Show if >55px */}
-                                                    {calculateAppointmentHeightPx(apt.startTime, apt.endTime) > 55 && (
+                                                    {calculateAppointmentHeightPx(apt.startDateTime, apt.endDateTime) > 55 && (
                                                         <div
                                                             className={`${APPOINTMENT_BLOCK_CONFIG.patientNameTextSize} font-semibold text-foreground truncate leading-tight ${APPOINTMENT_BLOCK_CONFIG.patientNameMargin}`}
                                                         >
@@ -103,7 +104,7 @@ export default function DayView({ weeklySchedule, currentDate, timeSlots, today 
                                                     )}
 
                                                     {/* Service - Show if >50px (includes 30min appointments) */}
-                                                    {calculateAppointmentHeightPx(apt.startTime, apt.endTime) > 50 && (
+                                                    {calculateAppointmentHeightPx(apt.startDateTime, apt.endDateTime) > 50 && (
                                                         <div
                                                             className={`${APPOINTMENT_BLOCK_CONFIG.serviceTextSize} text-muted-foreground line-clamp-1 leading-tight ${APPOINTMENT_BLOCK_CONFIG.serviceMargin}`}
                                                         >
@@ -112,7 +113,7 @@ export default function DayView({ weeklySchedule, currentDate, timeSlots, today 
                                                     )}
 
                                                     {/* Click hint for small blocks */}
-                                                    {calculateAppointmentHeightPx(apt.startTime, apt.endTime) <= 55 && (
+                                                    {calculateAppointmentHeightPx(apt.startDateTime, apt.endDateTime) <= 55 && (
                                                         <div
                                                             className={`${APPOINTMENT_BLOCK_CONFIG.clickHintTextSize} text-muted-foreground/50 ${APPOINTMENT_BLOCK_CONFIG.clickHintMargin} leading-tight`}
                                                         >
