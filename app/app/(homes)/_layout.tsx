@@ -165,7 +165,7 @@ export default function TabLayout() {
         />
         <Tabs.Screen
           name="(articles)"
-            options={{
+          options={{
             href: null,
           }}
         />
