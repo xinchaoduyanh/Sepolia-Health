@@ -7,8 +7,14 @@ logs
 .vscode
 .idea
 coverage
-dist
-build
-.next
 .expo
 *.tgz
+.git
+.gitignore
+README.md
+CLAUDE.md
+docs
+plans
+.scripts
+claude-code-guide.md
+*.md

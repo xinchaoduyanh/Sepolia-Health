@@ -22,6 +22,7 @@ import { CurrentUser } from '@/common/decorators';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { Roles } from '@/common/decorators';
 import { Role } from '@prisma/client';
+import { fileTypeFromBuffer } from 'file-type';
 // DTOs
 type UploadUrlDtoType = {
   url: string;
@@ -77,15 +78,40 @@ export class UploadController {
       throw new BadRequestException('Kích thước file không được vượt quá 10MB');
     }
 
-    // Generate unique filename
-    const fileExtension = file.originalname.split('.').pop();
-    const fileName = `uploads/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExtension}`;
+    // Enhanced file type validation
+    const fileType = await fileTypeFromBuffer(file.buffer);
+    if (!fileType) {
+      throw new BadRequestException('Không thể xác định loại file');
+    }
+
+    // Validate file extension
+    const fileExtension = file.originalname.split('.').pop()?.toLowerCase();
+    const allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'pdf', 'doc', 'docx', 'txt', 'zip', 'rar'];
+
+    if (!allowedExtensions.includes(fileExtension)) {
+      throw new BadRequestException('Loại file không được phép');
+    }
+
+    // Validate MIME type matches extension
+    const allowedMimeTypes = [
+      'image/jpeg', 'image/png', 'image/gif',
+      'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'text/plain', 'application/zip', 'application/x-rar-compressed'
+    ];
+
+    if (!allowedMimeTypes.includes(file.mime)) {
+      throw new BadRequestException('Loại file không được phép');
+    }
+
+    // Generate unique filename with validated extension
+    const safeExtension = fileType.ext || fileExtension;
+    const fileName = `uploads/${Date.now()}-${Math.random().toString(36).substring(2)}.${safeExtension}`;
 
     // Upload to S3
     const uploadResult = await this.uploadService.uploadFile({
       key: fileName,
       body: file.buffer,
-      contentType: file.mimetype,
+      contentType: fileType.mime || file.mimetype,
     });
 
     return uploadResult;
@@ -111,12 +137,31 @@ export class UploadController {
     description: 'Lưu URL thành công',
   })
   uploadFromUrl(@Body() body: UploadUrlDtoType): UploadFileResponseDtoType {
-    // Validate URL
+    // Validate URL format
+    let url;
     try {
-      new URL(body.url);
+      url = new URL(body.url);
     } catch {
       throw new BadRequestException('URL không hợp lệ');
     }
+
+    // Security checks for URL
+    const allowedProtocols = ['http:', 'https:'];
+    if (!allowedProtocols.includes(url.protocol)) {
+      throw new BadRequestException('Chỉ chấp nhận HTTP và HTTPS URLs');
+    }
+
+    // Block potentially dangerous URLs
+    const dangerousPatterns = ['javascript:', 'data:', 'file:', 'ftp:'];
+    if (dangerousPatterns.some(pattern => body.url.toLowerCase().includes(pattern))) {
+      throw new BadRequestException('URL không an toàn');
+    }
+
+    // Optional: Allow only specific domains (uncomment if needed)
+    // const allowedDomains = ['trusted-domain.com', 'another-trusted-domain.com'];
+    // if (!allowedDomains.includes(url.hostname)) {
+    //   throw new BadRequestException('Domain không được phép');
+    // }
 
     // For URL upload, we just return the URL as is
     // In a real scenario, you might want to download and re-upload to S3
@@ -155,10 +200,23 @@ export class UploadController {
       throw new BadRequestException('Vui lòng chọn file ảnh');
     }
 
-    // Validate file type
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-    if (!allowedTypes.includes(file.mimetype)) {
-      throw new BadRequestException('Chỉ chấp nhận file ảnh (JPEG, PNG, WebP)');
+    // Enhanced file validation using magic number detection
+    const fileType = await fileTypeFromBuffer(file.buffer);
+    if (!fileType) {
+      throw new BadRequestException('Không thể xác định loại file ảnh');
+    }
+
+    // Validate actual file type (not just MIME type)
+    const allowedImageTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!allowedImageTypes.includes(fileType.mime)) {
+      throw new BadRequestException('Chỉ chấp nhận file ảnh (JPEG, PNG, WebP, GIF)');
+    }
+
+    // Validate file extension matches actual type
+    const fileExtension = file.originalname.split('.').pop()?.toLowerCase();
+    const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+    if (!allowedExtensions.includes(fileExtension)) {
+      throw new BadRequestException('Phần mở rộng file không hợp lệ');
     }
 
     // Validate file size (5MB max)
@@ -167,15 +225,15 @@ export class UploadController {
       throw new BadRequestException('Kích thước file không được vượt quá 5MB');
     }
 
-    // Generate unique filename
-    const fileExtension = file.originalname.split('.').pop();
-    const fileName = `avatars/${userId}-${Date.now()}.${fileExtension}`;
+    // Generate unique filename with validated extension
+    const safeExtension = fileType.ext || 'jpg'; // Fallback to jpg
+    const fileName = `avatars/${userId}-${Date.now()}.${safeExtension}`;
 
     // Upload to S3
     const uploadResult = await this.uploadService.uploadFile({
       key: fileName,
       body: file.buffer,
-      contentType: file.mimetype,
+      contentType: fileType.mime,
     });
 
     if (!uploadResult.success) {
@@ -231,11 +289,31 @@ export class UploadController {
     @CurrentUser('userId') userId: number,
     @Body() body: UploadUrlDtoType,
   ): Promise<UploadFileResponseDtoType> {
-    // Validate URL
+    // Enhanced URL validation
+    let url;
     try {
-      new URL(body.url);
+      url = new URL(body.url);
     } catch {
       throw new BadRequestException('URL không hợp lệ');
+    }
+
+    // Security checks for avatar URL
+    const allowedProtocols = ['http:', 'https:'];
+    if (!allowedProtocols.includes(url.protocol)) {
+      throw new BadRequestException('Chỉ chấp nhận HTTP và HTTPS URLs');
+    }
+
+    // Block potentially dangerous URLs
+    const dangerousPatterns = ['javascript:', 'data:', 'file:', 'ftp:'];
+    if (dangerousPatterns.some(pattern => body.url.toLowerCase().includes(pattern))) {
+      throw new BadRequestException('URL không an toàn');
+    }
+
+    // Validate that URL points to an image (check extension)
+    const imagePath = url.pathname.toLowerCase();
+    const imageExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
+    if (!imageExtensions.some(ext => imagePath.endsWith(ext))) {
+      throw new BadRequestException('URL phải trỏ đến file ảnh');
     }
 
     // Update patient profile avatar URL

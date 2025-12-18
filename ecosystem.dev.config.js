@@ -2,36 +2,39 @@ module.exports = {
   apps: [
     {
       name: 'sepolia-backend-dev',
+      script: 'npm',
+      args: 'run start:dev',
       cwd: './Be',
-      script: 'node_modules/.bin/nest',
-      args: 'start --watch',
       instances: 1,
-      autorestart: true,
-      watch: ['src'],
-      ignore_watch: ['node_modules', 'dist', 'coverage'],
+      autorestart: false,
+      watch: false,
       max_memory_restart: '1G',
       env: {
         NODE_ENV: 'development',
         PORT: 8000
       },
-      out_file: './logs/backend-out.log',
-      error_file: './logs/backend-error.log'
+      log_file: '/dev/null',
+      out_file: '/dev/null',
+      error_file: '/dev/null',
+      log_date_format: ''
     },
     {
       name: 'sepolia-frontend-dev',
+      script: 'npm',
+      args: 'run dev',
       cwd: './web/apps',
-      script: 'node_modules/.bin/next',
-      args: 'dev --port 3000',
       instances: 1,
-      autorestart: true,
-      watch: false, // Next.js handles its own watching
+      autorestart: false,
+      watch: false,
       max_memory_restart: '512M',
       env: {
         NODE_ENV: 'development',
         PORT: 3000
       },
-      out_file: './logs/frontend-out.log',
-      error_file: './logs/frontend-error.log'
+      log_file: '/dev/null',
+      out_file: '/dev/null',
+      error_file: '/dev/null',
+      log_date_format: ''
     }
   ]
 };

@@ -15,6 +15,14 @@ const nextConfig = {
         ignoreDuringBuilds: true,
     },
 
+    // Fix for Next.js 16 Turbopack - add turbopack config
+    turbopack: {
+        // Enable turbopack configuration
+        rules: {
+            // Add any turbopack-specific rules here if needed
+        }
+    },
+
     // Tối ưu hóa compile time
     experimental: {
         // Tối ưu import để giảm thời gian compile
@@ -25,7 +33,7 @@ const nextConfig = {
         },
     },
 
-    // Tối ưu webpack
+    // Tối ưu webpack (only use when not using turbopack)
     webpack: (config, { dev, isServer }) => {
         if (dev && !isServer) {
             // Tắt lazy compilation cho client-side trong dev mode

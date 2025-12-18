@@ -4,12 +4,14 @@
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
-    "pm2": "bash scripts/start-services.sh",
-    "pm2:start": "bash scripts/start-services.sh",
-    "pm2:stop": "bash scripts/stop-services.sh",
+    "pm2": "bash scripts/pm2.sh",
+    "pm2:deploy": "bash scripts/deploy.sh",
+    "pm2:start": "pm2 start ecosystem.config.js --env production",
+    "pm2:stop": "pm2 delete all",
     "pm2:restart": "pm2 restart all",
     "pm2:status": "pm2 status",
-    "pm2:logs": "pm2 logs"
+    "pm2:monit": "pm2 monit",
+    "pm2:dev": "pm2 start ecosystem.dev.config.js"
   },
   "dependencies": {
     "turbo": "^2.5.8"

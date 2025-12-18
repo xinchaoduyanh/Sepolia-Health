@@ -2,9 +2,8 @@ module.exports = {
   apps: [
     {
       name: 'sepolia-backend',
+      script: 'dist/main.js',
       cwd: './Be',
-      script: 'npm',
-      args: 'run start:prod',
       instances: 1,
       autorestart: true,
       watch: false,
@@ -20,13 +19,14 @@ module.exports = {
       log_file: '/dev/null',
       out_file: '/dev/null',
       error_file: '/dev/null',
-      log_date_format: ''
+      log_date_format: '',
+      kill_timeout: 5000
     },
     {
       name: 'sepolia-frontend',
+      script: 'node_modules/next/dist/bin/next',
+      args: 'start',
       cwd: './web/apps',
-      script: 'npm',
-      args: 'run start',
       instances: 1,
       autorestart: true,
       watch: false,
@@ -42,28 +42,8 @@ module.exports = {
       log_file: '/dev/null',
       out_file: '/dev/null',
       error_file: '/dev/null',
-      log_date_format: ''
+      log_date_format: '',
+      kill_timeout: 5000
     }
-  ],
-
-  deploy: {
-    production: {
-      user: 'deploy',
-      host: 'your-server-ip',
-      ref: 'origin/main',
-      repo: 'git@github.com:username/Sepolia-Health.git',
-      path: '/var/www/sepolia-health',
-      'pre-deploy-local': '',
-      'post-deploy': 'npm install && npm run build && pm2 reload ecosystem.config.js --env production',
-      'pre-setup': ''
-    },
-    staging: {
-      user: 'deploy',
-      host: 'staging-server-ip',
-      ref: 'origin/develop',
-      repo: 'git@github.com:username/Sepolia-Health.git',
-      path: '/var/www/sepolia-health-staging',
-      'post-deploy': 'npm install && npm run build && pm2 reload ecosystem.config.js --env staging'
-    }
-  }
+  ]
 };
