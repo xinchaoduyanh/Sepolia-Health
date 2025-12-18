@@ -1,4 +1,3 @@
-import React from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -51,11 +50,13 @@ export default function GenderSelector({
                   ? '#F3F4F6'
                   : selectedGender === option.value
                     ? option.value === 'FEMALE'
-                      ? '#FCE7F3'
-                      : '#E0F2FE'
+                      ? '#EC4899'
+                      : '#0284C7'
                     : error
                       ? '#FEF2F2'
-                      : '#F0FDFA',
+                      : option.value === 'FEMALE'
+                        ? '#FCE7F3'
+                        : '#E0F2FE',
               },
             ]}
             className={`flex-1 flex-row items-center justify-center rounded-xl border-2 px-5 py-4 ${
@@ -65,7 +66,9 @@ export default function GenderSelector({
                   : 'border-sky-600'
                 : error
                   ? 'border-red-200'
-                  : 'border-cyan-100'
+                  : option.value === 'FEMALE'
+                    ? 'border-pink-200'
+                    : 'border-sky-200'
             }`}>
             <Ionicons
               name={option.icon}
@@ -74,10 +77,12 @@ export default function GenderSelector({
                 disabled
                   ? '#9CA3AF'
                   : selectedGender === option.value
-                    ? option.selectedColor
+                    ? '#FFFFFF'
                     : error
                       ? '#EF4444'
-                      : option.unselectedColor
+                      : option.value === 'FEMALE'
+                        ? '#EC4899'
+                        : '#0284C7'
               }
             />
             <Text
@@ -85,12 +90,12 @@ export default function GenderSelector({
                 disabled
                   ? 'text-gray-400'
                   : selectedGender === option.value
-                    ? option.value === 'FEMALE'
-                      ? 'text-pink-600'
-                      : 'text-sky-600'
+                    ? 'text-white'
                     : error
                       ? 'text-red-600'
-                      : 'text-slate-600'
+                      : option.value === 'FEMALE'
+                        ? 'text-pink-600'
+                        : 'text-sky-600'
               }`}>
               {option.label}
             </Text>

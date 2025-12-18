@@ -52,7 +52,7 @@ export default function ServiceSelectionScreen() {
   };
 
   const handleBack = () => {
-    router.push('/(homes)/(appointment)');
+    router.push('./facility-selection');
   };
 
   const handleBackToAppointments = () => {

@@ -14,21 +14,121 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useAppointment } from '@/lib/api/appointments';
 import { formatDate, formatTime, getAppointmentEndTime } from '@/utils/datetime';
 
+// Skeleton Component
+const PaymentScreenSkeleton = () => {
+  return (
+    <View style={{ flex: 1, backgroundColor: '#E0F2FE' }}>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+        alwaysBounceVertical={false}
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: 100 }}
+        scrollEventThrottle={16}
+        contentInsetAdjustmentBehavior="never"
+        automaticallyAdjustContentInsets={false}>
+        {/* Background Gradient */}
+        <View style={{ height: 280, position: 'relative', marginTop: -60 }}>
+          <LinearGradient
+            colors={['#0284C7', '#06B6D4', '#10B981']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{ flex: 1 }}
+          />
+          {/* Curved bottom edge using SVG */}
+          <Svg
+            height="70"
+            width="200%"
+            viewBox="0 0 1440 120"
+            style={{ position: 'absolute', bottom: -1, left: 0, right: 0 }}>
+            <Path d="M0,0 Q720,120 1440,0 L1440,120 L0,120 Z" fill="#E0F2FE" />
+          </Svg>
+
+          {/* Decorative circles */}
+          <View
+            style={{
+              position: 'absolute',
+              top: -40,
+              right: -40,
+              height: 120,
+              width: 120,
+              borderRadius: 60,
+              backgroundColor: 'rgba(255,255,255,0.12)',
+            }}
+          />
+          <View
+            style={{
+              position: 'absolute',
+              top: 80,
+              left: -30,
+              height: 100,
+              width: 100,
+              borderRadius: 50,
+              backgroundColor: 'rgba(255,255,255,0.08)',
+            }}
+          />
+
+          {/* Header positioned within gradient */}
+          <View
+            style={{
+              position: 'absolute',
+              top: 100,
+              left: 24,
+              right: 24,
+              flexDirection: 'row',
+              alignItems: 'center',
+            }}>
+            <View
+              style={{
+                height: 40,
+                width: 40,
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: 20,
+                backgroundColor: 'rgba(255,255,255,0.25)',
+                marginRight: 12,
+              }}>
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            </View>
+            <View style={{ flex: 1, height: 28, backgroundColor: 'rgba(255,255,255,0.3)', borderRadius: 4 }} />
+          </View>
+        </View>
+
+        {/* Content Skeleton */}
+        <View style={{ paddingHorizontal: 24, marginTop: -80, marginBottom: 24 }}>
+          <View className="items-center justify-center py-8">
+            <ActivityIndicator size="large" color="#0284C7" />
+            <Text className="mt-4 text-gray-500">Đang tải...</Text>
+          </View>
+        </View>
+      </ScrollView>
+    </View>
+  );
+};
+
 export default function PaymentScreen() {
   const { id } = useLocalSearchParams();
-  const appointmentId = parseInt(id as string);
+  const { data: appointment, isLoading } = useAppointment(Number(id));
 
-  const { data: appointment, isLoading } = useAppointment(appointmentId);
+  // Early return for loading state - theo pattern AppointmentDetail
+  if (isLoading) {
+    return <PaymentScreenSkeleton />;
+  }
 
   const handlePayment = () => {
-    // Use setTimeout to ensure navigation happens after render
-    setTimeout(() => {
-      try {
-        router.push(`/(homes)/(payment)/voucher-select?id=${appointmentId}`);
-      } catch (error) {
-        console.error('Navigation error:', error);
-      }
-    }, 0);
+    const appointmentId = Number(id);
+
+    if (!appointmentId || isNaN(appointmentId)) {
+      console.error('Invalid appointment ID');
+      return;
+    }
+
+    try {
+      router.push(`/(homes)/(payment)/voucher-select?id=${appointmentId}`);
+    } catch (error) {
+      console.error('Navigation error:', error);
+    }
   };
 
   return (

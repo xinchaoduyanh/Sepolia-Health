@@ -74,7 +74,7 @@ const SkeletonBox = ({
 const AppointmentDetailSkeleton = () => {
   return (
     <View style={{ flex: 1, backgroundColor: '#E0F2FE' }}>
-      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      <StatusBar barStyle="light-content" backgroundColor="#0284C7" />
 
       {/* Header Skeleton */}
       <LinearGradient
@@ -157,6 +157,7 @@ export default function AppointmentDetailScreen() {
   const { id } = useLocalSearchParams();
   const { data: appointment, isLoading } = useAppointment(Number(id));
 
+  
   if (isLoading) {
     return <AppointmentDetailSkeleton />;
   }
@@ -170,7 +171,7 @@ export default function AppointmentDetailScreen() {
           alignItems: 'center',
           backgroundColor: '#E0F2FE',
         }}>
-        <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+        <StatusBar barStyle="light-content" backgroundColor="#0284C7" />
         <Text style={{ fontSize: 16, color: '#6B7280' }}>Không tìm thấy lịch hẹn</Text>
       </View>
     );
@@ -178,7 +179,7 @@ export default function AppointmentDetailScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: '#E0F2FE' }}>
-      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      <StatusBar barStyle="light-content" backgroundColor="#0284C7" />
 
       {/* Header */}
       <LinearGradient

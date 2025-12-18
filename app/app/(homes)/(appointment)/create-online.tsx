@@ -285,13 +285,18 @@ export default function OnlineAppointmentScreen() {
                         <Image
                           source={{ uri: primaryProfile.avatar }}
                           className="h-full w-full rounded-full"
+                          resizeMode="cover"
                         />
                       ) : (
-                        <Ionicons
-                          name="person"
-                          size={32}
-                          color={selectedCustomer === 'me' ? '#10B981' : '#6EE7B7'}
-                        />
+                        <View
+                          className="h-full w-full items-center justify-center rounded-full"
+                          style={{ backgroundColor: selectedCustomer === 'me' ? '#D1FAE5' : '#ECFDF5' }}>
+                          <Ionicons
+                            name="person"
+                            size={32}
+                            color={selectedCustomer === 'me' ? '#10B981' : '#6EE7B7'}
+                          />
+                        </View>
                       )}
                     </TouchableOpacity>
                     <TouchableOpacity
@@ -333,11 +338,16 @@ export default function OnlineAppointmentScreen() {
                         <Image
                           source={{ uri: profile.avatar }}
                           className="h-full w-full rounded-full"
+                          resizeMode="cover"
                         />
                       ) : (
-                        <Text className="text-lg font-bold text-emerald-600">
-                          {profile.firstName.charAt(0).toUpperCase()}
-                        </Text>
+                        <View
+                          className="h-full w-full items-center justify-center rounded-full"
+                          style={{ backgroundColor: '#D1FAE5' }}>
+                          <Text className="text-lg font-bold text-emerald-600">
+                            {profile.firstName.charAt(0).toUpperCase()}
+                          </Text>
+                        </View>
                       )}
                     </TouchableOpacity>
                     <TouchableOpacity
