@@ -3,6 +3,7 @@ import { ConfigType } from '@nestjs/config';
 import { StreamChat } from 'stream-chat';
 import { appConfig } from '@/common/config';
 import { PrismaService } from '@/common/prisma/prisma.service';
+import { Role, AppointmentStatus } from '@prisma/client';
 import {
   NotificationType,
   NotificationPriority,
@@ -15,6 +16,9 @@ import {
   UpdateAppointmentNotificationDoctor,
   DeleteAppointmentNotificationDoctor,
   PaymentSuccessNotificationPatient,
+  AdminDirectNotificationDTO,
+  AdminBroadcastDTO,
+  EnhancedStreamMessage,
 } from './notification.types';
 
 @Injectable()
@@ -395,5 +399,427 @@ export class NotificationService {
         paymentMethod: dto.paymentMethod,
       },
     });
+  }
+
+  // ===== ENHANCED NOTIFICATION METHODS =====
+
+  /**
+   * Send notification to a specific role-based channel
+   */
+  async sendToRole(role: Role, notification: {
+    type: NotificationType;
+    title: string;
+    message: string;
+    priority?: NotificationPriority;
+    metadata?: Record<string, any>;
+  }): Promise<void> {
+    const channelId = `notifications_${role.toString().toLowerCase()}_all`;
+    const channel = this.streamClient.channel('messaging', channelId);
+    await channel.watch();
+
+    await channel.sendMessage({
+      text: notification.message,
+      type: notification.type as any,
+      priority: notification.priority || NotificationPriority.MEDIUM,
+      status: NotificationStatus.UNREAD,
+      title: notification.title,
+      metadata: {
+        ...notification.metadata,
+        targetType: 'role',
+        targetRole: role,
+        senderId: 'system',
+      },
+    } as any);
+  }
+
+  /**
+   * Send notification to all users in a specific clinic
+   */
+  async sendToClinic(clinicId: number, notification: {
+    type: NotificationType;
+    title: string;
+    message: string;
+    priority?: NotificationPriority;
+    metadata?: Record<string, any>;
+  }): Promise<void> {
+    const channelId = `notifications_clinic_${clinicId}`;
+    const channel = this.streamClient.channel('messaging', channelId);
+    await channel.watch();
+
+    await channel.sendMessage({
+      text: notification.message,
+      type: notification.type as any,
+      priority: notification.priority || NotificationPriority.MEDIUM,
+      status: NotificationStatus.UNREAD,
+      title: notification.title,
+      metadata: {
+        ...notification.metadata,
+        targetType: 'clinic',
+        targetClinicId: clinicId,
+        senderId: 'system',
+      },
+    } as any);
+  }
+
+  /**
+   * Send notification to receptionists at a specific clinic
+   */
+  async sendToClinicReceptionists(clinicId: number, notification: {
+    type: NotificationType;
+    title: string;
+    message: string;
+    priority?: NotificationPriority;
+    metadata?: Record<string, any>;
+  }): Promise<void> {
+    const channelId = `notifications_receptionists_clinic_${clinicId}`;
+    const channel = this.streamClient.channel('messaging', channelId);
+    await channel.watch();
+
+    await channel.sendMessage({
+      text: notification.message,
+      type: notification.type as any,
+      priority: notification.priority || NotificationPriority.MEDIUM,
+      status: NotificationStatus.UNREAD,
+      title: notification.title,
+      metadata: {
+        ...notification.metadata,
+        targetType: 'clinic_role',
+        targetClinicId: clinicId,
+        targetRole: Role.RECEPTIONIST,
+        senderId: 'system',
+      },
+    } as any);
+  }
+
+  /**
+   * Send appointment reminder to all parties
+   */
+  async sendAppointmentReminder(appointmentId: number): Promise<void> {
+    const appointment = await this.getAppointmentDetails(appointmentId);
+    if (!appointment) {
+      this.logger.error(`Appointment ${appointmentId} not found`);
+      return;
+    }
+
+    const formattedDate = appointment.startTime.toLocaleDateString('vi-VN');
+    const formattedTime = appointment.startTime.toLocaleTimeString('vi-VN', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
+    // Send to patient
+    await this.sendNotification({
+      type: NotificationType.APPOINTMENT_REMINDER_PATIENT,
+      priority: NotificationPriority.HIGH,
+      recipientId: appointment.patientId.toString(),
+      senderId: 'system',
+      title: 'Nhắc nhở lịch hẹn',
+      message: `Lịch hẹn của bạn vào ${formattedDate} lúc ${formattedTime} với Bác sĩ ${appointment.doctorName} tại ${appointment.clinicName}. Dịch vụ: ${appointment.serviceName}.`,
+      metadata: {
+        appointmentId,
+        targetType: 'individual',
+      },
+    });
+
+    // Send to doctor
+    await this.sendNotification({
+      type: NotificationType.APPOINTMENT_REMINDER_DOCTOR,
+      priority: NotificationPriority.HIGH,
+      recipientId: appointment.doctorId.toString(),
+      senderId: 'system',
+      title: 'Nhắc nhở lịch hẹn',
+      message: `Bạn có lịch hẹn vào ${formattedDate} lúc ${formattedTime} với bệnh nhân ${appointment.patientName} tại ${appointment.clinicName}. Dịch vụ: ${appointment.serviceName}.`,
+      metadata: {
+        appointmentId,
+        targetType: 'individual',
+      },
+    });
+
+    // Send to receptionists at clinic
+    if (appointment.clinicId) {
+      await this.sendToClinicReceptionists(appointment.clinicId, {
+        type: NotificationType.APPOINTMENT_REMINDER_RECEPTIONIST,
+        title: 'Nhắc nhở lịch hẹn',
+        message: `Lịch hẹn vào ${formattedDate} lúc ${formattedTime} - Bác sĩ ${appointment.doctorName} với bệnh nhân ${appointment.patientName}.`,
+        priority: NotificationPriority.MEDIUM,
+        metadata: {
+          appointmentId,
+          doctorId: appointment.doctorId,
+          patientId: appointment.patientId,
+        },
+      });
+    }
+  }
+
+  /**
+   * Send appointment status change notification
+   */
+  async sendAppointmentStatusChange(
+    appointmentId: number,
+    oldStatus: AppointmentStatus,
+    newStatus: AppointmentStatus,
+  ): Promise<void> {
+    const appointment = await this.getAppointmentDetails(appointmentId);
+    if (!appointment) {
+      this.logger.error(`Appointment ${appointmentId} not found`);
+      return;
+    }
+
+    const notification = {
+      type: NotificationType.APPOINTMENT_STATUS_CHANGE,
+      title: 'Cập nhật trạng thái lịch hẹn',
+      message: `Lịch hẹn #${appointmentId} đã chuyển từ ${oldStatus} thành ${newStatus}`,
+      priority: NotificationPriority.MEDIUM,
+      metadata: {
+        appointmentId,
+        oldStatus,
+        newStatus,
+        targetType: 'appointment_status_change',
+      },
+    };
+
+    // Send to all relevant parties
+    await this.sendToAllAppointmentParties(appointment, notification);
+  }
+
+  /**
+   * Send receptionist notification when appointment is created
+   */
+  async sendAppointmentCreatedToReceptionists(appointmentId: number): Promise<void> {
+    const appointment = await this.getAppointmentDetails(appointmentId);
+    if (!appointment || !appointment.clinicId) {
+      return;
+    }
+
+    const formattedDate = appointment.startTime.toLocaleDateString('vi-VN');
+    const formattedTime = appointment.startTime.toLocaleTimeString('vi-VN', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
+    await this.sendToClinicReceptionists(appointment.clinicId, {
+      type: NotificationType.APPOINTMENT_CONFIRMED_RECEPTIONIST,
+      title: 'Lịch hẹn mới',
+      message: `Lịch hẹn mới vào ${formattedDate} lúc ${formattedTime} - Bác sĩ ${appointment.doctorName} với bệnh nhân ${appointment.patientName}.`,
+      priority: NotificationPriority.MEDIUM,
+      metadata: {
+        appointmentId,
+        doctorId: appointment.doctorId,
+        patientId: appointment.patientId,
+      },
+    });
+  }
+
+  /**
+   * Admin direct notification functionality
+   */
+  async sendDirectNotification(dto: AdminDirectNotificationDTO): Promise<void> {
+    if (dto.recipientId) {
+      // Send to individual user
+      await this.sendNotification({
+        type: dto.type,
+        priority: dto.priority,
+        recipientId: dto.recipientId.toString(),
+        senderId: 'system',
+        title: dto.title,
+        message: dto.message,
+        metadata: {
+          ...dto.metadata,
+          targetType: 'individual',
+          scheduledFor: dto.scheduledFor,
+        },
+      });
+    } else if (dto.recipientRole) {
+      // Send to role-based channel
+      await this.sendToRole(dto.recipientRole, {
+        type: dto.type,
+        title: dto.title,
+        message: dto.message,
+        priority: dto.priority,
+        metadata: {
+          ...dto.metadata,
+          scheduledFor: dto.scheduledFor,
+        },
+      });
+    } else if (dto.recipientIds?.length) {
+      // Send to multiple users
+      for (const userId of dto.recipientIds) {
+        await this.sendNotification({
+          type: dto.type,
+          priority: dto.priority,
+          recipientId: userId.toString(),
+          senderId: 'system',
+          title: dto.title,
+          message: dto.message,
+          metadata: {
+            ...dto.metadata,
+            targetType: 'individual',
+            scheduledFor: dto.scheduledFor,
+          },
+        });
+      }
+    }
+  }
+
+  /**
+   * Create broadcast campaign tracking
+   */
+  async createBroadcastCampaign(dto: AdminBroadcastDTO): Promise<string> {
+    const campaignId = this.generateCampaignId();
+
+    const campaignMessage = await this.streamClient
+      .channel('messaging', 'admin_notifications_campaigns')
+      .sendMessage({
+        text: dto.title,
+        type: NotificationType.ADMIN_BROADCAST as any,
+        priority: dto.priority as any,
+        status: NotificationStatus.UNREAD,
+        title: dto.title,
+        metadata: {
+          campaignId,
+          title: dto.title,
+          message: dto.message,
+          targetRoles: dto.targetRoles,
+          targetUsers: dto.targetUsers,
+          targetClinics: dto.targetClinics,
+          scheduledFor: dto.scheduledFor,
+          templateId: dto.templateId,
+          status: 'created',
+          createdAt: new Date().toISOString(),
+        },
+      } as any);
+
+    return campaignId;
+  }
+
+  /**
+   * Send broadcast notification to target channels
+   */
+  async sendBroadcastNotification(campaignId: string, dto: AdminBroadcastDTO): Promise<void> {
+    const channels = await this.getTargetChannels(dto.targetRoles, dto.targetUsers, dto.targetClinics);
+
+    for (const channelId of channels) {
+      const channel = this.streamClient.channel('messaging', channelId);
+      await channel.watch();
+
+      await channel.sendMessage({
+        text: dto.message,
+        type: NotificationType.ADMIN_BROADCAST as any,
+        priority: dto.priority as any,
+        status: NotificationStatus.UNREAD,
+        title: dto.title,
+        metadata: {
+          campaignId,
+          targetType: 'broadcast',
+          targetRoles: dto.targetRoles,
+          targetClinics: dto.targetClinics,
+          targetUsers: dto.targetUsers,
+          senderId: 'system',
+        },
+      } as any);
+    }
+  }
+
+  // ===== HELPER METHODS =====
+
+  private async getAppointmentDetails(appointmentId: number) {
+    return await this.prisma.appointment.findUnique({
+      where: { id: appointmentId },
+      include: {
+        patientProfile: {
+          include: {
+            manager: true,
+          },
+        },
+        doctor: {
+          include: {
+            user: true,
+          },
+        },
+        service: true,
+        clinic: true,
+      },
+    }).then(appointment => {
+      if (!appointment) return null;
+
+      return {
+        id: appointment.id,
+        startTime: appointment.startTime,
+        endTime: appointment.endTime,
+        status: appointment.status,
+        patientId: appointment.patientProfile.manager.id,
+        doctorId: appointment.doctor.userId,
+        clinicId: appointment.clinic?.id,
+        patientName: `${appointment.patientProfile.firstName} ${appointment.patientProfile.lastName}`,
+        doctorName: `Bác sĩ ${appointment.doctor.firstName} ${appointment.doctor.lastName}`,
+        serviceName: appointment.service.name,
+        clinicName: appointment.clinic?.name || 'Chưa xác định',
+      };
+    });
+  }
+
+  private async sendToAllAppointmentParties(
+    appointment: any,
+    notification: any,
+  ): Promise<void> {
+    // Send to patient
+    await this.sendNotification({
+      ...notification,
+      recipientId: appointment.patientId.toString(),
+      metadata: {
+        ...notification.metadata,
+        recipientRole: Role.PATIENT,
+      },
+    });
+
+    // Send to doctor
+    await this.sendNotification({
+      ...notification,
+      recipientId: appointment.doctorId.toString(),
+      metadata: {
+        ...notification.metadata,
+        recipientRole: Role.DOCTOR,
+      },
+    });
+
+    // Send to receptionists at clinic
+    if (appointment.clinicId) {
+      await this.sendToClinicReceptionists(appointment.clinicId, {
+        ...notification,
+        metadata: {
+          ...notification.metadata,
+          recipientRole: Role.RECEPTIONIST,
+        },
+      });
+    }
+  }
+
+  private async getTargetChannels(
+    targetRoles: Role[],
+    targetUsers?: number[],
+    targetClinics?: number[],
+  ): Promise<string[]> {
+    const channels: string[] = [];
+
+    // Role-based channels
+    targetRoles.forEach(role => {
+      channels.push(`notifications_${role.toString().toLowerCase()}_all`);
+    });
+
+    // Specific user channels
+    targetUsers?.forEach(userId => {
+      channels.push(`notifications_${userId}`);
+    });
+
+    // Clinic-based channels
+    targetClinics?.forEach(clinicId => {
+      channels.push(`notifications_clinic_${clinicId}`);
+    });
+
+    return channels;
+  }
+
+  private generateCampaignId(): string {
+    return `campaign_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 }

@@ -473,6 +473,8 @@ export class PaymentService {
           patientProfile: {
             select: {
               id: true,
+              firstName: true,
+              lastName: true,
               managerId: true,
             },
           },
@@ -481,6 +483,7 @@ export class PaymentService {
               id: true,
               firstName: true,
               lastName: true,
+              userId: true,
             },
           },
           service: {
@@ -494,6 +497,8 @@ export class PaymentService {
 
       if (appointment && appointment.patientProfile?.managerId) {
         const patientUserId = appointment.patientProfile.managerId.toString();
+
+        // Send payment success notification to patient
         await this.notificationService.sendPaymentSuccessNotification({
           appointmentId: appointment.id,
           billingId: paymentCodeData.billingId,
@@ -505,6 +510,57 @@ export class PaymentService {
           transactionId: transaction.id.toString(),
           paymentMethod: 'SEPAY',
         });
+
+        // Send payment success notification to doctor (NEW)
+        if (appointment.doctor?.userId) {
+          const formattedAmount = new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND',
+          }).format(billing.amount);
+
+          try {
+            await this.notificationService.sendNotification({
+              type: NotificationType.PAYMENT_SUCCESS,
+              priority: NotificationPriority.MEDIUM,
+              recipientId: appointment.doctor.userId.toString(),
+              senderId: 'system',
+              title: 'Thanh toán lịch hẹn thành công',
+              message: `Bệnh nhân ${appointment.patientProfile.firstName} ${appointment.patientProfile.lastName} đã thanh toán thành công cho lịch hẹn #${appointment.id}. Số tiền: ${formattedAmount}. Dịch vụ: ${appointment.service?.name}.`,
+              metadata: {
+                appointmentId: appointment.id,
+                billingId: paymentCodeData.billingId,
+                amount: billing.amount,
+                transactionId: transaction.id.toString(),
+                paymentMethod: 'SEPAY',
+                targetType: 'individual',
+                recipientRole: 'DOCTOR',
+              },
+            });
+          } catch (error) {
+            console.error('Failed to send payment notification to doctor:', error);
+          }
+        }
+
+        // Send payment success notification to receptionists (NEW)
+        if (appointment.clinicId) {
+          try {
+            await this.notificationService.sendToClinicReceptionists(appointment.clinicId, {
+              type: NotificationType.APPOINTMENT_PAYMENT_COMPLETED,
+              title: 'Thanh toán lịch hẹn thành công',
+              message: `Bệnh nhân ${appointment.patientProfile.firstName} ${appointment.patientProfile.lastName} đã thanh toán thành công cho lịch hẹn #${appointment.id} với Bác sĩ ${appointment.doctor?.firstName || ''} ${appointment.doctor?.lastName || ''}. Số tiền: ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(billing.amount)}.`,
+              priority: NotificationPriority.MEDIUM,
+              metadata: {
+                appointmentId: appointment.id,
+                billingId: paymentCodeData.billingId,
+                amount: billing.amount,
+                patientId: appointment.patientProfile.managerId,
+                doctorId: appointment.doctor?.userId,
+              },
+            });
+          } catch (error) {
+            console.error('Failed to send payment notification to receptionists:', error);
+          }
+        }
       }
     } catch (error) {
       console.error(

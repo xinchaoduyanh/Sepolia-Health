@@ -24,6 +24,7 @@ import {
   AvailableDateDto,
 } from './dto';
 import { NotificationService } from '@/module/notification/notification.service';
+import { NotificationSchedulerService } from '@/module/notification/notification-scheduler.service';
 import { MeetingService } from '@/module/meeting/meeting.service';
 import { DateUtil, TimeUtil } from '@/common/utils';
 import { SortOrder } from '@/common/enum/sort.enum';
@@ -36,6 +37,7 @@ export class AppointmentService {
     private readonly prisma: PrismaService,
     private readonly notificationService: NotificationService,
     private readonly meetingService: MeetingService,
+    private readonly schedulerService: NotificationSchedulerService,
   ) {}
 
   /**
@@ -1119,6 +1121,26 @@ export class AppointmentService {
       });
     } catch (error) {
       console.error('Failed to send notification to doctor:', error);
+    }
+
+    // Send notification to receptionists (NEW)
+    try {
+      if (type === AppointmentType.OFFLINE && clinic?.id) {
+        await this.notificationService.sendAppointmentCreatedToReceptionists(appointment.id);
+      }
+    } catch (error) {
+      console.error('Failed to send notification to receptionists:', error);
+    }
+
+    // Schedule appointment reminder (NEW)
+    try {
+      // Schedule reminder for 24 hours before appointment
+      const reminderTime = new Date(appointment.startTime.getTime() - 24 * 60 * 60 * 1000);
+      if (reminderTime > new Date()) {
+        await this.schedulerService.scheduleAppointmentReminder(appointment.id, reminderTime);
+      }
+    } catch (error) {
+      console.error('Failed to schedule appointment reminder:', error);
     }
 
     // Return appointment response with all required data
