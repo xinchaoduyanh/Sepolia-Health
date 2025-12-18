@@ -445,7 +445,7 @@ export default function HomeScreen() {
           ) : closestAppointment ? (
             <TouchableOpacity
               onPress={() =>
-                router.push(`/(homes)/(appointment)/appointment-detail?id=${closestAppointment.id}`)
+                router.push(`/(homes)/appointment-detail?id=${closestAppointment.id}`)
               }
               style={{
                 borderRadius: 20,

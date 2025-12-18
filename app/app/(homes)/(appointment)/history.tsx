@@ -162,7 +162,7 @@ export default function AppointmentHistoryScreen() {
                 <TouchableOpacity
                   key={appointment.id}
                   onPress={() =>
-                    router.push(`/(homes)/(appointment)/appointment-detail?id=${appointment.id}`)
+                    router.push(`/(homes)/appointment-detail?id=${appointment.id}`)
                   }
                   style={{
                     backgroundColor: 'white',
@@ -305,7 +305,7 @@ export default function AppointmentHistoryScreen() {
                               <TouchableOpacity
                                 onPress={() =>
                                   router.push(
-                                    `/(homes)/(appointment)/appointment-detail?id=${appointment.id}`
+                                    `/(homes)/appointment-detail?id=${appointment.id}`
                                   )
                                 }
                                 style={{ marginTop: 8 }}>

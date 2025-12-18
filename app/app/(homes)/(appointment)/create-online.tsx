@@ -898,7 +898,7 @@ export default function OnlineAppointmentScreen() {
                 onPress={() => {
                   setShowSuccessModal(false);
                   router.push(
-                    `/(homes)/(appointment)/appointment-detail?id=${createdAppointmentId}`
+                    `/(homes)/appointment-detail?id=${createdAppointmentId}`
                   );
                 }}
                 className="w-full items-center rounded-xl py-4"

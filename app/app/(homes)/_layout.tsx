@@ -169,6 +169,12 @@ export default function TabLayout() {
             href: null,
           }}
         />
+        <Tabs.Screen
+          name="appointment-detail"
+          options={{
+            href: null,
+          }}
+        />
       </Tabs>
 
       {/* Global Call Overlay */}

@@ -942,7 +942,7 @@ export default function AppointmentScreen() {
                     setShowSuccessModal(false);
                     // Navigate to appointment detail
                     if (createdAppointmentId) {
-                      router.push(`/appointment-detail?id=${createdAppointmentId}`);
+                      router.push(`/(homes)/appointment-detail?id=${createdAppointmentId}`);
                     } else {
                       // Fallback to appointments list
                       router.push('/(homes)/(appointment)/');

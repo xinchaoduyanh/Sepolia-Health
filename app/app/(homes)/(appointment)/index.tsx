@@ -393,7 +393,7 @@ export default function AppointmentsListScreen() {
                   key={appointment.id}
                   activeOpacity={0.8}
                   onPress={() =>
-                    router.push(`/(homes)/(appointment)/appointment-detail?id=${appointment.id}`)
+                    router.push(`/(homes)/appointment-detail?id=${appointment.id}`)
                   }
                   className="mb-4 rounded-xl bg-white p-4"
                   style={{
