@@ -391,6 +391,7 @@ export default function AppointmentsListScreen() {
               return (
                 <TouchableOpacity
                   key={appointment.id}
+                  activeOpacity={0.8}
                   onPress={() =>
                     router.push(`/(homes)/(appointment)/appointment-detail?id=${appointment.id}`)
                   }
@@ -463,7 +464,7 @@ export default function AppointmentsListScreen() {
                             <TouchableOpacity
                               onPress={() => {
                                 if (canCreatePayment) {
-                                  router.push(`/(homes)/(payment)?id=${appointment.id}` as any);
+                                  router.push(`/(homes)/(payment)?id=${appointment.id}`);
                                 }
                               }}
                               disabled={!canCreatePayment}

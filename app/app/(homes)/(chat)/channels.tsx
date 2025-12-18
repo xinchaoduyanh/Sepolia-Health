@@ -279,7 +279,7 @@ export default function ChannelsScreen() {
             <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
           </TouchableOpacity>
           <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#FFFFFF' }}>Tin nhắn</Text>
-          <View style={{ width: 24 }} /> {/* Spacer for alignment */}
+          <View style={{ width: 24 }} />
         </View>
       </View>
 

@@ -701,7 +701,7 @@ export default function HomeScreen() {
                 </TouchableOpacity>
               </View>
 
-              
+
               <View style={{ width: '22%', alignItems: 'center' }}>
                 <TouchableOpacity activeOpacity={0.7} style={{ alignItems: 'center' }}>
                   <View
@@ -720,7 +720,7 @@ export default function HomeScreen() {
                     Thanh toán
                   </Text>
                 </TouchableOpacity>
-              </View> */
+              </View>
 
               <View style={{ width: '22%', alignItems: 'center' }}>
                 <TouchableOpacity
@@ -770,7 +770,7 @@ export default function HomeScreen() {
                 </TouchableOpacity>
               </View>
 
-              
+
               <View style={{ width: '22%', alignItems: 'center' }}>
                 <TouchableOpacity activeOpacity={0.7} style={{ alignItems: 'center' }}>
                   <View
@@ -789,7 +789,7 @@ export default function HomeScreen() {
                     Sức khỏe
                   </Text>
                 </TouchableOpacity>
-              </View> */
+              </View>
 
               <View style={{ width: '22%', alignItems: 'center' }}>
                 <TouchableOpacity
