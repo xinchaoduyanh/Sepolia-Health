@@ -81,6 +81,12 @@ export class BookedTimeSlotDto {
     enum: ['UPCOMING', 'ON_GOING', 'COMPLETED', 'CANCELLED'],
   })
   status: 'UPCOMING' | 'ON_GOING' | 'COMPLETED' | 'CANCELLED';
+
+  @ApiProperty({ description: 'Thời gian bắt đầu thực tế (ISO format)', example: '2025-01-15T10:00:00.000Z' })
+  startDateTime: Date;
+
+  @ApiProperty({ description: 'Thời gian kết thúc thực tế (ISO format)', example: '2025-01-15T10:30:00.000Z' })
+  endDateTime: Date;
 }
 
 export class WeeklyScheduleDayDto {

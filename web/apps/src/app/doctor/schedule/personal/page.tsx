@@ -25,6 +25,7 @@ import {
 import { vi } from 'date-fns/locale'
 import { useDoctorWeeklySchedule, useDoctorMonthlySchedule } from '@/shared/hooks'
 import { generateTimeSlots } from '@/util/appointment-helpers'
+import { formatDate, formatTime } from '@/util/datetime'
 import WeekView from '@/components/WeekView'
 import MonthView from '@/components/MonthView'
 import DayView from '@/components/DayView'
@@ -343,7 +344,7 @@ export default function DoctorPersonalSchedulePage() {
                                         {todayAppointments.map((slot, index) => (
                                             <div key={index} className="p-2 rounded-md bg-muted/50 border">
                                                 <div className="text-xs font-medium text-foreground">
-                                                    {slot.displayTime}
+                                                    {formatTime(slot.startDateTime)}
                                                 </div>
                                                 <div className="text-xs text-muted-foreground mt-1">
                                                     {slot.patientName}
@@ -368,10 +369,10 @@ export default function DoctorPersonalSchedulePage() {
                                         {upcomingAppointments.map((item, index) => (
                                             <div key={index} className="p-2 rounded-md bg-muted/50 border">
                                                 <div className="text-xs font-medium text-muted-foreground">
-                                                    {format(parseISO(item.date), 'dd/MM/yyyy', { locale: vi })}
+                                                    {formatDate(item.slot.startDateTime)}
                                                 </div>
                                                 <div className="text-xs font-medium text-foreground mt-1">
-                                                    {item.slot.displayTime}
+                                                    {formatTime(item.slot.startDateTime)}
                                                 </div>
                                                 <div className="text-xs text-muted-foreground mt-1">
                                                     {item.slot.patientName}

@@ -11,6 +11,8 @@ export interface BookedTimeSlot {
     serviceName: string
     patientName: string
     status: AppointmentStatus
+    startDateTime: string
+    endDateTime: string
 }
 
 export interface DoctorAvailability {

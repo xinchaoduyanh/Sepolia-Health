@@ -140,6 +140,8 @@ export class DoctorScheduleService {
           ? `${apt.patientProfile.firstName} ${apt.patientProfile.lastName}`
           : 'Khách vãng lai',
         status: apt.status,
+        startDateTime: apt.startTime,
+        endDateTime: apt.endTime,
       };
     });
   }
