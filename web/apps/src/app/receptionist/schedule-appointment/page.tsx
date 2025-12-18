@@ -29,6 +29,14 @@ interface PatientInfo {
     nationality?: string
 }
 
+interface ValidationError {
+    phone?: string
+    dateOfBirth?: string
+    firstName?: string
+    lastName?: string
+    email?: string
+}
+
 interface AppointmentInfo {
     clinicId: number
     serviceId: number
@@ -74,6 +82,9 @@ export default function ScheduleAppointmentPage() {
     })
     const [createdAppointment, setCreatedAppointment] = useState<any>(null)
     const [temporaryPassword, setTemporaryPassword] = useState('')
+    const [validationErrors, setValidationErrors] = useState<ValidationError>({})
+    const [searchEmailError, setSearchEmailError] = useState<string | ''>('')
+    const [hasSearched, setHasSearched] = useState(false)
 
     // API hooks
     const { data: clinics = [] } = useQuery({
@@ -150,9 +161,90 @@ export default function ScheduleAppointmentPage() {
         },
     })
 
+    // Validation functions
+    const validateEmail = (email: string): string | undefined => {
+        if (!email.trim()) {
+            return 'Email không được để trống'
+        }
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        if (!emailRegex.test(email.trim())) {
+            return 'Email không hợp lệ. Vui lòng nhập email đúng định dạng (ví dụ: ten@email.com)'
+        }
+        return undefined
+    }
+
+    const validatePhoneNumber = (phone: string): string | undefined => {
+        const cleanPhone = phone.replace(/\s/g, '')
+        if (!cleanPhone) {
+            return 'Số điện thoại không được để trống'
+        }
+        if (!/^[0-9]+$/.test(cleanPhone)) {
+            return 'Số điện thoại chỉ được chứa số'
+        }
+        if (cleanPhone.length < 10 || cleanPhone.length > 11) {
+            return 'Số điện thoại phải có 10 hoặc 11 số'
+        }
+        return undefined
+    }
+
+    const validateDateOfBirth = (dateOfBirth: string): string | undefined => {
+        if (!dateOfBirth) {
+            return 'Ngày sinh không được để trống'
+        }
+
+        const birthDate = new Date(dateOfBirth)
+        const today = new Date()
+        today.setHours(0, 0, 0, 0) // Set to start of day for accurate comparison
+
+        // Check if date is in the future
+        if (birthDate > today) {
+            return 'Ngày sinh phải là ngày trong quá khứ'
+        }
+
+        // Check reasonable year range (1900 onwards)
+        const birthYear = birthDate.getFullYear()
+        if (birthYear < 1900) {
+            return 'Năm sinh phải từ 1900 trở đi'
+        }
+
+        return undefined
+    }
+
+    const validateRequiredField = (value: string, fieldName: string): string | undefined => {
+        if (!value.trim()) {
+            return `${fieldName} không được để trống`
+        }
+        return undefined
+    }
+
+    const validatePatientInfo = (): ValidationError => {
+        const errors: ValidationError = {}
+
+        errors.phone = validatePhoneNumber(patientInfo.phone)
+        errors.dateOfBirth = validateDateOfBirth(patientInfo.dateOfBirth)
+        errors.firstName = validateRequiredField(patientInfo.firstName, 'Tên')
+        errors.lastName = validateRequiredField(patientInfo.lastName, 'Họ')
+
+        // Remove undefined values
+        Object.keys(errors).forEach(key => {
+            if (!errors[key as keyof ValidationError]) {
+                delete errors[key as keyof ValidationError]
+            }
+        })
+
+        return errors
+    }
+
     // Handlers
     const handleSearchPatient = () => {
-        if (!searchEmail.trim()) return
+        setHasSearched(true)
+        const emailError = validateEmail(searchEmail)
+        setSearchEmailError(emailError || '')
+
+        if (emailError) {
+            return // Don't search if email is invalid
+        }
+
         findPatientMutation.mutate({ email: searchEmail.trim() })
     }
 
@@ -162,21 +254,18 @@ export default function ScheduleAppointmentPage() {
     }
 
     const handleCreatePatient = () => {
-        if (
-            !patientInfo.firstName.trim() ||
-            !patientInfo.lastName.trim() ||
-            !patientInfo.phone.trim() ||
-            !patientInfo.dateOfBirth
-        ) {
-            alert('Vui lòng điền đầy đủ thông tin bắt buộc')
-            return
+        const errors = validatePatientInfo()
+        setValidationErrors(errors)
+
+        if (Object.keys(errors).length > 0) {
+            return // Don't submit if there are validation errors
         }
 
         createPatientMutation.mutate({
             email: patientInfo.email,
             firstName: patientInfo.firstName,
             lastName: patientInfo.lastName,
-            phone: patientInfo.phone,
+            phone: patientInfo.phone.replace(/\s/g, ''), // Clean phone before submission
             dateOfBirth: patientInfo.dateOfBirth,
             gender: patientInfo.gender,
             idCardNumber: patientInfo.idCardNumber,
@@ -248,9 +337,57 @@ export default function ScheduleAppointmentPage() {
         }))
     }
 
+    // Real-time validation handlers
+    const handlePhoneChange = (value: string) => {
+        setPatientInfo(prev => ({ ...prev, phone: value }))
+        const phoneError = validatePhoneNumber(value)
+        setValidationErrors(prev => ({
+            ...prev,
+            phone: phoneError
+        }))
+    }
+
+    const handleDateOfBirthChange = (value: string) => {
+        setPatientInfo(prev => ({ ...prev, dateOfBirth: value }))
+        const dobError = validateDateOfBirth(value)
+        setValidationErrors(prev => ({
+            ...prev,
+            dateOfBirth: dobError
+        }))
+    }
+
+    const handleFirstNameChange = (value: string) => {
+        setPatientInfo(prev => ({ ...prev, firstName: value }))
+        const nameError = validateRequiredField(value, 'Tên')
+        setValidationErrors(prev => ({
+            ...prev,
+            firstName: nameError
+        }))
+    }
+
+    const handleLastNameChange = (value: string) => {
+        setPatientInfo(prev => ({ ...prev, lastName: value }))
+        const nameError = validateRequiredField(value, 'Họ')
+        setValidationErrors(prev => ({
+            ...prev,
+            lastName: nameError
+        }))
+    }
+
+    const handleSearchEmailChange = (value: string) => {
+        setSearchEmail(value)
+        // Only show validation error if user has already tried to search
+        if (hasSearched) {
+            const emailError = validateEmail(value)
+            setSearchEmailError(emailError || '')
+        }
+    }
+
     const resetForm = () => {
         setCurrentStep('search')
         setSearchEmail('')
+        setSearchEmailError('')
+        setHasSearched(false)
         setFoundPatient(null)
         setSelectedProfile(null)
         setPatientInfo({
@@ -276,6 +413,7 @@ export default function ScheduleAppointmentPage() {
         })
         setCreatedAppointment(null)
         setTemporaryPassword('')
+        setValidationErrors({})
     }
 
     return (
@@ -352,23 +490,34 @@ export default function ScheduleAppointmentPage() {
                             <div className="space-y-4">
                                 <div>
                                     <label className="block text-sm font-medium mb-2">Email bệnh nhân</label>
-                                    <div className="flex gap-2">
-                                        <input
-                                            type="email"
-                                            value={searchEmail}
-                                            onChange={e => setSearchEmail(e.target.value)}
-                                            placeholder="Nhập email của bệnh nhân"
-                                            className="flex-1 px-3 py-2 bg-background border border-border rounded-md text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-                                            onKeyPress={e => e.key === 'Enter' && handleSearchPatient()}
-                                        />
-                                        <Button
-                                            onClick={handleSearchPatient}
-                                            isDisabled={!searchEmail.trim() || findPatientMutation.isPending}
-                                            className="flex items-center gap-2"
-                                        >
-                                            <Search className="h-4 w-4" />
-                                            {findPatientMutation.isPending ? 'Đang tìm...' : 'Tìm kiếm'}
-                                        </Button>
+                                    <div className="flex flex-col gap-2">
+                                        <div className="flex gap-2">
+                                            <input
+                                                type="email"
+                                                value={searchEmail}
+                                                onChange={e => handleSearchEmailChange(e.target.value)}
+                                                placeholder="Nhập email của bệnh nhân"
+                                                className={`flex-1 px-3 py-2 bg-background border rounded-md text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:border-primary ${
+                                                    searchEmailError && hasSearched
+                                                        ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                                                        : 'border-border focus:ring-primary'
+                                                }`}
+                                                onKeyDown={e => e.key === 'Enter' && handleSearchPatient()}
+                                            />
+                                            <Button
+                                                onClick={handleSearchPatient}
+                                                isDisabled={!searchEmail.trim() || findPatientMutation.isPending || (!!searchEmailError && hasSearched)}
+                                                className="flex items-center gap-2"
+                                            >
+                                                <Search className="h-4 w-4" />
+                                                {findPatientMutation.isPending ? 'Đang tìm...' : 'Tìm kiếm'}
+                                            </Button>
+                                        </div>
+                                        {searchEmailError && hasSearched && (
+                                            <p className="text-sm text-red-600 dark:text-red-400">
+                                                {searchEmailError}
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -445,12 +594,19 @@ export default function ScheduleAppointmentPage() {
                                             <input
                                                 type="tel"
                                                 value={patientInfo.phone}
-                                                onChange={e =>
-                                                    setPatientInfo(prev => ({ ...prev, phone: e.target.value }))
-                                                }
-                                                className={inputClassName}
+                                                onChange={e => handlePhoneChange(e.target.value)}
+                                                className={`${inputClassName} ${
+                                                    validationErrors.phone
+                                                        ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                                                        : ''
+                                                }`}
                                                 placeholder="Nhập số điện thoại"
                                             />
+                                            {validationErrors.phone && (
+                                                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                                                    {validationErrors.phone}
+                                                </p>
+                                            )}
                                         </div>
 
                                         <div>
@@ -458,12 +614,19 @@ export default function ScheduleAppointmentPage() {
                                             <input
                                                 type="text"
                                                 value={patientInfo.lastName}
-                                                onChange={e =>
-                                                    setPatientInfo(prev => ({ ...prev, lastName: e.target.value }))
-                                                }
-                                                className={inputClassName}
+                                                onChange={e => handleLastNameChange(e.target.value)}
+                                                className={`${inputClassName} ${
+                                                    validationErrors.lastName
+                                                        ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                                                        : ''
+                                                }`}
                                                 placeholder="Nhập họ"
                                             />
+                                            {validationErrors.lastName && (
+                                                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                                                    {validationErrors.lastName}
+                                                </p>
+                                            )}
                                         </div>
 
                                         <div>
@@ -471,12 +634,19 @@ export default function ScheduleAppointmentPage() {
                                             <input
                                                 type="text"
                                                 value={patientInfo.firstName}
-                                                onChange={e =>
-                                                    setPatientInfo(prev => ({ ...prev, firstName: e.target.value }))
-                                                }
-                                                className={inputClassName}
+                                                onChange={e => handleFirstNameChange(e.target.value)}
+                                                className={`${inputClassName} ${
+                                                    validationErrors.firstName
+                                                        ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                                                        : ''
+                                                }`}
                                                 placeholder="Nhập tên"
                                             />
+                                            {validationErrors.firstName && (
+                                                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                                                    {validationErrors.firstName}
+                                                </p>
+                                            )}
                                         </div>
 
                                         <div>
@@ -484,11 +654,20 @@ export default function ScheduleAppointmentPage() {
                                             <input
                                                 type="date"
                                                 value={patientInfo.dateOfBirth}
-                                                onChange={e =>
-                                                    setPatientInfo(prev => ({ ...prev, dateOfBirth: e.target.value }))
-                                                }
-                                                className={inputClassName}
+                                                onChange={e => handleDateOfBirthChange(e.target.value)}
+                                                className={`${inputClassName} ${
+                                                    validationErrors.dateOfBirth
+                                                        ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                                                        : ''
+                                                }`}
+                                                max={new Date().toISOString().split('T')[0]}
+                                                min="1900-01-01"
                                             />
+                                            {validationErrors.dateOfBirth && (
+                                                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                                                    {validationErrors.dateOfBirth}
+                                                </p>
+                                            )}
                                         </div>
 
                                         <div>
