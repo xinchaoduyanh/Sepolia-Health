@@ -15,7 +15,7 @@ import { ThemeSwitcher } from '@/shared/components/ThemeSwitcher'
 import { useAuth, useLogout } from '@/shared/hooks/useAuth'
 import { getUserProfile, getClinicInfo } from '@/shared/lib/user-profile'
 import Image from 'next/image'
-import { Monitor, FileText, User, LogOut, Calendar, ScanLine } from 'lucide-react'
+import { Monitor, FileText, User, LogOut, Calendar, ScanLine, MoreVertical, MoreHorizontal } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState, useRef, useEffect } from 'react'
@@ -30,8 +30,8 @@ function ToggleLogo({ userProfile }: { userProfile: { name: string } }) {
             className="flex items-center hover:opacity-80 transition-opacity cursor-pointer"
             aria-label="Toggle Sidebar"
         >
-            <div className="text-lg font-semibold text-foreground">
-                Lễ tân {userProfile.name}
+            <div className="w-8 h-8 relative">
+                <MoreHorizontal className="h-8 w-8" />
             </div>
         </button>
     )
@@ -58,7 +58,7 @@ const RECEPTIONIST_MAIN_ITEMS: Array<SidebarNavigationMenuItem> = [
         title: 'Tin nhắn',
         url: '/receptionist/messages',
         icon: FileText,
-    }
+    },
 ]
 
 interface ReceptionistDashboardLayoutProps {
@@ -123,11 +123,11 @@ export function ReceptionistDashboardLayout({ children, defaultOpen = true }: Re
         <SidebarProvider defaultOpen={defaultOpen}>
             <Sidebar collapsible="icon">
                 <SidebarHeader className="border-b border-border">
-                    <div className="flex items-center gap-2 px-2">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                    <div className="flex items-center gap-2 px-2 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                             <Monitor className="h-4 w-4" />
                         </div>
-                        <div className="grid flex-1 text-left text-sm leading-tight">
+                        <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
                             <span className="truncate font-semibold">
                                 {clinicInfo ? `Phòng khám ${clinicInfo.name}` : 'Phòng khám Sepolia'}
                             </span>
@@ -145,13 +145,13 @@ export function ReceptionistDashboardLayout({ children, defaultOpen = true }: Re
                     />
                 </SidebarContent>
 
-                <SidebarFooter className="border-t border-border p-2">
+                <SidebarFooter className="border-t border-border p-2 group-data-[collapsible=icon]:p-2">
                     <div className="relative" ref={sidebarDropdownRef}>
                         <button
                             onClick={() => setIsSidebarDropdownOpen(!isSidebarDropdownOpen)}
-                            className="w-full flex items-center gap-3 px-2 py-2 hover:bg-sidebar-accent rounded-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2"
+                            className="w-full flex items-center gap-3 px-2 py-2 hover:bg-sidebar-accent rounded-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
                         >
-                            <Avatar className="h-8 w-8">
+                            <Avatar className="h-8 w-8 shrink-0">
                                 <AvatarFallback className="bg-primary text-primary-foreground">
                                     {userProfile.name ? userProfile.name.charAt(0).toUpperCase() : 'R'}
                                 </AvatarFallback>
@@ -165,14 +165,18 @@ export function ReceptionistDashboardLayout({ children, defaultOpen = true }: Re
                                     />
                                 )}
                             </Avatar>
-                            <div className="grid flex-1 text-left text-xs">
-                                <span className="truncate font-medium text-sidebar-foreground">{userProfile.name || 'Receptionist'}</span>
-                                <span className="truncate text-sidebar-foreground/70">{user?.email || 'receptionist@sepolia.com'}</span>
+                            <div className="grid flex-1 text-left text-xs group-data-[collapsible=icon]:hidden">
+                                <span className="truncate font-medium text-sidebar-foreground">
+                                    {userProfile.name || 'Receptionist'}
+                                </span>
+                                <span className="truncate text-sidebar-foreground/70">
+                                    {user?.email || 'receptionist@sepolia.com'}
+                                </span>
                             </div>
                         </button>
 
                         {isMounted && isSidebarDropdownOpen && (
-                            <div className="absolute bottom-full right-0 mb-2 w-56 bg-popover border border-border rounded-lg shadow-popover z-50">
+                            <div className="absolute bottom-full mb-2 w-56 bg-popover border border-border rounded-lg shadow-popover z-50 group-data-[collapsible=icon]:left-full group-data-[collapsible=icon]:bottom-0 group-data-[collapsible=icon]:mb-0 group-data-[collapsible=icon]:ml-2 right-0 group-data-[collapsible=icon]:right-auto">
                                 <div className="p-1">
                                     <button
                                         onClick={handleAccountInfo}

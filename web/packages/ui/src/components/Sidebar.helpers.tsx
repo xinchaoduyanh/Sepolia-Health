@@ -77,35 +77,40 @@ function SidebarNavigationMenu({
                     // collapsed and not mobile
                     if (isCollapsed && !isMobile) {
                         return (
-                            <PopoverTrigger key={`collapsed-${item.title}`}>
-                                <SidebarMenuButton tooltip={item.title}>
-                                    {item.icon && <item.icon />}
-                                    <span>{item.title}</span>
-                                    <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 text-sidebar-foreground" />
-                                </SidebarMenuButton>
-                                <Popover placement="right top">
-                                    <PopoverDialog className="min-w-[150px] p-2">
-                                        <p className="text-xs font-medium text-sidebar-foreground mb-2">{item.title}</p>
-                                        <ul className="space-y-0.5 list-none">
-                                            {item.items?.map((subItem, index) => (
-                                                <SidebarMenuSubItem key={`${item.title}-sub-${index}-${subItem.title}`}>
-                                                    <SidebarMenuSubButton
-                                                        isActive={
-                                                            currentPathname === subItem.url ||
-                                                            currentPathname?.startsWith(subItem.url + '/')
-                                                        }
-                                                        asChild
+                            <SidebarMenuItem key={`collapsed-${item.title}`}>
+                                <PopoverTrigger>
+                                    <SidebarMenuButton tooltip={item.title}>
+                                        {item.icon && <item.icon />}
+                                    </SidebarMenuButton>
+                                    <Popover placement="right top">
+                                        <PopoverDialog className="min-w-[150px] p-2">
+                                            <p className="text-xs font-medium text-sidebar-foreground mb-2">
+                                                {item.title}
+                                            </p>
+                                            <ul className="space-y-0.5 list-none">
+                                                {item.items?.map((subItem, index) => (
+                                                    <SidebarMenuSubItem
+                                                        key={`${item.title}-sub-${index}-${subItem.title}`}
                                                     >
-                                                        <LinkComponent href={subItem.url}>
-                                                            <span>{subItem.title}</span>
-                                                        </LinkComponent>
-                                                    </SidebarMenuSubButton>
-                                                </SidebarMenuSubItem>
-                                            ))}
-                                        </ul>
-                                    </PopoverDialog>
-                                </Popover>
-                            </PopoverTrigger>
+                                                        <SidebarMenuSubButton
+                                                            isActive={
+                                                                currentPathname === subItem.url ||
+                                                                currentPathname?.startsWith(subItem.url + '/')
+                                                            }
+                                                            asChild
+                                                            className="!flex"
+                                                        >
+                                                            <LinkComponent href={subItem.url}>
+                                                                <span>{subItem.title}</span>
+                                                            </LinkComponent>
+                                                        </SidebarMenuSubButton>
+                                                    </SidebarMenuSubItem>
+                                                ))}
+                                            </ul>
+                                        </PopoverDialog>
+                                    </Popover>
+                                </PopoverTrigger>
+                            </SidebarMenuItem>
                         )
                     }
 

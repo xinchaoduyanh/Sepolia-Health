@@ -31,6 +31,7 @@ import {
     Wrench,
     Building2,
     Smartphone,
+    MoreHorizontal,
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
@@ -47,13 +48,7 @@ function ToggleLogo() {
             aria-label="Toggle Sidebar"
         >
             <div className="w-8 h-8 relative">
-                <Image
-                    src="/image/sepolia-icon.png"
-                    alt="Sepolia Health Logo"
-                    width={32}
-                    height={32}
-                    className="object-contain"
-                />
+                <MoreHorizontal className="h-8 w-8" />
             </div>
         </button>
     )
@@ -66,21 +61,21 @@ const ADMIN_MAIN_ITEMS: Array<SidebarNavigationMenuItem> = [
         url: '/admin/overview',
         icon: BarChart3,
     },
-    {
-        title: 'Sản phẩm',
-        url: '/admin/products',
-        icon: Package,
-    },
-    {
-        title: 'Doanh thu',
-        url: '/admin/revenue',
-        icon: DollarSign,
-    },
-    {
-        title: 'Thông tin & Chương trình',
-        url: '/admin/info-programs',
-        icon: FileText,
-    },
+    // {
+    //     title: 'Sản phẩm',
+    //     url: '/admin/products',
+    //     icon: Package,
+    // },
+    // {
+    //     title: 'Doanh thu',
+    //     url: '/admin/revenue',
+    //     icon: DollarSign,
+    // },
+    // {
+    //     title: 'Thông tin & Chương trình',
+    //     url: '/admin/info-programs',
+    //     icon: FileText,
+    // },
     {
         title: 'Bài viết',
         url: '/admin/articles',
@@ -91,44 +86,44 @@ const ADMIN_MAIN_ITEMS: Array<SidebarNavigationMenuItem> = [
         url: '/admin/news-events',
         icon: FileText,
     },
-    {
-        title: 'Khuyến mại',
-        url: '/admin/promotions',
-        icon: Percent,
-    },
-    {
-        title: 'Câu hỏi thường gặp',
-        url: '/admin/faq',
-        icon: HelpCircle,
-    },
-    {
-        title: 'Chăm sóc sức khỏe từ xa',
-        url: '/admin/remote-healthcare',
-        icon: Monitor,
-        items: [
-            {
-                title: 'Danh sách đặt khám',
-                url: '/admin/remote-healthcare/appointments',
-            },
-            {
-                title: 'Đặt lịch khám',
-                url: '/admin/remote-healthcare/schedule-appointment',
-            },
-            {
-                title: 'Danh sách khách hàng',
-                url: '/admin/remote-healthcare/customers',
-            },
-        ],
-    },
+    // {
+    //     title: 'Khuyến mại',
+    //     url: '/admin/promotions',
+    //     icon: Percent,
+    // },
+    // {
+    //     title: 'Câu hỏi thường gặp',
+    //     url: '/admin/faq',
+    //     icon: HelpCircle,
+    // },
+    // {
+    //     title: 'Chăm sóc sức khỏe từ xa',
+    //     url: '/admin/remote-healthcare',
+    //     icon: Monitor,
+    //     items: [
+    //         {
+    //             title: 'Danh sách đặt khám',
+    //             url: '/admin/remote-healthcare/appointments',
+    //         },
+    //         {
+    //             title: 'Đặt lịch khám',
+    //             url: '/admin/remote-healthcare/schedule-appointment',
+    //         },
+    //         {
+    //             title: 'Danh sách khách hàng',
+    //             url: '/admin/remote-healthcare/customers',
+    //         },
+    //     ],
+    // },
 ]
 
 // Management items chỉ dành cho ADMIN
 const ADMIN_MANAGEMENT_ITEMS: Array<SidebarNavigationMenuItem> = [
-    {
-        title: 'Quản lý sản phẩm',
-        url: '/admin/product-management',
-        icon: Package,
-    },
+    // {
+    //     title: 'Quản lý sản phẩm',
+    //     url: '/admin/product-management',
+    //     icon: Package,
+    // },
     {
         title: 'Quản lý khuyến mại',
         url: '/admin/promotion-management',
@@ -287,11 +282,11 @@ export function AdminDashboardLayout({ children, defaultOpen = true }: AdminDash
         <SidebarProvider defaultOpen={defaultOpen}>
             <Sidebar collapsible="icon">
                 <SidebarHeader className="border-b border-border">
-                    <div className="flex items-center gap-2 px-2">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                    <div className="flex items-center gap-2 px-2 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                             <BarChart3 className="h-4 w-4" />
                         </div>
-                        <div className="grid flex-1 text-left text-sm leading-tight">
+                        <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
                             <span className="truncate font-semibold">Sepolia Health</span>
                             <span className="truncate text-xs text-sidebar-foreground/70">Admin Dashboard</span>
                         </div>
@@ -314,23 +309,23 @@ export function AdminDashboardLayout({ children, defaultOpen = true }: AdminDash
                     />
                 </SidebarContent>
 
-                <SidebarFooter className="border-t border-border p-2">
+                <SidebarFooter className="border-t border-border p-2 group-data-[collapsible=icon]:p-2">
                     <div className="relative" ref={sidebarDropdownRef}>
                         <button
                             onClick={() => setIsSidebarDropdownOpen(!isSidebarDropdownOpen)}
-                            className="w-full flex items-center gap-3 px-2 py-2 hover:bg-sidebar-accent rounded-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2"
+                            className="w-full flex items-center gap-3 px-2 py-2 hover:bg-sidebar-accent rounded-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
                         >
-                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
                                 <span className="text-sm font-medium">HP</span>
                             </div>
-                            <div className="grid flex-1 text-left text-xs">
+                            <div className="grid flex-1 text-left text-xs group-data-[collapsible=icon]:hidden">
                                 <span className="truncate font-medium text-sidebar-foreground">Admin User</span>
                                 <span className="truncate text-sidebar-foreground/70">admin@sepolia.com</span>
                             </div>
                         </button>
 
                         {isMounted && isSidebarDropdownOpen && (
-                            <div className="absolute bottom-full right-0 mb-2 w-56 bg-popover border border-border rounded-lg shadow-popover z-50">
+                            <div className="absolute bottom-full mb-2 w-56 bg-popover border border-border rounded-lg shadow-popover z-50 group-data-[collapsible=icon]:left-full group-data-[collapsible=icon]:bottom-0 group-data-[collapsible=icon]:mb-0 group-data-[collapsible=icon]:ml-2 right-0 group-data-[collapsible=icon]:right-auto">
                                 <div className="p-1">
                                     <button
                                         onClick={handleAccountInfo}
