@@ -1,42 +1,37 @@
 #!/bin/bash
-
-echo ""
 echo "====================================="
-echo "  Sepolia Health PM2 Manager"
+echo "  Sepolia Health PM2 Safe Manager"
 echo "====================================="
-echo ""
 
-# Dừng tất cả process hiện tại
-echo "[1/3] Stopping existing PM2 processes..."
+# 1. Dọn dẹp triệt để (Cực kỳ quan trọng cho lần chạy thứ 2)
+echo "[1/4] Force cleaning processes..."
 pm2 delete all > /dev/null 2>&1
+# Giết tận gốc các tiến trình node chạy ngầm có thể gây treo CPU
+sudo pkill -9 node
+sleep 2
 
-# Chạy backend
-echo "[2/3] Starting Backend..."
+# 2. Chạy Backend với giới hạn RAM
+echo "[2/4] Starting Backend..."
 cd "$(dirname "$0")/../Be"
-pm2 start dist/src/main.js --name sepolia-backend --watch false
+# Thêm giới hạn RAM 1.5GB để tránh tràn bộ nhớ gây sập SSH
+pm2 start dist/src/main.js --name sepolia-backend --max-memory-restart 1500M --watch false
 
-# Chạy frontend
-echo "[3/3] Starting Frontend..."
+# 3. KHOẢNG NGHỈ "SỐNG CÒN"
+# Cho Backend 10 giây để ổn định kết nối DB/Redis trước khi chạy FE
+echo "Waiting 10s for Backend to stabilize (Avoiding 200% CPU spike)..."
+sleep 10
+
+# 4. Chạy Frontend Standalone
+echo "[3/4] Starting Frontend..."
 cd "../web/apps"
-pm2 start start-server.js --name sepolia-frontend
+# Sử dụng trực tiếp file standalone server để nhẹ máy nhất
+# Lưu ý: Nhớ copy public và static vào standalone như đã hướng dẫn
+pm2 start start-server.js --name sepolia-frontend --max-memory-restart 1G
 
-# Hiển thị trạng thái
-echo ""
-echo "====================================="
-echo "  Services Status:"
-echo "====================================="
 echo ""
 pm2 status
+pm2 save
+echo "✅ Services started safely!"
 
-echo ""
-echo "✅ Services started successfully!"
-echo ""
-echo "Backend  : http://localhost:8000"
-echo "Frontend : http://localhost:3000"
-echo ""
-echo "To stop all services:"
-echo "  npm run pm2:stop"
-echo ""
-echo "To view logs:"
-echo "  npm run pm2:logs"
-echo ""
+
+
