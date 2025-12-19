@@ -31,7 +31,7 @@
     "recharts": "^3.4.1",
     "remark-breaks": "^4.0.0",
     "remark-gfm": "^4.0.1",
-    "stream-chat": "^9.25.0",
+    "stream-chat": "^9.27.2",
     "stream-chat-react": "^12.15.8",
     "zod": "^3.25.76",
     "zustand": "^5.0.8"

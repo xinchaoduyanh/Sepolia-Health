@@ -1,8 +1,11 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectQueue, Processor } from '@nestjs/bullmq';
 import { Queue, Worker } from 'bullmq';
-import { ConfigService } from '@nestjs/config';
+import { Inject } from '@nestjs/common';
+import { appConfig } from '@/common/config';
+import { ConfigType } from '@nestjs/config';
 import { NotificationService } from './notification.service';
+import { AppointmentResultScannerService } from './appointment-result-scanner.service';
 
 export const NOTIFICATION_SCHEDULER_QUEUE = 'notification-scheduler';
 
@@ -14,7 +17,8 @@ export class NotificationSchedulerService implements OnModuleInit {
   constructor(
     @InjectQueue(NOTIFICATION_SCHEDULER_QUEUE) private readonly queue: Queue,
     private readonly notificationService: NotificationService,
-    private readonly configService: ConfigService,
+    private readonly appointmentResultScannerService: AppointmentResultScannerService,
+    @Inject(appConfig.KEY) private readonly appConf: ConfigType<typeof appConfig>,
   ) {}
 
   async onModuleInit() {
@@ -50,6 +54,10 @@ export class NotificationSchedulerService implements OnModuleInit {
               await this.processSystemAnnouncement(job.data);
               break;
 
+            case 'appointment-result-pending':
+              await this.processAppointmentResultPending(job.data);
+              break;
+
             default:
               this.logger.warn(`Unknown job type: ${job.name}`);
           }
@@ -64,7 +72,9 @@ export class NotificationSchedulerService implements OnModuleInit {
         }
       },
       {
-        connection: this.getRedisConfig(),
+        connection: {
+          url: this.appConf.redisUrl,
+        },
         concurrency: 5, // Process up to 5 jobs concurrently
       },
     );
@@ -259,6 +269,49 @@ export class NotificationSchedulerService implements OnModuleInit {
   }
 
   /**
+   * Schedule daily appointment result scanner job
+   */
+  async scheduleDailyResultScan(): Promise<void> {
+    await this.queue.add(
+      'appointment-result-pending',
+      {},
+      {
+        repeat: { pattern: '0 9 * * *' }, // 9 AM every day
+        attempts: 3,
+        backoff: {
+          type: 'exponential',
+          delay: 300000, // 5 minutes
+        },
+        removeOnComplete: 10,
+        removeOnFail: 5,
+      }
+    );
+
+    this.logger.log('✅ Scheduled daily appointment result scan at 9:00 AM');
+  }
+
+  /**
+   * Trigger manual appointment result scanner
+   */
+  async triggerManualResultScan(): Promise<void> {
+    await this.queue.add(
+      'appointment-result-pending',
+      { manual: true, timestamp: new Date().toISOString() },
+      {
+        attempts: 3,
+        backoff: {
+          type: 'exponential',
+          delay: 60000, // 1 minute for manual trigger
+        },
+        removeOnComplete: 5,
+        removeOnFail: 3,
+      }
+    );
+
+    this.logger.log('🔧 Triggered manual appointment result scan');
+  }
+
+  /**
    * Get queue statistics
    */
   async getQueueStats(): Promise<{
@@ -353,14 +406,15 @@ export class NotificationSchedulerService implements OnModuleInit {
     }
   }
 
-  private getRedisConfig() {
-    return {
-      host: this.configService.get('REDIS_HOST', 'localhost'),
-      port: this.configService.get('REDIS_PORT', 6379),
-      password: this.configService.get('REDIS_PASSWORD'),
-      db: this.configService.get('REDIS_DB', 0),
-    };
+  private async processAppointmentResultPending(data: any): Promise<void> {
+    this.logger.log(`🔍 Processing appointment result pending job...`);
+
+    // Use injected scanner service
+    await this.appointmentResultScannerService.processAppointmentResultScanner(data);
+
+    this.logger.log(`✅ Completed appointment result pending job processing`);
   }
+
 
   async onModuleDestroy() {
     if (this.worker) {

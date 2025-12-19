@@ -24,7 +24,6 @@ import {
   AvailableDateDto,
 } from './dto';
 import { NotificationService } from '@/module/notification/notification.service';
-import { NotificationSchedulerService } from '@/module/notification/notification-scheduler.service';
 import { MeetingService } from '@/module/meeting/meeting.service';
 import { DateUtil, TimeUtil } from '@/common/utils';
 import { SortOrder } from '@/common/enum/sort.enum';
@@ -37,7 +36,7 @@ export class AppointmentService {
     private readonly prisma: PrismaService,
     private readonly notificationService: NotificationService,
     private readonly meetingService: MeetingService,
-    private readonly schedulerService: NotificationSchedulerService,
+    // private readonly schedulerService: NotificationSchedulerService, // DISABLED
   ) {}
 
   /**
@@ -1086,63 +1085,84 @@ export class AppointmentService {
     // Send notification to patient
     try {
       const patientUserId = appointment.patientProfile?.managerId?.toString();
+      console.log(`👤 [AppointmentService] === NOTIFICATION DEBUG ===`);
+      console.log(`👤 [AppointmentService] Patient ID: ${appointment.patientProfile?.id}`);
+      console.log(`👤 [AppointmentService] Patient Profile:`, JSON.stringify(appointment.patientProfile, null, 2));
+      console.log(`👤 [AppointmentService] Patient notification - managerId: ${patientUserId}`);
+      console.log(`👤 [AppointmentService] Doctor: ${doctorService.doctor.firstName} ${doctorService.doctor.lastName}`);
+      console.log(`👤 [AppointmentService] Service: ${doctorService.service.name}`);
+      console.log(`👤 [AppointmentService] Clinic: ${type === AppointmentType.OFFLINE ? clinic?.name : 'Online (Zoom)'}`);
+
       if (!patientUserId) {
-        console.warn(
-          '⚠️ [AppointmentService] Cannot send notification: patientProfile.managerId is missing',
+        console.error(
+          '❌ [AppointmentService] CANNOT SEND NOTIFICATION: patientProfile.managerId is MISSING!',
         );
+        console.error(`❌ [AppointmentService] PatientProfile data: ${JSON.stringify(appointment.patientProfile)}`);
       } else {
-        await this.notificationService.sendCreateAppointmentPatientNotification(
-          {
-            appointmentId: appointment.id,
-            startTime: appointment.startTime,
-            doctorName: `${doctorService.doctor.firstName} ${doctorService.doctor.lastName}`,
-            serviceName: doctorService.service.name,
-            clinicName:
-              type === AppointmentType.OFFLINE ? clinic?.name : 'Online (Zoom)',
-            recipientId: patientUserId,
-          },
-        );
+        console.log(`🔔 [AppointmentService] SENDING PATIENT NOTIFICATION to: ${patientUserId}`);
+        console.log(`🔔 [AppointmentService] Notification data:`, {
+          appointmentId: appointment.id,
+          startTime: appointment.startTime,
+          doctorName: `${doctorService.doctor.firstName} ${doctorService.doctor.lastName}`,
+          serviceName: doctorService.service.name,
+          clinicName: type === AppointmentType.OFFLINE ? clinic?.name : 'Online (Zoom)',
+          recipientId: patientUserId,
+        });
+
+        await this.notificationService.sendCreateAppointmentPatientNotification({
+          appointmentId: appointment.id,
+          startTime: appointment.startTime,
+          doctorName: `${doctorService.doctor.firstName} ${doctorService.doctor.lastName}`,
+          serviceName: doctorService.service.name,
+          clinicName: type === AppointmentType.OFFLINE ? clinic?.name : 'Online (Zoom)',
+          recipientId: patientUserId,
+        });
+
+        console.log('✅ [AppointmentService] PATIENT NOTIFICATION SENT SUCCESSFULLY!');
       }
     } catch (error) {
-      console.error('Failed to send notification:', error);
+      console.error('❌ [AppointmentService] FAILED TO SEND PATIENT NOTIFICATION:', error);
+      console.error('❌ [AppointmentService] Error details:', JSON.stringify(error, null, 2));
     }
 
     // Send notification to doctor
     try {
+      const doctorUserId = doctorService.doctor.userId.toString();
+      console.log(`👨‍⚕️ [AppointmentService] === DOCTOR NOTIFICATION DEBUG ===`);
+      console.log(`👨‍⚕️ [AppointmentService] Doctor ID: ${doctorService.doctor.id}`);
+      console.log(`👨‍⚕️ [AppointmentService] Doctor User ID: ${doctorUserId}`);
+      console.log(`👨‍⚕️ [AppointmentService] Doctor Name: ${doctorService.doctor.firstName} ${doctorService.doctor.lastName}`);
+      console.log(`👨‍⚕️ [AppointmentService] Patient Name: ${appointment.patientProfile?.firstName} ${appointment.patientProfile?.lastName}`);
+      console.log(`👨‍⚕️ [AppointmentService] Service: ${doctorService.service.name}`);
+
+      console.log(`🔔 [AppointmentService] SENDING DOCTOR NOTIFICATION to: ${doctorUserId}`);
+      console.log(`🔔 [AppointmentService] Doctor notification data:`, {
+        appointmentId: appointment.id,
+        startTime: appointment.startTime,
+        patientName: `${appointment.patientProfile?.firstName} ${appointment.patientProfile?.lastName}`,
+        serviceName: doctorService.service.name,
+        clinicName: type === AppointmentType.OFFLINE ? clinic.name : 'Online (Zoom)',
+        recipientId: doctorUserId,
+        notes: notes,
+      });
+
       await this.notificationService.sendCreateAppointmentDoctorNotification({
         appointmentId: appointment.id,
         startTime: appointment.startTime,
         patientName: `${appointment.patientProfile?.firstName} ${appointment.patientProfile?.lastName}`,
         serviceName: doctorService.service.name,
-        clinicName:
-          type === AppointmentType.OFFLINE ? clinic.name : 'Online (Zoom)',
-        recipientId: doctorService.doctor.userId.toString(),
+        clinicName: type === AppointmentType.OFFLINE ? clinic.name : 'Online (Zoom)',
+        recipientId: doctorUserId,
         notes: notes,
       });
+
+      console.log('✅ [AppointmentService] DOCTOR NOTIFICATION SENT SUCCESSFULLY!');
     } catch (error) {
-      console.error('Failed to send notification to doctor:', error);
+      console.error('❌ [AppointmentService] FAILED TO SEND DOCTOR NOTIFICATION:', error);
+      console.error('❌ [AppointmentService] Error details:', JSON.stringify(error, null, 2));
     }
 
-    // Send notification to receptionists (NEW)
-    try {
-      if (type === AppointmentType.OFFLINE && clinic?.id) {
-        await this.notificationService.sendAppointmentCreatedToReceptionists(appointment.id);
-      }
-    } catch (error) {
-      console.error('Failed to send notification to receptionists:', error);
-    }
-
-    // Schedule appointment reminder (NEW)
-    try {
-      // Schedule reminder for 24 hours before appointment
-      const reminderTime = new Date(appointment.startTime.getTime() - 24 * 60 * 60 * 1000);
-      if (reminderTime > new Date()) {
-        await this.schedulerService.scheduleAppointmentReminder(appointment.id, reminderTime);
-      }
-    } catch (error) {
-      console.error('Failed to schedule appointment reminder:', error);
-    }
-
+    
     // Return appointment response with all required data
     return this.formatAppointmentResponse({
       ...appointment,

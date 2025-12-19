@@ -76,32 +76,63 @@ export class NotificationService {
     message: string;
     metadata?: Record<string, any>;
   }): Promise<NotificationResponse> {
-    await this.streamClient.upsertUser({
-      id: dto.recipientId,
-      role: 'user',
-    });
-    const channel = await this.getOrCreateNotificationChannel(dto.recipientId);
-    const message = await channel.sendMessage({
-      text: dto.message,
-      user_id: dto.senderId || 'system',
-      type: dto.type as any,
-      priority: dto.priority as any,
-      status: NotificationStatus.UNREAD,
-      title: dto.title,
-      metadata: dto.metadata,
-    } as any);
-    return {
-      id: message.message?.id || '',
-      type: dto.type,
-      priority: dto.priority,
-      status: NotificationStatus.UNREAD,
-      title: dto.title,
-      message: dto.message,
-      metadata: dto.metadata,
-      createdAt: message.message?.created_at
-        ? new Date(message.message.created_at)
-        : new Date(),
-    };
+    // DEBUG LOGS
+    this.logger.log(`🔔 [NotificationService] Sending notification: ${dto.type}`);
+    this.logger.log(`👤 [NotificationService] Recipient ID: ${dto.recipientId}`);
+    this.logger.log(`📝 [NotificationService] Title: ${dto.title}`);
+    this.logger.log(`💬 [NotificationService] Message: ${dto.message}`);
+
+    try {
+      // Create user in Stream Chat
+      this.logger.log(`⬆️ [NotificationService] Creating Stream Chat user: ${dto.recipientId}`);
+      await this.streamClient.upsertUser({
+        id: dto.recipientId,
+        role: 'user',
+      });
+      this.logger.log(`✅ [NotificationService] Stream Chat user created successfully: ${dto.recipientId}`);
+    } catch (error) {
+      this.logger.error(`❌ [NotificationService] Failed to create Stream Chat user: ${dto.recipientId}`, error);
+      throw error;
+    }
+
+    try {
+      // Get or create notification channel
+      this.logger.log(`📢 [NotificationService] Creating notification channel for: ${dto.recipientId}`);
+      const channel = await this.getOrCreateNotificationChannel(dto.recipientId);
+      this.logger.log(`✅ [NotificationService] Notification channel created: ${channel.id}`);
+
+      // Send message
+      this.logger.log(`📤 [NotificationService] Sending message to channel: ${channel.id}`);
+      const message = await channel.sendMessage({
+        text: dto.message,
+        user_id: dto.senderId || 'system',
+        type: 'regular', // StreamChat only accepts 'regular', 'system', or empty string
+        priority: dto.priority as any,
+        status: NotificationStatus.UNREAD,
+        title: dto.title,
+        metadata: {
+          ...dto.metadata,
+          notificationType: dto.type, // Store original notification type in metadata
+        },
+      } as any);
+      this.logger.log(`✅ [NotificationService] Message sent successfully. Message ID: ${message.message?.id}`);
+
+      return {
+        id: message.message?.id || '',
+        type: dto.type,
+        priority: dto.priority,
+        status: NotificationStatus.UNREAD,
+        title: dto.title,
+        message: dto.message,
+        metadata: dto.metadata,
+        createdAt: message.message?.created_at
+          ? new Date(message.message.created_at)
+          : new Date(),
+      };
+    } catch (error) {
+      this.logger.error(`❌ [NotificationService] Failed to send notification to: ${dto.recipientId}`, error);
+      throw error;
+    }
   }
 
   /**
@@ -111,6 +142,9 @@ export class NotificationService {
   async sendCreateAppointmentPatientNotification(
     obj: AppointmentNotificationPatient,
   ): Promise<NotificationResponse> {
+    console.log(`🔔 [NotificationService] === PATIENT NOTIFICATION DEBUG ===`);
+    console.log(`🔔 [NotificationService] sendCreateAppointmentPatientNotification called with:`, JSON.stringify(obj, null, 2));
+
     const appointmentDate = obj.startTime.toLocaleDateString('vi-VN');
     const appointmentTime = obj.startTime.toLocaleTimeString('vi-VN', {
       hour: '2-digit',
@@ -119,15 +153,30 @@ export class NotificationService {
 
     const title = 'Đặt lịch hẹn thành công';
     const message = `Bạn đã đặt lịch khám với Bác sĩ ${obj.doctorName} vào ${appointmentDate} lúc ${appointmentTime} tại ${obj.clinicName}. Dịch vụ: ${obj.serviceName}.`;
-    return this.sendNotification({
-      type: NotificationType.CREATE_APPOINTMENT_PATIENT,
-      priority: NotificationPriority.HIGH,
-      recipientId: obj.recipientId,
-      senderId: 'system',
-      title,
-      message,
-      metadata: { ...obj },
-    });
+
+    console.log(`🔔 [NotificationService] Prepared notification - Title: ${title}`);
+    console.log(`🔔 [NotificationService] Prepared notification - Message: ${message}`);
+    console.log(`🔔 [NotificationService] Recipient ID: ${obj.recipientId}`);
+
+    try {
+      const result = await this.sendNotification({
+        type: NotificationType.CREATE_APPOINTMENT_PATIENT,
+        priority: NotificationPriority.HIGH,
+        recipientId: obj.recipientId,
+        senderId: 'system',
+        title,
+        message,
+        metadata: { ...obj },
+      });
+
+      console.log('✅ [NotificationService] PATIENT NOTIFICATION SENT SUCCESSFULLY!');
+      console.log('✅ [NotificationService] Result:', JSON.stringify(result, null, 2));
+      return result;
+    } catch (error) {
+      console.error('❌ [NotificationService] FAILED TO SEND PATIENT NOTIFICATION:', error);
+      console.error('❌ [NotificationService] Error details:', JSON.stringify(error, null, 2));
+      throw error;
+    }
   }
 
   /**
@@ -194,6 +243,9 @@ export class NotificationService {
   async sendCreateAppointmentDoctorNotification(
     dto: AppointmentNotificationDoctor,
   ): Promise<NotificationResponse> {
+    console.log(`👨‍⚕️ [NotificationService] === DOCTOR NOTIFICATION DEBUG ===`);
+    console.log(`👨‍⚕️ [NotificationService] sendCreateAppointmentDoctorNotification called with:`, JSON.stringify(dto, null, 2));
+
     const appointmentDate = dto.startTime.toLocaleDateString('vi-VN');
     const appointmentTime = dto.startTime.toLocaleTimeString('vi-VN', {
       hour: '2-digit',
@@ -203,17 +255,31 @@ export class NotificationService {
     const title = 'Lịch hẹn mới';
     const message = `Bạn có lịch hẹn mới với bệnh nhân ${dto.patientName} vào ${appointmentDate} lúc ${appointmentTime} tại ${dto.clinicName}. Dịch vụ: ${dto.serviceName}.`;
 
-    return this.sendNotification({
-      type: NotificationType.CREATE_APPOINTMENT_DOCTOR,
-      priority: NotificationPriority.HIGH,
-      recipientId: dto.recipientId,
-      senderId: 'system',
-      title,
-      message,
-      metadata: {
-        notes: dto.notes,
-      },
-    });
+    console.log(`👨‍⚕️ [NotificationService] Prepared doctor notification - Title: ${title}`);
+    console.log(`👨‍⚕️ [NotificationService] Prepared doctor notification - Message: ${message}`);
+    console.log(`👨‍⚕️ [NotificationService] Recipient Doctor ID: ${dto.recipientId}`);
+
+    try {
+      const result = await this.sendNotification({
+        type: NotificationType.CREATE_APPOINTMENT_DOCTOR,
+        priority: NotificationPriority.HIGH,
+        recipientId: dto.recipientId,
+        senderId: 'system',
+        title,
+        message,
+        metadata: {
+          notes: dto.notes,
+        },
+      });
+
+      console.log('✅ [NotificationService] DOCTOR NOTIFICATION SENT SUCCESSFULLY!');
+      console.log('✅ [NotificationService] Result:', JSON.stringify(result, null, 2));
+      return result;
+    } catch (error) {
+      console.error('❌ [NotificationService] FAILED TO SEND DOCTOR NOTIFICATION:', error);
+      console.error('❌ [NotificationService] Error details:', JSON.stringify(error, null, 2));
+      throw error;
+    }
   }
 
   /**
@@ -821,5 +887,62 @@ export class NotificationService {
 
   private generateCampaignId(): string {
     return `campaign_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  /**
+   * Generate StreamChat token for user
+   */
+  async generateStreamToken(userId: string): Promise<string> {
+    try {
+      // Create user in StreamChat if not exists
+      await this.streamClient.upsertUser({
+        id: userId,
+        role: 'user',
+      });
+
+      // Generate token with 24 hour expiration
+      const token = this.streamClient.createToken(userId, Math.floor(Date.now() / 1000) + (24 * 60 * 60));
+
+      this.logger.log(`Generated StreamChat token for user: ${userId}`);
+      return token;
+    } catch (error) {
+      this.logger.error(`Failed to generate StreamChat token for user ${userId}:`, error);
+      throw new Error(`Failed to generate StreamChat token: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Generate StreamChat tokens for all users
+   */
+  async generateTokensForAllUsers(): Promise<{ success: number; failed: number; errors: any[] }> {
+    const users = await this.prisma.user.findMany({
+      select: { id: true, email: true, role: true }
+    });
+
+    let success = 0;
+    let failed = 0;
+    const errors: any[] = [];
+
+    this.logger.log(`Starting to generate StreamChat tokens for ${users.length} users...`);
+
+    for (const user of users) {
+      try {
+        await this.generateStreamToken(user.id.toString());
+        success++;
+        this.logger.log(`✅ Generated token for user: ${user.email} (${user.role})`);
+      } catch (error) {
+        failed++;
+        errors.push({
+          userId: user.id,
+          email: user.email,
+          role: user.role,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
+        this.logger.error(`❌ Failed to generate token for user: ${user.email}`, error);
+      }
+    }
+
+    this.logger.log(`Token generation completed: ${success} success, ${failed} failed`);
+    return { success, failed, errors };
   }
 }

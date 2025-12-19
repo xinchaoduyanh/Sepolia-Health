@@ -13,7 +13,10 @@ import {
 } from '@workspace/ui/components/Sidebar'
 import { ThemeSwitcher } from '@/shared/components/ThemeSwitcher'
 import { useAuth, useLogout } from '@/shared/hooks/useAuth'
+import { useAuthStore } from '@/shared/stores/auth.store'
 import { useDoctorProfile } from '@/shared/hooks/useDoctorProfile'
+import { NotificationCenter } from '@/components/notification/notification-center'
+import { NotificationProvider } from '@/contexts/notification-context'
 import Image from 'next/image'
 import { Monitor, UserCheck, User, LogOut, MessageSquare, MoreHorizontal } from 'lucide-react'
 import Link from 'next/link'
@@ -96,6 +99,7 @@ export function DoctorDashboardLayout({ children, defaultOpen = true }: DoctorDa
     }
 
     const { user } = useAuth()
+    const { accessToken } = useAuthStore()
     const logoutMutation = useLogout()
 
     const handleLogout = () => {
@@ -142,7 +146,8 @@ export function DoctorDashboardLayout({ children, defaultOpen = true }: DoctorDa
         : 'Doctor User'
 
     return (
-        <SidebarProvider defaultOpen={defaultOpen}>
+        <NotificationProvider userId={user?.id?.toString()} userToken={accessToken || undefined}>
+            <SidebarProvider defaultOpen={defaultOpen}>
             <Sidebar collapsible="icon">
                 <SidebarHeader className="border-b-2 border-border bg-gradient-to-r from-primary/5 to-primary/10">
                     <div className="flex items-center gap-3 px-4 py-4 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center">
@@ -226,6 +231,7 @@ export function DoctorDashboardLayout({ children, defaultOpen = true }: DoctorDa
                         </div>
                         <div className="flex items-center space-x-4">
                             <ThemeSwitcher />
+                            <NotificationCenter />
                             <div className="relative" ref={dropdownRef}>
                                 <button
                                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -274,5 +280,6 @@ export function DoctorDashboardLayout({ children, defaultOpen = true }: DoctorDa
                 <div className="p-6">{children}</div>
             </SidebarInset>
         </SidebarProvider>
+        </NotificationProvider>
     )
 }

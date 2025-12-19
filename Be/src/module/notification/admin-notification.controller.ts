@@ -27,13 +27,16 @@ import { RolesGuard } from '@/common/guards/roles.guard';
 import { NotificationService } from './notification.service';
 import { NotificationTemplateService } from './notification-template.service';
 import { NotificationSchedulerService } from './notification-scheduler.service';
+import { AppointmentResultScannerService } from './appointment-result-scanner.service';
 import {
   AdminDirectNotificationDTO,
   AdminBroadcastDTO,
   CreateTemplateDTO,
   UpdateTemplateDTO,
+  NotificationResponse,
   NotificationTemplate,
 } from './notification.types';
+import { AppointmentScannerStats } from './appointment-scanner.types';
 
 @ApiBearerAuth()
 @Roles(Role.ADMIN)
@@ -44,7 +47,8 @@ export class AdminNotificationController {
   constructor(
     private readonly notificationService: NotificationService,
     private readonly templateService: NotificationTemplateService,
-    private readonly schedulerService: NotificationSchedulerService,
+    // private readonly schedulerService: NotificationSchedulerService, // DISABLED
+    // private readonly appointmentResultScannerService: AppointmentResultScannerService, // DISABLED
   ) {}
 
   // ===== DIRECT NOTIFICATION ENDPOINTS =====
@@ -56,19 +60,8 @@ export class AdminNotificationController {
   async sendDirectNotification(
     @Body(ValidationPipe) dto: AdminDirectNotificationDTO,
   ): Promise<void> {
-    if (dto.scheduledFor) {
-      // Schedule for later
-      await this.schedulerService.scheduleSystemAnnouncement(
-        dto.title,
-        dto.message,
-        dto.recipientRole ? [dto.recipientRole.toString()] : [],
-        dto.scheduledFor,
-        dto.priority,
-      );
-    } else {
-      // Send immediately
-      await this.notificationService.sendDirectNotification(dto);
-    }
+    // Scheduling disabled - send immediately only
+    await this.notificationService.sendDirectNotification(dto);
   }
 
   // ===== BROADCAST CAMPAIGN ENDPOINTS =====
@@ -81,20 +74,12 @@ export class AdminNotificationController {
   ): Promise<{ campaignId: string; message: string }> {
     const campaignId = await this.notificationService.createBroadcastCampaign(dto);
 
-    if (dto.scheduledFor) {
-      await this.schedulerService.scheduleCampaignBroadcast(campaignId, dto.scheduledFor);
-      return {
-        campaignId,
-        message: `Campaign scheduled for ${dto.scheduledFor.toISOString()}`,
-      };
-    } else {
-      // Send immediately
-      await this.notificationService.sendBroadcastNotification(campaignId, dto);
-      return {
-        campaignId,
-        message: 'Campaign sent successfully',
-      };
-    }
+    // Scheduling disabled - send immediately
+    await this.notificationService.sendBroadcastNotification(campaignId, dto);
+    return {
+      campaignId,
+      message: 'Campaign sent successfully',
+    };
   }
 
   @Get('campaigns')
@@ -258,7 +243,15 @@ export class AdminNotificationController {
   @ApiOperation({ summary: 'Get queue statistics' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Queue statistics retrieved successfully' })
   async getQueueStats(): Promise<any> {
-    return await this.schedulerService.getQueueStats();
+    // Queue functionality disabled - return placeholder data
+    return {
+      active: 0,
+      delayed: 0,
+      paused: 0,
+      waiting: 0,
+      completed: 0,
+      failed: 0
+    };
   }
 
   @Get('analytics/types')
@@ -277,6 +270,64 @@ export class AdminNotificationController {
       { type: 'APPOINTMENT_STATUS_CHANGE', count: 200, percentage: 20 },
       { type: 'SYSTEM_NOTIFICATION', count: 100, percentage: 10 },
     ];
+  }
+
+  // ===== APPOINTMENT RESULT SCANNER ENDPOINTS =====
+
+  @Post('scanner/trigger')
+  @ApiOperation({ summary: 'Manually trigger appointment result scanner' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Scanner triggered successfully' })
+  async triggerAppointmentResultScanner(): Promise<{
+    message: string;
+    result: {
+      totalDoctors: number;
+      totalAppointments: number;
+      scanTime: Date;
+    };
+  }> {
+    // Scanner functionality disabled - return placeholder response
+    return {
+      message: 'Appointment result scanner is currently disabled',
+      result: {
+        totalDoctors: 0,
+        totalAppointments: 0,
+        scanTime: new Date(),
+      },
+    };
+  }
+
+  @Get('scanner/stats')
+  @ApiOperation({ summary: 'Get appointment result scanner statistics' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Scanner statistics retrieved successfully' })
+  async getScannerStats(): Promise<AppointmentScannerStats> {
+    // Scanner functionality disabled - return empty stats
+    return {
+      lastScanTime: null,
+      nextScanTime: null,
+      totalDoctorsNotified: 0,
+      totalPendingAppointments: 0,
+      averageProcessingTime: 0,
+    };
+  }
+
+  @Get('scanner/health')
+  @ApiOperation({ summary: 'Get appointment result scanner health status' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Health status retrieved successfully' })
+  async getScannerHealth(): Promise<{
+    status: 'healthy' | 'unhealthy';
+    lastScanTime?: Date;
+    nextScanTime?: Date;
+    databaseConnection: boolean;
+    error?: string;
+  }> {
+    // Scanner functionality disabled - return disabled status
+    return {
+      status: 'healthy',
+      lastScanTime: undefined,
+      nextScanTime: undefined,
+      databaseConnection: true,
+      error: 'Scanner service is disabled',
+    };
   }
 
   // ===== BULK OPERATIONS =====
@@ -337,6 +388,42 @@ export class AdminNotificationController {
     return {
       message: 'Test notification sent successfully',
       notificationId: result.id,
+    };
+  }
+
+  // ===== STREAMCHAT TOKEN ENDPOINTS =====
+
+  @Post('streamchat/tokens/generate-all')
+  @ApiOperation({ summary: 'Generate StreamChat tokens for all users' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Tokens generated successfully' })
+  async generateTokensForAllUsers(): Promise<{
+    message: string;
+    results: { success: number; failed: number; errors: any[] };
+  }> {
+    const results = await (this.notificationService as any).generateTokensForAllUsers();
+
+    return {
+      message: `Token generation completed. Success: ${results.success}, Failed: ${results.failed}`,
+      results,
+    };
+  }
+
+  @Post('streamchat/tokens/:userId')
+  @ApiOperation({ summary: 'Generate StreamChat token for specific user' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Token generated successfully' })
+  async generateTokenForUser(
+    @Param('userId') userId: string,
+  ): Promise<{
+    message: string;
+    token: string;
+    userId: string;
+  }> {
+    const token = await (this.notificationService as any).generateStreamToken(userId);
+
+    return {
+      message: 'Token generated successfully',
+      token,
+      userId,
     };
   }
 }

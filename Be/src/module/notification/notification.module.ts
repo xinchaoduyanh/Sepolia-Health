@@ -6,6 +6,7 @@ import { ConfigModule } from '@nestjs/config';
 import { NotificationService } from './notification.service';
 import { NotificationTemplateService } from './notification-template.service';
 import { NotificationSchedulerService } from './notification-scheduler.service';
+import { AppointmentResultScannerService } from './appointment-result-scanner.service';
 import { NotificationController } from './notification.controller';
 import { AdminNotificationController } from './admin-notification.controller';
 import { NOTIFICATION_SCHEDULER_QUEUE } from './notification-scheduler.service';
@@ -16,23 +17,25 @@ import { NOTIFICATION_SCHEDULER_QUEUE } from './notification-scheduler.service';
     PrismaModule,
     CommonModule,
     ConfigModule,
-    BullModule.registerQueue({
-      name: NOTIFICATION_SCHEDULER_QUEUE,
-    }),
+    // BullModule.registerQueue({ // DISABLED - Background scheduler queue
+    //   name: NOTIFICATION_SCHEDULER_QUEUE,
+    // }),
   ],
   controllers: [
     NotificationController,
-    AdminNotificationController,
+    AdminNotificationController, // ENABLED - Admin features for StreamChat tokens
   ],
   providers: [
     NotificationService,
     NotificationTemplateService,
-    NotificationSchedulerService,
+    // NotificationSchedulerService, // DISABLED - Background scheduler
+    // AppointmentResultScannerService, // DISABLED - Background scanner
   ],
   exports: [
     NotificationService,
     NotificationTemplateService,
-    NotificationSchedulerService,
+    // NotificationSchedulerService, // DISABLED - Background scheduler
+    // AppointmentResultScannerService, // DISABLED - Background scanner
   ],
 })
 export class NotificationModule { }

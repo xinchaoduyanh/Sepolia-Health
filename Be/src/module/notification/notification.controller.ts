@@ -9,6 +9,7 @@ import {
   HttpStatus,
   ParseIntPipe,
   UseGuards,
+  Post,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -199,6 +200,36 @@ export class NotificationController {
       unread,
       byType,
       byPriority,
+    };
+  }
+
+  @Post('stream-token')
+  @ApiOperation({ summary: 'Generate StreamChat token for current user' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'StreamChat token generated successfully' })
+  async generateStreamToken(
+    @CurrentUser('userId') userId: number,
+  ): Promise<{ token: string; apiKey: string; userId: string }> {
+    const token = await this.notificationService.generateStreamToken(userId.toString());
+
+    return {
+      token,
+      apiKey: (this.notificationService as any).streamClient.apiKey,
+      userId: userId.toString(),
+    };
+  }
+
+  @Post('stream-token/generate-all')
+  @ApiOperation({ summary: 'Generate StreamChat tokens for all users (Admin only)' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'All tokens generated successfully' })
+  async generateTokensForAllUsers(): Promise<{
+    message: string;
+    results: { success: number; failed: number; errors: any[] };
+  }> {
+    const results = await this.notificationService.generateTokensForAllUsers();
+
+    return {
+      message: `Token generation completed. Success: ${results.success}, Failed: ${results.failed}`,
+      results,
     };
   }
 }
