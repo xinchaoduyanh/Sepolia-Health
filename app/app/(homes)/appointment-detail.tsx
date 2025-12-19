@@ -157,7 +157,7 @@ export default function AppointmentDetailScreen() {
   const { id } = useLocalSearchParams();
   const { data: appointment, isLoading } = useAppointment(Number(id));
 
-  
+
   if (isLoading) {
     return <AppointmentDetailSkeleton />;
   }

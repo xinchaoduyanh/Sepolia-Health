@@ -40,11 +40,6 @@ function ToggleLogo({ userProfile }: { userProfile: { name: string } }) {
 // Menu items cho RECEPTIONIST
 const RECEPTIONIST_MAIN_ITEMS: Array<SidebarNavigationMenuItem> = [
     {
-        title: 'Tiếp nhận bệnh nhân',
-        url: '/receptionist/checkin',
-        icon: ScanLine,
-    },
-    {
         title: 'Quản lý lịch hẹn',
         url: '/receptionist/appointment',
         icon: Calendar,

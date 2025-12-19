@@ -54,7 +54,7 @@ export class ReceptionistAppointmentService {
       // Check if search is a number (for appointment ID search)
       const searchAsNumber = parseInt(search, 10);
       if (!isNaN(searchAsNumber)) {
-        searchConditions.push({ id: searchAsNumber });
+        searchConditions.push({ id: searchAsNumber, mode: 'insensitive' });
       }
 
       // Always add text-based searches
@@ -93,43 +93,11 @@ export class ReceptionistAppointmentService {
       this.prisma.appointment.findMany({
         where,
         include: {
-          patientProfile: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              phone: true,
-            },
-          },
-          doctor: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-            },
-          },
-          service: {
-            select: {
-              id: true,
-              name: true,
-              price: true,
-              duration: true,
-            },
-          },
-          clinic: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-          billing: {
-            select: {
-              id: true,
-              amount: true,
-              status: true,
-              paymentMethod: true,
-            },
-          },
+          patientProfile: true,
+          doctor: true,
+          service: true,
+          clinic: true,
+          billing: true,
         },
         skip,
         take: limit,
