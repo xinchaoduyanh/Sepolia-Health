@@ -819,7 +819,7 @@ export class AppointmentService {
       return null;
     }
 
-    const appointments = await this.prisma.appointment.findFirstOrThrow({
+    const appointments = await this.prisma.appointment.findFirst({
       where: {
         patientProfileId: { in: patientProfileIds },
         startTime: { gte: new Date() },
@@ -843,7 +843,7 @@ export class AppointmentService {
     });
 
     // Return the closest appointment (already sorted by date and startTime)
-    return this.formatAppointmentResponse(appointments);
+    return appointments ? this.formatAppointmentResponse(appointments) : null;
   }
 
   /**
