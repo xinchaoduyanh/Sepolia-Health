@@ -27,22 +27,6 @@ function decodeJWT(token: string): JwtPayload | null {
 }
 
 /**
- * Get role-based redirect path
- */
-function getRoleBasedPath(role: string): string {
-    switch (role) {
-        case 'ADMIN':
-            return '/admin'
-        case 'DOCTOR':
-            return '/doctor'
-        case 'RECEPTIONIST':
-            return '/receptionist'
-        default:
-            return '/admin'
-    }
-}
-
-/**
  * Hook for login
  */
 export function useLogin() {
@@ -64,18 +48,14 @@ export function useLogin() {
             }
 
             setTokens({ accessToken, refreshToken })
-
             const userProfile = await authService.getProfile()
-
             return { tokens: { accessToken, refreshToken }, user: userProfile }
         },
         onSuccess: data => {
             const { tokens, user } = data
-
             login(user, tokens)
-
-            const redirectPath = getRoleBasedPath(user.role)
-            router.push(redirectPath)
+            // Redirect to home page, which will handle role-based routing
+            router.push('/')
         },
     })
 }
