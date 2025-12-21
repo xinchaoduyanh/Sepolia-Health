@@ -1242,6 +1242,7 @@ export class AppointmentService {
             updatedAt: appointment.result.updatedAt,
           }
         : undefined,
+      doctorServiceId: appointment.doctorServiceId,
       createdAt: appointment.createdAt,
       updatedAt: appointment.updatedAt,
     };

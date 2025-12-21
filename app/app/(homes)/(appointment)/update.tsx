@@ -51,14 +51,14 @@ export default function UpdateAppointmentScreen() {
 
   // Fetch available dates for the calendar
   const { data: availableDatesData } = useAvailableDates(
-    appointment?.doctorServiceId || 0,
+    appointment?.doctorServiceId ?? 0,
     startDate,
     endDate
   );
 
   // Fetch available time slots for selected date
   const { data: availabilityData, isLoading: isLoadingSlots } = useDoctorAvailability(
-    appointment?.doctorServiceId || 0,
+    appointment?.doctorServiceId ?? 0,
     selectedDate ? selectedDate.toISOString().split('T')[0] : ''
   );
 
