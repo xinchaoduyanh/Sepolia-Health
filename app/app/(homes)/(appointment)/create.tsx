@@ -733,6 +733,7 @@ export default function AppointmentScreen() {
                         onTimeSlotSelect={handleTimeSlotSelect}
                         isLoading={false}
                         error={null}
+                        isOnline={false}
                       />
                     ) : availabilityError ? (
                       <View className="rounded-xl border border-red-200 bg-red-50 p-6">

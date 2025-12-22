@@ -12,9 +12,11 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Path } from 'react-native-svg';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useArticle, useIncrementViews } from '@/lib/api/articles';
 import { Article } from '@/lib/api/articles';
+import Markdown from 'react-native-markdown-display';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -141,21 +143,59 @@ export default function ArticleIdPage() {
     <View style={{ flex: 1, backgroundColor: '#E0F2FE' }}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
-      <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
-        {/* Header with Gradient */}
-        <View style={{ height: 200, position: 'relative' }}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: 100 }}
+        scrollEventThrottle={16}
+        contentInsetAdjustmentBehavior="never"
+        automaticallyAdjustContentInsets={false}>
+        {/* Background Gradient - now scrollable and extends to top */}
+        <View style={{ height: 320, position: 'relative', marginTop: -60 }}>
           <LinearGradient
             colors={['#0284C7', '#06B6D4', '#10B981']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={{ flex: 1 }}
           />
+          {/* Curved bottom edge using SVG */}
+          <Svg
+            height="70"
+            width="200%"
+            viewBox="0 0 1440 120"
+            style={{ position: 'absolute', bottom: -1, left: 0, right: 0 }}>
+            <Path d="M0,0 Q720,120 1440,0 L1440,120 L0,120 Z" fill="#E0F2FE" />
+          </Svg>
 
-          {/* Back and Refresh buttons */}
+          {/* Decorative circles */}
           <View
             style={{
               position: 'absolute',
-              top: 60,
+              top: -60,
+              right: -40,
+              height: 180,
+              width: 180,
+              borderRadius: 90,
+              backgroundColor: 'rgba(255,255,255,0.12)',
+            }}
+          />
+          <View
+            style={{
+              position: 'absolute',
+              top: 120,
+              left: -50,
+              height: 150,
+              width: 150,
+              borderRadius: 75,
+              backgroundColor: 'rgba(255,255,255,0.08)',
+            }}
+          />
+
+          {/* Header positioned within gradient */}
+          <View
+            style={{
+              position: 'absolute',
+              top: 120,
               left: 0,
               right: 0,
               flexDirection: 'row',
@@ -175,35 +215,10 @@ export default function ArticleIdPage() {
               }}>
               Chi tiết tin tức
             </Text>
-            <TouchableOpacity
-              onPress={handleRefresh}
-              disabled={isRefreshing || isFetching}
-              style={{ padding: 8, marginRight: 4 }}>
-              <Animated.View style={{ transform: [{ rotate: spin }] }}>
-                <Ionicons name="refresh" size={24} color="#FFFFFF" />
-              </Animated.View>
-            </TouchableOpacity>
           </View>
-
-          {/* Featured image overlay */}
-          {article.image && (
-            <Image
-              source={{ uri: article.image }}
-              style={{
-                position: 'absolute',
-                bottom: 0,
-                left: 16,
-                right: 16,
-                height: 120,
-                borderRadius: 12,
-                backgroundColor: '#FFFFFF',
-              }}
-              resizeMode="cover"
-            />
-          )}
         </View>
 
-        <View style={{ padding: 16, marginTop: 60 }}>
+        <View style={{ padding: 16, marginTop: -100 }}>
           {/* Article Card */}
           <View
             style={{
@@ -217,6 +232,21 @@ export default function ArticleIdPage() {
               shadowRadius: 8,
               elevation: 3,
             }}>
+            {/* Featured Image inside article */}
+            {article.image && (
+              <Image
+                source={{ uri: article.image }}
+                style={{
+                  width: '100%',
+                  height: 200,
+                  borderRadius: 16,
+                  marginBottom: 20,
+                  backgroundColor: '#F3F4F6',
+                }}
+                resizeMode="cover"
+              />
+            )}
+
             {/* Title */}
             <Text
               style={{
@@ -300,23 +330,129 @@ export default function ArticleIdPage() {
 
             {/* Content */}
             <View style={{ marginBottom: 20 }}>
-              {article.content.split('\n').map((paragraph, index) =>
-                paragraph.trim() ? (
-                  <Text
-                    key={index}
-                    style={{
-                      fontSize: 16,
-                      color: '#374151',
-                      lineHeight: 26,
-                      marginBottom: 16,
-                      textAlign: 'justify',
-                    }}>
-                    {paragraph}
-                  </Text>
-                ) : (
-                  <View key={index} style={{ height: 16 }} />
-                )
-              )}
+              <Markdown
+                style={{
+                  body: {
+                    fontSize: 16,
+                    color: '#374151',
+                    lineHeight: 26,
+                    marginBottom: 16,
+                  },
+                  heading1: {
+                    fontSize: 24,
+                    fontWeight: '700',
+                    color: '#1F2937',
+                    marginBottom: 16,
+                    marginTop: 20,
+                  },
+                  heading2: {
+                    fontSize: 22,
+                    fontWeight: '600',
+                    color: '#1F2937',
+                    marginBottom: 14,
+                    marginTop: 18,
+                  },
+                  heading3: {
+                    fontSize: 20,
+                    fontWeight: '600',
+                    color: '#1F2937',
+                    marginBottom: 12,
+                    marginTop: 16,
+                  },
+                  heading4: {
+                    fontSize: 18,
+                    fontWeight: '600',
+                    color: '#1F2937',
+                    marginBottom: 10,
+                    marginTop: 14,
+                  },
+                  heading5: {
+                    fontSize: 17,
+                    fontWeight: '600',
+                    color: '#1F2937',
+                    marginBottom: 8,
+                    marginTop: 12,
+                  },
+                  heading6: {
+                    fontSize: 16,
+                    fontWeight: '600',
+                    color: '#1F2937',
+                    marginBottom: 6,
+                    marginTop: 10,
+                  },
+                  paragraph: {
+                    marginBottom: 16,
+                    textAlign: 'justify',
+                  },
+                  list_item: {
+                    flexDirection: 'row',
+                    marginBottom: 8,
+                  },
+                  bullet_list: {
+                    marginBottom: 16,
+                  },
+                  ordered_list: {
+                    marginBottom: 16,
+                  },
+                  code_inline: {
+                    backgroundColor: '#F3F4F6',
+                    paddingHorizontal: 6,
+                    paddingVertical: 2,
+                    borderRadius: 4,
+                    fontFamily: 'monospace',
+                  },
+                  code_block: {
+                    backgroundColor: '#F3F4F6',
+                    padding: 12,
+                    borderRadius: 8,
+                    marginBottom: 16,
+                    fontFamily: 'monospace',
+                  },
+                  blockquote: {
+                    backgroundColor: '#F0F9FF',
+                    borderLeftWidth: 4,
+                    borderLeftColor: '#0284C7',
+                    paddingLeft: 16,
+                    paddingVertical: 8,
+                    marginBottom: 16,
+                  },
+                  strong: {
+                    fontWeight: '700',
+                  },
+                  em: {
+                    fontStyle: 'italic',
+                  },
+                  link: {
+                    color: '#0284C7',
+                    textDecorationLine: 'underline',
+                  },
+                  table: {
+                    borderWidth: 1,
+                    borderColor: '#E5E7EB',
+                    marginBottom: 16,
+                  },
+                  thead: {
+                    backgroundColor: '#F9FAFB',
+                  },
+                  th: {
+                    borderWidth: 1,
+                    borderColor: '#E5E7EB',
+                    padding: 8,
+                    fontWeight: '600',
+                  },
+                  td: {
+                    borderWidth: 1,
+                    borderColor: '#E5E7EB',
+                    padding: 8,
+                  },
+                  hr: {
+                    backgroundColor: '#E5E7EB',
+                    height: 1,
+                    marginBottom: 16,
+                  },
+                }}>
+                {article.content}
+              </Markdown>
             </View>
 
             {/* Additional Images */}
@@ -326,34 +462,39 @@ export default function ArticleIdPage() {
                   style={{ fontSize: 18, fontWeight: '600', color: '#1F2937', marginBottom: 16 }}>
                   Hình ảnh bài viết
                 </Text>
-                {article.images
-                  .sort((a, b) => a.order - b.order)
-                  .map((image, index) => (
-                    <View key={image.id} style={{ marginBottom: 16 }}>
-                      <Image
-                        source={{ uri: image.url }}
-                        style={{
-                          width: '100%',
-                          height: 200,
-                          borderRadius: 12,
-                          backgroundColor: '#F3F4F6',
-                        }}
-                        resizeMode="cover"
-                      />
-                      {image.alt && (
-                        <Text
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={{ gap: 12 }}>
+                  {article.images
+                    .sort((a, b) => a.order - b.order)
+                    .map((image) => (
+                      <View key={image.id} style={{ width: screenWidth - 64 }}>
+                        <Image
+                          source={{ uri: image.url }}
                           style={{
-                            fontSize: 14,
-                            color: '#6B7280',
-                            marginTop: 8,
-                            textAlign: 'center',
-                            fontStyle: 'italic',
-                          }}>
-                          {image.alt}
-                        </Text>
-                      )}
-                    </View>
-                  ))}
+                            width: '100%',
+                            height: 200,
+                            borderRadius: 16,
+                            backgroundColor: '#F3F4F6',
+                          }}
+                          resizeMode="cover"
+                        />
+                        {image.alt && (
+                          <Text
+                            style={{
+                              fontSize: 14,
+                              color: '#6B7280',
+                              marginTop: 8,
+                              textAlign: 'center',
+                              fontStyle: 'italic',
+                            }}>
+                            {image.alt}
+                          </Text>
+                        )}
+                      </View>
+                    ))}
+                </ScrollView>
               </View>
             )}
           </View>

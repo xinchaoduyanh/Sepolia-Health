@@ -982,43 +982,42 @@ export default function HomeScreen() {
               ))
             ) : articles.length > 0 ? (
               articles.map((article) => {
-                // Get random icon and background color for variety
-                const icons = [
-                  'newspaper-outline',
-                  'shield-checkmark-outline',
-                  'gift-outline',
-                  'heart-outline',
-                  'star-outline',
-                ];
-                const bgColors = ['#E0F2FE', '#A7F3D0', '#FEF3C7', '#FCE7F3', '#E0E7FF'];
-                const iconColors = ['#0284C7', '#10B981', '#F59E0B', '#EC4899', '#6366F1'];
-
-                const randomIndex = article.id % icons.length;
-                const icon = icons[randomIndex];
-                const bgColor = bgColors[randomIndex];
-                const iconColor = iconColors[randomIndex];
-
                 return (
                   <TouchableOpacity
                     key={article.id}
                     style={{
                       borderRadius: 20,
                       backgroundColor: '#FFFFFF',
+                      overflow: 'hidden',
                     }}
                     onPress={() => router.push(`/(homes)/(articles)/${article.id}`)}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16 }}>
-                      <View
-                        style={{
-                          height: 48,
-                          width: 48,
-                          borderRadius: 14,
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          backgroundColor: bgColor,
-                          marginRight: 16,
-                        }}>
-                        <Ionicons name={icon as any} size={24} color={iconColor} />
-                      </View>
+                      {article.image ? (
+                        <Image
+                          source={{ uri: article.image }}
+                          style={{
+                            height: 48,
+                            width: 48,
+                            borderRadius: 14,
+                            backgroundColor: '#F3F4F6',
+                            marginRight: 16,
+                          }}
+                          resizeMode="cover"
+                        />
+                      ) : (
+                        <View
+                          style={{
+                            height: 48,
+                            width: 48,
+                            borderRadius: 14,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            backgroundColor: '#E0F2FE',
+                            marginRight: 16,
+                          }}>
+                          <Ionicons name="newspaper-outline" size={24} color="#0284C7" />
+                        </View>
+                      )}
                       <View style={{ flex: 1 }}>
                         <Text
                           style={{

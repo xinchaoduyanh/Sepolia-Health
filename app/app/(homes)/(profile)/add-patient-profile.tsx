@@ -13,6 +13,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Path } from 'react-native-svg';
 import { router } from 'expo-router';
 import { userApi } from '@/lib/api';
 import { useUploadPatientProfileAvatar } from '@/lib/api/user';
@@ -180,20 +182,85 @@ const AddPatientProfileScreen = () => {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <StatusBar barStyle="dark-content" backgroundColor="white" />
+    <View style={{ flex: 1, backgroundColor: '#E0F2FE' }}>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
-      {/* Header */}
-      <View className="flex-row items-center justify-between border-b border-gray-200 px-4 py-3">
-        <Pressable onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#1F2937" />
-        </Pressable>
-        <Text className="text-lg font-bold text-gray-900">Thông tin cơ bản</Text>
-        <View className="w-6" />
-      </View>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: 100 }}
+        scrollEventThrottle={16}
+        contentInsetAdjustmentBehavior="never"
+        automaticallyAdjustContentInsets={false}>
+        {/* Background Gradient - now scrollable and extends to top */}
+        <View style={{ height: 320, position: 'relative', marginTop: -60 }}>
+          <LinearGradient
+            colors={['#0284C7', '#06B6D4', '#10B981']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{ flex: 1 }}
+          />
+          {/* Curved bottom edge using SVG */}
+          <Svg
+            height="70"
+            width="200%"
+            viewBox="0 0 1440 120"
+            style={{ position: 'absolute', bottom: -1, left: 0, right: 0 }}>
+            <Path d="M0,0 Q720,120 1440,0 L1440,120 L0,120 Z" fill="#E0F2FE" />
+          </Svg>
 
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        <View className="px-6 py-6">
+          {/* Decorative circles */}
+          <View
+            style={{
+              position: 'absolute',
+              top: -60,
+              right: -40,
+              height: 180,
+              width: 180,
+              borderRadius: 90,
+              backgroundColor: 'rgba(255,255,255,0.12)',
+            }}
+          />
+          <View
+            style={{
+              position: 'absolute',
+              top: 120,
+              left: -50,
+              height: 150,
+              width: 150,
+              borderRadius: 75,
+              backgroundColor: 'rgba(255,255,255,0.08)',
+            }}
+          />
+
+          {/* Header positioned within gradient */}
+          <View
+            style={{
+              position: 'absolute',
+              top: 120,
+              left: 0,
+              right: 0,
+              flexDirection: 'row',
+              alignItems: 'center',
+              paddingHorizontal: 16,
+            }}>
+            <Pressable onPress={() => router.back()}>
+              <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+            </Pressable>
+            <Text
+              style={{
+                flex: 1,
+                fontSize: 20,
+                fontWeight: 'bold',
+                color: '#FFFFFF',
+                marginLeft: 8,
+              }}>
+              Thêm thông tin người thân
+            </Text>
+          </View>
+        </View>
+
+        <View style={{ padding: 16, marginTop: -100 }}>
           {/* Header Section */}
           <View className="mb-8 items-center">
             <View className="mb-4 h-32 w-32 items-center justify-center rounded-full bg-gray-100">
@@ -544,26 +611,35 @@ const AddPatientProfileScreen = () => {
               )}
             </View>
           </View>
+
+          {/* Submit Button */}
+          <View style={{ paddingHorizontal: 16, paddingBottom: 24 }}>
+            <Pressable
+              style={{
+                borderRadius: 12,
+                paddingVertical: 16,
+                backgroundColor: isSubmitting ? '#9CA3AF' : '#0284C7',
+                shadowColor: '#0284C7',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.3,
+                shadowRadius: 8,
+                elevation: 4,
+              }}
+              onPress={handleSubmit}
+              disabled={isSubmitting}>
+              <Text style={{
+                textAlign: 'center',
+                fontSize: 16,
+                fontWeight: 'bold',
+                color: '#FFFFFF'
+              }}>
+                {isSubmitting ? 'ĐANG TẠO...' : 'HOÀN TẤT'}
+              </Text>
+            </Pressable>
+          </View>
         </View>
       </ScrollView>
-
-      {/* Submit Button */}
-      <View className="px-6 pb-6">
-        <Pressable
-          className={`rounded-lg py-4 ${isSubmitting ? 'bg-gray-400' : 'bg-cyan-500'}`}
-          onPress={handleSubmit}
-          disabled={isSubmitting}
-          style={({ pressed }) => [
-            {
-              opacity: pressed && !isSubmitting ? 0.7 : 1,
-            },
-          ]}>
-          <Text className="text-center text-lg font-bold text-white">
-            {isSubmitting ? 'ĐANG TẠO...' : 'HOÀN TẤT'}
-          </Text>
-        </Pressable>
-      </View>
-    </SafeAreaView>
+    </View>
   );
 };
 
