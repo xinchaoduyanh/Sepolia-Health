@@ -69,7 +69,7 @@ export default function OtpInput({
 
 	return (
 		<View className="w-full">
-			<Pressable onPress={handlePress}>
+			<TouchableOpacity onPress={handlePress}>
 				<View className="mb-8 flex-row justify-between gap-2">
 					{Array(length)
 						.fill(0)
@@ -92,7 +92,7 @@ export default function OtpInput({
 							);
 						})}
 				</View>
-			</Pressable>
+			</TouchableOpacity>
 
 			{/* Hidden input that captures the actual text */}
 			<TextInput

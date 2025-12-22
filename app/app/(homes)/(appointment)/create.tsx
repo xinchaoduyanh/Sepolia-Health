@@ -456,15 +456,22 @@ export default function AppointmentScreen() {
               <View>
                 <View
                   className="flex-row items-center rounded-xl border px-5 py-4"
-                  style={{ backgroundColor: '#F0FDFA', borderColor: '#E0F2FE' }}>
-                  <Ionicons name="create" size={22} color="#0284C7" />
+                  style={{
+                    backgroundColor: selectedCustomer === 'add' ? '#F0FDFA' : '#FFFFFF',
+                    borderColor: selectedCustomer === 'add' ? '#E0F2FE' : '#E5E7EB'
+                  }}>
+                  <Ionicons
+                    name="create"
+                    size={22}
+                    color={selectedCustomer === 'add' ? '#0284C7' : '#6B7280'}
+                  />
                   <TextInput
                     className="ml-4 flex-1 text-lg"
                     style={{
-                      color: selectedCustomer === 'add' ? '#0F172A' : '#9CA3AF',
+                      color: selectedCustomer === 'add' ? '#0F172A' : '#374151',
                     }}
                     placeholder="* Họ"
-                    placeholderTextColor="#475569"
+                    placeholderTextColor={selectedCustomer === 'add' ? '#475569' : '#9CA3AF'}
                     value={lastName}
                     onChangeText={setLastName}
                     editable={selectedCustomer === 'add'}
@@ -475,15 +482,22 @@ export default function AppointmentScreen() {
               <View>
                 <View
                   className="flex-row items-center rounded-xl border px-5 py-4"
-                  style={{ backgroundColor: '#F0FDFA', borderColor: '#E0F2FE' }}>
-                  <Ionicons name="create" size={22} color="#0284C7" />
+                  style={{
+                    backgroundColor: selectedCustomer === 'add' ? '#F0FDFA' : '#FFFFFF',
+                    borderColor: selectedCustomer === 'add' ? '#E0F2FE' : '#E5E7EB'
+                  }}>
+                  <Ionicons
+                    name="create"
+                    size={22}
+                    color={selectedCustomer === 'add' ? '#0284C7' : '#6B7280'}
+                  />
                   <TextInput
                     className="ml-4 flex-1 text-lg"
                     style={{
-                      color: selectedCustomer === 'add' ? '#0F172A' : '#9CA3AF',
+                      color: selectedCustomer === 'add' ? '#0F172A' : '#374151',
                     }}
                     placeholder="* Tên"
-                    placeholderTextColor="#475569"
+                    placeholderTextColor={selectedCustomer === 'add' ? '#475569' : '#9CA3AF'}
                     value={firstName}
                     onChangeText={setFirstName}
                     editable={selectedCustomer === 'add'}
@@ -503,15 +517,22 @@ export default function AppointmentScreen() {
               <View>
                 <View
                   className="flex-row items-center rounded-xl border px-5 py-4"
-                  style={{ backgroundColor: '#F0FDFA', borderColor: '#E0F2FE' }}>
-                  <Ionicons name="call" size={22} color="#0284C7" />
+                  style={{
+                    backgroundColor: selectedCustomer === 'add' ? '#F0FDFA' : '#FFFFFF',
+                    borderColor: selectedCustomer === 'add' ? '#E0F2FE' : '#E5E7EB'
+                  }}>
+                  <Ionicons
+                    name="call"
+                    size={22}
+                    color={selectedCustomer === 'add' ? '#0284C7' : '#6B7280'}
+                  />
                   <TextInput
                     className="ml-4 flex-1 text-lg"
                     style={{
-                      color: selectedCustomer === 'add' ? '#0F172A' : '#9CA3AF',
+                      color: selectedCustomer === 'add' ? '#0F172A' : '#374151',
                     }}
                     placeholder="* 0988659126"
-                    placeholderTextColor="#475569"
+                    placeholderTextColor={selectedCustomer === 'add' ? '#475569' : '#9CA3AF'}
                     value={phoneNumber}
                     onChangeText={setPhoneNumber}
                     keyboardType="phone-pad"
@@ -545,7 +566,6 @@ export default function AppointmentScreen() {
 
             <View className="space-y-6">
               <TouchableOpacity
-                activeOpacity={0.7}
                 onPress={handleFacilitySelect}
                 className="flex-row items-center rounded-xl border px-5 py-4"
                 style={{ backgroundColor: '#F0FDFA', borderColor: '#E0F2FE' }}>
@@ -563,7 +583,6 @@ export default function AppointmentScreen() {
 
               {/* Chọn dịch vụ */}
               <TouchableOpacity
-                activeOpacity={0.7}
                 onPress={handleServiceSelect}
                 disabled={!selectedFacility}
                 className={`flex-row items-center rounded-xl border px-5 py-4 ${
@@ -571,7 +590,6 @@ export default function AppointmentScreen() {
                 }`}
                 style={{
                   backgroundColor: selectedFacility ? '#F0FDFA' : '#F9FAFB',
-                  opacity: selectedFacility ? 1 : 0.6,
                 }}>
                 <Ionicons
                   name="medical"
@@ -594,7 +612,6 @@ export default function AppointmentScreen() {
 
               {/* Chọn bác sĩ */}
               <TouchableOpacity
-                activeOpacity={0.7}
                 onPress={handleDoctorSelect}
                 disabled={!selectedFacility || !selectedService}
                 className={`flex-row items-center rounded-xl border px-5 py-4 ${
@@ -602,7 +619,6 @@ export default function AppointmentScreen() {
                 }`}
                 style={{
                   backgroundColor: selectedFacility && selectedService ? '#F0FDFA' : '#F9FAFB',
-                  opacity: selectedFacility && selectedService ? 1 : 0.6,
                 }}>
                 <Ionicons
                   name="person"
@@ -647,7 +663,6 @@ export default function AppointmentScreen() {
                 .map((date, index) => (
                   <TouchableOpacity
                     key={index}
-                    activeOpacity={0.7}
                     onPress={() => handlePresetDateSelect(date)}
                     className={`flex-1 rounded-xl px-4 py-4 ${
                       selectedDate === date.fullDate ? 'bg-[#0284C7]' : 'bg-[#F0FDFA]'
@@ -678,7 +693,6 @@ export default function AppointmentScreen() {
                 ))}
 
               <TouchableOpacity
-                activeOpacity={0.7}
                 onPress={handleCustomDatePress}
                 className="flex-1 items-center justify-center rounded-xl px-4 py-4"
                 style={{
@@ -733,7 +747,7 @@ export default function AppointmentScreen() {
                         onTimeSlotSelect={handleTimeSlotSelect}
                         isLoading={false}
                         error={null}
-                        isOnline={false}
+                        // isOnline={false}
                       />
                     ) : availabilityError ? (
                       <View className="rounded-xl border border-red-200 bg-red-50 p-6">
@@ -797,7 +811,6 @@ export default function AppointmentScreen() {
             {/* Book Appointment Button */}
             <View className="mt-8">
               <TouchableOpacity
-                activeOpacity={0.7}
                 onPress={handleBookAppointment}
                 disabled={createAppointmentMutation.isPending}
                 className="items-center rounded-xl py-4"
@@ -832,7 +845,6 @@ export default function AppointmentScreen() {
                   Chọn ngày khám
                 </Text>
                 <TouchableOpacity
-                  activeOpacity={0.7}
                   onPress={() => setShowDatePicker(false)}
                   className="h-8 w-8 items-center justify-center rounded-full"
                   style={{ backgroundColor: '#E0F2FE' }}>
@@ -847,7 +859,6 @@ export default function AppointmentScreen() {
                     .map((date, index) => (
                       <TouchableOpacity
                         key={index}
-                        activeOpacity={0.7}
                         onPress={() => {
                           // Tạo Date object trực tiếp từ year, month, day để tránh timezone issue
                           const selectedDate = new Date(date.year, date.month - 1, date.day);

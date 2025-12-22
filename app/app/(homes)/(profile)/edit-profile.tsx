@@ -170,9 +170,9 @@ export default function EditProfileScreen() {
 
       {/* Header */}
       <View className="flex-row items-center justify-between border-b border-gray-200 px-4 py-3">
-        <Pressable onPress={() => router.back()}>
+        <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#1F2937" />
-        </Pressable>
+        </TouchableOpacity>
         <Text className="text-lg font-bold text-gray-900">Thông tin cơ bản</Text>
         <View className="w-6" />
       </View>
@@ -199,7 +199,7 @@ export default function EditProfileScreen() {
 
             {/* Avatar Section */}
             <View className="mt-6">
-              <Pressable onPress={handleUploadAvatar} disabled={isUploading} className="relative">
+              <TouchableOpacity onPress={handleUploadAvatar} disabled={isUploading} className="relative">
                 <View className="h-24 w-24 items-center justify-center rounded-full bg-gray-100">
                   {watchedAvatar ? (
                     <Image source={{ uri: watchedAvatar }} className="h-full w-full rounded-full" />
@@ -210,7 +210,7 @@ export default function EditProfileScreen() {
                 <View className="absolute -bottom-1 -right-1 h-8 w-8 items-center justify-center rounded-full bg-cyan-500">
                   <Ionicons name="camera" size={16} color="white" />
                 </View>
-              </Pressable>
+              </TouchableOpacity>
             </View>
           </View>
 

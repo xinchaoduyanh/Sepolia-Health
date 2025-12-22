@@ -703,7 +703,7 @@ export default function HomeScreen() {
 
 
               <View style={{ width: '22%', alignItems: 'center' }}>
-                <TouchableOpacity activeOpacity={0.7} style={{ alignItems: 'center' }}>
+                <TouchableOpacity style={{ alignItems: 'center' }}>
                   <View
                     style={{
                       height: 56,
@@ -772,7 +772,7 @@ export default function HomeScreen() {
 
 
               <View style={{ width: '22%', alignItems: 'center' }}>
-                <TouchableOpacity activeOpacity={0.7} style={{ alignItems: 'center' }}>
+                <TouchableOpacity style={{ alignItems: 'center' }}>
                   <View
                     style={{
                       height: 56,

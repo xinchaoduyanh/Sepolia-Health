@@ -10,6 +10,7 @@ import {
   Image,
   TextInput,
   Alert,
+  TouchableOpacity
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -244,9 +245,9 @@ const AddPatientProfileScreen = () => {
               alignItems: 'center',
               paddingHorizontal: 16,
             }}>
-            <Pressable onPress={() => router.back()}>
+            <TouchableOpacity onPress={() => router.back()}>
               <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
-            </Pressable>
+            </TouchableOpacity>
             <Text
               style={{
                 flex: 1,
