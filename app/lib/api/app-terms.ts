@@ -83,7 +83,14 @@ export function usePrefetchAppTerms() {
     // Delay prefetch to not interfere with initial app load
     const timeoutId = setTimeout(() => {
       // Prefetch all app terms types in parallel
-      const prefetchPromises = Object.values(AppTermsType).map((type) =>
+      const appTermsTypes = [
+        AppTermsType.APP_FAQ,
+        AppTermsType.USAGE_REGULATIONS,
+        AppTermsType.DISPUTE_RESOLUTION,
+        AppTermsType.PRIVACY_POLICY,
+      ];
+
+      const prefetchPromises = appTermsTypes.map((type) =>
         queryClient
           .prefetchQuery({
             queryKey: appTermsKeys.detail(type),

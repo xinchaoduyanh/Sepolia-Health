@@ -299,6 +299,10 @@ export class UserService {
     const patientProfiles =
       await this.userRepository.getPatientProfiles(userId);
 
+    // DEBUG LOG: Log userId and number of profiles found
+    console.log(`[DEBUG] getPatientProfiles - userId: ${userId}, found ${patientProfiles.length} profiles`);
+    console.log(`[DEBUG] Profile IDs:`, patientProfiles.map(p => ({ id: p.id, firstName: p.firstName, lastName: p.lastName, managerId: p.managerId })));
+
     return {
       profiles: patientProfiles.map((profile) => ({
         id: profile.id,

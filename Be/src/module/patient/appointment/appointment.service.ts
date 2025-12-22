@@ -562,18 +562,36 @@ export class AppointmentService {
       };
     }
 
-    // Xử lý filter theo thời gian: chỉ lấy appointments trong tương lai
-    where.startTime = {};
-    if (dateFrom) {
-      const dateFromTime = new Date(dateFrom);
-      // Lấy max giữa dateFrom và now để đảm bảo chỉ lấy trong tương lai
-      where.startTime.gte = dateFromTime > now ? dateFromTime : now;
+    // Xử lý filter theo thời gian:
+    // - Cho UPCOMING/ON_GOING: chỉ lấy appointments trong tương lai
+    // - Cho COMPLETED/CANCELLED: không filter thời gian (để lấy lịch sử trong quá khứ)
+    const isHistoryQuery = status === 'COMPLETED' || status === 'CANCELLED';
+
+    if (!isHistoryQuery) {
+      // Chỉ filter startTime cho upcoming appointments
+      where.startTime = {};
+      if (dateFrom) {
+        const dateFromTime = new Date(dateFrom);
+        // Lấy max giữa dateFrom và now để đảm bảo chỉ lấy trong tương lai
+        where.startTime.gte = dateFromTime > now ? dateFromTime : now;
+      } else {
+        // Không có dateFrom thì mặc định chỉ lấy từ hiện tại trở đi
+        where.startTime.gte = now;
+      }
+      if (dateTo) {
+        where.startTime.lte = new Date(dateTo);
+      }
     } else {
-      // Không có dateFrom thì mặc định chỉ lấy từ hiện tại trở đi
-      where.startTime.gte = now;
-    }
-    if (dateTo) {
-      where.startTime.lte = new Date(dateTo);
+      // Cho history (COMPLETED/CANCELLED), không filter startTime trừ khi có dateFrom/dateTo cụ thể
+      if (dateFrom || dateTo) {
+        where.startTime = {};
+        if (dateFrom) {
+          where.startTime.gte = new Date(dateFrom);
+        }
+        if (dateTo) {
+          where.startTime.lte = new Date(dateTo);
+        }
+      }
     }
 
     // Build orderBy based on sortBy and sortOrder

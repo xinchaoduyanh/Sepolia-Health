@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { apiClient } from '../api-client';
 import { API_ENDPOINTS } from '@/constants/api';
 import type { PatientProfile } from '@/types/auth';
@@ -147,6 +147,17 @@ export const useUpdatePatientProfile = () => {
       // Invalidate and refetch profile immediately to ensure consistency
       await queryClient.invalidateQueries({ queryKey: authKeys.profile() });
       await queryClient.refetchQueries({ queryKey: authKeys.profile() });
+    },
+  });
+};
+
+// Hook to fetch patient profiles
+export const usePatientProfiles = () => {
+  return useQuery({
+    queryKey: userKeys.patientProfiles(),
+    queryFn: async () => {
+      const response = await userApi.getPatientProfiles();
+      return response.profiles;
     },
   });
 };

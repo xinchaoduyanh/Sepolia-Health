@@ -13,6 +13,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path } from 'react-native-svg';
 import { router } from 'expo-router';
 import { useMyAppointments } from '@/lib/api/appointments';
+import { usePatientProfiles } from '@/lib/api/user';
 import { formatTime } from '@/utils/datetime';
 import { AppointmentStatus } from '@/types/appointment';
 import { getRelationshipLabel } from '@/utils/relationshipTranslator';
@@ -20,31 +21,63 @@ import { getRelationshipLabel } from '@/utils/relationshipTranslator';
 export default function AppointmentHistoryScreen() {
   const [page, setPage] = useState(1);
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedProfileId, setSelectedProfileId] = useState<number | null>(null); // null = all profiles
+
+  // Fetch patient profiles for filter
+  const { data: patientProfiles, isLoading: profilesLoading } = usePatientProfiles();
 
   // Filter to only show completed and cancelled appointments
+  // Note: Backend will return COMPLETED/CANCELLED appointments from history (past)
+  // Use a high limit to fetch all history, then paginate client-side
   const filters = {
-    page,
-    limit: 10,
-    status: 'COMPLETED' as AppointmentStatus, // We'll filter manually to include CANCELLED too
+    page: 1, // Always fetch page 1 from backend
+    limit: 1000, // Fetch all history at once
     sortBy: 'date' as const,
     sortOrder: 'desc' as const,
+    ...(selectedProfileId ? { patientProfileId: selectedProfileId } : {}),
   };
 
-  const { data: appointmentsData, isLoading } = useMyAppointments({
+  // Fetch both COMPLETED and CANCELLED appointments
+  const { data: completedData, isLoading: isLoadingCompleted } = useMyAppointments({
     ...filters,
-    status: undefined, // Get all, then filter
+    status: 'COMPLETED' as AppointmentStatus,
   });
 
-  const appointments = (appointmentsData?.data || []).filter(
-    (apt) => apt.status === 'COMPLETED' || apt.status === 'CANCELLED'
-  );
-  const total = appointments.length;
+  const { data: cancelledData, isLoading: isLoadingCancelled } = useMyAppointments({
+    ...filters,
+    status: 'CANCELLED' as AppointmentStatus,
+  });
+
+  // Merge both results
+  const allAppointments = [
+    ...(completedData?.data || []),
+    ...(cancelledData?.data || []),
+  ];
+
+  // Sort by startTime descending (newest first) - already sorted by backend but ensure
+  allAppointments.sort((a, b) => {
+    return new Date(b.startTime).getTime() - new Date(a.startTime).getTime();
+  });
+
+  // Manual pagination on merged results
+  const startIndex = (page - 1) * 10;
+  const endIndex = startIndex + 10;
+  const appointments = allAppointments.slice(startIndex, endIndex);
+  const total = allAppointments.length;
   const totalPages = Math.ceil(total / 10);
+
+  const isLoading = isLoadingCompleted || isLoadingCancelled;
 
   const handleRefresh = async () => {
     setRefreshing(true);
     setPage(1);
     setRefreshing(false);
+  };
+
+  // Handle profile filter change
+  const handleProfileFilterChange = (profileId: number | null) => {
+    setSelectedProfileId(profileId);
+    setPage(1); // Reset to first page when filter changes
   };
 
   const getDateParts = (dateString: string) => {
@@ -111,6 +144,81 @@ export default function AppointmentHistoryScreen() {
         </View>
 
         <View style={{ paddingHorizontal: 24, marginTop: -80, marginBottom: 24 }}>
+          {/* Patient Profile Filter */}
+          {!profilesLoading && patientProfiles && patientProfiles.length > 0 && (
+            <View style={{ marginBottom: 20 }}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ gap: 10 }}>
+                {/* "All" Filter Chip */}
+                <TouchableOpacity
+                  onPress={() => handleProfileFilterChange(null)}
+                  style={{
+                    paddingHorizontal: 16,
+                    paddingVertical: 10,
+                    borderRadius: 20,
+                    backgroundColor: selectedProfileId === null ? '#0284C7' : 'white',
+                    borderWidth: 1,
+                    borderColor: selectedProfileId === null ? '#0284C7' : '#E5E7EB',
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 1 },
+                    shadowOpacity: 0.05,
+                    shadowRadius: 2,
+                    elevation: 2,
+                  }}>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      fontWeight: '600',
+                      color: selectedProfileId === null ? 'white' : '#374151',
+                    }}>
+                    Tất cả
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Individual Profile Chips */}
+                {patientProfiles.map((profile) => (
+                  <TouchableOpacity
+                    key={profile.id}
+                    onPress={() => handleProfileFilterChange(profile.id)}
+                    style={{
+                      paddingHorizontal: 16,
+                      paddingVertical: 10,
+                      borderRadius: 20,
+                      backgroundColor: selectedProfileId === profile.id ? '#0284C7' : 'white',
+                      borderWidth: 1,
+                      borderColor: selectedProfileId === profile.id ? '#0284C7' : '#E5E7EB',
+                      shadowColor: '#000',
+                      shadowOffset: { width: 0, height: 1 },
+                      shadowOpacity: 0.05,
+                      shadowRadius: 2,
+                      elevation: 2,
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 6,
+                    }}>
+                    <Text
+                      style={{
+                        fontSize: 14,
+                        fontWeight: '600',
+                        color: selectedProfileId === profile.id ? 'white' : '#374151',
+                      }}>
+                      {profile.firstName} {profile.lastName}
+                    </Text>
+                    <Text
+                      style={{
+                        fontSize: 11,
+                        color: selectedProfileId === profile.id ? 'rgba(255,255,255,0.8)' : '#9CA3AF',
+                      }}>
+                      ({getRelationshipLabel(profile.relationship)})
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          )}
+
           {/* Appointments List */}
           {isLoading ? (
             <View style={{ alignItems: 'center', paddingVertical: 40 }}>
@@ -137,10 +245,12 @@ export default function AppointmentHistoryScreen() {
                 <Ionicons name="time-outline" size={64} color="#0284C7" />
               </View>
               <Text style={{ marginTop: 24, fontSize: 20, fontWeight: 'bold', color: '#1F2937' }}>
-                Chưa có lịch sử khám bệnh
+                {selectedProfileId ? 'Không có lịch sử khám bệnh' : 'Chưa có lịch sử khám bệnh'}
               </Text>
               <Text style={{ marginTop: 8, fontSize: 14, color: '#6B7280', textAlign: 'center' }}>
-                Các lịch khám đã hoàn thành sẽ hiển thị tại đây
+                {selectedProfileId
+                  ? 'Người thân này chưa có lịch khám đã hoàn thành'
+                  : 'Các lịch khám đã hoàn thành sẽ hiển thị tại đây'}
               </Text>
             </View>
           ) : (
