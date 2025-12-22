@@ -306,7 +306,7 @@ export default function AppointmentScreen() {
                     <TouchableOpacity
                       onPress={() => handleCustomerSelect('me', primaryProfile)}
                       className={`h-16 w-16 items-center justify-center rounded-full border-2 ${
-                        selectedCustomer === 'me' ? 'border-[#0284C7]' : 'border-[#06B6D4]'
+                        selectedCustomer === 'me' ? 'border-sky-500' : 'border-slate-200'
                       }`}>
                       {primaryProfile.avatar ? (
                         <Image
@@ -316,12 +316,11 @@ export default function AppointmentScreen() {
                         />
                       ) : (
                         <View
-                          className="h-full w-full items-center justify-center rounded-full"
-                          style={{ backgroundColor: selectedCustomer === 'me' ? '#E0F2FE' : '#F0F9FF' }}>
+                          className="h-full w-full items-center justify-center rounded-full bg-slate-100">
                           <Ionicons
                             name="person"
                             size={32}
-                            color={selectedCustomer === 'me' ? '#0284C7' : '#06B6D4'}
+                            color={selectedCustomer === 'me' ? '#0284C7' : '#475569'}
                           />
                         </View>
                       )}
@@ -329,12 +328,12 @@ export default function AppointmentScreen() {
                     <TouchableOpacity
                       onPress={() => handleCustomerSelect('me', primaryProfile)}
                       className={`mt-2 rounded-full px-4 py-2 ${
-                        selectedCustomer === 'me' ? 'bg-[#0284C7]' : 'bg-[#E0F2FE]'
+                        selectedCustomer === 'me' ? 'bg-sky-500' : 'bg-slate-100'
                       }`}>
                       <View className="flex-row items-center">
                         <Text
                           className={`font-medium ${
-                            selectedCustomer === 'me' ? 'text-white' : 'text-[#475569]'
+                            selectedCustomer === 'me' ? 'text-white' : 'text-slate-600'
                           }`}>
                           Bản thân
                         </Text>
@@ -358,8 +357,8 @@ export default function AppointmentScreen() {
                       onPress={() => handleCustomerSelect(`profile-${profile.id}`, profile)}
                       className={`h-16 w-16 items-center justify-center rounded-full border-2 ${
                         selectedCustomer === `profile-${profile.id}`
-                          ? 'border-[#0284C7]'
-                          : 'border-[#06B6D4]'
+                          ? 'border-sky-500'
+                          : 'border-slate-200'
                       }`}>
                       {profile.avatar ? (
                         <Image
@@ -369,8 +368,7 @@ export default function AppointmentScreen() {
                         />
                       ) : (
                         <View
-                          className="h-full w-full items-center justify-center rounded-full"
-                          style={{ backgroundColor: '#E0F2FE' }}>
+                          className="h-full w-full items-center justify-center rounded-full bg-slate-100">
                           <Text className="text-lg font-bold text-sky-600">
                             {profile.firstName.charAt(0).toUpperCase()}
                           </Text>
@@ -381,15 +379,15 @@ export default function AppointmentScreen() {
                       onPress={() => handleCustomerSelect(`profile-${profile.id}`, profile)}
                       className={`mt-2 rounded-full px-4 py-2 ${
                         selectedCustomer === `profile-${profile.id}`
-                          ? 'bg-[#0284C7]'
-                          : 'bg-[#E0F2FE]'
+                          ? 'bg-sky-500'
+                          : 'bg-slate-100'
                       }`}>
                       <View className="flex-row items-center">
                         <Text
                           className={`font-medium ${
                             selectedCustomer === `profile-${profile.id}`
                               ? 'text-white'
-                              : 'text-[#475569]'
+                              : 'text-slate-600'
                           }`}>
                           {getRelationshipLabel(profile.relationship) || profile.firstName}
                         </Text>
@@ -411,23 +409,23 @@ export default function AppointmentScreen() {
                   <TouchableOpacity
                     onPress={() => handleCustomerSelect('add')}
                     className={`h-16 w-16 items-center justify-center rounded-full border-2 ${
-                      selectedCustomer === 'add' ? 'border-[#0284C7]' : 'border-[#06B6D4]'
+                      selectedCustomer === 'add' ? 'border-sky-500' : 'border-slate-200'
                     }`}>
                     <Ionicons
                       name="person-add"
                       size={32}
-                      color={selectedCustomer === 'add' ? '#0284C7' : '#06B6D4'}
+                      color={selectedCustomer === 'add' ? '#0284C7' : '#475569'}
                     />
                   </TouchableOpacity>
                   <TouchableOpacity
                     onPress={() => handleCustomerSelect('add')}
                     className={`mt-2 rounded-full px-4 py-2 ${
-                      selectedCustomer === 'add' ? 'bg-[#0284C7]' : 'bg-[#E0F2FE]'
+                      selectedCustomer === 'add' ? 'bg-sky-500' : 'bg-slate-100'
                     }`}>
                     <View className="flex-row items-center">
                       <Text
                         className={`font-medium ${
-                          selectedCustomer === 'add' ? 'text-white' : 'text-[#475569]'
+                          selectedCustomer === 'add' ? 'text-white' : 'text-slate-600'
                         }`}>
                         Thêm mới
                       </Text>
@@ -456,15 +454,12 @@ export default function AppointmentScreen() {
               <View>
                 <View
                   className="flex-row items-center rounded-xl border px-5 py-4"
-                  style={{ backgroundColor: '#F0FDFA', borderColor: '#E0F2FE' }}>
-                  <Ionicons name="create" size={22} color="#0284C7" />
+                  style={{ backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' }}>
+                  <Ionicons name="create" size={22} color="#64748B" />
                   <TextInput
-                    className="ml-4 flex-1 text-lg"
-                    style={{
-                      color: selectedCustomer === 'add' ? '#0F172A' : '#9CA3AF',
-                    }}
+                    className="ml-4 flex-1 text-lg text-slate-800"
                     placeholder="* Họ"
-                    placeholderTextColor="#475569"
+                    placeholderTextColor="#94A3B8"
                     value={lastName}
                     onChangeText={setLastName}
                     editable={selectedCustomer === 'add'}
@@ -475,15 +470,12 @@ export default function AppointmentScreen() {
               <View>
                 <View
                   className="flex-row items-center rounded-xl border px-5 py-4"
-                  style={{ backgroundColor: '#F0FDFA', borderColor: '#E0F2FE' }}>
-                  <Ionicons name="create" size={22} color="#0284C7" />
+                  style={{ backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' }}>
+                  <Ionicons name="create" size={22} color="#64748B" />
                   <TextInput
-                    className="ml-4 flex-1 text-lg"
-                    style={{
-                      color: selectedCustomer === 'add' ? '#0F172A' : '#9CA3AF',
-                    }}
+                    className="ml-4 flex-1 text-lg text-slate-800"
                     placeholder="* Tên"
-                    placeholderTextColor="#475569"
+                    placeholderTextColor="#94A3B8"
                     value={firstName}
                     onChangeText={setFirstName}
                     editable={selectedCustomer === 'add'}
@@ -503,15 +495,12 @@ export default function AppointmentScreen() {
               <View>
                 <View
                   className="flex-row items-center rounded-xl border px-5 py-4"
-                  style={{ backgroundColor: '#F0FDFA', borderColor: '#E0F2FE' }}>
-                  <Ionicons name="call" size={22} color="#0284C7" />
+                  style={{ backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' }}>
+                  <Ionicons name="call" size={22} color="#64748B" />
                   <TextInput
-                    className="ml-4 flex-1 text-lg"
-                    style={{
-                      color: selectedCustomer === 'add' ? '#0F172A' : '#9CA3AF',
-                    }}
+                    className="ml-4 flex-1 text-lg text-slate-800"
                     placeholder="* 0988659126"
-                    placeholderTextColor="#475569"
+                    placeholderTextColor="#94A3B8"
                     value={phoneNumber}
                     onChangeText={setPhoneNumber}
                     keyboardType="phone-pad"

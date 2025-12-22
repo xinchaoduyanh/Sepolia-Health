@@ -58,12 +58,23 @@ export class NotificationService {
   }
 
   private async getOrCreateNotificationChannel(userId: string) {
+    console.log(`📢 [NotificationService] === GET OR CREATE NOTIFICATION CHANNEL ===`);
+    console.log(`📢 [NotificationService] User ID: ${userId}`);
+
     const channelId = `${this.NOTIFICATION_CHANNEL_PREFIX}_${userId}`;
+    console.log(`📢 [NotificationService] Channel ID: ${channelId}`);
+    console.log(`📢 [NotificationService] StreamClient connected as: ${this.streamClient.userID}`);
+
     const channel = this.streamClient.channel('messaging', channelId, {
       created_by_id: 'system',
       members: ['system', userId],
     });
+
+    console.log(`📢 [NotificationService] Watching channel: ${channelId}`);
     await channel.watch();
+    console.log(`✅ [NotificationService] Channel watched successfully: ${channelId}`);
+    console.log(`✅ [NotificationService] Channel members:`, Object.keys(channel.state?.members || {}));
+
     return channel;
   }
 

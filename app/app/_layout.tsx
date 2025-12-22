@@ -8,6 +8,7 @@ import { PaymentProvider } from '@/contexts/PaymentContext';
 import { QueryProvider } from '@/providers/QueryProvider';
 import { ChatProvider } from '@/contexts/ChatContext';
 import { NotificationProvider } from '@/contexts/NotificationContext';
+import { GlobalLoading } from '@/components/GlobalLoading';
 import { BackgroundPrefetch } from '@/components/BackgroundPrefetch';
 import Constants from 'expo-constants';
 
@@ -36,11 +37,14 @@ export default function Layout() {
             <VideoProvider>
               <AppointmentProvider>
                 <PaymentProvider>
+                  {/* Stack điều hướng các màn hình */}
                   <Stack
                     screenOptions={{
                       headerShown: false,
                     }}
                   />
+                  {/* Lớp phủ loading toàn cục */}
+                  <GlobalLoading />
                 </PaymentProvider>
               </AppointmentProvider>
             </VideoProvider>

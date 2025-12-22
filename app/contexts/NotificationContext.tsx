@@ -2,7 +2,6 @@ import { createContext, useContext, useEffect, useState, useCallback, ReactNode 
 import { Channel } from 'stream-chat';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useChatContext } from './ChatContext';
-import { markNotificationAsRead } from '@/lib/api/notification';
 
 export interface NotificationData {
   id: string;
@@ -143,7 +142,10 @@ const NotificationProvider = ({ children }: { children: ReactNode }) => {
 
         // Create notification channel ID
         const channelId = `notifications_${user.id}`;
-        console.log('📋 [NotificationContext] Channel ID:', channelId);
+        console.log('📋 [NotificationContext] === NOTIFICATION CHANNEL INIT ===');
+        console.log(`📋 [NotificationContext] User ID: ${user.id}`);
+        console.log(`📋 [NotificationContext] Channel ID: ${channelId}`);
+        console.log(`📋 [NotificationContext] ChatClient UserID: ${chatClient.userID}`);
 
         // Check again before creating channel
         if (isCancelled || !chatClient || chatClient.userID !== user.id.toString()) {
@@ -256,13 +258,18 @@ const NotificationProvider = ({ children }: { children: ReactNode }) => {
 
   // Mark notification as read
   const markAsRead = async (notificationId: string) => {
-    if (!notificationChannel || !user) return;
+    if (!notificationChannel || !user) {
+      console.warn('⚠️ [NotificationContext] Cannot mark as read: missing channel or user');
+      return;
+    }
 
     try {
-      // Gọi backend API để update message metadata trong StreamChat
-      await markNotificationAsRead(user.id.toString(), notificationId);
+      console.log('📖 [NotificationContext] Marking notification as read:', notificationId);
 
-      // Update local state sau khi update thành công
+      // ✅ CÁCH CHÍNH THỨC: Dùng StreamChat API trực tiếp
+      await notificationChannel.markRead();
+
+      // Update local state sau khi mark read thành công
       const readAt = new Date().toISOString();
       setNotifications((prev) =>
         prev.map((n) =>
@@ -281,15 +288,20 @@ const NotificationProvider = ({ children }: { children: ReactNode }) => {
         )
       );
 
-      console.log('✅ Notification marked as read:', notificationId);
+      console.log('✅ [NotificationContext] Notification marked as read successfully:', notificationId);
+      console.log('📊 [NotificationContext] Channel last_read updated for user:', notificationChannel.client?.userID);
     } catch (error) {
-      console.error('Error marking notification as read:', error);
-      // Fallback: update local state nếu API call fail
+      console.error('❌ [NotificationContext] Error marking notification as read:', error);
+
+      // Fallback: Update local state if StreamChat API fails
+      const readAt = new Date().toISOString();
       setNotifications((prev) =>
         prev.map((n) =>
-          n.id === notificationId ? { ...n, status: 'READ', readAt: new Date().toISOString() } : n
+          n.id === notificationId ? { ...n, status: 'READ', readAt } : n
         )
       );
+
+      console.log('🔄 [NotificationContext] Fallback: Updated local state only');
     }
   };
 

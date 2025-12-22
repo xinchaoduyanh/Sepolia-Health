@@ -335,6 +335,10 @@ const ChatProvider = ({ children }: { children: ReactNode }) => {
         });
 
         // Use tokenProvider for automatic token refresh
+        console.log('🔑 [ChatContext] === GETTING STREAM CHAT TOKEN ===');
+        console.log(`🔑 [ChatContext] User ID requesting token: ${currentUserIdString}`);
+        console.log(`🔑 [ChatContext] User Name: ${userProfile.name}`);
+
         await client.connectUser(
           {
             id: currentUserIdString,
@@ -342,9 +346,17 @@ const ChatProvider = ({ children }: { children: ReactNode }) => {
             image: userProfile.image,
           },
           async () => {
-            return await ChatAPI.getToken();
+            console.log('🔄 [ChatContext] === TOKEN REFRESH CALLBACK ===');
+            console.log(`🔄 [ChatContext] Refreshing token for user: ${currentUserIdString}`);
+            const token = await ChatAPI.getToken();
+            console.log(`🔄 [ChatContext] New token received (length: ${token.length})`);
+            return token;
           }
         );
+
+        console.log('✅ [ChatContext] === STREAM CHAT CONNECTED SUCCESSFULLY ===');
+        console.log(`✅ [ChatContext] Connected User ID: ${client.userID}`);
+        console.log(`✅ [ChatContext] Connected User Name: ${userProfile.name}`);
 
         if (isMounted) {
           setChatClient(client);
