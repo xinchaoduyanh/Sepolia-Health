@@ -61,7 +61,7 @@ export default function AppointmentScreen() {
     setPatientDescription,
   } = useAppointment();
 
-  // Auto-fill user info when component mounts (default to "Bản thân")
+  // Auto-fill user info when component mounts or customer changes
   useEffect(() => {
     if (user && selectedCustomer === 'me' && primaryProfile) {
       setSelectedProfile(primaryProfile); // Set profile ID for appointment
@@ -71,7 +71,7 @@ export default function AppointmentScreen() {
       setPhoneNumber(primaryProfile.phone);
       setGender(primaryProfile.gender === 'OTHER' ? null : primaryProfile.gender);
     }
-  }, [user, selectedCustomer, primaryProfile]);
+  }, [user, selectedCustomer, primaryProfile]); // Only run when these change, NOT gender
 
   const { data: availabilityData, error: availabilityError } = useDoctorAvailability(
     selectedDoctorServiceId || 0,
@@ -283,7 +283,12 @@ export default function AppointmentScreen() {
         </View>
       </LinearGradient>
 
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+      <ScrollView
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
+        nestedScrollEnabled={true}
+        collapsable={false}
+        removeClippedSubviews={false}>
         {/* Main Content */}
         <View className="px-5 py-6">
           {/* Chọn Khách hàng Section */}
@@ -298,13 +303,18 @@ export default function AppointmentScreen() {
               </Text>
             </View>
 
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4">
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              nestedScrollEnabled={true}
+              className="mb-4">
               <View className="flex-row space-x-4">
                 {/* Primary Profile (Tôi) */}
                 {primaryProfile && (
-                  <View className="items-center">
-                    <TouchableOpacity
-                      onPress={() => handleCustomerSelect('me', primaryProfile)}
+                  <TouchableOpacity
+                    onPress={() => handleCustomerSelect('me', primaryProfile)}
+                    className="items-center">
+                    <View
                       className={`h-16 w-16 items-center justify-center rounded-full border-2 ${
                         selectedCustomer === 'me' ? 'border-[#0284C7]' : 'border-[#06B6D4]'
                       }`}>
@@ -325,9 +335,8 @@ export default function AppointmentScreen() {
                           />
                         </View>
                       )}
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => handleCustomerSelect('me', primaryProfile)}
+                    </View>
+                    <View
                       className={`mt-2 rounded-full px-4 py-2 ${
                         selectedCustomer === 'me' ? 'bg-[#0284C7]' : 'bg-[#E0F2FE]'
                       }`}>
@@ -347,15 +356,17 @@ export default function AppointmentScreen() {
                           />
                         )}
                       </View>
-                    </TouchableOpacity>
-                  </View>
+                    </View>
+                  </TouchableOpacity>
                 )}
 
                 {/* Other Patient Profiles */}
                 {otherProfiles.map((profile) => (
-                  <View key={profile.id} className="items-center">
-                    <TouchableOpacity
-                      onPress={() => handleCustomerSelect(`profile-${profile.id}`, profile)}
+                  <TouchableOpacity
+                    key={profile.id}
+                    onPress={() => handleCustomerSelect(`profile-${profile.id}`, profile)}
+                    className="items-center">
+                    <View
                       className={`h-16 w-16 items-center justify-center rounded-full border-2 ${
                         selectedCustomer === `profile-${profile.id}`
                           ? 'border-[#0284C7]'
@@ -376,9 +387,8 @@ export default function AppointmentScreen() {
                           </Text>
                         </View>
                       )}
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => handleCustomerSelect(`profile-${profile.id}`, profile)}
+                    </View>
+                    <View
                       className={`mt-2 rounded-full px-4 py-2 ${
                         selectedCustomer === `profile-${profile.id}`
                           ? 'bg-[#0284C7]'
@@ -402,14 +412,15 @@ export default function AppointmentScreen() {
                           />
                         )}
                       </View>
-                    </TouchableOpacity>
-                  </View>
+                    </View>
+                  </TouchableOpacity>
                 ))}
 
                 {/* Add New Profile */}
-                <View className="items-center">
-                  <TouchableOpacity
-                    onPress={() => handleCustomerSelect('add')}
+                <TouchableOpacity
+                  onPress={() => handleCustomerSelect('add')}
+                  className="items-center">
+                  <View
                     className={`h-16 w-16 items-center justify-center rounded-full border-2 ${
                       selectedCustomer === 'add' ? 'border-[#0284C7]' : 'border-[#06B6D4]'
                     }`}>
@@ -418,9 +429,8 @@ export default function AppointmentScreen() {
                       size={32}
                       color={selectedCustomer === 'add' ? '#0284C7' : '#06B6D4'}
                     />
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={() => handleCustomerSelect('add')}
+                  </View>
+                  <View
                     className={`mt-2 rounded-full px-4 py-2 ${
                       selectedCustomer === 'add' ? 'bg-[#0284C7]' : 'bg-[#E0F2FE]'
                     }`}>
@@ -440,8 +450,8 @@ export default function AppointmentScreen() {
                         />
                       )}
                     </View>
-                  </TouchableOpacity>
-                </View>
+                  </View>
+                </TouchableOpacity>
               </View>
             </ScrollView>
           </View>
@@ -543,7 +553,7 @@ export default function AppointmentScreen() {
             </View>
 
             {/* Gender Selection */}
-            <View className="mt-8">
+            <View className="mt-8" pointerEvents="auto">
               <GenderSelector
                 selectedGender={gender}
                 onGenderSelect={setGender}
@@ -567,6 +577,8 @@ export default function AppointmentScreen() {
             <View className="space-y-6">
               <TouchableOpacity
                 onPress={handleFacilitySelect}
+                activeOpacity={0.7}
+                delayPressIn={0}
                 className="flex-row items-center rounded-xl border px-5 py-4"
                 style={{ backgroundColor: '#F0FDFA', borderColor: '#E0F2FE' }}>
                 <Ionicons name="business" size={22} color="#0284C7" />
@@ -584,6 +596,8 @@ export default function AppointmentScreen() {
               {/* Chọn dịch vụ */}
               <TouchableOpacity
                 onPress={handleServiceSelect}
+                activeOpacity={0.7}
+                delayPressIn={0}
                 disabled={!selectedFacility}
                 className={`flex-row items-center rounded-xl border px-5 py-4 ${
                   selectedFacility ? 'border-[#E0F2FE]' : 'border-[#D1D5DB]'
@@ -613,6 +627,8 @@ export default function AppointmentScreen() {
               {/* Chọn bác sĩ */}
               <TouchableOpacity
                 onPress={handleDoctorSelect}
+                activeOpacity={0.7}
+                delayPressIn={0}
                 disabled={!selectedFacility || !selectedService}
                 className={`flex-row items-center rounded-xl border px-5 py-4 ${
                   selectedFacility && selectedService ? 'border-[#E0F2FE]' : 'border-[#D1D5DB]'
@@ -664,6 +680,8 @@ export default function AppointmentScreen() {
                   <TouchableOpacity
                     key={index}
                     onPress={() => handlePresetDateSelect(date)}
+                    activeOpacity={0.7}
+                    delayPressIn={0}
                     className={`flex-1 rounded-xl px-4 py-4 ${
                       selectedDate === date.fullDate ? 'bg-[#0284C7]' : 'bg-[#F0FDFA]'
                     }`}
@@ -694,6 +712,8 @@ export default function AppointmentScreen() {
 
               <TouchableOpacity
                 onPress={handleCustomDatePress}
+                activeOpacity={0.7}
+                delayPressIn={0}
                 className="flex-1 items-center justify-center rounded-xl px-4 py-4"
                 style={{
                   backgroundColor: selectedCustomDate ? '#0284C7' : '#F0FDFA',
@@ -720,7 +740,7 @@ export default function AppointmentScreen() {
 
             {/* Chọn thời gian - chỉ hiển thị khi đã chọn ngày */}
             {selectedDate && (
-              <View>
+              <View pointerEvents="auto">
                 {/* Time Slots - chỉ hiển thị khi đã chọn đủ thông tin và có ngày */}
                 {selectedFacility && selectedService && selectedDoctor && selectedDate && (
                   <View className="mb-4">
@@ -812,6 +832,8 @@ export default function AppointmentScreen() {
             <View className="mt-8">
               <TouchableOpacity
                 onPress={handleBookAppointment}
+                activeOpacity={0.8}
+                delayPressIn={0}
                 disabled={createAppointmentMutation.isPending}
                 className="items-center rounded-xl py-4"
                 style={{
@@ -846,6 +868,8 @@ export default function AppointmentScreen() {
                 </Text>
                 <TouchableOpacity
                   onPress={() => setShowDatePicker(false)}
+                  activeOpacity={0.7}
+                  delayPressIn={0}
                   className="h-8 w-8 items-center justify-center rounded-full"
                   style={{ backgroundColor: '#E0F2FE' }}>
                   <Ionicons name="close" size={20} color="#06B6D4" />
@@ -864,6 +888,8 @@ export default function AppointmentScreen() {
                           const selectedDate = new Date(date.year, date.month - 1, date.day);
                           handleCustomDateConfirm(selectedDate);
                         }}
+                        activeOpacity={0.7}
+                        delayPressIn={0}
                         className={`w-20 rounded-xl border-2 px-2 py-3 ${
                           selectedCustomDate &&
                           selectedCustomDate.getDate() === date.day &&

@@ -154,7 +154,10 @@ export default function BirthDatePicker({
                 {/* Day Picker */}
                 <View className="flex-1">
                   <Text className="mb-2 text-sm font-bold text-slate-700">Ngày</Text>
-                  <ScrollView className="h-32" showsVerticalScrollIndicator={false}>
+                  <ScrollView
+                    className="h-32"
+                    showsVerticalScrollIndicator={false}
+                    nestedScrollEnabled={true}>
                     {days.map((day) => (
                       <TouchableOpacity
                         key={day}
@@ -177,7 +180,10 @@ export default function BirthDatePicker({
                 {/* Month Picker */}
                 <View className="flex-1">
                   <Text className="mb-2 text-sm font-bold text-slate-700">Tháng</Text>
-                  <ScrollView className="h-32" showsVerticalScrollIndicator={false}>
+                  <ScrollView
+                    className="h-32"
+                    showsVerticalScrollIndicator={false}
+                    nestedScrollEnabled={true}>
                     {months.map((month) => (
                       <TouchableOpacity
                         key={month.value}
@@ -202,7 +208,10 @@ export default function BirthDatePicker({
                 {/* Year Picker */}
                 <View className="flex-1">
                   <Text className="mb-2 text-sm font-bold text-slate-700">Năm</Text>
-                  <ScrollView className="h-32" showsVerticalScrollIndicator={false}>
+                  <ScrollView
+                    className="h-32"
+                    showsVerticalScrollIndicator={false}
+                    nestedScrollEnabled={true}>
                     {years.map((year) => (
                       <TouchableOpacity
                         key={year}

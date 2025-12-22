@@ -28,7 +28,9 @@ export default function GenderSelector({
   disabled = false,
 }: GenderSelectorProps) {
   return (
-    <View>
+    <View
+      onStartShouldSetResponderCapture={() => false}
+      onMoveShouldSetResponderCapture={() => false}>
       <View className="mb-4">
         <Text className="text-lg font-bold text-slate-900">Giới tính *</Text>
       </View>
@@ -95,6 +97,8 @@ export default function GenderSelector({
               key={option.value}
               onPress={() => !disabled && onGenderSelect(option.value)}
               disabled={disabled}
+              activeOpacity={0.7}
+              delayPressIn={0}
               style={{
                 flex: 1,
                 flexDirection: 'row',
@@ -112,8 +116,6 @@ export default function GenderSelector({
                 shadowOpacity: isSelected ? 0.3 : 0.05,
                 shadowRadius: isSelected ? 4 : 2,
                 elevation: isSelected ? 3 : 1,
-                // QUAN TRỌNG: Luôn giữ opacity là 1 để màu sắc không bị nhạt đi
-                opacity: 1,
               }}>
               <Ionicons name={option.icon} size={20} color={iconColor} />
               <Text

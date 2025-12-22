@@ -90,6 +90,8 @@ export default function TimeSlotPicker({
         {/* Morning Button */}
         <TouchableOpacity
           onPress={() => setSelectedPeriod('morning')}
+          activeOpacity={0.7}
+          delayPressIn={0}
           style={{
             flex: 1,
             flexDirection: 'row',
@@ -128,6 +130,8 @@ export default function TimeSlotPicker({
         {/* Afternoon Button */}
         <TouchableOpacity
           onPress={() => setSelectedPeriod('afternoon')}
+          activeOpacity={0.7}
+          delayPressIn={0}
           style={{
             flex: 1,
             flexDirection: 'row',
@@ -201,6 +205,7 @@ export default function TimeSlotPicker({
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
+            nestedScrollEnabled={true}
             contentContainerStyle={{ paddingRight: 20, gap: 12 }}
           >
             {filteredSlots.map((slot, index) => {
@@ -213,6 +218,8 @@ export default function TimeSlotPicker({
                 <TouchableOpacity
                   key={index}
                   onPress={() => onTimeSlotSelect(slot.startTime)}
+                  activeOpacity={0.7}
+                  delayPressIn={0}
                   style={{
                     minWidth: 100,
                     paddingVertical: 12,

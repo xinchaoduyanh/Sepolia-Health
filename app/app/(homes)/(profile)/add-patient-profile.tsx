@@ -20,6 +20,7 @@ import { router } from 'expo-router';
 import { userApi } from '@/lib/api';
 import { useUploadPatientProfileAvatar } from '@/lib/api/user';
 import BirthDatePicker from '@/components/BirthDatePicker';
+import GenderSelector from '@/components/GenderSelector';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { Relationship } from '@/constants/enum';
@@ -192,7 +193,10 @@ const AddPatientProfileScreen = () => {
         contentContainerStyle={{ paddingBottom: 100 }}
         scrollEventThrottle={16}
         contentInsetAdjustmentBehavior="never"
-        automaticallyAdjustContentInsets={false}>
+        automaticallyAdjustContentInsets={false}
+        nestedScrollEnabled={true}
+        collapsable={false}
+        removeClippedSubviews={false}>
         {/* Background Gradient - now scrollable and extends to top */}
         <View style={{ height: 320, position: 'relative', marginTop: -60 }}>
           <LinearGradient
@@ -313,16 +317,16 @@ const AddPatientProfileScreen = () => {
                 <Ionicons
                   name="person-outline"
                   size={20}
-                  color={firstNameError ? '#EF4444' : '#000000'}
+                  color={firstNameError ? '#EF4444' : '#06B6D4'}
                 />
                 <TextInput
-                  className="ml-3 flex-1 text-base text-gray-800"
+                  className="ml-3 flex-1 text-base text-slate-900"
                   placeholder="Tên"
-                  placeholderTextColor="#9CA3AF"
+                  placeholderTextColor="#06B6D4"
                   value={formData.firstName}
                   onChangeText={(text) => {
                     setFormData((prev) => ({ ...prev, firstName: text }));
-                    if (firstNameError) setFirstNameError(''); // Clear error when user types
+                    if (firstNameError) setFirstNameError('');
                   }}
                 />
               </View>
@@ -338,16 +342,16 @@ const AddPatientProfileScreen = () => {
                 <Ionicons
                   name="person-outline"
                   size={20}
-                  color={lastNameError ? '#EF4444' : '#000000'}
+                  color={lastNameError ? '#EF4444' : '#06B6D4'}
                 />
                 <TextInput
-                  className="ml-3 flex-1 text-base text-gray-800"
+                  className="ml-3 flex-1 text-base text-slate-900"
                   placeholder="Họ"
-                  placeholderTextColor="#9CA3AF"
+                  placeholderTextColor="#06B6D4"
                   value={formData.lastName}
                   onChangeText={(text) => {
                     setFormData((prev) => ({ ...prev, lastName: text }));
-                    if (lastNameError) setLastNameError(''); // Clear error when user types
+                    if (lastNameError) setLastNameError('');
                   }}
                 />
               </View>
@@ -361,16 +365,16 @@ const AddPatientProfileScreen = () => {
                 <Ionicons
                   name="call-outline"
                   size={20}
-                  color={phoneError ? '#EF4444' : '#000000'}
+                  color={phoneError ? '#EF4444' : '#06B6D4'}
                 />
                 <TextInput
-                  className="ml-3 flex-1 text-base text-gray-800"
+                  className="ml-3 flex-1 text-base text-slate-900"
                   placeholder="Số điện thoại"
-                  placeholderTextColor="#9CA3AF"
+                  placeholderTextColor="#06B6D4"
                   value={formData.phone}
                   onChangeText={(text) => {
                     setFormData((prev) => ({ ...prev, phone: text }));
-                    if (phoneError) setPhoneError(''); // Clear error when user types
+                    if (phoneError) setPhoneError('');
                   }}
                   keyboardType="phone-pad"
                   maxLength={11}
@@ -380,7 +384,7 @@ const AddPatientProfileScreen = () => {
             </View>
 
             {/* Date of Birth */}
-            <View>
+            <View pointerEvents="auto">
               <BirthDatePicker
                 selectedDate={dateOfBirth}
                 onDateSelect={setDateOfBirth}
@@ -390,83 +394,14 @@ const AddPatientProfileScreen = () => {
             </View>
 
             {/* Gender */}
-            <View>
-              <Text className="mb-4 text-lg font-bold text-slate-900">Giới tính *</Text>
-              <View className="flex-row space-x-4">
-                <Pressable
-                  onPress={() => {
-                    setGender('MALE');
-                    if (genderError) setGenderError('');
-                  }}
-                  className={`flex-1 flex-row items-center justify-center rounded-xl border-2 px-5 py-4 ${
-                    gender === 'MALE'
-                      ? 'border-blue-600'
-                      : genderError
-                        ? 'border-red-200'
-                        : 'border-gray-200'
-                  }`}
-                  style={({ pressed }) => [
-                    {
-                      opacity: pressed ? 0.7 : 1,
-                      backgroundColor:
-                        gender === 'MALE' ? '#DBEAFE' : genderError ? '#FEF2F2' : '#F9FAFB',
-                    },
-                  ]}>
-                  <Ionicons
-                    name="male"
-                    size={22}
-                    color={gender === 'MALE' ? '#2563EB' : genderError ? '#EF4444' : '#9CA3AF'}
-                  />
-                  <Text
-                    className={`ml-3 text-lg font-medium ${
-                      gender === 'MALE'
-                        ? 'text-blue-600'
-                        : genderError
-                          ? 'text-red-600'
-                          : 'text-gray-400'
-                    }`}>
-                    Nam
-                  </Text>
-                </Pressable>
-
-                <Pressable
-                  onPress={() => {
-                    setGender('FEMALE');
-                    if (genderError) setGenderError('');
-                  }}
-                  className={`flex-1 flex-row items-center justify-center rounded-xl border-2 px-5 py-4 ${
-                    gender === 'FEMALE'
-                      ? 'border-pink-600'
-                      : genderError
-                        ? 'border-red-200'
-                        : 'border-gray-200'
-                  }`}
-                  style={({ pressed }) => [
-                    {
-                      opacity: pressed ? 0.7 : 1,
-                      backgroundColor:
-                        gender === 'FEMALE' ? '#FCE7F3' : genderError ? '#FEF2F2' : '#F9FAFB',
-                    },
-                  ]}>
-                  <Ionicons
-                    name="female"
-                    size={22}
-                    color={gender === 'FEMALE' ? '#DB2777' : genderError ? '#EF4444' : '#9CA3AF'}
-                  />
-                  <Text
-                    className={`ml-3 text-lg font-medium ${
-                      gender === 'FEMALE'
-                        ? 'text-pink-600'
-                        : genderError
-                          ? 'text-red-600'
-                          : 'text-gray-400'
-                    }`}>
-                    Nữ
-                  </Text>
-                </Pressable>
-              </View>
-              {genderError && <Text className="mt-1 text-xs text-red-600">{genderError}</Text>}
-            </View>
+            <GenderSelector
+              selectedGender={gender}
+              onGenderSelect={(value) => {
+                setGender(value);
+                if (genderError) setGenderError('');
+              }}
+              error={genderError}
+            />
 
             {/* Relationship Selection */}
             <View>
