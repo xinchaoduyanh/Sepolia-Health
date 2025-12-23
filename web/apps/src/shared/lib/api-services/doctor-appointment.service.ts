@@ -40,6 +40,12 @@ export interface FeedbackInfo {
     createdAt: Date
 }
 
+export interface DoctorInfo {
+    id: number
+    firstName: string
+    lastName: string
+}
+
 export interface DoctorAppointmentDetail {
     id: number
     startTime: Date
@@ -49,6 +55,7 @@ export interface DoctorAppointmentDetail {
     type: 'ONLINE' | 'OFFLINE'
     hostUrl?: string | null
     patient?: PatientInfo
+    doctor?: DoctorInfo
     service?: ServiceInfo
     clinic?: ClinicInfo | null
     feedback?: FeedbackInfo | null
@@ -108,6 +115,25 @@ export class DoctorAppointmentService {
      */
     async updateResult(id: number, data: CreateAppointmentResultDto): Promise<AppointmentResult> {
         return apiClient.put<AppointmentResult>(`/doctor/appointments/${id}/result`, data)
+    }
+
+    /**
+     * Get patient medical history
+     * GET /doctor/appointments/patient/:patientProfileId/history
+     */
+    async getPatientMedicalHistory(
+        patientProfileId: number,
+        params?: {
+            page?: number
+            limit?: number
+            sortBy?: string
+            sortOrder?: 'asc' | 'desc'
+        }
+    ): Promise<DoctorAppointmentsListResponse> {
+        return apiClient.get<DoctorAppointmentsListResponse>(
+            `/doctor/appointments/patient/${patientProfileId}/history`,
+            { params }
+        )
     }
 }
 

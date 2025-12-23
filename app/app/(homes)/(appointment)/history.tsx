@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   ScrollView,
   StatusBar,
-  ActivityIndicator,
   RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -37,36 +36,24 @@ export default function AppointmentHistoryScreen() {
     ...(selectedProfileId ? { patientProfileId: selectedProfileId } : {}),
   };
 
-  // Fetch both COMPLETED and CANCELLED appointments
-  const { data: completedData, isLoading: isLoadingCompleted } = useMyAppointments({
+  // Chỉ fetch COMPLETED appointments (không lấy CANCELLED)
+  const { data: completedData, isLoading } = useMyAppointments({
     ...filters,
     status: 'COMPLETED' as AppointmentStatus,
   });
 
-  const { data: cancelledData, isLoading: isLoadingCancelled } = useMyAppointments({
-    ...filters,
-    status: 'CANCELLED' as AppointmentStatus,
-  });
-
-  // Merge both results
-  const allAppointments = [
-    ...(completedData?.data || []),
-    ...(cancelledData?.data || []),
-  ];
-
   // Sort by startTime descending (newest first) - already sorted by backend but ensure
+  const allAppointments = [...(completedData?.data || [])];
   allAppointments.sort((a, b) => {
     return new Date(b.startTime).getTime() - new Date(a.startTime).getTime();
   });
 
-  // Manual pagination on merged results
+  // Manual pagination on results
   const startIndex = (page - 1) * 10;
   const endIndex = startIndex + 10;
   const appointments = allAppointments.slice(startIndex, endIndex);
   const total = allAppointments.length;
   const totalPages = Math.ceil(total / 10);
-
-  const isLoading = isLoadingCompleted || isLoadingCancelled;
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -126,7 +113,7 @@ export default function AppointmentHistoryScreen() {
             <Path d="M0,0 Q720,120 1440,0 L1440,120 L0,120 Z" fill="#E0F2FE" />
           </Svg>
 
-          {/* Header */}
+          {/* Header với Back Button */}
           <View
             style={{
               position: 'absolute',
@@ -134,12 +121,28 @@ export default function AppointmentHistoryScreen() {
               left: 24,
               right: 24,
             }}>
-            <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#FFFFFF' }}>
-              Lịch sử khám bệnh
-            </Text>
-            <Text style={{ fontSize: 14, color: '#FFFFFF', opacity: 0.9, marginTop: 4 }}>
-              Xem lại các lịch khám đã hoàn thành
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <TouchableOpacity
+                onPress={() => router.back()}
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
+                  backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}>
+                <Ionicons name="arrow-back" size={24} color="white" />
+              </TouchableOpacity>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#FFFFFF' }}>
+                  Lịch sử khám bệnh
+                </Text>
+                <Text style={{ fontSize: 14, color: '#FFFFFF', opacity: 0.9, marginTop: 4 }}>
+                  Xem lại các lịch khám đã hoàn thành
+                </Text>
+              </View>
+            </View>
           </View>
         </View>
 
@@ -209,7 +212,8 @@ export default function AppointmentHistoryScreen() {
                     <Text
                       style={{
                         fontSize: 11,
-                        color: selectedProfileId === profile.id ? 'rgba(255,255,255,0.8)' : '#9CA3AF',
+                        color: selectedProfileId === profile.id ? 'white' : '#6B7280',
+                        fontWeight: '500',
                       }}>
                       ({getRelationshipLabel(profile.relationship)})
                     </Text>
@@ -221,11 +225,121 @@ export default function AppointmentHistoryScreen() {
 
           {/* Appointments List */}
           {isLoading ? (
-            <View style={{ alignItems: 'center', paddingVertical: 40 }}>
-              <ActivityIndicator size="large" color="#0284C7" />
-              <Text style={{ marginTop: 16, fontSize: 16, color: '#6B7280' }}>
-                Đang tải lịch sử...
-              </Text>
+            <View style={{ gap: 16 }}>
+              {/* Skeleton Cards - giống structure thật */}
+              {[1, 2, 3].map((i) => (
+                <View
+                  key={i}
+                  style={{
+                    backgroundColor: 'white',
+                    borderRadius: 16,
+                    padding: 16,
+                    flexDirection: 'row',
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.1,
+                    shadowRadius: 4,
+                    elevation: 3,
+                  }}>
+                  {/* Date Block Skeleton */}
+                  <View
+                    style={{
+                      marginRight: 16,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      borderRadius: 12,
+                      paddingHorizontal: 12,
+                      paddingVertical: 8,
+                      backgroundColor: '#F0FDFA',
+                    }}>
+                    <View
+                      style={{
+                        width: 40,
+                        height: 14,
+                        backgroundColor: '#E5E7EB',
+                        borderRadius: 4,
+                        marginBottom: 4,
+                      }}
+                  />
+                    <View
+                      style={{
+                        width: 40,
+                        height: 28,
+                        backgroundColor: '#E5E7EB',
+                        borderRadius: 4,
+                      }}
+                  />
+                  </View>
+
+                  {/* Content Skeleton */}
+                  <View style={{ flex: 1, gap: 8 }}>
+                    <View
+                      style={{
+                        width: '70%',
+                        height: 20,
+                        backgroundColor: '#E5E7EB',
+                        borderRadius: 4,
+                      }}
+                    />
+                    <View
+                      style={{
+                        width: '50%',
+                        height: 16,
+                        backgroundColor: '#E5E7EB',
+                        borderRadius: 4,
+                      }}
+                    />
+                    <View
+                      style={{
+                        width: '60%',
+                        height: 16,
+                        backgroundColor: '#E5E7EB',
+                        borderRadius: 4,
+                      }}
+                    />
+
+                    {/* Status Badge Skeleton */}
+                    <View
+                      style={{
+                        width: 100,
+                        height: 24,
+                        backgroundColor: '#E5E7EB',
+                        borderRadius: 12,
+                        marginTop: 4,
+                      }}
+                    />
+
+                    {/* Result Box Skeleton */}
+                    <View
+                      style={{
+                        marginTop: 12,
+                        backgroundColor: '#EFF6FF',
+                        borderRadius: 8,
+                        padding: 12,
+                        borderLeftWidth: 3,
+                        borderLeftColor: '#E5E7EB',
+                        gap: 8,
+                      }}>
+                      <View
+                        style={{
+                          width: '80%',
+                          height: 14,
+                          backgroundColor: '#E5E7EB',
+                          borderRadius: 4,
+                        }}
+                      />
+                      <View
+                        style={{
+                          width: '100%',
+                          height: 14,
+                          backgroundColor: '#E5E7EB',
+                          borderRadius: 4,
+                        }}
+                      />
+                    </View>
+                  </View>
+                </View>
+              ))}
             </View>
           ) : appointments.length === 0 ? (
             <View style={{ alignItems: 'center', paddingVertical: 40 }}>

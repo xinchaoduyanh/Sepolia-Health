@@ -20,6 +20,8 @@ import {
     Save,
     Loader2,
     AlertCircle,
+    History,
+    Home,
 } from 'lucide-react'
 import { formatDate, formatTime } from '@/util/datetime'
 
@@ -172,17 +174,26 @@ export default function AppointmentDetailPage() {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex items-center gap-4">
-                <button
-                    onClick={() => router.back()}
-                    className="p-2 hover:bg-muted rounded-lg transition-colors border border-border"
-                >
-                    <ArrowLeft className="h-5 w-5 text-foreground" />
-                </button>
-                <div>
-                    <h1 className="text-3xl font-bold text-foreground">Chi tiết lịch khám</h1>
-                    <p className="text-sm text-muted-foreground mt-1">Mã lịch khám: #{appointment.id}</p>
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                    <button
+                        onClick={() => router.back()}
+                        className="p-2 hover:bg-muted rounded-lg transition-colors border border-border"
+                    >
+                        <ArrowLeft className="h-5 w-5 text-foreground" />
+                    </button>
+                    <div>
+                        <h1 className="text-3xl font-bold text-foreground">Chi tiết lịch khám</h1>
+                        <p className="text-sm text-muted-foreground mt-1">Mã lịch khám: #{appointment.id}</p>
+                    </div>
                 </div>
+                <button
+                    onClick={() => router.push('/doctor')}
+                    className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white text-sm font-medium rounded-lg transition-colors"
+                >
+                    <Home className="h-4 w-4" />
+                    Về trang chủ
+                </button>
             </div>
 
             {/* Appointment Info */}
@@ -239,9 +250,18 @@ export default function AppointmentDetailPage() {
                     {appointment.patient && (
                         <Card className="border-2 shadow-lg">
                             <CardHeader className="border-b bg-gradient-to-r from-blue-500/5 to-blue-500/10">
-                                <div className="flex items-center gap-2">
-                                    <User className="h-5 w-5 text-blue-600" />
-                                    <CardTitle className="text-xl font-bold">Thông tin bệnh nhân</CardTitle>
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <User className="h-5 w-5 text-blue-600" />
+                                        <CardTitle className="text-xl font-bold">Thông tin bệnh nhân</CardTitle>
+                                    </div>
+                                    <button
+                                        onClick={() => router.push(`/doctor/patient/${appointment.patient.id}/history`)}
+                                        className="flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-primary hover:bg-primary/90 text-white rounded-lg transition-all duration-200 hover:scale-105 shadow-md hover:shadow-lg"
+                                    >
+                                        <History className="h-4 w-4" />
+                                        Xem lịch sử khám của bệnh nhân
+                                    </button>
                                 </div>
                             </CardHeader>
                             <CardContent className="p-6">

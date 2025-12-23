@@ -84,3 +84,27 @@ export function useUpdateAppointmentResult() {
         },
     })
 }
+
+/**
+ * Hook to get patient medical history
+ * Returns all completed appointments for a specific patient
+ */
+export function usePatientMedicalHistory(
+    patientProfileId: number,
+    enabled: boolean = true,
+    params?: {
+        page?: number
+        limit?: number
+        sortBy?: string
+        sortOrder?: 'asc' | 'desc'
+    }
+) {
+    return useQuery<DoctorAppointmentsListResponse>({
+        queryKey: ['doctor', 'patient-history', patientProfileId, params],
+        queryFn: () => doctorAppointmentService.getPatientMedicalHistory(patientProfileId, params),
+        enabled: enabled && !!patientProfileId,
+        staleTime: 5 * 60 * 1000, // 5 minutes
+        retry: 1,
+        refetchOnWindowFocus: false,
+    })
+}

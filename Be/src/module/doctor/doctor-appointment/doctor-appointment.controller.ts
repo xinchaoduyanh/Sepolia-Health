@@ -150,4 +150,36 @@ export class DoctorAppointmentController {
       userId,
     );
   }
+
+  @Get('patient/:patientProfileId/history')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Lấy lịch sử khám bệnh của bệnh nhân',
+    description: 'Lấy tất cả các appointments đã hoàn thành của một bệnh nhân',
+  })
+  @ApiParam({
+    name: 'patientProfileId',
+    type: 'number',
+    description: 'ID hồ sơ bệnh nhân',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy lịch sử thành công',
+    type: DoctorAppointmentsListResponseDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Không tìm thấy bệnh nhân',
+  })
+  async getPatientMedicalHistory(
+    @Param('patientProfileId', ParseIntPipe) patientProfileId: number,
+    @Query() query: GetDoctorAppointmentsQueryDto,
+    @CurrentUser('userId') userId: number,
+  ): Promise<DoctorAppointmentsListResponseDto> {
+    return this.doctorAppointmentService.getPatientMedicalHistory(
+      patientProfileId,
+      query,
+      userId,
+    );
+  }
 }

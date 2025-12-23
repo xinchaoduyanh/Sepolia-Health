@@ -47,6 +47,7 @@ export default function TabLayout() {
             tabBarIcon: ({ color, size }) => (
               <Ionicons name="calendar-outline" size={size} color={color} />
             ),
+            href: '/(homes)/(appointment)',
           }}
         />
 

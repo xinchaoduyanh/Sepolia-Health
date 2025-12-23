@@ -86,6 +86,15 @@ export class DoctorAppointmentDetailDto {
   };
 
   @ApiProperty({
+    description: 'Thông tin bác sĩ',
+  })
+  doctor?: {
+    id: number;
+    firstName: string;
+    lastName: string;
+  };
+
+  @ApiProperty({
     description: 'Thông tin dịch vụ',
   })
   service?: {
