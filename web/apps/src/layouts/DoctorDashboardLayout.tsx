@@ -1,7 +1,11 @@
 'use client'
 
+import { StreamClientProvider } from '@/components/StreamClientProvider'
+import { NotificationPopover } from '@/components/notifications/NotificationPopover'
+import { ThemeSwitcher } from '@/shared/components/ThemeSwitcher'
+import { useAuth, useLogout } from '@/shared/hooks/useAuth'
+import { useDoctorProfile } from '@/shared/hooks/useDoctorProfile'
 import { Avatar, AvatarFallback, AvatarImage } from '@workspace/ui/components/Avatar'
-import { SidebarNavigationMenu, SidebarNavigationMenuItem } from '@workspace/ui/components/Sidebar.helpers'
 import {
     Sidebar,
     SidebarContent,
@@ -11,14 +15,11 @@ import {
     SidebarProvider,
     useSidebar,
 } from '@workspace/ui/components/Sidebar'
-import { ThemeSwitcher } from '@/shared/components/ThemeSwitcher'
-import { useAuth, useLogout } from '@/shared/hooks/useAuth'
-import { useDoctorProfile } from '@/shared/hooks/useDoctorProfile'
-import Image from 'next/image'
-import { Monitor, UserCheck, User, LogOut, MessageSquare, MoreHorizontal } from 'lucide-react'
+import { SidebarNavigationMenu, SidebarNavigationMenuItem } from '@workspace/ui/components/Sidebar.helpers'
+import { Bell, LogOut, MessageSquare, Monitor, MoreHorizontal, User, UserCheck } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useState, useRef, useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 // Component cho logo có thể toggle sidebar
 function ToggleLogo() {
@@ -63,6 +64,11 @@ const DOCTOR_MAIN_ITEMS: Array<SidebarNavigationMenuItem> = [
         title: 'Câu hỏi cộng đồng',
         url: '/doctor/qna',
         icon: MessageSquare,
+    },
+    {
+        title: 'Thông báo',
+        url: '/doctor/notifications',
+        icon: Bell,
     },
 ]
 
@@ -142,137 +148,144 @@ export function DoctorDashboardLayout({ children, defaultOpen = true }: DoctorDa
         : 'Doctor User'
 
     return (
-        <SidebarProvider defaultOpen={defaultOpen}>
-            <Sidebar collapsible="icon">
-                <SidebarHeader className="border-b-2 border-border bg-gradient-to-r from-primary/5 to-primary/10">
-                    <div className="flex items-center gap-3 px-4 py-4 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg">
-                            <Monitor className="h-5 w-5" />
-                        </div>
-                        <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
-                            <span className="truncate font-bold text-foreground">Sepolia Healthcare</span>
-                        </div>
-                    </div>
-                </SidebarHeader>
-
-                <SidebarContent className="gap-0 p-2">
-                    <SidebarNavigationMenu
-                        title="Chính"
-                        linkComponent={Link}
-                        items={DOCTOR_MAIN_ITEMS}
-                        currentPathname={currentPathname}
-                    />
-                </SidebarContent>
-
-                <SidebarFooter className="border-t border-border p-2 group-data-[collapsible=icon]:p-2">
-                    <div className="relative" ref={sidebarDropdownRef}>
-                        <button
-                            onClick={() => setIsSidebarDropdownOpen(!isSidebarDropdownOpen)}
-                            className="w-full flex items-center gap-3 px-3 py-3 hover:bg-sidebar-accent rounded-lg transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
-                        >
-                            <Avatar className="h-10 w-10 shrink-0 border-2 border-primary/20 group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8">
-                                {doctorAvatar ? <AvatarImage src={doctorAvatar} alt={doctorFullName} /> : null}
-                                <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-bold">
-                                    {doctorFullName.charAt(0).toUpperCase()}
-                                </AvatarFallback>
-                            </Avatar>
-                            <div className="grid flex-1 text-left text-xs group-data-[collapsible=icon]:hidden">
-                                <span className="truncate font-semibold text-sidebar-foreground">{doctorFullName}</span>
-                                <span className="truncate text-sidebar-foreground/70">{doctorEmail}</span>
+        <StreamClientProvider>
+            <SidebarProvider defaultOpen={defaultOpen}>
+                <Sidebar collapsible="icon">
+                    <SidebarHeader className="border-b-2 border-border bg-gradient-to-r from-primary/5 to-primary/10">
+                        <div className="flex items-center gap-3 px-4 py-4 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg">
+                                <Monitor className="h-5 w-5" />
                             </div>
-                        </button>
+                            <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
+                                <span className="truncate font-bold text-foreground">Sepolia Healthcare</span>
+                            </div>
+                        </div>
+                    </SidebarHeader>
 
-                        {isMounted && isSidebarDropdownOpen && (
-                            <div className="absolute bottom-full mb-2 w-64 bg-popover border-2 border-border rounded-xl shadow-2xl z-50 overflow-hidden backdrop-blur-sm group-data-[collapsible=icon]:left-full group-data-[collapsible=icon]:bottom-0 group-data-[collapsible=icon]:mb-0 group-data-[collapsible=icon]:ml-2 right-0 group-data-[collapsible=icon]:right-auto">
-                                <div className="p-2">
-                                    <div className="px-4 py-3 border-b border-border bg-gradient-to-r from-primary/5 to-primary/10 mb-1">
-                                        <p className="text-sm font-semibold text-popover-foreground truncate">
-                                            {doctorFullName}
-                                        </p>
-                                        <p className="text-xs text-muted-foreground truncate">{doctorEmail}</p>
+                    <SidebarContent className="gap-0 p-2">
+                        <SidebarNavigationMenu
+                            title="Chính"
+                            linkComponent={Link}
+                            items={DOCTOR_MAIN_ITEMS}
+                            currentPathname={currentPathname}
+                        />
+                    </SidebarContent>
+
+                    <SidebarFooter className="border-t border-border p-2 group-data-[collapsible=icon]:p-2">
+                        <div className="relative" ref={sidebarDropdownRef}>
+                            <button
+                                onClick={() => setIsSidebarDropdownOpen(!isSidebarDropdownOpen)}
+                                className="w-full flex items-center gap-3 px-3 py-3 hover:bg-sidebar-accent rounded-lg transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
+                            >
+                                <Avatar className="h-10 w-10 shrink-0 border-2 border-primary/20 group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8">
+                                    {doctorAvatar ? <AvatarImage src={doctorAvatar} alt={doctorFullName} /> : null}
+                                    <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-bold">
+                                        {doctorFullName.charAt(0).toUpperCase()}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <div className="grid flex-1 text-left text-xs group-data-[collapsible=icon]:hidden">
+                                    <span className="truncate font-semibold text-sidebar-foreground">
+                                        {doctorFullName}
+                                    </span>
+                                    <span className="truncate text-sidebar-foreground/70">{doctorEmail}</span>
+                                </div>
+                            </button>
+
+                            {isMounted && isSidebarDropdownOpen && (
+                                <div className="absolute bottom-full mb-2 w-64 bg-popover border-2 border-border rounded-xl shadow-2xl z-50 overflow-hidden backdrop-blur-sm group-data-[collapsible=icon]:left-full group-data-[collapsible=icon]:bottom-0 group-data-[collapsible=icon]:mb-0 group-data-[collapsible=icon]:ml-2 right-0 group-data-[collapsible=icon]:right-auto">
+                                    <div className="p-2">
+                                        <div className="px-4 py-3 border-b border-border bg-gradient-to-r from-primary/5 to-primary/10 mb-1">
+                                            <p className="text-sm font-semibold text-popover-foreground truncate">
+                                                {doctorFullName}
+                                            </p>
+                                            <p className="text-xs text-muted-foreground truncate">{doctorEmail}</p>
+                                        </div>
+                                        <button
+                                            onClick={handleAccountInfo}
+                                            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-popover-foreground hover:bg-accent hover:text-accent-foreground rounded-lg transition-all duration-200 cursor-pointer"
+                                        >
+                                            <User className="w-4 h-4" />
+                                            Thông tin tài khoản
+                                        </button>
+                                        <button
+                                            onClick={handleLogout}
+                                            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950 dark:hover:text-red-300 rounded-lg transition-all duration-200 cursor-pointer"
+                                        >
+                                            <LogOut className="w-4 h-4" />
+                                            Đăng xuất
+                                        </button>
                                     </div>
-                                    <button
-                                        onClick={handleAccountInfo}
-                                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-popover-foreground hover:bg-accent hover:text-accent-foreground rounded-lg transition-all duration-200 cursor-pointer"
-                                    >
-                                        <User className="w-4 h-4" />
-                                        Thông tin tài khoản
-                                    </button>
-                                    <button
-                                        onClick={handleLogout}
-                                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950 dark:hover:text-red-300 rounded-lg transition-all duration-200 cursor-pointer"
-                                    >
-                                        <LogOut className="w-4 h-4" />
-                                        Đăng xuất
-                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </SidebarFooter>
+                </Sidebar>
+
+                <SidebarInset>
+                    <header className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex h-16 shrink-0 items-center gap-2 border-b-2 border-border shadow-lg w-full">
+                        <div className="flex items-center justify-between px-6 w-full">
+                            <div className="flex items-center space-x-4">
+                                <ToggleLogo />
+                                <div className="h-8 w-px bg-border" />
+                                <div className="flex items-center gap-2">
+                                    <span className="text-sm font-semibold text-foreground hidden sm:block">
+                                        {greeting}, {doctorName}
+                                    </span>
                                 </div>
                             </div>
-                        )}
-                    </div>
-                </SidebarFooter>
-            </Sidebar>
+                            <div className="flex items-center space-x-4">
+                                <NotificationPopover />
+                                <ThemeSwitcher />
+                                <div className="relative" ref={dropdownRef}>
+                                    <button
+                                        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                                        className="ml-auto cursor-pointer hover:opacity-80 transition-all duration-200 hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-full shadow-md hover:shadow-lg"
+                                    >
+                                        <Avatar className="border-2 border-primary/20">
+                                            {doctorAvatar ? (
+                                                <AvatarImage src={doctorAvatar} alt={doctorFullName} />
+                                            ) : null}
+                                            <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-bold">
+                                                {doctorFullName.charAt(0).toUpperCase()}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                    </button>
 
-            <SidebarInset>
-                <header className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex h-16 shrink-0 items-center gap-2 border-b-2 border-border shadow-lg w-full">
-                    <div className="flex items-center justify-between px-6 w-full">
-                        <div className="flex items-center space-x-4">
-                            <ToggleLogo />
-                            <div className="h-8 w-px bg-border" />
-                            <div className="flex items-center gap-2">
-                                <span className="text-sm font-semibold text-foreground hidden sm:block">
-                                    {greeting}, {doctorName}
-                                </span>
-                            </div>
-                        </div>
-                        <div className="flex items-center space-x-4">
-                            <ThemeSwitcher />
-                            <div className="relative" ref={dropdownRef}>
-                                <button
-                                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                                    className="ml-auto cursor-pointer hover:opacity-80 transition-all duration-200 hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-full shadow-md hover:shadow-lg"
-                                >
-                                    <Avatar className="border-2 border-primary/20">
-                                        {doctorAvatar ? <AvatarImage src={doctorAvatar} alt={doctorFullName} /> : null}
-                                        <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-bold">
-                                            {doctorFullName.charAt(0).toUpperCase()}
-                                        </AvatarFallback>
-                                    </Avatar>
-                                </button>
-
-                                {isMounted && isDropdownOpen && (
-                                    <div className="absolute right-0 top-full mt-2 w-64 bg-popover border-2 border-border rounded-xl shadow-2xl z-50 overflow-hidden backdrop-blur-sm">
-                                        <div className="p-2">
-                                            <div className="px-4 py-3 border-b border-border bg-gradient-to-r from-primary/5 to-primary/10">
-                                                <p className="text-sm font-semibold text-popover-foreground truncate">
-                                                    {doctorFullName}
-                                                </p>
-                                                <p className="text-xs text-muted-foreground mt-1 truncate">
-                                                    {doctorEmail}
-                                                </p>
+                                    {isMounted && isDropdownOpen && (
+                                        <div className="absolute right-0 top-full mt-2 w-64 bg-popover border-2 border-border rounded-xl shadow-2xl z-50 overflow-hidden backdrop-blur-sm">
+                                            <div className="p-2">
+                                                <div className="px-4 py-3 border-b border-border bg-gradient-to-r from-primary/5 to-primary/10">
+                                                    <p className="text-sm font-semibold text-popover-foreground truncate">
+                                                        {doctorFullName}
+                                                    </p>
+                                                    <p className="text-xs text-muted-foreground mt-1 truncate">
+                                                        {doctorEmail}
+                                                    </p>
+                                                </div>
+                                                <button
+                                                    onClick={handleAccountInfo}
+                                                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-popover-foreground hover:bg-accent hover:text-accent-foreground rounded-lg transition-all duration-200 cursor-pointer mt-1"
+                                                >
+                                                    <User className="w-4 h-4" />
+                                                    Thông tin tài khoản
+                                                </button>
+                                                <button
+                                                    onClick={handleLogout}
+                                                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950 dark:hover:text-red-300 rounded-lg transition-all duration-200 cursor-pointer mt-1"
+                                                >
+                                                    <LogOut className="w-4 h-4" />
+                                                    Đăng xuất
+                                                </button>
                                             </div>
-                                            <button
-                                                onClick={handleAccountInfo}
-                                                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-popover-foreground hover:bg-accent hover:text-accent-foreground rounded-lg transition-all duration-200 cursor-pointer mt-1"
-                                            >
-                                                <User className="w-4 h-4" />
-                                                Thông tin tài khoản
-                                            </button>
-                                            <button
-                                                onClick={handleLogout}
-                                                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950 dark:hover:text-red-300 rounded-lg transition-all duration-200 cursor-pointer mt-1"
-                                            >
-                                                <LogOut className="w-4 h-4" />
-                                                Đăng xuất
-                                            </button>
                                         </div>
-                                    </div>
-                                )}
+                                    )}
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </header>
-                <div className="p-6">{children}</div>
-            </SidebarInset>
-        </SidebarProvider>
+                    </header>
+                    <div className="p-6">{children}</div>
+                </SidebarInset>
+            </SidebarProvider>
+        </StreamClientProvider>
     )
 }
