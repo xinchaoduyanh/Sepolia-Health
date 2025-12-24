@@ -1,26 +1,26 @@
 'use client';
 
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  StatusBar,
-  Image,
-  Alert,
-  ImageBackground,
-} from 'react-native';
+import { useChatContext } from '@/contexts/ChatContext';
+import { useNotificationContext } from '@/contexts/NotificationContext';
+import { useClosestAppointment } from '@/lib/api/appointments';
+import { useArticles } from '@/lib/api/articles';
+import { useClaimPromotion, useFeaturedPromotion } from '@/lib/api/promotion';
+import { useAuth } from '@/lib/hooks/useAuth';
+import { formatTime } from '@/utils/datetime';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { useAuth } from '@/lib/hooks/useAuth';
-import { useNotificationContext } from '@/contexts/NotificationContext';
-import { useChatContext } from '@/contexts/ChatContext';
-import { useClosestAppointment } from '@/lib/api/appointments';
+import {
+  Alert,
+  Image,
+  ImageBackground,
+  ScrollView,
+  StatusBar,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-import { formatTime } from '@/utils/datetime';
-import { useFeaturedPromotion, useClaimPromotion } from '@/lib/api/promotion';
-import { useArticles } from '@/lib/api/articles';
 
 export default function HomeScreen() {
   const { user } = useAuth();
@@ -445,7 +445,7 @@ export default function HomeScreen() {
           ) : closestAppointment ? (
             <TouchableOpacity
               onPress={() =>
-                router.push(`/(homes)/appointment-detail?id=${closestAppointment.id}`)
+                router.push(`/(homes)/(appointment-detail)?id=${closestAppointment.id}`)
               }
               style={{
                 borderRadius: 20,
@@ -682,7 +682,7 @@ export default function HomeScreen() {
                 <TouchableOpacity
                   activeOpacity={0.7}
                   style={{ alignItems: 'center' }}
-                  onPress={() => router.push('/(homes)/(appointment)/history')}>
+                  onPress={() => router.push('/(homes)/(history-appointment)')}>
                   <View
                     style={{
                       height: 56,
@@ -700,7 +700,6 @@ export default function HomeScreen() {
                   </Text>
                 </TouchableOpacity>
               </View>
-
 
               <View style={{ width: '22%', alignItems: 'center' }}>
                 <TouchableOpacity style={{ alignItems: 'center' }}>
@@ -769,7 +768,6 @@ export default function HomeScreen() {
                   </Text>
                 </TouchableOpacity>
               </View>
-
 
               <View style={{ width: '22%', alignItems: 'center' }}>
                 <TouchableOpacity style={{ alignItems: 'center' }}>

@@ -1,20 +1,25 @@
-import { Inject, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
-import { ConfigType } from '@nestjs/config';
-import { StreamChat } from 'stream-chat';
 import { appConfig } from '@/common/config';
 import { PrismaService } from '@/common/prisma/prisma.service';
 import {
-  NotificationType,
-  NotificationPriority,
-  NotificationStatus,
-  NotificationResponse,
-  AppointmentNotificationPatient,
-  UpdateAppointmentNotificationPatient,
-  DeleteAppointmentNotificationPatient,
+  Inject,
+  Injectable,
+  Logger,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { ConfigType } from '@nestjs/config';
+import { StreamChat } from 'stream-chat';
+import {
   AppointmentNotificationDoctor,
-  UpdateAppointmentNotificationDoctor,
+  AppointmentNotificationPatient,
   DeleteAppointmentNotificationDoctor,
+  DeleteAppointmentNotificationPatient,
+  NotificationPriority,
+  NotificationResponse,
+  NotificationStatus,
+  NotificationType,
   PaymentSuccessNotificationPatient,
+  UpdateAppointmentNotificationDoctor,
+  UpdateAppointmentNotificationPatient,
 } from './notification.types';
 
 @Injectable()
@@ -77,15 +82,24 @@ export class NotificationService {
       role: 'user',
     });
     const channel = await this.getOrCreateNotificationChannel(dto.recipientId);
+
+    // Merge custom fields into metadata for frontend compatibility and StreamChat compliance
+    const finalMetadata = {
+      ...(dto.metadata || {}),
+      notificationType: dto.type,
+      priority: dto.priority,
+      status: NotificationStatus.UNREAD,
+      title: dto.title,
+    };
+
     const message = await channel.sendMessage({
       text: dto.message,
       user_id: dto.senderId || 'system',
-      type: dto.type as any,
-      priority: dto.priority as any,
-      status: NotificationStatus.UNREAD,
-      title: dto.title,
-      metadata: dto.metadata,
+      type: 'regular', // Use standard type
+      attachments: [], // Optional: add if needed
+      ...finalMetadata, // stream-chat-js often spreads extra fields as custom data (metadata)
     } as any);
+
     return {
       id: message.message?.id || '',
       type: dto.type,
@@ -303,13 +317,19 @@ export class NotificationService {
   /**
    * Mark notification as read
    */
-  async markAsRead(userId: number, messageId: string, currentUserId: number): Promise<void> {
+  async markAsRead(
+    userId: number,
+    messageId: string,
+    currentUserId: number,
+  ): Promise<void> {
     if (userId !== currentUserId) {
       throw new UnauthorizedException(
         "Unauthorized: Cannot mark other user's notifications as read",
       );
     }
-    const channel = await this.getOrCreateNotificationChannel(userId.toString());
+    const channel = await this.getOrCreateNotificationChannel(
+      userId.toString(),
+    );
 
     // Get the message from channel state
     const message = channel.state.messages.find((msg) => msg.id === messageId);

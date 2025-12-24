@@ -1,8 +1,7 @@
-import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { View, TouchableOpacity, Text } from 'react-native';
 import Constants from 'expo-constants';
-import React from 'react';
+import { Tabs } from 'expo-router';
+import { Text, TouchableOpacity, View } from 'react-native';
 
 // Lazy import CallOverlay
 let CallOverlay: any = () => null;
@@ -147,6 +146,18 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
+          name="(appointment-detail)"
+          options={{
+            href: null,
+          }}
+        />
+        <Tabs.Screen
+          name="(history-appointment)"
+          options={{
+            href: null,
+          }}
+        />
+        <Tabs.Screen
           name="(payment)"
           options={{
             href: null,
@@ -166,12 +177,6 @@ export default function TabLayout() {
         />
         <Tabs.Screen
           name="(articles)"
-          options={{
-            href: null,
-          }}
-        />
-        <Tabs.Screen
-          name="appointment-detail"
           options={{
             href: null,
           }}

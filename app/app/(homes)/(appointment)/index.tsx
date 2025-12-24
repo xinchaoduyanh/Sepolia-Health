@@ -1,25 +1,25 @@
+import { usePayment } from '@/contexts/PaymentContext';
+import { useCancelAppointment, useMyAppointments } from '@/lib/api/appointments';
+import { AppointmentStatus, PaymentStatus } from '@/types';
+import { formatTime } from '@/utils/datetime';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  StatusBar,
   ActivityIndicator,
+  Alert,
   Modal,
   Pressable,
   RefreshControl,
-  Alert,
+  ScrollView,
+  StatusBar,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Path } from 'react-native-svg';
-import { router } from 'expo-router';
-import { useMyAppointments, useCancelAppointment } from '@/lib/api/appointments';
-import { usePayment } from '@/contexts/PaymentContext';
 import QRCode from 'react-native-qrcode-svg';
-import { formatTime } from '@/utils/datetime';
-import { AppointmentStatus, PaymentStatus } from '@/types';
+import Svg, { Path } from 'react-native-svg';
 
 export default function AppointmentsListScreen() {
   const [page, setPage] = useState(1);
@@ -370,7 +370,9 @@ export default function AppointmentsListScreen() {
             appointments.map((appointment) => {
               const { day, month, year } = getDateParts(appointment.startTime);
               const startDate = new Date(appointment.startTime);
-              const endDate = new Date(startDate.getTime() + (appointment.service.duration * 60 * 1000));
+              const endDate = new Date(
+                startDate.getTime() + appointment.service.duration * 60 * 1000
+              );
               const timeRange = `${formatTime(appointment.startTime)} - ${formatTime(endDate.toISOString())}`;
               const billingStatus = appointment.billing?.status as PaymentStatus | undefined;
               const statusInfo = getStatusInfo(
@@ -392,9 +394,7 @@ export default function AppointmentsListScreen() {
                 <TouchableOpacity
                   key={appointment.id}
                   activeOpacity={0.8}
-                  onPress={() =>
-                    router.push(`/(homes)/appointment-detail?id=${appointment.id}`)
-                  }
+                  onPress={() => router.push(`/(homes)/(appointment-detail)?id=${appointment.id}`)}
                   className="mb-4 rounded-xl bg-white p-4"
                   style={{
                     borderLeftWidth: 4,
@@ -468,12 +468,13 @@ export default function AppointmentsListScreen() {
                                 }
                               }}
                               disabled={!canCreatePayment}
-                              className={`w-full items-center rounded-lg py-3 ${isPaymentPending
-                                ? 'bg-green-500'
-                                : canCreatePayment
-                                  ? 'bg-green-600'
-                                  : 'bg-gray-400'
-                                }`}
+                              className={`w-full items-center rounded-lg py-3 ${
+                                isPaymentPending
+                                  ? 'bg-green-500'
+                                  : canCreatePayment
+                                    ? 'bg-green-600'
+                                    : 'bg-gray-400'
+                              }`}
                               style={{
                                 shadowColor: '#000',
                                 shadowOffset: { width: 0, height: 2 },
@@ -533,7 +534,9 @@ export default function AppointmentsListScreen() {
                             <TouchableOpacity
                               className="flex-1 flex-row items-center justify-center rounded-lg border-2 bg-white py-2.5"
                               style={{
-                                borderColor: isWithin4Hours(appointment.startTime) ? '#9CA3AF' : '#0284C7',
+                                borderColor: isWithin4Hours(appointment.startTime)
+                                  ? '#9CA3AF'
+                                  : '#0284C7',
                                 shadowColor: '#0284C7',
                                 shadowOffset: { width: 0, height: 1 },
                                 shadowOpacity: 0.1,
@@ -542,33 +545,66 @@ export default function AppointmentsListScreen() {
                                 opacity: isWithin4Hours(appointment.startTime) ? 0.5 : 1,
                               }}
                               disabled={isWithin4Hours(appointment.startTime)}
-                              onPress={() => router.push(`/(homes)/(appointment)/update?id=${appointment.id}`)}>
-                              <Ionicons name="calendar-outline" size={16} color={isWithin4Hours(appointment.startTime) ? '#9CA3AF' : '#0284C7'} />
+                              onPress={() =>
+                                router.push(`/(homes)/(appointment)/update?id=${appointment.id}`)
+                              }>
+                              <Ionicons
+                                name="calendar-outline"
+                                size={16}
+                                color={
+                                  isWithin4Hours(appointment.startTime) ? '#9CA3AF' : '#0284C7'
+                                }
+                              />
                               <Text
                                 className="ml-1.5 text-sm font-semibold"
-                                style={{ color: isWithin4Hours(appointment.startTime) ? '#9CA3AF' : '#0284C7' }}>
+                                style={{
+                                  color: isWithin4Hours(appointment.startTime)
+                                    ? '#9CA3AF'
+                                    : '#0284C7',
+                                }}>
                                 Đổi lịch
                               </Text>
                             </TouchableOpacity>
                             <TouchableOpacity
                               className="flex-1 flex-row items-center justify-center rounded-lg border-2 bg-white py-2.5"
                               style={{
-                                borderColor: isWithin4Hours(appointment.startTime) ? '#9CA3AF' : '#EF4444',
+                                borderColor: isWithin4Hours(appointment.startTime)
+                                  ? '#9CA3AF'
+                                  : '#EF4444',
                                 shadowColor: '#EF4444',
                                 shadowOffset: { width: 0, height: 1 },
                                 shadowOpacity: 0.1,
                                 shadowRadius: 2,
                                 elevation: 2,
-                                opacity: isWithin4Hours(appointment.startTime) || cancellingId === appointment.id ? 0.5 : 1,
+                                opacity:
+                                  isWithin4Hours(appointment.startTime) ||
+                                  cancellingId === appointment.id
+                                    ? 0.5
+                                    : 1,
                               }}
-                              disabled={isWithin4Hours(appointment.startTime) || cancellingId === appointment.id}
+                              disabled={
+                                isWithin4Hours(appointment.startTime) ||
+                                cancellingId === appointment.id
+                              }
                               onPress={() => handleCancelAppointment(appointment.id)}>
                               {cancellingId === appointment.id ? (
                                 <ActivityIndicator size="small" color="#EF4444" />
                               ) : (
                                 <>
-                                  <Ionicons name="close-circle-outline" size={16} color={isWithin4Hours(appointment.startTime) ? '#9CA3AF' : '#EF4444'} />
-                                  <Text className="ml-1.5 text-sm font-semibold" style={{ color: isWithin4Hours(appointment.startTime) ? '#9CA3AF' : '#EF4444' }}>
+                                  <Ionicons
+                                    name="close-circle-outline"
+                                    size={16}
+                                    color={
+                                      isWithin4Hours(appointment.startTime) ? '#9CA3AF' : '#EF4444'
+                                    }
+                                  />
+                                  <Text
+                                    className="ml-1.5 text-sm font-semibold"
+                                    style={{
+                                      color: isWithin4Hours(appointment.startTime)
+                                        ? '#9CA3AF'
+                                        : '#EF4444',
+                                    }}>
                                     Hủy lịch
                                   </Text>
                                 </>
@@ -594,8 +630,9 @@ export default function AppointmentsListScreen() {
               <TouchableOpacity
                 onPress={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className={`rounded-lg border px-4 py-2 ${page === 1 ? 'border-gray-300 bg-gray-100' : 'border-blue-500 bg-white'
-                  }`}>
+                className={`rounded-lg border px-4 py-2 ${
+                  page === 1 ? 'border-gray-300 bg-gray-100' : 'border-blue-500 bg-white'
+                }`}>
                 <Ionicons
                   name="chevron-back"
                   size={20}
@@ -620,13 +657,15 @@ export default function AppointmentsListScreen() {
                     <TouchableOpacity
                       key={pageNum}
                       onPress={() => setPage(pageNum)}
-                      className={`rounded-lg border px-4 py-2 ${page === pageNum
-                        ? 'border-blue-500 bg-blue-500'
-                        : 'border-gray-300 bg-white'
-                        }`}>
+                      className={`rounded-lg border px-4 py-2 ${
+                        page === pageNum
+                          ? 'border-blue-500 bg-blue-500'
+                          : 'border-gray-300 bg-white'
+                      }`}>
                       <Text
-                        className={`text-sm font-medium ${page === pageNum ? 'text-white' : 'text-gray-700'
-                          }`}>
+                        className={`text-sm font-medium ${
+                          page === pageNum ? 'text-white' : 'text-gray-700'
+                        }`}>
                         {pageNum}
                       </Text>
                     </TouchableOpacity>
@@ -637,8 +676,9 @@ export default function AppointmentsListScreen() {
               <TouchableOpacity
                 onPress={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
-                className={`rounded-lg border px-4 py-2 ${page === totalPages ? 'border-gray-300 bg-gray-100' : 'border-blue-500 bg-white'
-                  }`}>
+                className={`rounded-lg border px-4 py-2 ${
+                  page === totalPages ? 'border-gray-300 bg-gray-100' : 'border-blue-500 bg-white'
+                }`}>
                 <Ionicons
                   name="chevron-forward"
                   size={20}
@@ -708,25 +748,27 @@ export default function AppointmentsListScreen() {
                   setDateSortModalVisible(false);
                 }}
                 activeOpacity={0.7}
-                className={`mx-2 my-1 flex-row items-center justify-between rounded-xl px-4 py-4 ${dateSortOrder === 'asc' ? 'bg-blue-50' : 'bg-white active:bg-gray-50'
-                  }`}
+                className={`mx-2 my-1 flex-row items-center justify-between rounded-xl px-4 py-4 ${
+                  dateSortOrder === 'asc' ? 'bg-blue-50' : 'bg-white active:bg-gray-50'
+                }`}
                 style={
                   dateSortOrder === 'asc'
                     ? {
-                      borderWidth: 2,
-                      borderColor: '#0284C7',
-                      shadowColor: '#0284C7',
-                      shadowOffset: { width: 0, height: 2 },
-                      shadowOpacity: 0.1,
-                      shadowRadius: 4,
-                      elevation: 2,
-                    }
+                        borderWidth: 2,
+                        borderColor: '#0284C7',
+                        shadowColor: '#0284C7',
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.1,
+                        shadowRadius: 4,
+                        elevation: 2,
+                      }
                     : {}
                 }>
                 <View className="flex-1 flex-row items-center">
                   <View
-                    className={`mr-3 rounded-lg p-2 ${dateSortOrder === 'asc' ? 'bg-blue-100' : 'bg-gray-100'
-                      }`}>
+                    className={`mr-3 rounded-lg p-2 ${
+                      dateSortOrder === 'asc' ? 'bg-blue-100' : 'bg-gray-100'
+                    }`}>
                     <Ionicons
                       name="arrow-up"
                       size={22}
@@ -735,10 +777,11 @@ export default function AppointmentsListScreen() {
                   </View>
                   <View className="flex-1">
                     <Text
-                      className={`text-base ${dateSortOrder === 'asc'
-                        ? 'font-bold text-blue-700'
-                        : 'font-medium text-gray-700'
-                        }`}>
+                      className={`text-base ${
+                        dateSortOrder === 'asc'
+                          ? 'font-bold text-blue-700'
+                          : 'font-medium text-gray-700'
+                      }`}>
                       Cũ nhất
                     </Text>
                     <Text className="mt-0.5 text-xs text-gray-500">Từ quá khứ đến hiện tại</Text>
@@ -757,25 +800,27 @@ export default function AppointmentsListScreen() {
                   setDateSortModalVisible(false);
                 }}
                 activeOpacity={0.7}
-                className={`mx-2 my-1 flex-row items-center justify-between rounded-xl px-4 py-4 ${dateSortOrder === 'desc' ? 'bg-blue-50' : 'bg-white active:bg-gray-50'
-                  }`}
+                className={`mx-2 my-1 flex-row items-center justify-between rounded-xl px-4 py-4 ${
+                  dateSortOrder === 'desc' ? 'bg-blue-50' : 'bg-white active:bg-gray-50'
+                }`}
                 style={
                   dateSortOrder === 'desc'
                     ? {
-                      borderWidth: 2,
-                      borderColor: '#0284C7',
-                      shadowColor: '#0284C7',
-                      shadowOffset: { width: 0, height: 2 },
-                      shadowOpacity: 0.1,
-                      shadowRadius: 4,
-                      elevation: 2,
-                    }
+                        borderWidth: 2,
+                        borderColor: '#0284C7',
+                        shadowColor: '#0284C7',
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.1,
+                        shadowRadius: 4,
+                        elevation: 2,
+                      }
                     : {}
                 }>
                 <View className="flex-1 flex-row items-center">
                   <View
-                    className={`mr-3 rounded-lg p-2 ${dateSortOrder === 'desc' ? 'bg-blue-100' : 'bg-gray-100'
-                      }`}>
+                    className={`mr-3 rounded-lg p-2 ${
+                      dateSortOrder === 'desc' ? 'bg-blue-100' : 'bg-gray-100'
+                    }`}>
                     <Ionicons
                       name="arrow-down"
                       size={22}
@@ -784,10 +829,11 @@ export default function AppointmentsListScreen() {
                   </View>
                   <View className="flex-1">
                     <Text
-                      className={`text-base ${dateSortOrder === 'desc'
-                        ? 'font-bold text-blue-700'
-                        : 'font-medium text-gray-700'
-                        }`}>
+                      className={`text-base ${
+                        dateSortOrder === 'desc'
+                          ? 'font-bold text-blue-700'
+                          : 'font-medium text-gray-700'
+                      }`}>
                       Sớm nhất
                     </Text>
                     <Text className="mt-0.5 text-xs text-gray-500">Từ hiện tại đến tương lai</Text>
@@ -855,25 +901,27 @@ export default function AppointmentsListScreen() {
                   setPaymentFilterModalVisible(false);
                 }}
                 activeOpacity={0.7}
-                className={`mx-2 my-1 flex-row items-center justify-between rounded-xl px-4 py-4 ${paymentFilter === 'all' ? 'bg-green-50' : 'bg-white active:bg-gray-50'
-                  }`}
+                className={`mx-2 my-1 flex-row items-center justify-between rounded-xl px-4 py-4 ${
+                  paymentFilter === 'all' ? 'bg-green-50' : 'bg-white active:bg-gray-50'
+                }`}
                 style={
                   paymentFilter === 'all'
                     ? {
-                      borderWidth: 2,
-                      borderColor: '#10B981',
-                      shadowColor: '#10B981',
-                      shadowOffset: { width: 0, height: 2 },
-                      shadowOpacity: 0.1,
-                      shadowRadius: 4,
-                      elevation: 2,
-                    }
+                        borderWidth: 2,
+                        borderColor: '#10B981',
+                        shadowColor: '#10B981',
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.1,
+                        shadowRadius: 4,
+                        elevation: 2,
+                      }
                     : {}
                 }>
                 <View className="flex-1 flex-row items-center">
                   <View
-                    className={`mr-3 rounded-lg p-2 ${paymentFilter === 'all' ? 'bg-green-100' : 'bg-gray-100'
-                      }`}>
+                    className={`mr-3 rounded-lg p-2 ${
+                      paymentFilter === 'all' ? 'bg-green-100' : 'bg-gray-100'
+                    }`}>
                     <Ionicons
                       name="wallet"
                       size={22}
@@ -882,10 +930,11 @@ export default function AppointmentsListScreen() {
                   </View>
                   <View className="flex-1">
                     <Text
-                      className={`text-base ${paymentFilter === 'all'
-                        ? 'font-bold text-green-700'
-                        : 'font-medium text-gray-700'
-                        }`}>
+                      className={`text-base ${
+                        paymentFilter === 'all'
+                          ? 'font-bold text-green-700'
+                          : 'font-medium text-gray-700'
+                      }`}>
                       Tất cả
                     </Text>
                     <Text className="mt-0.5 text-xs text-gray-500">Hiển thị tất cả lịch hẹn</Text>
@@ -904,25 +953,27 @@ export default function AppointmentsListScreen() {
                   setPaymentFilterModalVisible(false);
                 }}
                 activeOpacity={0.7}
-                className={`mx-2 my-1 flex-row items-center justify-between rounded-xl px-4 py-4 ${paymentFilter === 'PENDING' ? 'bg-orange-50' : 'bg-white active:bg-gray-50'
-                  }`}
+                className={`mx-2 my-1 flex-row items-center justify-between rounded-xl px-4 py-4 ${
+                  paymentFilter === 'PENDING' ? 'bg-orange-50' : 'bg-white active:bg-gray-50'
+                }`}
                 style={
                   paymentFilter === 'PENDING'
                     ? {
-                      borderWidth: 2,
-                      borderColor: '#F59E0B',
-                      shadowColor: '#F59E0B',
-                      shadowOffset: { width: 0, height: 2 },
-                      shadowOpacity: 0.1,
-                      shadowRadius: 4,
-                      elevation: 2,
-                    }
+                        borderWidth: 2,
+                        borderColor: '#F59E0B',
+                        shadowColor: '#F59E0B',
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.1,
+                        shadowRadius: 4,
+                        elevation: 2,
+                      }
                     : {}
                 }>
                 <View className="flex-1 flex-row items-center">
                   <View
-                    className={`mr-3 rounded-lg p-2 ${paymentFilter === 'PENDING' ? 'bg-orange-100' : 'bg-gray-100'
-                      }`}>
+                    className={`mr-3 rounded-lg p-2 ${
+                      paymentFilter === 'PENDING' ? 'bg-orange-100' : 'bg-gray-100'
+                    }`}>
                     <Ionicons
                       name="time"
                       size={22}
@@ -931,10 +982,11 @@ export default function AppointmentsListScreen() {
                   </View>
                   <View className="flex-1">
                     <Text
-                      className={`text-base ${paymentFilter === 'PENDING'
-                        ? 'font-bold text-orange-700'
-                        : 'font-medium text-gray-700'
-                        }`}>
+                      className={`text-base ${
+                        paymentFilter === 'PENDING'
+                          ? 'font-bold text-orange-700'
+                          : 'font-medium text-gray-700'
+                      }`}>
                       Chưa thanh toán
                     </Text>
                     <Text className="mt-0.5 text-xs text-gray-500">
@@ -955,25 +1007,27 @@ export default function AppointmentsListScreen() {
                   setPaymentFilterModalVisible(false);
                 }}
                 activeOpacity={0.7}
-                className={`mx-2 my-1 flex-row items-center justify-between rounded-xl px-4 py-4 ${paymentFilter === 'PAID' ? 'bg-green-50' : 'bg-white active:bg-gray-50'
-                  }`}
+                className={`mx-2 my-1 flex-row items-center justify-between rounded-xl px-4 py-4 ${
+                  paymentFilter === 'PAID' ? 'bg-green-50' : 'bg-white active:bg-gray-50'
+                }`}
                 style={
                   paymentFilter === 'PAID'
                     ? {
-                      borderWidth: 2,
-                      borderColor: '#10B981',
-                      shadowColor: '#10B981',
-                      shadowOffset: { width: 0, height: 2 },
-                      shadowOpacity: 0.1,
-                      shadowRadius: 4,
-                      elevation: 2,
-                    }
+                        borderWidth: 2,
+                        borderColor: '#10B981',
+                        shadowColor: '#10B981',
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.1,
+                        shadowRadius: 4,
+                        elevation: 2,
+                      }
                     : {}
                 }>
                 <View className="flex-1 flex-row items-center">
                   <View
-                    className={`mr-3 rounded-lg p-2 ${paymentFilter === 'PAID' ? 'bg-green-100' : 'bg-gray-100'
-                      }`}>
+                    className={`mr-3 rounded-lg p-2 ${
+                      paymentFilter === 'PAID' ? 'bg-green-100' : 'bg-gray-100'
+                    }`}>
                     <Ionicons
                       name="checkmark-circle"
                       size={22}
@@ -982,10 +1036,11 @@ export default function AppointmentsListScreen() {
                   </View>
                   <View className="flex-1">
                     <Text
-                      className={`text-base ${paymentFilter === 'PAID'
-                        ? 'font-bold text-green-700'
-                        : 'font-medium text-gray-700'
-                        }`}>
+                      className={`text-base ${
+                        paymentFilter === 'PAID'
+                          ? 'font-bold text-green-700'
+                          : 'font-medium text-gray-700'
+                      }`}>
                       Đã thanh toán
                     </Text>
                     <Text className="mt-0.5 text-xs text-gray-500">Chỉ hiển thị đã thanh toán</Text>

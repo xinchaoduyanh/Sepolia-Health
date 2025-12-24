@@ -1,28 +1,28 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  TextInput,
-  StatusBar,
-  Modal,
-  Image,
-} from 'react-native';
+import BirthDatePicker from '@/components/BirthDatePicker';
+import GenderSelector from '@/components/GenderSelector';
+import TimeSlotPicker from '@/components/TimeSlotPicker';
+import { Relationship } from '@/constants/enum';
+import { useAppointment } from '@/contexts/AppointmentContext';
+import { userApi } from '@/lib/api';
+import { useCreateAppointment, useDoctorAvailability } from '@/lib/api/appointments';
+import { useAuth } from '@/lib/hooks/useAuth';
+import { PatientProfile } from '@/types/auth';
+import { createISODateTime, getTodayDateString } from '@/utils/datetime';
+import { getRelationshipLabel } from '@/utils/relationshipTranslator';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { useAppointment } from '@/contexts/AppointmentContext';
-import GenderSelector from '@/components/GenderSelector';
-import BirthDatePicker from '@/components/BirthDatePicker';
-import TimeSlotPicker from '@/components/TimeSlotPicker';
-import { useAuth } from '@/lib/hooks/useAuth';
-import { PatientProfile } from '@/types/auth';
-import { getRelationshipLabel } from '@/utils/relationshipTranslator';
-import { useDoctorAvailability, useCreateAppointment } from '@/lib/api/appointments';
-import { createISODateTime, getTodayDateString } from '@/utils/datetime';
-import { userApi } from '@/lib/api';
-import { Relationship } from '@/constants/enum';
+import { useEffect, useState } from 'react';
+import {
+  Image,
+  Modal,
+  ScrollView,
+  StatusBar,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 export default function AppointmentScreen() {
   const { user } = useAuth();
@@ -327,7 +327,9 @@ export default function AppointmentScreen() {
                       ) : (
                         <View
                           className="h-full w-full items-center justify-center rounded-full"
-                          style={{ backgroundColor: selectedCustomer === 'me' ? '#E0F2FE' : '#F0F9FF' }}>
+                          style={{
+                            backgroundColor: selectedCustomer === 'me' ? '#E0F2FE' : '#F0F9FF',
+                          }}>
                           <Ionicons
                             name="person"
                             size={32}
@@ -468,7 +470,7 @@ export default function AppointmentScreen() {
                   className="flex-row items-center rounded-xl border px-5 py-4"
                   style={{
                     backgroundColor: selectedCustomer === 'add' ? '#F0FDFA' : '#FFFFFF',
-                    borderColor: selectedCustomer === 'add' ? '#E0F2FE' : '#E5E7EB'
+                    borderColor: selectedCustomer === 'add' ? '#E0F2FE' : '#E5E7EB',
                   }}>
                   <Ionicons
                     name="create"
@@ -494,7 +496,7 @@ export default function AppointmentScreen() {
                   className="flex-row items-center rounded-xl border px-5 py-4"
                   style={{
                     backgroundColor: selectedCustomer === 'add' ? '#F0FDFA' : '#FFFFFF',
-                    borderColor: selectedCustomer === 'add' ? '#E0F2FE' : '#E5E7EB'
+                    borderColor: selectedCustomer === 'add' ? '#E0F2FE' : '#E5E7EB',
                   }}>
                   <Ionicons
                     name="create"
@@ -529,7 +531,7 @@ export default function AppointmentScreen() {
                   className="flex-row items-center rounded-xl border px-5 py-4"
                   style={{
                     backgroundColor: selectedCustomer === 'add' ? '#F0FDFA' : '#FFFFFF',
-                    borderColor: selectedCustomer === 'add' ? '#E0F2FE' : '#E5E7EB'
+                    borderColor: selectedCustomer === 'add' ? '#E0F2FE' : '#E5E7EB',
                   }}>
                   <Ionicons
                     name="call"
@@ -980,7 +982,7 @@ export default function AppointmentScreen() {
                     setShowSuccessModal(false);
                     // Navigate to appointment detail
                     if (createdAppointmentId) {
-                      router.push(`/(homes)/appointment-detail?id=${createdAppointmentId}`);
+                      router.push(`/(homes)/(appointment-detail)?id=${createdAppointmentId}`);
                     } else {
                       // Fallback to appointments list
                       router.push('/(homes)/(appointment)/');

@@ -1,21 +1,14 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  StatusBar,
-  RefreshControl,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Path } from 'react-native-svg';
-import { router } from 'expo-router';
 import { useMyAppointments } from '@/lib/api/appointments';
 import { usePatientProfiles } from '@/lib/api/user';
-import { formatTime } from '@/utils/datetime';
 import { AppointmentStatus } from '@/types/appointment';
+import { formatTime } from '@/utils/datetime';
 import { getRelationshipLabel } from '@/utils/relationshipTranslator';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
+import { useState } from 'react';
+import { RefreshControl, ScrollView, StatusBar, Text, TouchableOpacity, View } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 
 export default function AppointmentHistoryScreen() {
   const [page, setPage] = useState(1);
@@ -260,7 +253,7 @@ export default function AppointmentHistoryScreen() {
                         borderRadius: 4,
                         marginBottom: 4,
                       }}
-                  />
+                    />
                     <View
                       style={{
                         width: 40,
@@ -268,7 +261,7 @@ export default function AppointmentHistoryScreen() {
                         backgroundColor: '#E5E7EB',
                         borderRadius: 4,
                       }}
-                  />
+                    />
                   </View>
 
                   {/* Content Skeleton */}
@@ -385,9 +378,7 @@ export default function AppointmentHistoryScreen() {
               return (
                 <TouchableOpacity
                   key={appointment.id}
-                  onPress={() =>
-                    router.push(`/(homes)/appointment-detail?id=${appointment.id}`)
-                  }
+                  onPress={() => router.push(`/(homes)/(appointment-detail)?id=${appointment.id}`)}
                   style={{
                     backgroundColor: 'white',
                     borderRadius: 16,
@@ -528,9 +519,7 @@ export default function AppointmentHistoryScreen() {
                               )}
                               <TouchableOpacity
                                 onPress={() =>
-                                  router.push(
-                                    `/(homes)/appointment-detail?id=${appointment.id}`
-                                  )
+                                  router.push(`/(homes)/(appointment-detail)?id=${appointment.id}`)
                                 }
                                 style={{ marginTop: 8 }}>
                                 <Text

@@ -1,20 +1,20 @@
-import React from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  StatusBar,
-  Animated,
-  Linking,
-} from 'react-native';
+import { AppointmentStatus } from '@/constants/enum';
+import { useAppointment } from '@/lib/api/appointments';
+import { formatDate, formatTime } from '@/utils/datetime';
+import { getRelationshipLabel } from '@/utils/relationshipTranslator';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useAppointment } from '@/lib/api/appointments';
-import { formatDate, formatTime } from '@/utils/datetime';
-import { AppointmentStatus } from '@/constants/enum';
-import { getRelationshipLabel } from '@/utils/relationshipTranslator';
+import React from 'react';
+import {
+  Animated,
+  Linking,
+  ScrollView,
+  StatusBar,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 // Skeleton Component
 const SkeletonBox = ({
@@ -156,7 +156,6 @@ const AppointmentDetailSkeleton = () => {
 export default function AppointmentDetailScreen() {
   const { id } = useLocalSearchParams();
   const { data: appointment, isLoading } = useAppointment(Number(id));
-
 
   if (isLoading) {
     return <AppointmentDetailSkeleton />;

@@ -1,19 +1,20 @@
 'use client';
 
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  StatusBar,
-  RefreshControl,
-  ActivityIndicator,
-} from 'react-native';
+import { NotificationData, useNotificationContext } from '@/contexts/NotificationContext';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { useState, useCallback } from 'react';
-import { useNotificationContext, NotificationData } from '@/contexts/NotificationContext';
+import { useCallback, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  RefreshControl,
+  ScrollView,
+  StatusBar,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 export default function NotificationScreen() {
   const { notifications, unreadCount, isReady, markAsRead, refreshNotifications } =
@@ -28,14 +29,27 @@ export default function NotificationScreen() {
     setRefreshing(false);
   }, [refreshNotifications]);
 
-  // Mark notification as read
-  const handleMarkAsRead = async (notification: NotificationData) => {
-    if (notification.status === 'READ') return;
+  // Handle notification press
+  const handleNotificationPress = async (notification: NotificationData) => {
+    const appointmentId = notification.metadata?.appointmentId || notification.metadata?.id;
 
-    try {
-      await markAsRead(notification.id);
-    } catch (error) {
-      console.error('Error marking notification as read:', error);
+    if (appointmentId) {
+      // Mark as read if not already read
+      if (notification.status !== 'READ') {
+        try {
+          await markAsRead(notification.id);
+        } catch (error) {
+          console.error('Error marking notification as read:', error);
+        }
+      }
+
+      router.push({
+        pathname: '/(homes)/(appointment-detail)',
+        params: { id: appointmentId },
+      });
+    } else {
+      // Show alert if no detail is available
+      Alert.alert('Thông báo', 'Không có thông tin chi tiết cho thông báo này');
     }
   };
 
@@ -238,7 +252,7 @@ export default function NotificationScreen() {
             return (
               <TouchableOpacity
                 key={notification.id}
-                onPress={() => handleMarkAsRead(notification)}
+                onPress={() => handleNotificationPress(notification)}
                 style={{
                   marginBottom: 12,
                   borderRadius: 16,

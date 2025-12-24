@@ -1,28 +1,28 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  TextInput,
-  StatusBar,
-  Modal,
-  Image,
-} from 'react-native';
+import BirthDatePicker from '@/components/BirthDatePicker';
+import GenderSelector from '@/components/GenderSelector';
+import TimeSlotPicker from '@/components/TimeSlotPicker';
+import { Relationship } from '@/constants/enum';
+import { useAppointment } from '@/contexts/AppointmentContext';
+import { userApi } from '@/lib/api';
+import { useCreateAppointment, useDoctorAvailability } from '@/lib/api/appointments';
+import { useAuth } from '@/lib/hooks/useAuth';
+import { PatientProfile } from '@/types/auth';
+import { createISODateTime, getTodayDateString } from '@/utils/datetime';
+import { getRelationshipLabel } from '@/utils/relationshipTranslator';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { useAppointment } from '@/contexts/AppointmentContext';
-import GenderSelector from '@/components/GenderSelector';
-import BirthDatePicker from '@/components/BirthDatePicker';
-import TimeSlotPicker from '@/components/TimeSlotPicker';
-import { useAuth } from '@/lib/hooks/useAuth';
-import { PatientProfile } from '@/types/auth';
-import { getRelationshipLabel } from '@/utils/relationshipTranslator';
-import { useDoctorAvailability, useCreateAppointment } from '@/lib/api/appointments';
-import { createISODateTime, getTodayDateString } from '@/utils/datetime';
-import { userApi } from '@/lib/api';
-import { Relationship } from '@/constants/enum';
+import { useEffect, useState } from 'react';
+import {
+  Image,
+  Modal,
+  ScrollView,
+  StatusBar,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 export default function OnlineAppointmentScreen() {
   const { user } = useAuth();
@@ -290,7 +290,9 @@ export default function OnlineAppointmentScreen() {
                       ) : (
                         <View
                           className="h-full w-full items-center justify-center rounded-full"
-                          style={{ backgroundColor: selectedCustomer === 'me' ? '#D1FAE5' : '#ECFDF5' }}>
+                          style={{
+                            backgroundColor: selectedCustomer === 'me' ? '#D1FAE5' : '#ECFDF5',
+                          }}>
                           <Ionicons
                             name="person"
                             size={32}
@@ -431,7 +433,7 @@ export default function OnlineAppointmentScreen() {
                   className="flex-row items-center rounded-xl border px-5 py-4"
                   style={{
                     backgroundColor: selectedCustomer === 'add' ? '#ECFDF5' : '#FFFFFF',
-                    borderColor: selectedCustomer === 'add' ? '#A7F3D0' : '#E5E7EB'
+                    borderColor: selectedCustomer === 'add' ? '#A7F3D0' : '#E5E7EB',
                   }}>
                   <Ionicons
                     name="create"
@@ -457,7 +459,7 @@ export default function OnlineAppointmentScreen() {
                   className="flex-row items-center rounded-xl border px-5 py-4"
                   style={{
                     backgroundColor: selectedCustomer === 'add' ? '#ECFDF5' : '#FFFFFF',
-                    borderColor: selectedCustomer === 'add' ? '#A7F3D0' : '#E5E7EB'
+                    borderColor: selectedCustomer === 'add' ? '#A7F3D0' : '#E5E7EB',
                   }}>
                   <Ionicons
                     name="create"
@@ -492,7 +494,7 @@ export default function OnlineAppointmentScreen() {
                   className="flex-row items-center rounded-xl border px-5 py-4"
                   style={{
                     backgroundColor: selectedCustomer === 'add' ? '#ECFDF5' : '#FFFFFF',
-                    borderColor: selectedCustomer === 'add' ? '#A7F3D0' : '#E5E7EB'
+                    borderColor: selectedCustomer === 'add' ? '#A7F3D0' : '#E5E7EB',
                   }}>
                   <Ionicons
                     name="call"
@@ -915,9 +917,7 @@ export default function OnlineAppointmentScreen() {
                 activeOpacity={0.7}
                 onPress={() => {
                   setShowSuccessModal(false);
-                  router.push(
-                    `/(homes)/appointment-detail?id=${createdAppointmentId}`
-                  );
+                  router.push(`/(homes)/(appointment-detail)?id=${createdAppointmentId}`);
                 }}
                 className="w-full items-center rounded-xl py-4"
                 style={{ backgroundColor: '#10B981' }}>
