@@ -16,6 +16,12 @@ export function NotificationPopover() {
     const handleNotificationClick = async (id: string, metadata?: any) => {
         await markAsRead(id)
 
+        // For online appointments, maybe open join/host URL if available
+        if (metadata?.hostUrl) {
+            window.open(metadata.hostUrl, '_blank')
+            return
+        }
+
         // Navigate based on metadata if available
         if (metadata?.appointmentId) {
             // For now, assume doctor appointments url path
@@ -26,6 +32,7 @@ export function NotificationPopover() {
     const getIcon = (type: string) => {
         switch (type) {
             case 'CREATE_APPOINTMENT_PATIENT':
+            case 'CREATE_APPOINTMENT_DOCTOR':
             case 'CREATE_APPOINTMENT':
                 return <Calendar className="h-4 w-4 text-green-600" />
             case 'UPDATE_APPOINTMENT_PATIENT':
@@ -47,6 +54,7 @@ export function NotificationPopover() {
     const getBgColor = (type: string) => {
         switch (type) {
             case 'CREATE_APPOINTMENT_PATIENT':
+            case 'CREATE_APPOINTMENT_DOCTOR':
             case 'CREATE_APPOINTMENT':
                 return 'bg-green-100'
             case 'UPDATE_APPOINTMENT_PATIENT':

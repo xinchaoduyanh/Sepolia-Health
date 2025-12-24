@@ -1,34 +1,34 @@
+import { ERROR_MESSAGES, MESSAGES } from '@/common/constants';
+import { SuccessResponseDto } from '@/common/dto';
+import { SortOrder } from '@/common/enum/sort.enum';
+import { PrismaService } from '@/common/prisma/prisma.service';
+import { DateUtil, TimeUtil } from '@/common/utils';
+import { MeetingService } from '@/module/meeting/meeting.service';
+import { NotificationService } from '@/module/notification/notification.service';
 import {
+  BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
-  ForbiddenException,
-  BadRequestException,
 } from '@nestjs/common';
-import { PrismaService } from '@/common/prisma/prisma.service';
 import {
   AppointmentStatus,
   AppointmentType,
   PaymentStatus,
 } from '@prisma/client';
 import {
-  UpdateAppointmentDto,
-  GetAppointmentsQueryDto,
-  GetAvailableDateQueryDto,
-  GetDoctorServicesQueryDto,
-  AppointmentsListResponseDto,
-  GetDoctorAvailabilityQueryDto,
-  CreateAppointmentFromDoctorServiceBodyDto,
-  GetDoctorAvailabilityResponseDto,
-  GetAvailabilityDateResponseDto,
   AppointmentDetailResponseDto,
+  AppointmentsListResponseDto,
   AvailableDateDto,
+  CreateAppointmentFromDoctorServiceBodyDto,
+  GetAppointmentsQueryDto,
+  GetAvailabilityDateResponseDto,
+  GetAvailableDateQueryDto,
+  GetDoctorAvailabilityQueryDto,
+  GetDoctorAvailabilityResponseDto,
+  GetDoctorServicesQueryDto,
+  UpdateAppointmentDto,
 } from './dto';
-import { NotificationService } from '@/module/notification/notification.service';
-import { MeetingService } from '@/module/meeting/meeting.service';
-import { DateUtil, TimeUtil } from '@/common/utils';
-import { SortOrder } from '@/common/enum/sort.enum';
-import { ERROR_MESSAGES, MESSAGES } from '@/common/constants';
-import { SuccessResponseDto } from '@/common/dto';
 
 @Injectable()
 export class AppointmentService {
@@ -1116,6 +1116,7 @@ export class AppointmentService {
             clinicName:
               type === AppointmentType.OFFLINE ? clinic?.name : 'Online (Zoom)',
             recipientId: patientUserId,
+            joinUrl: appointment.joinUrl,
           },
         );
       }
@@ -1134,6 +1135,7 @@ export class AppointmentService {
           type === AppointmentType.OFFLINE ? clinic.name : 'Online (Zoom)',
         recipientId: doctorService.doctor.userId.toString(),
         notes: notes,
+        hostUrl: appointment.hostUrl,
       });
     } catch (error) {
       console.error('Failed to send notification to doctor:', error);

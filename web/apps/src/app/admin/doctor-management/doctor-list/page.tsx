@@ -1,17 +1,17 @@
 'use client'
 
-import { useState, useMemo, useEffect, useCallback } from 'react'
-import { DataTable } from '@workspace/ui/components/DataTable'
-import { BsSearchField } from '@workspace/ui/components/Searchfield'
-import { Pagination } from '@workspace/ui/components/Pagination'
-import { Button } from '@workspace/ui/components/Button'
-import { Badge } from '@workspace/ui/components/Badge'
-import { Avatar, AvatarFallback } from '@workspace/ui/components/Avatar'
-import { Eye, Plus, MoreHorizontal } from 'lucide-react'
-import { useDoctors, useClinicsDropdown, useServicesDropdown } from '@/shared/hooks'
 import { DoctorActionDialog } from '@/components/DoctorActionDialog'
+import { useClinicsDropdown, useDoctors, useServicesDropdown } from '@/shared/hooks'
+import { Avatar, AvatarFallback } from '@workspace/ui/components/Avatar'
+import { Badge } from '@workspace/ui/components/Badge'
+import { Button } from '@workspace/ui/components/Button'
+import { DataTable } from '@workspace/ui/components/DataTable'
+import { Pagination } from '@workspace/ui/components/Pagination'
+import { BsSearchField } from '@workspace/ui/components/Searchfield'
 import { BsSelect } from '@workspace/ui/components/Select'
 import { Skeleton } from '@workspace/ui/components/Skeleton'
+import { Eye, Plus, Trash2 } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 // Skeleton table component for loading state
 const SkeletonTable = ({ columns }: { columns: any[] }) => {
@@ -101,8 +101,13 @@ function ActionCell({ doctor }: { doctor: any }) {
                 >
                     <Eye className="h-4 w-4" />
                 </Button>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => setDialogOpen(true)}>
-                    <MoreHorizontal className="h-4 w-4" />
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                    onClick={() => setDialogOpen(true)}
+                >
+                    <Trash2 className="h-4 w-4" />
                 </Button>
             </div>
             <DoctorActionDialog doctor={doctor} open={dialogOpen} onOpenChange={setDialogOpen} />
@@ -114,7 +119,7 @@ const columns: any[] = [
     {
         accessorKey: 'id',
         header: 'ID',
-        size: 80,
+        size: 50,
         cell: ({ getValue }: { getValue: () => any }) => (
             <span className="font-medium text-primary text-sm">{getValue() as string}</span>
         ),
@@ -122,11 +127,15 @@ const columns: any[] = [
     {
         accessorKey: 'fullName',
         header: 'Họ và tên',
-        cell: ({ getValue }: { getValue: () => any }) => {
-            const fullName = getValue() as string
+        cell: ({ row }: { row: any }) => {
+            const doctor = row.original
+            const fullName = doctor.fullName
+            const avatarUrl = doctor.doctorProfile?.avatar || doctor.avatar
+
             return (
                 <div className="flex items-center space-x-3">
                     <Avatar className="h-8 w-8">
+                        {avatarUrl && <img src={avatarUrl} alt={fullName} className="h-full w-full object-cover" />}
                         <AvatarFallback className="text-xs bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300">
                             {fullName
                                 .split(' ')
@@ -142,9 +151,11 @@ const columns: any[] = [
     {
         accessorKey: 'email',
         header: 'Email',
-        size: 280,
+        size: 160,
         cell: ({ getValue }: { getValue: () => any }) => (
-            <span className="text-muted-foreground text-sm">{getValue() as string}</span>
+            <div className="w-full max-w-[180px] truncate" title={getValue() as string}>
+                <span className="text-muted-foreground text-sm">{getValue() as string}</span>
+            </div>
         ),
     },
     {
@@ -231,8 +242,8 @@ const columns: any[] = [
     },
     {
         id: 'actions',
-        header: 'Thao tác',
-        size: 100,
+        header: 'Hành động',
+        size: 120,
         cell: ({ row }: { row: any }) => {
             const doctor = row.original
             return <ActionCell doctor={doctor} />

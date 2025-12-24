@@ -7,7 +7,6 @@ import { router } from 'expo-router';
 import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   RefreshControl,
   ScrollView,
   StatusBar,
@@ -31,25 +30,13 @@ export default function NotificationScreen() {
 
   // Handle notification press
   const handleNotificationPress = async (notification: NotificationData) => {
-    const appointmentId = notification.metadata?.appointmentId || notification.metadata?.id;
-
-    if (appointmentId) {
-      // Mark as read if not already read
-      if (notification.status !== 'READ') {
-        try {
-          await markAsRead(notification.id);
-        } catch (error) {
-          console.error('Error marking notification as read:', error);
-        }
+    // Mark as read if not already read
+    if (notification.status !== 'READ') {
+      try {
+        await markAsRead(notification.id);
+      } catch (error) {
+        console.error('Error marking notification as read:', error);
       }
-
-      router.push({
-        pathname: '/(homes)/(appointment-detail)',
-        params: { id: appointmentId },
-      });
-    } else {
-      // Show alert if no detail is available
-      Alert.alert('Thông báo', 'Không có thông tin chi tiết cho thông báo này');
     }
   };
 

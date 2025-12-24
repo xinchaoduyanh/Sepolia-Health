@@ -1,19 +1,19 @@
+import { PrismaService } from '@/common/prisma/prisma.service';
 import {
+  ConflictException,
   Injectable,
   NotFoundException,
-  ConflictException,
 } from '@nestjs/common';
-import { PrismaService } from '@/common/prisma/prisma.service';
-import { UserStatus, Role } from '@prisma/client';
+import { Role, UserStatus } from '@prisma/client';
 import {
   CreateDoctorDto,
+  CreateDoctorResponseDto,
+  CreateDoctorScheduleDto,
+  DoctorDetailResponseDto,
+  DoctorListResponseDto,
+  GetDoctorsQueryDto,
   UpdateDoctorDto,
   UpdateDoctorStatusDto,
-  CreateDoctorResponseDto,
-  DoctorListResponseDto,
-  DoctorDetailResponseDto,
-  CreateDoctorScheduleDto,
-  GetDoctorsQueryDto,
 } from './admin-doctor.dto';
 
 @Injectable()
@@ -169,6 +169,7 @@ export class AdminDoctorService {
       experienceYears: parseInt(result.doctorProfile.experience || '0'),
       status: result.user.status,
       createdAt: result.doctorProfile.createdAt,
+      avatar: result.doctorProfile.avatar,
     };
   }
 
@@ -293,6 +294,7 @@ export class AdminDoctorService {
             }
           : null,
         createdAt: doctor.createdAt,
+        avatar: doctor.doctorProfile!.avatar,
       })),
       total,
       page,
@@ -365,6 +367,7 @@ export class AdminDoctorService {
       id: doctor.id,
       email: doctor.user.email,
       fullName: `${doctor.firstName} ${doctor.lastName}`,
+      avatar: doctor.avatar,
       phone: doctor.user.phone || '',
       services: doctor.services.map((s) => ({
         id: s.service.id,
@@ -507,6 +510,7 @@ export class AdminDoctorService {
       })),
       experienceYears: parseInt(updatedDoctor.experience || '0'),
       status: 'ACTIVE',
+      avatar: updatedDoctor.avatar,
     };
   }
 
@@ -575,6 +579,7 @@ export class AdminDoctorService {
       })),
       experienceYears: parseInt(updatedDoctor.experience || '0'),
       status: updatedDoctor.user.status,
+      avatar: updatedDoctor.avatar,
     };
   }
 

@@ -98,6 +98,7 @@ export interface AppointmentNotificationPatient {
   clinicName: string;
   recipientId: string;
   notes?: string;
+  joinUrl?: string | null;
 }
 
 export interface UpdateAppointmentNotificationPatient
@@ -125,6 +126,7 @@ export interface AppointmentNotificationDoctor {
   clinicName: string;
   recipientId: string;
   notes?: string;
+  hostUrl?: string | null;
 }
 export interface UpdateAppointmentNotificationDoctor
   extends Partial<AppointmentNotificationDoctor> {

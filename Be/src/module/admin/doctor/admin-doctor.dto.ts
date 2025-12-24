@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { z } from 'zod';
 import { UserStatus } from '@prisma/client';
+import { z } from 'zod';
 
 // Password regex: tối thiểu 6 ký tự, có chữ IN HOA, có số, có ký tự đặc biệt
 const PASSWORD_REGEX =
@@ -289,6 +289,13 @@ export class CreateDoctorResponseDto {
     required: false,
   })
   createdAt?: Date;
+
+  @ApiProperty({
+    description: 'Avatar bác sĩ',
+    example: 'https://example.com/avatar.jpg',
+    required: false,
+  })
+  avatar?: string | null;
 }
 
 export class DoctorListResponseDto {
@@ -335,6 +342,13 @@ export class DoctorDetailResponseDto {
     example: 'Nguyễn Văn A',
   })
   fullName: string;
+
+  @ApiProperty({
+    description: 'Avatar bác sĩ',
+    example: 'https://example.com/avatar.jpg',
+    required: false,
+  })
+  avatar?: string | null;
 
   @ApiProperty({
     description: 'Danh sách dịch vụ chi tiết',

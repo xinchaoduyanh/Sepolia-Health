@@ -98,6 +98,7 @@ export class NotificationService {
       type: 'regular', // Use standard type
       attachments: [], // Optional: add if needed
       ...finalMetadata, // stream-chat-js often spreads extra fields as custom data (metadata)
+      metadata: finalMetadata,
     } as any);
 
     return {
@@ -107,7 +108,7 @@ export class NotificationService {
       status: NotificationStatus.UNREAD,
       title: dto.title,
       message: dto.message,
-      metadata: dto.metadata,
+      metadata: finalMetadata,
       createdAt: message.message?.created_at
         ? new Date(message.message.created_at)
         : new Date(),
@@ -127,8 +128,14 @@ export class NotificationService {
       minute: '2-digit',
     });
 
-    const title = 'Đặt lịch hẹn thành công';
-    const message = `Bạn đã đặt lịch khám với Bác sĩ ${obj.doctorName} vào ${appointmentDate} lúc ${appointmentTime} tại ${obj.clinicName}. Dịch vụ: ${obj.serviceName}.`;
+    const isOnline = !!obj.joinUrl;
+    const title = isOnline
+      ? 'Đặt lịch khám Online thành công'
+      : 'Đặt lịch hẹn thành công';
+    const message = isOnline
+      ? `Bạn đã đặt lịch khám Online với Bác sĩ ${obj.doctorName} vào ${appointmentDate} lúc ${appointmentTime}. Dịch vụ: ${obj.serviceName}. Link tham gia đã được gửi kèm.`
+      : `Bạn đã đặt lịch khám với Bác sĩ ${obj.doctorName} vào ${appointmentDate} lúc ${appointmentTime} tại ${obj.clinicName}. Dịch vụ: ${obj.serviceName}.`;
+
     return this.sendNotification({
       type: NotificationType.CREATE_APPOINTMENT_PATIENT,
       priority: NotificationPriority.HIGH,
@@ -210,8 +217,11 @@ export class NotificationService {
       minute: '2-digit',
     });
 
-    const title = 'Lịch hẹn mới';
-    const message = `Bạn có lịch hẹn mới với bệnh nhân ${dto.patientName} vào ${appointmentDate} lúc ${appointmentTime} tại ${dto.clinicName}. Dịch vụ: ${dto.serviceName}.`;
+    const isOnline = !!dto.hostUrl;
+    const title = isOnline ? 'Lịch hẹn Online mới' : 'Lịch hẹn mới';
+    const message = isOnline
+      ? `Bạn có lịch hẹn Online mới với bệnh nhân ${dto.patientName} vào ${appointmentDate} lúc ${appointmentTime}. Dịch vụ: ${dto.serviceName}.`
+      : `Bạn có lịch hẹn mới với bệnh nhân ${dto.patientName} vào ${appointmentDate} lúc ${appointmentTime} tại ${dto.clinicName}. Dịch vụ: ${dto.serviceName}.`;
 
     return this.sendNotification({
       type: NotificationType.CREATE_APPOINTMENT_DOCTOR,
@@ -220,9 +230,7 @@ export class NotificationService {
       senderId: 'system',
       title,
       message,
-      metadata: {
-        notes: dto.notes,
-      },
+      metadata: { ...dto },
     });
   }
 

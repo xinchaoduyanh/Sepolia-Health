@@ -80,14 +80,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     useEffect(() => {
         if (!client || !isConnected || !user) {
             setIsReady(false)
-            if (notificationChannel) {
-                try {
-                    notificationChannel.off()
-                } catch (e) {
-                    // ignore
-                }
-                setNotificationChannel(undefined)
-            }
+            setNotificationChannel(undefined)
             setNotifications([])
             return
         }
@@ -98,46 +91,59 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
         }
 
         let isCancelled = false
+        let channel: Channel | undefined
+
+        // Define handlers outside init so they can be accessed by cleanup
+        const handleNewMessage = (event: any) => {
+            if (!isCancelled && event.message) {
+                const newNotification = transformStreamMessageToNotification(event.message, channel)
+                setNotifications(prev => [newNotification, ...prev])
+            }
+        }
+
+        const handleMessageUpdated = (event: any) => {
+            if (!isCancelled && event.message) {
+                const updatedNotification = transformStreamMessageToNotification(event.message, channel)
+                setNotifications(prev => prev.map(n => (n.id === updatedNotification.id ? updatedNotification : n)))
+            }
+        }
+
+        const handleMessageRead = () => {
+            if (!isCancelled && channel) {
+                loadNotifications(channel)
+            }
+        }
 
         const initNotifications = async () => {
             try {
                 const channelId = `notifications_${user.id}`
-                const channel = client.channel('messaging', channelId)
+                const newChannel = client.channel('messaging', channelId)
 
-                await channel.watch()
+                await newChannel.watch()
 
-                if (isCancelled) return
+                if (isCancelled) {
+                    try {
+                        newChannel.stopWatching()
+                    } catch (e) {
+                        // ignore
+                    }
+                    return
+                }
 
+                channel = newChannel
                 setNotificationChannel(channel)
                 await loadNotifications(channel)
 
-                const handleNewMessage = (event: any) => {
-                    if (event.channel_id === channelId && event.message) {
-                        const newNotification = transformStreamMessageToNotification(event.message, channel)
-                        setNotifications(prev => [newNotification, ...prev])
-                    }
-                }
-
-                const handleMessageUpdated = (event: any) => {
-                    if (event.channel_id === channelId && event.message) {
-                        const updatedNotification = transformStreamMessageToNotification(event.message, channel)
-                        setNotifications(prev =>
-                            prev.map(n => (n.id === updatedNotification.id ? updatedNotification : n)),
-                        )
-                    }
-                }
-
                 channel.on('message.new', handleNewMessage)
                 channel.on('message.updated', handleMessageUpdated)
-                // Listen to read events to update status in real-time
-                channel.on('message.read', () => {
-                    loadNotifications(channel)
-                })
+                channel.on('message.read', handleMessageRead)
 
                 setIsReady(true)
             } catch (error) {
-                console.error('Failed to initialize notifications:', error)
-                setIsReady(false)
+                if (!isCancelled) {
+                    console.error('Failed to initialize notifications:', error)
+                    setIsReady(false)
+                }
             }
         }
 
@@ -145,7 +151,11 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
 
         return () => {
             isCancelled = true
-            // Cleanup handled by logic above if dependencies change
+            if (channel) {
+                channel.off('message.new', handleNewMessage)
+                channel.off('message.updated', handleMessageUpdated)
+                channel.off('message.read', handleMessageRead)
+            }
         }
     }, [client, isConnected, user, loadNotifications, transformStreamMessageToNotification])
 
