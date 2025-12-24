@@ -1,9 +1,20 @@
 'use client';
 
-import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
-import Markdown from 'react-native-markdown-display';
-import { useAppTermsByType, AppTermsType } from '@/lib/api';
+import { AppTermsType, useAppTermsByType } from '@/lib/api';
 import { prepareMarkdownContent } from '@/utils/html-to-markdown';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
+import {
+  ActivityIndicator,
+  ScrollView,
+  StatusBar,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import Markdown from 'react-native-markdown-display';
+import Svg, { Path } from 'react-native-svg';
 
 // Markdown styles for terms pages
 const markdownStyles = {
@@ -104,7 +115,13 @@ export default function PrivacyPolicyScreen() {
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <View
+        style={{
+          flex: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: '#E0F2FE',
+        }}>
         <ActivityIndicator size="large" color="#0284C7" />
       </View>
     );
@@ -112,7 +129,14 @@ export default function PrivacyPolicyScreen() {
 
   if (error || !terms) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+      <View
+        style={{
+          flex: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: 20,
+          backgroundColor: '#E0F2FE',
+        }}>
         <Text style={{ fontSize: 16, color: '#666', textAlign: 'center' }}>
           Không thể tải nội dung. Vui lòng thử lại sau.
         </Text>
@@ -124,22 +148,79 @@ export default function PrivacyPolicyScreen() {
   const displayTitle = terms.title;
 
   return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: '#fff' }}
-      contentContainerStyle={{ padding: 20 }}
-      showsVerticalScrollIndicator={true}>
-      {displayTitle && (
-        <Text
+    <View style={{ flex: 1, backgroundColor: '#E0F2FE' }}>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: 40 }}>
+        {/* Background Gradient Header */}
+        <View style={{ height: 240, position: 'relative', marginTop: -60 }}>
+          <LinearGradient
+            colors={['#0284C7', '#06B6D4', '#10B981']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{ flex: 1 }}
+          />
+          {/* Curved bottom edge using SVG */}
+          <Svg
+            height="70"
+            width="200%"
+            viewBox="0 0 1440 120"
+            style={{ position: 'absolute', bottom: -1, left: 0, right: 0 }}>
+            <Path d="M0,0 Q720,120 1440,0 L1440,120 L0,120 Z" fill="#E0F2FE" />
+          </Svg>
+
+          {/* Header content */}
+          <View
+            style={{
+              position: 'absolute',
+              top: 100,
+              left: 24,
+              right: 24,
+              flexDirection: 'row',
+              alignItems: 'center',
+            }}>
+            <TouchableOpacity
+              onPress={() => router.back()}
+              style={{
+                height: 40,
+                width: 40,
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: 20,
+                backgroundColor: 'rgba(255,255,255,0.25)',
+                marginRight: 12,
+              }}>
+              <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+            </TouchableOpacity>
+            <Text
+              numberOfLines={1}
+              style={{ fontSize: 22, fontWeight: 'bold', color: '#FFFFFF', flex: 1 }}>
+              {displayTitle || 'Chính sách bảo mật'}
+            </Text>
+          </View>
+        </View>
+
+        {/* Content Section */}
+        <View
           style={{
-            fontSize: 28,
-            fontWeight: 'bold',
-            color: '#0284C7',
-            marginBottom: 20,
+            marginHorizontal: 20,
+            marginTop: -40,
+            backgroundColor: '#fff',
+            borderRadius: 20,
+            padding: 20,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.1,
+            shadowRadius: 12,
+            elevation: 5,
           }}>
-          {displayTitle}
-        </Text>
-      )}
-      <Markdown style={markdownStyles}>{markdownContent}</Markdown>
-    </ScrollView>
+          <Markdown style={markdownStyles}>{markdownContent}</Markdown>
+        </View>
+      </ScrollView>
+    </View>
   );
 }

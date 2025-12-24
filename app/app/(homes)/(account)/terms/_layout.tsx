@@ -4,7 +4,7 @@ export default function TermsLayout() {
   return (
     <Stack
       screenOptions={{
-        headerShown: true,
+        headerShown: false,
         headerBackVisible: true,
         headerBackTitle: 'Tài khoản',
         headerStyle: {

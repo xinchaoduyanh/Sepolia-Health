@@ -1,7 +1,8 @@
-import React from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
-import { AppTermsType, AppTerms, AppTermsResponse } from '@/types/app-terms';
+import { AppTerms, AppTermsResponse, AppTermsType } from '@/types/app-terms';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import React from 'react';
+export { AppTerms, AppTermsResponse, AppTermsType };
 
 class AppTermsApi {
   /**

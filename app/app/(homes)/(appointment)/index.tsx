@@ -5,10 +5,12 @@ import { formatTime } from '@/utils/datetime';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Animated,
+  DimensionValue,
   Modal,
   Pressable,
   RefreshControl,
@@ -17,9 +19,90 @@ import {
   Text,
   TouchableOpacity,
   View,
+  ViewStyle,
 } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import Svg, { Path } from 'react-native-svg';
+
+interface SkeletonProps {
+  width?: DimensionValue;
+  height?: DimensionValue;
+  borderRadius?: number;
+  style?: ViewStyle;
+}
+
+const Skeleton = ({ width, height, borderRadius, style }: SkeletonProps) => {
+  const opacity = useRef(new Animated.Value(0.3)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, {
+          toValue: 0.7,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacity, {
+          toValue: 0.3,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, [opacity]);
+
+  return (
+    <Animated.View
+      style={[
+        {
+          width,
+          height,
+          borderRadius: borderRadius || 4,
+          backgroundColor: '#E1E9EE',
+          opacity,
+        },
+        style,
+      ]}
+    />
+  );
+};
+
+const AppointmentSkeleton = () => (
+  <View
+    className="mb-4 rounded-xl bg-white p-4"
+    style={{
+      borderLeftWidth: 4,
+      borderLeftColor: '#E5E7EB',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+    }}>
+    <View className="flex-row">
+      {/* Date Block Skeleton */}
+      <View
+        className="mr-4 items-center justify-center rounded-lg px-3 py-2"
+        style={{ backgroundColor: '#F0FDFA', width: 60, height: 60 }}>
+        <Skeleton width={30} height={12} style={{ marginBottom: 4 }} />
+        <Skeleton width={40} height={24} />
+      </View>
+
+      {/* Details Skeleton */}
+      <View className="flex-1">
+        <Skeleton width={100} height={16} style={{ marginBottom: 8, borderRadius: 10 }} />
+        <Skeleton width="80%" height={20} style={{ marginBottom: 8 }} />
+        <Skeleton width="60%" height={14} style={{ marginBottom: 6 }} />
+        <Skeleton width="50%" height={14} style={{ marginBottom: 10 }} />
+        <View className="flex-row items-center">
+          <Skeleton width={16} height={16} borderRadius={8} style={{ marginRight: 6 }} />
+          <Skeleton width={120} height={14} />
+        </View>
+        <Skeleton width={80} height={20} borderRadius={10} style={{ marginTop: 10 }} />
+      </View>
+    </View>
+  </View>
+);
 
 export default function AppointmentsListScreen() {
   const [page, setPage] = useState(1);
@@ -337,9 +420,10 @@ export default function AppointmentsListScreen() {
 
           {/* Appointments List */}
           {isLoading ? (
-            <View className="items-center py-20">
-              <ActivityIndicator size="large" color="#0284C7" />
-              <Text className="mt-4 text-base text-gray-600">Đang tải lịch hẹn...</Text>
+            <View>
+              <AppointmentSkeleton />
+              <AppointmentSkeleton />
+              <AppointmentSkeleton />
             </View>
           ) : appointments.length === 0 ? (
             <View className="items-center py-20">

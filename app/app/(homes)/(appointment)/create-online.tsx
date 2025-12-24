@@ -233,9 +233,7 @@ export default function OnlineAppointmentScreen() {
         end={{ x: 1, y: 1 }}
         style={{ paddingTop: 60, paddingBottom: 24, paddingHorizontal: 24 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <TouchableOpacity
-            onPress={() => router.push('/(homes)/(appointment)')}
-            style={{ marginRight: 16 }}>
+          <TouchableOpacity onPress={() => router.push('/(homes)')} style={{ marginRight: 16 }}>
             <Ionicons name="arrow-back" size={24} color="white" />
           </TouchableOpacity>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>

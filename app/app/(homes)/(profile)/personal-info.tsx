@@ -1,10 +1,10 @@
-import { View, Text, TouchableOpacity, ScrollView, StatusBar } from 'react-native';
+import { useAuth } from '@/lib/hooks/useAuth';
+import { PatientProfile } from '@/types/auth';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Path } from 'react-native-svg';
-import { useAuth } from '@/lib/hooks/useAuth';
 import { router, useLocalSearchParams } from 'expo-router';
-import { PatientProfile } from '@/types/auth';
+import { ScrollView, StatusBar, Text, TouchableOpacity, View } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 
 export default function PersonalInfoScreen() {
   const { user } = useAuth();
@@ -146,7 +146,7 @@ export default function PersonalInfoScreen() {
                   style={{
                     fontSize: 16,
                     fontWeight: 'bold',
-                    color: '#10B981',
+                    color: '#0F172A',
                   }}>
                   Thông tin cơ bản
                 </Text>
@@ -311,7 +311,7 @@ export default function PersonalInfoScreen() {
                   style={{
                     fontSize: 16,
                     fontWeight: 'bold',
-                    color: '#10B981',
+                    color: '#0F172A',
                   }}>
                   Thông tin bổ sung
                 </Text>
@@ -354,7 +354,7 @@ export default function PersonalInfoScreen() {
                   style={{
                     fontSize: 16,
                     fontWeight: 'bold',
-                    color: '#10B981',
+                    color: '#0F172A',
                   }}>
                   Thông tin bảo hiểm
                 </Text>
@@ -429,7 +429,7 @@ export default function PersonalInfoScreen() {
                   style={{
                     fontSize: 16,
                     fontWeight: 'bold',
-                    color: '#10B981',
+                    color: '#0F172A',
                   }}>
                   Thông tin công ty
                 </Text>

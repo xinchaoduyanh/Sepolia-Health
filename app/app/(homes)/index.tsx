@@ -10,8 +10,11 @@ import { formatTime } from '@/utils/datetime';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
+import { useEffect, useRef } from 'react';
 import {
   Alert,
+  Animated,
+  DimensionValue,
   Image,
   ImageBackground,
   ScrollView,
@@ -19,8 +22,52 @@ import {
   Text,
   TouchableOpacity,
   View,
+  ViewStyle,
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
+
+interface SkeletonProps {
+  width?: DimensionValue;
+  height?: DimensionValue;
+  borderRadius?: number;
+  style?: ViewStyle;
+}
+
+const Skeleton = ({ width, height, borderRadius, style }: SkeletonProps) => {
+  const opacity = useRef(new Animated.Value(0.3)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, {
+          toValue: 0.7,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacity, {
+          toValue: 0.3,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, [opacity]);
+
+  return (
+    <Animated.View
+      style={[
+        {
+          width,
+          height,
+          borderRadius: borderRadius || 4,
+          backgroundColor: '#E1E9EE',
+          opacity,
+        },
+        style,
+      ]}
+    />
+  );
+};
 
 export default function HomeScreen() {
   const { user } = useAuth();
@@ -426,7 +473,10 @@ export default function HomeScreen() {
             <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#0F172A' }}>
               Lịch trình sắp tới
             </Text>
-            <TouchableOpacity onPress={() => router.push('/(homes)/(appointment)')}>
+            <TouchableOpacity
+              onPress={() => router.push('/(homes)/(appointment)')}
+              activeOpacity={0.7}
+              style={{ padding: 4 }}>
               <Text style={{ fontSize: 14, fontWeight: '600', color: '#0284C7' }}>Xem tất cả</Text>
             </TouchableOpacity>
           </View>
@@ -434,13 +484,22 @@ export default function HomeScreen() {
             <View
               style={{
                 borderRadius: 20,
-                padding: 20,
+                padding: 16,
                 backgroundColor: '#FFFFFF',
-                alignItems: 'center',
-                justifyContent: 'center',
-                minHeight: 120,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.05,
+                shadowRadius: 8,
+                elevation: 2,
               }}>
-              <Text style={{ fontSize: 14, color: '#475569' }}>Đang tải...</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Skeleton width={56} height={56} borderRadius={16} style={{ marginRight: 16 }} />
+                <View style={{ flex: 1 }}>
+                  <Skeleton width="40%" height={14} style={{ marginBottom: 8 }} />
+                  <Skeleton width="80%" height={16} style={{ marginBottom: 8 }} />
+                  <Skeleton width="60%" height={14} />
+                </View>
+              </View>
             </View>
           ) : closestAppointment ? (
             <TouchableOpacity
@@ -930,7 +989,8 @@ export default function HomeScreen() {
             </Text>
             <TouchableOpacity
               onPress={() => router.push('/(homes)/(articles)')}
-              activeOpacity={0.7}>
+              activeOpacity={0.7}
+              style={{ padding: 4 }}>
               <Text style={{ fontSize: 14, fontWeight: '600', color: '#0284C7' }}>Xem tất cả</Text>
             </TouchableOpacity>
           </View>
@@ -947,33 +1007,15 @@ export default function HomeScreen() {
                     padding: 16,
                   }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <View
-                      style={{
-                        height: 48,
-                        width: 48,
-                        borderRadius: 14,
-                        backgroundColor: '#E5E7EB',
-                        marginRight: 16,
-                      }}
+                    <Skeleton
+                      width={48}
+                      height={48}
+                      borderRadius={14}
+                      style={{ marginRight: 16 }}
                     />
                     <View style={{ flex: 1 }}>
-                      <View
-                        style={{
-                          height: 14,
-                          backgroundColor: '#E5E7EB',
-                          borderRadius: 4,
-                          marginBottom: 4,
-                          width: '80%',
-                        }}
-                      />
-                      <View
-                        style={{
-                          height: 12,
-                          backgroundColor: '#E5E7EB',
-                          borderRadius: 4,
-                          width: '40%',
-                        }}
-                      />
+                      <Skeleton width="80%" height={14} style={{ marginBottom: 8 }} />
+                      <Skeleton width="40%" height={12} />
                     </View>
                   </View>
                 </View>
@@ -983,6 +1025,7 @@ export default function HomeScreen() {
                 return (
                   <TouchableOpacity
                     key={article.id}
+                    activeOpacity={0.7}
                     style={{
                       borderRadius: 20,
                       backgroundColor: '#FFFFFF',

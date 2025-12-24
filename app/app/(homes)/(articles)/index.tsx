@@ -1,19 +1,18 @@
-import React, { useState, useRef } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  StatusBar,
-  ActivityIndicator,
-  TextInput,
-  Image,
-} from 'react-native';
+import { Article, useArticles } from '@/lib/api/articles';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { useArticles } from '@/lib/api/articles';
-import { Article } from '@/lib/api/articles';
+import { useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Image,
+  ScrollView,
+  StatusBar,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 const debounce = (func: Function, delay: number) => {
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
@@ -208,8 +207,7 @@ export default function ArticlesListScreen() {
             {articles.map((article: Article) => (
               <TouchableOpacity
                 key={article.id}
-
-
+                activeOpacity={0.7}
                 onPress={() => router.push(`/(homes)/(articles)/${article.id}`)}
                 style={{
                   backgroundColor: '#FFFFFF',

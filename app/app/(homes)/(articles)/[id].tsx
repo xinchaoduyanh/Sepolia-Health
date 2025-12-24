@@ -1,22 +1,21 @@
-import React, { useState, useEffect, useRef } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  StatusBar,
-  ActivityIndicator,
-  Image,
-  Dimensions,
-  Animated,
-} from 'react-native';
+import { useArticle, useIncrementViews } from '@/lib/api/articles';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Path } from 'react-native-svg';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useArticle, useIncrementViews } from '@/lib/api/articles';
-import { Article } from '@/lib/api/articles';
+import { useEffect, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Animated,
+  Dimensions,
+  Image,
+  ScrollView,
+  StatusBar,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import Markdown from 'react-native-markdown-display';
+import Svg, { Path } from 'react-native-svg';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -202,7 +201,10 @@ export default function ArticleIdPage() {
               alignItems: 'center',
               paddingHorizontal: 16,
             }}>
-            <TouchableOpacity onPress={() => router.back()} style={{ padding: 8 }}>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => router.back()}
+              style={{ padding: 8 }}>
               <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
             </TouchableOpacity>
             <Text
