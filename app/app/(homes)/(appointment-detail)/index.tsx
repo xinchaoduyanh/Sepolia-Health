@@ -1,5 +1,5 @@
 import { AppointmentStatus } from '@/constants/enum';
-import { useAppointment } from '@/lib/api/appointments';
+import { useAppointment, useCancelAppointment } from '@/lib/api/appointments';
 import { formatDate, formatTime } from '@/utils/datetime';
 import { getRelationshipLabel } from '@/utils/relationshipTranslator';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,6 +7,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import React from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Animated,
   Linking,
   ScrollView,
@@ -156,6 +158,44 @@ const AppointmentDetailSkeleton = () => {
 export default function AppointmentDetailScreen() {
   const { id } = useLocalSearchParams();
   const { data: appointment, isLoading } = useAppointment(Number(id));
+  const cancelMutation = useCancelAppointment();
+
+  const handleCancel = () => {
+    if (!appointment) return;
+
+    Alert.alert(
+      'Hủy lịch hẹn',
+      'Bạn có chắc chắn muốn hủy lịch hẹn này? Hành động này không thể hoàn tác.',
+      [
+        { text: 'Không', style: 'cancel' },
+        {
+          text: 'Có, hủy ngay',
+          style: 'destructive',
+          onPress: () => {
+            cancelMutation.mutate(appointment.id, {
+              onSuccess: () => {
+                Alert.alert('Thành công', 'Đã hủy lịch hẹn');
+                router.back();
+              },
+              onError: (error: any) => {
+                Alert.alert('Lỗi', error?.response?.data?.message || 'Không thể hủy lịch hẹn');
+              },
+            });
+          },
+        },
+      ]
+    );
+  };
+
+  const handleUpdate = () => {
+    if (!appointment) return;
+    router.push(`/(homes)/(appointment)/update?id=${appointment.id}`);
+  };
+
+  const handlePayment = () => {
+    if (!appointment) return;
+    router.push(`/(homes)/(payment)?id=${appointment.id}`);
+  };
 
   if (isLoading) {
     return <AppointmentDetailSkeleton />;
@@ -494,6 +534,106 @@ export default function AppointmentDetailScreen() {
           </View>
         )}
       </ScrollView>
+
+      {/* Action Buttons Footer */}
+      {(appointment.status === AppointmentStatus.UPCOMING ||
+        appointment.status === AppointmentStatus.ON_GOING) && (
+        <View
+          style={{
+            padding: 16,
+            backgroundColor: 'white',
+            borderTopLeftRadius: 24,
+            borderTopRightRadius: 24,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: -4 },
+            shadowOpacity: 0.1,
+            shadowRadius: 12,
+            elevation: 5,
+          }}>
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            {/* Cancel Button */}
+            {appointment.status === AppointmentStatus.UPCOMING && (
+              <TouchableOpacity
+                onPress={handleCancel}
+                disabled={cancelMutation.isPending}
+                style={{
+                  flex: 1,
+                  backgroundColor: '#FEE2E2',
+                  paddingVertical: 14,
+                  borderRadius: 12,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexDirection: 'row',
+                }}>
+                {cancelMutation.isPending ? (
+                  <ActivityIndicator size="small" color="#EF4444" />
+                ) : (
+                  <>
+                    <Ionicons
+                      name="close-circle-outline"
+                      size={20}
+                      color="#EF4444"
+                      style={{ marginRight: 8 }}
+                    />
+                    <Text style={{ color: '#EF4444', fontWeight: 'bold', fontSize: 16 }}>
+                      Hủy lịch
+                    </Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            )}
+
+            {/* Update/Reschedule Button */}
+            {appointment.status === AppointmentStatus.UPCOMING && (
+              <TouchableOpacity
+                onPress={handleUpdate}
+                style={{
+                  flex: 1,
+                  backgroundColor: '#E0F2FE',
+                  paddingVertical: 14,
+                  borderRadius: 12,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexDirection: 'row',
+                }}>
+                <Ionicons
+                  name="calendar-outline"
+                  size={20}
+                  color="#0284C7"
+                  style={{ marginRight: 8 }}
+                />
+                <Text style={{ color: '#0284C7', fontWeight: 'bold', fontSize: 16 }}>Đổi lịch</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {/* Payment Button */}
+          {appointment.status === AppointmentStatus.UPCOMING &&
+            appointment.billing?.status === 'PENDING' && (
+              <TouchableOpacity
+                onPress={handlePayment}
+                style={{
+                  marginTop: 12,
+                  backgroundColor: '#0284C7',
+                  paddingVertical: 14,
+                  borderRadius: 12,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexDirection: 'row',
+                  shadowColor: '#0284C7',
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.2,
+                  shadowRadius: 8,
+                  elevation: 4,
+                }}>
+                <Ionicons name="card-outline" size={20} color="white" style={{ marginRight: 8 }} />
+                <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16 }}>
+                  Thanh toán ngay
+                </Text>
+              </TouchableOpacity>
+            )}
+        </View>
+      )}
     </View>
   );
 }
