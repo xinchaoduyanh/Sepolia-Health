@@ -779,7 +779,7 @@ export default function AppointmentScreen() {
                           Không thể tải khung giờ khả dụng. Vui lòng thử lại.
                         </Text>
                       </View>
-                    ) : (
+                    ) : ( 
                       <TimeSlotSkeleton />
                     )}
                   </View>
