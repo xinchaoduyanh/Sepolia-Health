@@ -1,16 +1,17 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import { DataTable } from '@workspace/ui/components/DataTable'
-import { Button } from '@workspace/ui/components/Button'
+import { AppointmentSummary } from '@/shared/lib/api-services/appointment.service'
+import { AppointmentDetailResponse } from '@/types/appointment'
 import { Badge } from '@workspace/ui/components/Badge'
-import { Calendar, Clock, User, Phone, Plus, Eye } from 'lucide-react'
+import { Button } from '@workspace/ui/components/Button'
+import { DataTable } from '@workspace/ui/components/DataTable'
 import { BsSearchField } from '@workspace/ui/components/Searchfield'
 import { BsSelect } from '@workspace/ui/components/Select'
-import { AppointmentDetailResponse } from '@/types/appointment'
-import { AppointmentSummary } from '@/shared/lib/api-services/appointment.service'
+import { Skeleton } from '@workspace/ui/components/Skeleton'
 import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
+import { Calendar, Clock, Eye, Phone, Plus, User } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 
 const statusOptions = [
     { id: 'all', name: 'Tất cả trạng thái' },
@@ -235,12 +236,7 @@ export function AppointmentList({
             minSize: 80,
             maxSize: 80,
             cell: ({ row }: any) => (
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onViewDetail(row.original.id)}
-                    className="h-8 w-8 p-0"
-                >
+                <Button variant="ghost" size="sm" onClick={() => onViewDetail(row.original.id)} className="h-8 w-8 p-0">
                     <Eye className="h-4 w-4" />
                 </Button>
             ),
@@ -267,25 +263,41 @@ export function AppointmentList({
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="bg-card rounded-lg p-4 border border-border">
                     <div className="text-2xl font-bold text-foreground">
-                        {isSummaryLoading ? '...' : summary?.reduce((acc, s) => acc + s.count, 0) || 0}
+                        {isSummaryLoading ? (
+                            <Skeleton className="h-8 w-16" />
+                        ) : (
+                            summary?.reduce((acc, s) => acc + s.count, 0) || 0
+                        )}
                     </div>
                     <div className="text-sm text-muted-foreground">Tổng lịch hẹn</div>
                 </div>
                 <div className="bg-card rounded-lg p-4 border border-border">
                     <div className="text-2xl font-bold text-blue-600">
-                        {isSummaryLoading ? '...' : summary?.find(s => s.appointmentStatus === 'UPCOMING')?.count || 0}
+                        {isSummaryLoading ? (
+                            <Skeleton className="h-8 w-16" />
+                        ) : (
+                            summary?.find(s => s.appointmentStatus === 'UPCOMING')?.count || 0
+                        )}
                     </div>
                     <div className="text-sm text-muted-foreground">Sắp tới</div>
                 </div>
                 <div className="bg-card rounded-lg p-4 border border-border">
                     <div className="text-2xl font-bold text-orange-600">
-                        {isSummaryLoading ? '...' : summary?.find(s => s.appointmentStatus === 'ON_GOING')?.count || 0}
+                        {isSummaryLoading ? (
+                            <Skeleton className="h-8 w-16" />
+                        ) : (
+                            summary?.find(s => s.appointmentStatus === 'ON_GOING')?.count || 0
+                        )}
                     </div>
                     <div className="text-sm text-muted-foreground">Đang diễn ra</div>
                 </div>
                 <div className="bg-card rounded-lg p-4 border border-border">
                     <div className="text-2xl font-bold text-green-600">
-                        {isSummaryLoading ? '...' : summary?.find(s => s.appointmentStatus === 'COMPLETED')?.count || 0}
+                        {isSummaryLoading ? (
+                            <Skeleton className="h-8 w-16" />
+                        ) : (
+                            summary?.find(s => s.appointmentStatus === 'COMPLETED')?.count || 0
+                        )}
                     </div>
                     <div className="text-sm text-muted-foreground">Hoàn thành</div>
                 </div>
@@ -314,8 +326,19 @@ export function AppointmentList({
             {/* Data Table */}
             <div className="bg-card rounded-lg shadow-sm border border-border overflow-x-auto">
                 {isLoading ? (
-                    <div className="flex items-center justify-center h-64">
-                        <div className="text-muted-foreground">Đang tải...</div>
+                    <div className="p-4 space-y-4">
+                        <div className="flex space-x-4">
+                            <Skeleton className="h-10 w-[100px]" />
+                            <Skeleton className="h-10 w-[200px]" />
+                            <Skeleton className="h-10 w-[150px]" />
+                            <Skeleton className="h-10 w-[150px]" />
+                            <Skeleton className="h-10 w-[150px]" />
+                        </div>
+                        {[...Array(5)].map((_, i) => (
+                            <div key={i} className="flex space-x-4">
+                                <Skeleton className="h-12 w-full" />
+                            </div>
+                        ))}
                     </div>
                 ) : appointments.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-64 text-center">

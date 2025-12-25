@@ -1,18 +1,19 @@
 'use client'
 
-import { useState } from 'react'
-import { Button } from '@workspace/ui/components/Button'
-import { ArrowLeft, Search, Plus, Calendar, Clock, User } from 'lucide-react'
-import { useRouter } from 'next/navigation'
-import { useMutation, useQuery } from '@tanstack/react-query'
 import { doctorServicesApi } from '@/lib/api/doctor-services'
 import { receptionistApi, type TimeSlot } from '@/lib/api/receptionist'
 import type {
-    FindPatientRequest,
-    CreatePatientAccountRequest,
     CreateAppointmentForPatientRequest,
+    CreatePatientAccountRequest,
+    FindPatientRequest,
     PatientProfile,
 } from '@/types/receptionist'
+import { useMutation, useQuery } from '@tanstack/react-query'
+import { Button } from '@workspace/ui/components/Button'
+import { Skeleton } from '@workspace/ui/components/Skeleton'
+import { ArrowLeft, Calendar, Clock, Plus, Search, User } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 
 type Step = 'search' | 'patient-info' | 'appointment' | 'confirmation'
 
@@ -343,7 +344,7 @@ export default function ScheduleAppointmentPage() {
         const phoneError = validatePhoneNumber(value)
         setValidationErrors(prev => ({
             ...prev,
-            phone: phoneError
+            phone: phoneError,
         }))
     }
 
@@ -352,7 +353,7 @@ export default function ScheduleAppointmentPage() {
         const dobError = validateDateOfBirth(value)
         setValidationErrors(prev => ({
             ...prev,
-            dateOfBirth: dobError
+            dateOfBirth: dobError,
         }))
     }
 
@@ -361,7 +362,7 @@ export default function ScheduleAppointmentPage() {
         const nameError = validateRequiredField(value, 'Tên')
         setValidationErrors(prev => ({
             ...prev,
-            firstName: nameError
+            firstName: nameError,
         }))
     }
 
@@ -370,7 +371,7 @@ export default function ScheduleAppointmentPage() {
         const nameError = validateRequiredField(value, 'Họ')
         setValidationErrors(prev => ({
             ...prev,
-            lastName: nameError
+            lastName: nameError,
         }))
     }
 
@@ -506,7 +507,11 @@ export default function ScheduleAppointmentPage() {
                                             />
                                             <Button
                                                 onClick={handleSearchPatient}
-                                                isDisabled={!searchEmail.trim() || findPatientMutation.isPending || (!!searchEmailError && hasSearched)}
+                                                isDisabled={
+                                                    !searchEmail.trim() ||
+                                                    findPatientMutation.isPending ||
+                                                    (!!searchEmailError && hasSearched)
+                                                }
                                                 className="flex items-center gap-2"
                                             >
                                                 <Search className="h-4 w-4" />
@@ -514,9 +519,7 @@ export default function ScheduleAppointmentPage() {
                                             </Button>
                                         </div>
                                         {searchEmailError && hasSearched && (
-                                            <p className="text-sm text-red-600 dark:text-red-400">
-                                                {searchEmailError}
-                                            </p>
+                                            <p className="text-sm text-red-600 dark:text-red-400">{searchEmailError}</p>
                                         )}
                                     </div>
                                 </div>
@@ -848,10 +851,10 @@ export default function ScheduleAppointmentPage() {
                                         {appointmentInfo.doctorServiceId > 0 && appointmentInfo.date ? (
                                             <div className="space-y-3">
                                                 {isLoadingTimeSlots ? (
-                                                    <div className="flex items-center justify-center p-4 bg-muted/30 rounded-lg">
-                                                        <div className="text-sm text-muted-foreground">
-                                                            Đang tải lịch trống...
-                                                        </div>
+                                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 p-4 bg-muted/30 rounded-lg">
+                                                        {[...Array(8)].map((_, i) => (
+                                                            <Skeleton key={i} className="h-10 w-full rounded-lg" />
+                                                        ))}
                                                     </div>
                                                 ) : availabilityData?.availableTimeSlots.length === 0 ? (
                                                     <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">

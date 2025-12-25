@@ -1,16 +1,29 @@
 'use client'
 
-import { useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
-import { formatDate, formatTime } from '@/util/datetime'
-import { useAppointment, useCheckInAppointment, useCancelAppointment } from '@/shared/hooks'
-import { queryKeys } from '@/shared/lib/query-keys'
-import { useQueryClient } from '@tanstack/react-query'
-import { Button } from '@workspace/ui/components/Button'
-import { Badge } from '@workspace/ui/components/Badge'
 import { UpdateAppointmentDialog } from '@/components/UpdateAppointmentDialog'
-import { ArrowLeft, Calendar, Clock, User, Phone, MapPin, Stethoscope, DollarSign, CheckCircle, XCircle, Edit } from 'lucide-react'
+import { useAppointment, useCancelAppointment, useCheckInAppointment } from '@/shared/hooks'
+import { queryKeys } from '@/shared/lib/query-keys'
+import { formatDate, formatTime } from '@/util/datetime'
+import { useQueryClient } from '@tanstack/react-query'
+import { Badge } from '@workspace/ui/components/Badge'
+import { Button } from '@workspace/ui/components/Button'
+import { Skeleton } from '@workspace/ui/components/Skeleton'
 import { toast } from '@workspace/ui/components/Sonner'
+import {
+    ArrowLeft,
+    Calendar,
+    CheckCircle,
+    Clock,
+    DollarSign,
+    Edit,
+    MapPin,
+    Phone,
+    Stethoscope,
+    User,
+    XCircle,
+} from 'lucide-react'
+import { useParams, useRouter } from 'next/navigation'
+import { useState } from 'react'
 
 const getStatusVariant = (status: string): 'default' | 'secondary' | 'destructive' | 'outline' => {
     switch (status.toUpperCase()) {
@@ -94,10 +107,31 @@ export default function AppointmentDetailPage() {
     if (loading) {
         return (
             <div className="container mx-auto px-4 py-8">
-                <div className="flex items-center justify-center h-64">
-                    <div className="text-center">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                        <p className="text-muted-foreground">Đang tải...</p>
+                {/* Header Skeleton */}
+                <div className="mb-6">
+                    <Skeleton className="h-8 w-24 mb-4" />
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <Skeleton className="h-10 w-64 mb-2" />
+                            <Skeleton className="h-4 w-32" />
+                        </div>
+                        <Skeleton className="h-6 w-24" />
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className="lg:col-span-2 space-y-6">
+                        <Skeleton className="h-48 w-full rounded-lg" />
+                        <Skeleton className="h-48 w-full rounded-lg" />
+                    </div>
+                    <div className="space-y-6">
+                        <Skeleton className="h-32 w-full rounded-lg" />
+                        <Skeleton className="h-32 w-full rounded-lg" />
+                        <div className="space-y-3">
+                            <Skeleton className="h-12 w-full rounded-lg" />
+                            <Skeleton className="h-12 w-full rounded-lg" />
+                            <Skeleton className="h-12 w-full rounded-lg" />
+                        </div>
                     </div>
                 </div>
             </div>
@@ -131,12 +165,7 @@ export default function AppointmentDetailPage() {
         <div className="container mx-auto px-4 py-8">
             {/* Header */}
             <div className="mb-6">
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleBack}
-                    className="mb-4"
-                >
+                <Button variant="ghost" size="sm" onClick={handleBack} className="mb-4">
                     <ArrowLeft className="h-4 w-4 mr-2" />
                     Quay lại
                 </Button>
@@ -145,9 +174,7 @@ export default function AppointmentDetailPage() {
                         <h1 className="text-3xl font-bold text-foreground">Chi tiết lịch hẹn</h1>
                         <p className="text-muted-foreground mt-1">Mã lịch hẹn: #{appointment.id}</p>
                     </div>
-                    <Badge variant={getStatusVariant(appointment.status)}>
-                        {getStatusLabel(appointment.status)}
-                    </Badge>
+                    <Badge variant={getStatusVariant(appointment.status)}>{getStatusLabel(appointment.status)}</Badge>
                 </div>
             </div>
 
@@ -181,9 +208,7 @@ export default function AppointmentDetailPage() {
                             {appointment.notes && (
                                 <div className="flex items-start pt-3 border-t border-border">
                                     <span className="text-sm font-medium text-muted-foreground w-32">Lý do khám:</span>
-                                    <span className="text-sm text-foreground flex-1 italic">
-                                        {appointment.notes}
-                                    </span>
+                                    <span className="text-sm text-foreground flex-1 italic">{appointment.notes}</span>
                                 </div>
                             )}
                         </div>
@@ -249,9 +274,7 @@ export default function AppointmentDetailPage() {
                                 ? `${appointment.service.price.toLocaleString('vi-VN')} ₫`
                                 : 'N/A'}
                         </p>
-                        <p className="text-xs opacity-75 mt-2">
-                            Thời lượng: {appointment.service?.duration || 0} phút
-                        </p>
+                        <p className="text-xs opacity-75 mt-2">Thời lượng: {appointment.service?.duration || 0} phút</p>
                     </div>
 
                     {/* Metadata Card */}
@@ -260,9 +283,7 @@ export default function AppointmentDetailPage() {
                         <div className="space-y-2 text-sm">
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">Ngày tạo:</span>
-                                <span className="text-foreground font-medium">
-                                    {formatDate(appointment.createdAt)}
-                                </span>
+                                <span className="text-foreground font-medium">{formatDate(appointment.createdAt)}</span>
                             </div>
                             {appointment.billing && (
                                 <div className="flex justify-between pt-2 border-t border-border">
