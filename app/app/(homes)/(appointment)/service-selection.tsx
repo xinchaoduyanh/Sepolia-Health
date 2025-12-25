@@ -1,21 +1,14 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  TextInput,
-  StatusBar,
-  ActivityIndicator,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Path } from 'react-native-svg';
-import { router } from 'expo-router';
+import { ServiceSkeleton } from '@/components/SkeletonLoader';
 import { useAppointment } from '@/contexts/AppointmentContext';
 import { useServices } from '@/lib/api/appointments';
 import { Service } from '@/types/doctor';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
+import { useState } from 'react';
+import { Pressable, ScrollView, StatusBar, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Svg, { Path } from 'react-native-svg';
 
 export default function ServiceSelectionScreen() {
   const [selectedService, setSelectedService] = useState<number | null>(null);
@@ -74,18 +67,6 @@ export default function ServiceSelectionScreen() {
     const minutes = duration % 60;
     return minutes > 0 ? `${hours}h ${minutes}p` : `${hours}h`;
   };
-
-  if (isLoading) {
-    return (
-      <SafeAreaView className="flex-1 bg-slate-50">
-        <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#2563EB" />
-          <Text className="mt-4 text-base text-slate-600">Đang tải danh sách dịch vụ...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
 
   if (error) {
     return (
@@ -169,7 +150,7 @@ export default function ServiceSelectionScreen() {
               flexDirection: 'row',
               alignItems: 'center',
             }}>
-            <TouchableOpacity
+            <Pressable
               onPress={handleBack}
               style={{
                 height: 40,
@@ -181,11 +162,11 @@ export default function ServiceSelectionScreen() {
                 marginRight: 12,
               }}>
               <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
-            </TouchableOpacity>
+            </Pressable>
             <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#FFFFFF', flex: 1 }}>
               Chọn dịch vụ
             </Text>
-            <TouchableOpacity
+            <Pressable
               onPress={handleBackToAppointments}
               style={{
                 height: 40,
@@ -196,7 +177,7 @@ export default function ServiceSelectionScreen() {
                 backgroundColor: 'rgba(255,255,255,0.25)',
               }}>
               <Ionicons name="calendar-outline" size={24} color="#FFFFFF" />
-            </TouchableOpacity>
+            </Pressable>
           </View>
         </View>
 
@@ -253,7 +234,9 @@ export default function ServiceSelectionScreen() {
 
           {/* Services List */}
           <View>
-            {filteredServices.length === 0 ? (
+            {isLoading ? (
+              Array.from({ length: 5 }).map((_, index) => <ServiceSkeleton key={index} />)
+            ) : filteredServices.length === 0 ? (
               <View className="mt-8 items-center">
                 <Ionicons name="medical-outline" size={48} color="#94A3B8" />
                 <Text className="mt-4 text-center text-base text-slate-600">
@@ -262,7 +245,7 @@ export default function ServiceSelectionScreen() {
               </View>
             ) : (
               filteredServices.map((service: Service) => (
-                <TouchableOpacity
+                <Pressable
                   key={service.id}
                   onPress={() => handleServiceSelect(service.id)}
                   className={`mb-3 rounded-xl p-4 ${
@@ -317,31 +300,30 @@ export default function ServiceSelectionScreen() {
                       </View>
                     </View>
                   </View>
-                </TouchableOpacity>
+                </Pressable>
               ))
             )}
-
-            {/* Continue Button */}
-            {selectedService && (
-              <View style={{ marginTop: 24 }}>
-                <TouchableOpacity
-                  onPress={handleContinue}
-                  style={{
-                    backgroundColor: '#0284C7',
-                    paddingVertical: 16,
-                    borderRadius: 12,
-                    alignItems: 'center',
-                    shadowColor: '#0284C7',
-                    shadowOffset: { width: 0, height: 4 },
-                    shadowOpacity: 0.3,
-                    shadowRadius: 8,
-                    elevation: 4,
-                  }}>
-                  <Text style={{ color: 'white', fontSize: 16, fontWeight: 'bold' }}>Tiếp tục</Text>
-                </TouchableOpacity>
-              </View>
-            )}
           </View>
+          {/* Continue Button */}
+          {selectedService && (
+            <View style={{ marginTop: 24 }}>
+              <TouchableOpacity
+                onPress={handleContinue}
+                style={{
+                  backgroundColor: '#0284C7',
+                  paddingVertical: 16,
+                  borderRadius: 12,
+                  alignItems: 'center',
+                  shadowColor: '#0284C7',
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 8,
+                  elevation: 4,
+                }}>
+                <Text style={{ color: 'white', fontSize: 16, fontWeight: 'bold' }}>Tiếp tục</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       </ScrollView>
     </View>

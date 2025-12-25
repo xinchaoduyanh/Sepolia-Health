@@ -1,22 +1,23 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  TextInput,
-  StatusBar,
-  ActivityIndicator,
-  Image,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Path } from 'react-native-svg';
-import { router } from 'expo-router';
+import { DoctorSkeleton } from '@/components/SkeletonLoader';
 import { useAppointment } from '@/contexts/AppointmentContext';
 import { useDoctorServices } from '@/lib/api/appointments';
 import { getTodayDateString } from '@/utils/datetime';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
+import { useState } from 'react';
+import {
+  Image,
+  Pressable,
+  ScrollView,
+  StatusBar,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Svg, { Path } from 'react-native-svg';
 
 export default function DoctorSelectionScreen() {
   const [selectedDoctor, setSelectedDoctor] = useState<number | null>(null);
@@ -139,18 +140,6 @@ export default function DoctorSelectionScreen() {
     return stars;
   };
 
-  if (isLoading) {
-    return (
-      <SafeAreaView className="flex-1 bg-slate-50">
-        <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#2563EB" />
-          <Text className="mt-4 text-base text-slate-600">Đang tải danh sách bác sĩ...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
   if (error) {
     return (
       <SafeAreaView className="flex-1 bg-slate-50">
@@ -233,7 +222,7 @@ export default function DoctorSelectionScreen() {
               flexDirection: 'row',
               alignItems: 'center',
             }}>
-            <TouchableOpacity
+            <Pressable
               onPress={handleBack}
               style={{
                 height: 40,
@@ -245,11 +234,11 @@ export default function DoctorSelectionScreen() {
                 marginRight: 12,
               }}>
               <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
-            </TouchableOpacity>
+            </Pressable>
             <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#FFFFFF', flex: 1 }}>
               Chọn bác sĩ
             </Text>
-            <TouchableOpacity
+            <Pressable
               onPress={handleBackToAppointments}
               style={{
                 height: 40,
@@ -260,7 +249,7 @@ export default function DoctorSelectionScreen() {
                 backgroundColor: 'rgba(255,255,255,0.25)',
               }}>
               <Ionicons name="calendar-outline" size={24} color="#FFFFFF" />
-            </TouchableOpacity>
+            </Pressable>
           </View>
         </View>
 
@@ -329,7 +318,9 @@ export default function DoctorSelectionScreen() {
 
           {/* Doctors List */}
           <View>
-            {filteredDoctors.length === 0 ? (
+            {isLoading ? (
+              Array.from({ length: 5 }).map((_, index) => <DoctorSkeleton key={index} />)
+            ) : filteredDoctors.length === 0 ? (
               <View className="mt-8 items-center">
                 <Ionicons name="person-outline" size={48} color="#94A3B8" />
                 <Text className="mt-4 text-center text-base text-slate-600">
@@ -338,13 +329,14 @@ export default function DoctorSelectionScreen() {
               </View>
             ) : (
               filteredDoctors.map((doctor: any) => (
-                <TouchableOpacity
+                <Pressable
                   key={doctor.id}
                   onPress={() => handleDoctorSelect(doctor.id)}
-                  className={`mb-3 rounded-xl p-4 ${selectedDoctor === doctor.id
+                  className={`mb-3 rounded-xl p-4 ${
+                    selectedDoctor === doctor.id
                       ? 'border-2 border-blue-500 bg-blue-50'
                       : 'border border-slate-200 bg-white'
-                    }`}
+                  }`}
                   style={{
                     shadowColor: '#000',
                     shadowOffset: { width: 0, height: 1 },
@@ -386,7 +378,9 @@ export default function DoctorSelectionScreen() {
                       )}
 
                       {doctor.experience && (
-                        <Text className="mb-2 text-sm text-slate-600">{doctor.experience}</Text>
+                        <Text className="mb-2 text-sm text-slate-600">
+                          {new Date().getFullYear() - parseInt(doctor.experience)} năm kinh nghiệm
+                        </Text>
                       )}
 
                       <View className="flex-row items-center">
@@ -397,7 +391,7 @@ export default function DoctorSelectionScreen() {
                       </View>
                     </View>
                   </View>
-                </TouchableOpacity>
+                </Pressable>
               ))
             )}
           </View>

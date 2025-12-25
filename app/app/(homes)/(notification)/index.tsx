@@ -104,12 +104,12 @@ export default function NotificationScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
+    <View style={{ flex: 1, backgroundColor: '#E0F2FE' }}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
       {/* Header */}
       <LinearGradient
-        colors={['#0284C7', '#06B6D4']}
+        colors={['#0284C7', '#06B6D4', '#10B981']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={{
@@ -205,7 +205,7 @@ export default function NotificationScreen() {
               borderRadius: 60,
               alignItems: 'center',
               justifyContent: 'center',
-              backgroundColor: '#E0F2FE',
+              backgroundColor: '#FFFFFF',
               marginBottom: 20,
             }}>
             <Ionicons name="notifications-off-outline" size={60} color="#0284C7" />

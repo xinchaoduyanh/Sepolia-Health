@@ -1,5 +1,6 @@
 import BirthDatePicker from '@/components/BirthDatePicker';
 import GenderSelector from '@/components/GenderSelector';
+import { TimeSlotSkeleton } from '@/components/SkeletonLoader';
 import TimeSlotPicker from '@/components/TimeSlotPicker';
 import { Relationship } from '@/constants/enum';
 import { useAppointment } from '@/contexts/AppointmentContext';
@@ -16,6 +17,7 @@ import { useEffect, useState } from 'react';
 import {
   Image,
   Modal,
+  Pressable,
   ScrollView,
   StatusBar,
   Text,
@@ -294,10 +296,6 @@ export default function AppointmentScreen() {
           {/* Chọn Khách hàng Section */}
           <View className="mb-8">
             <View className="mb-4 flex-row items-center">
-              <View
-                className="mr-2.5 h-5 w-1 rounded-full"
-                style={{ backgroundColor: '#0284C7' }}
-              />
               <Text className="text-lg font-bold" style={{ color: '#0F172A' }}>
                 Chọn Khách hàng
               </Text>
@@ -311,7 +309,7 @@ export default function AppointmentScreen() {
               <View className="flex-row space-x-4">
                 {/* Primary Profile (Tôi) */}
                 {primaryProfile && (
-                  <TouchableOpacity
+                  <Pressable
                     onPress={() => handleCustomerSelect('me', primaryProfile)}
                     className="items-center">
                     <View
@@ -359,12 +357,12 @@ export default function AppointmentScreen() {
                         )}
                       </View>
                     </View>
-                  </TouchableOpacity>
+                  </Pressable>
                 )}
 
                 {/* Other Patient Profiles */}
                 {otherProfiles.map((profile) => (
-                  <TouchableOpacity
+                  <Pressable
                     key={profile.id}
                     onPress={() => handleCustomerSelect(`profile-${profile.id}`, profile)}
                     className="items-center">
@@ -415,13 +413,11 @@ export default function AppointmentScreen() {
                         )}
                       </View>
                     </View>
-                  </TouchableOpacity>
+                  </Pressable>
                 ))}
 
                 {/* Add New Profile */}
-                <TouchableOpacity
-                  onPress={() => handleCustomerSelect('add')}
-                  className="items-center">
+                <Pressable onPress={() => handleCustomerSelect('add')} className="items-center">
                   <View
                     className={`h-16 w-16 items-center justify-center rounded-full border-2 ${
                       selectedCustomer === 'add' ? 'border-[#0284C7]' : 'border-[#06B6D4]'
@@ -453,7 +449,7 @@ export default function AppointmentScreen() {
                       )}
                     </View>
                   </View>
-                </TouchableOpacity>
+                </Pressable>
               </View>
             </ScrollView>
           </View>
@@ -784,9 +780,7 @@ export default function AppointmentScreen() {
                         </Text>
                       </View>
                     ) : (
-                      <View className="flex-row items-center justify-center py-8">
-                        <Text className="text-gray-600">Đang tải...</Text>
-                      </View>
+                      <TimeSlotSkeleton />
                     )}
                   </View>
                 )}

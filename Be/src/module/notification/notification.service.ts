@@ -173,6 +173,7 @@ export class NotificationService {
       metadata: {
         changes: dto.changes,
         notes: dto.notes,
+        appointmentId: dto.appointmentId,
       },
     });
   }
@@ -201,6 +202,7 @@ export class NotificationService {
       message,
       metadata: {
         reason: dto.reason,
+        appointmentId: dto.appointmentId,
       },
     });
   }
@@ -359,6 +361,7 @@ export class NotificationService {
     const channelId = `${this.NOTIFICATION_CHANNEL_PREFIX}_${userId}`;
     await this.streamClient.updateMessage({
       id: messageId,
+      text: message.text,
       channel_id: channelId,
       channel_type: 'messaging',
       user_id: 'system', // Message được gửi bởi system, nên update cũng dùng system

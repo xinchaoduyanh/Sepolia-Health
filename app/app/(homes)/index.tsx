@@ -198,6 +198,7 @@ export default function HomeScreen() {
               shadowOpacity: 0.15,
               shadowRadius: 12,
               elevation: 6,
+              opacity: 0.9,
             }}>
             <Ionicons name="notifications-outline" size={24} color="#0284C7" />
             {unreadCount > 0 && (

@@ -1,21 +1,22 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  TextInput,
-  StatusBar,
-  ActivityIndicator,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Path } from 'react-native-svg';
-import { router } from 'expo-router';
+import { FacilitySkeleton } from '@/components/SkeletonLoader';
 import { useAppointment } from '@/contexts/AppointmentContext';
 import { useLocations } from '@/lib/api/appointments';
 import { Facility } from '@/types/doctor';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
+import { useState } from 'react';
+import {
+  Pressable,
+  ScrollView,
+  StatusBar,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Svg, { Path } from 'react-native-svg';
 
 export default function FacilitySelectionScreen() {
   const [selectedFacility, setSelectedFacility] = useState<number | null>(null);
@@ -49,18 +50,6 @@ export default function FacilitySelectionScreen() {
   const handleBack = () => {
     router.push('/(homes)/(appointment)');
   };
-
-  if (isLoading) {
-    return (
-      <SafeAreaView className="flex-1 bg-slate-50">
-        <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#2563EB" />
-          <Text className="mt-4 text-base text-slate-600">Đang tải danh sách cơ sở...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
 
   if (error) {
     return (
@@ -195,7 +184,9 @@ export default function FacilitySelectionScreen() {
           </View>
 
           {/* Facilities List */}
-          {filteredFacilities.length === 0 ? (
+          {isLoading ? (
+            Array.from({ length: 5 }).map((_, index) => <FacilitySkeleton key={index} />)
+          ) : filteredFacilities.length === 0 ? (
             <View className="mt-8 items-center">
               <Ionicons name="location-outline" size={48} color="#94A3B8" />
               <Text className="mt-4 text-center text-base text-slate-600">
@@ -204,7 +195,7 @@ export default function FacilitySelectionScreen() {
             </View>
           ) : (
             filteredFacilities.map((facility: Facility) => (
-              <TouchableOpacity
+              <Pressable
                 key={facility.id}
                 onPress={() => handleFacilitySelect(facility.id)}
                 className={`mb-3 rounded-xl p-4 ${
@@ -251,7 +242,7 @@ export default function FacilitySelectionScreen() {
                     )}
                   </View>
                 </View>
-              </TouchableOpacity>
+              </Pressable>
             ))
           )}
 
