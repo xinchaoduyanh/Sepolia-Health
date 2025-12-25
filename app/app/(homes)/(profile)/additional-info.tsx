@@ -1,10 +1,67 @@
-import { View, Text, TouchableOpacity, ScrollView, StatusBar, TextInput } from 'react-native';
+import { useUpdatePatientProfile } from '@/lib/api/user';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StatusBar,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-import { router } from 'expo-router';
 
 export default function AdditionalInfoScreen() {
+  const params = useLocalSearchParams();
+  const profile = params.profile ? JSON.parse(params.profile as string) : null;
+
+  const [idCardNumber, setIdCardNumber] = useState(profile?.idCardNumber || '');
+  const [occupation, setOccupation] = useState(profile?.occupation || '');
+  const [address, setAddress] = useState(profile?.address || '');
+  const [nationality, setNationality] = useState(profile?.nationality || '');
+  const [ethnicity, setEthnicity] = useState(profile?.additionalInfo?.ethnicity || '');
+
+  const updateProfileMutation = useUpdatePatientProfile();
+  const isSubmitting = updateProfileMutation.isPending;
+
+  const handleSave = async () => {
+    if (!profile?.id) {
+      Alert.alert('Lỗi', 'Không tìm thấy thông tin hồ sơ.');
+      return;
+    }
+
+    try {
+      const additionalInfo = {
+        ...profile.additionalInfo,
+        ethnicity: ethnicity.trim() || undefined,
+      };
+
+      const updateData = {
+        idCardNumber: idCardNumber.trim() || undefined,
+        occupation: occupation.trim() || undefined,
+        address: address.trim() || undefined,
+        nationality: nationality.trim() || undefined,
+        additionalInfo: additionalInfo,
+      };
+
+      await updateProfileMutation.mutateAsync({
+        profileId: profile.id,
+        data: updateData,
+      });
+
+      Alert.alert('Thành công', 'Cập nhật thông tin bổ sung thành công', [
+        { text: 'OK', onPress: () => router.back() },
+      ]);
+    } catch (error) {
+      console.error('Update additional info error:', error);
+      Alert.alert('Lỗi', 'Không thể cập nhật thông tin. Vui lòng thử lại.');
+    }
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: '#E0F2FE' }}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
@@ -66,7 +123,7 @@ export default function AdditionalInfoScreen() {
               alignItems: 'center',
             }}>
             <TouchableOpacity
-              onPress={() => router.push('/(profile)/' as any)}
+              onPress={() => router.back()}
               style={{
                 height: 40,
                 width: 40,
@@ -115,6 +172,8 @@ export default function AdditionalInfoScreen() {
                   }}
                   placeholder="Số CMT/Hộ chiếu"
                   placeholderTextColor="#475569"
+                  value={idCardNumber}
+                  onChangeText={setIdCardNumber}
                 />
               </View>
 
@@ -137,6 +196,8 @@ export default function AdditionalInfoScreen() {
                   }}
                   placeholder="Nghề nghiệp"
                   placeholderTextColor="#475569"
+                  value={occupation}
+                  onChangeText={setOccupation}
                 />
               </View>
 
@@ -159,6 +220,8 @@ export default function AdditionalInfoScreen() {
                   }}
                   placeholder="Địa chỉ"
                   placeholderTextColor="#475569"
+                  value={address}
+                  onChangeText={setAddress}
                 />
               </View>
 
@@ -181,6 +244,8 @@ export default function AdditionalInfoScreen() {
                   }}
                   placeholder="Quốc tịch"
                   placeholderTextColor="#475569"
+                  value={nationality}
+                  onChangeText={setNationality}
                 />
               </View>
 
@@ -201,6 +266,8 @@ export default function AdditionalInfoScreen() {
                   }}
                   placeholder="Dân tộc"
                   placeholderTextColor="#475569"
+                  value={ethnicity}
+                  onChangeText={setEthnicity}
                 />
               </View>
             </View>
@@ -211,8 +278,10 @@ export default function AdditionalInfoScreen() {
       {/* Bottom Save Button */}
       <View style={{ paddingHorizontal: 24, paddingBottom: 24 }}>
         <TouchableOpacity
+          onPress={handleSave}
+          disabled={isSubmitting}
           style={{
-            backgroundColor: '#0284C7',
+            backgroundColor: isSubmitting ? '#94A3B8' : '#0284C7',
             paddingVertical: 16,
             borderRadius: 12,
             alignItems: 'center',
@@ -222,14 +291,18 @@ export default function AdditionalInfoScreen() {
             shadowRadius: 8,
             elevation: 4,
           }}>
-          <Text
-            style={{
-              color: 'white',
-              fontSize: 16,
-              fontWeight: 'bold',
-            }}>
-            LƯU
-          </Text>
+          {isSubmitting ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            <Text
+              style={{
+                color: 'white',
+                fontSize: 16,
+                fontWeight: 'bold',
+              }}>
+              LƯU
+            </Text>
+          )}
         </TouchableOpacity>
       </View>
     </View>

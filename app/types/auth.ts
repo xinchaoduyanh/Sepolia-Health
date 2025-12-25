@@ -117,6 +117,7 @@ export interface PatientProfile {
   nationality?: string;
   address?: string;
   healthDetailsJson?: any;
+  additionalInfo?: any;
   managerId: number;
   createdAt: string;
   updatedAt: string;

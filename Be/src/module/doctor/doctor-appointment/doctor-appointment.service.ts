@@ -1,19 +1,19 @@
+import { ERROR_MESSAGES, MESSAGES } from '@/common/constants';
+import { PrismaService } from '@/common/prisma/prisma.service';
 import {
+  BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
-  ForbiddenException,
-  BadRequestException,
 } from '@nestjs/common';
-import { PrismaService } from '@/common/prisma/prisma.service';
 import { AppointmentStatus } from '@prisma/client';
 import {
-  GetDoctorAppointmentsQueryDto,
-  DoctorAppointmentsListResponseDto,
-  DoctorAppointmentDetailDto,
-  CreateAppointmentResultDto,
   AppointmentResultDto,
+  CreateAppointmentResultDto,
+  DoctorAppointmentDetailDto,
+  DoctorAppointmentsListResponseDto,
+  GetDoctorAppointmentsQueryDto,
 } from './dto';
-import { ERROR_MESSAGES, MESSAGES } from '@/common/constants';
 
 @Injectable()
 export class DoctorAppointmentService {
@@ -75,6 +75,11 @@ export class DoctorAppointmentService {
               phone: true,
               dateOfBirth: true,
               gender: true,
+              idCardNumber: true,
+              occupation: true,
+              nationality: true,
+              address: true,
+              additionalInfo: true,
             },
           },
           service: {
@@ -134,6 +139,13 @@ export class DoctorAppointmentService {
             phone: apt.patientProfile.phone,
             dateOfBirth: apt.patientProfile.dateOfBirth,
             gender: apt.patientProfile.gender,
+            idCardNumber: apt.patientProfile.idCardNumber || undefined,
+            occupation: apt.patientProfile.occupation || undefined,
+            nationality: apt.patientProfile.nationality || undefined,
+            address: apt.patientProfile.address || undefined,
+            additionalInfo:
+              (apt.patientProfile.additionalInfo as Record<string, any>) ||
+              null,
           }
         : undefined,
       service: apt.service
@@ -213,6 +225,11 @@ export class DoctorAppointmentService {
             phone: true,
             dateOfBirth: true,
             gender: true,
+            idCardNumber: true,
+            occupation: true,
+            nationality: true,
+            address: true,
+            additionalInfo: true,
           },
         },
         service: {
@@ -278,6 +295,15 @@ export class DoctorAppointmentService {
             phone: appointment.patientProfile.phone,
             dateOfBirth: appointment.patientProfile.dateOfBirth,
             gender: appointment.patientProfile.gender,
+            idCardNumber: appointment.patientProfile.idCardNumber || undefined,
+            occupation: appointment.patientProfile.occupation || undefined,
+            nationality: appointment.patientProfile.nationality || undefined,
+            address: appointment.patientProfile.address || undefined,
+            additionalInfo:
+              (appointment.patientProfile.additionalInfo as Record<
+                string,
+                any
+              >) || null,
           }
         : undefined,
       service: appointment.service

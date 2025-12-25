@@ -208,6 +208,7 @@ model PatientProfile {
 
   // Thông tin sức khỏe
   healthDetailsJson Json? // Lưu các thông tin linh hoạt khác
+  additionalInfo    Json? // Thông tin bổ sung (JSON)
 
   // Quan hệ
   managerId     Int

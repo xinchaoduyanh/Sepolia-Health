@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '@/common/prisma/prisma.service';
 import { ERROR_MESSAGES } from '@/common/constants/error-messages';
+import { PrismaService } from '@/common/prisma/prisma.service';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { Gender, Relationship } from '@prisma/client';
 
 @Injectable()
@@ -86,6 +86,7 @@ export class UserRepository {
     nationality?: string;
     address?: string;
     healthDetailsJson?: any;
+    additionalInfo?: any;
     managerId: number;
   }) {
     return this.prisma.patientProfile.create({

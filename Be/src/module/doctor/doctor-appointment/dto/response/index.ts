@@ -83,6 +83,11 @@ export class DoctorAppointmentDetailDto {
     phone: string;
     dateOfBirth: Date;
     gender: string;
+    idCardNumber?: string;
+    occupation?: string;
+    nationality?: string;
+    address?: string;
+    additionalInfo?: Record<string, any> | null;
   };
 
   @ApiProperty({

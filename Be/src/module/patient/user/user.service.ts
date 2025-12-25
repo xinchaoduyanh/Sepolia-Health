@@ -1,18 +1,18 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
-import { UserRepository } from './user.repository';
+import { UploadService } from '@/common/modules';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import {
+  CreatePatientProfileDtoType,
+  CreatePatientProfileResponseDtoType,
+  DeletePatientProfileResponseDtoType,
+  PatientProfilesResponseDtoType,
+  UpdatePatientProfileDtoType,
+  UpdatePatientProfileResponseDtoType,
   UpdateUserProfileDtoType,
-  UserProfileWithPatientProfilesResponseDtoType,
   UpdateUserProfileResponseDtoType,
   UploadAvatarResponseDtoType,
-  PatientProfilesResponseDtoType,
-  CreatePatientProfileDtoType,
-  UpdatePatientProfileDtoType,
-  CreatePatientProfileResponseDtoType,
-  UpdatePatientProfileResponseDtoType,
-  DeletePatientProfileResponseDtoType,
+  UserProfileWithPatientProfilesResponseDtoType,
 } from './user.dto';
-import { UploadService } from '@/common/modules';
+import { UserRepository } from './user.repository';
 
 @Injectable()
 export class UserService {
@@ -55,6 +55,7 @@ export class UserService {
         nationality: patientProfile.nationality,
         address: patientProfile.address,
         healthDetailsJson: patientProfile.healthDetailsJson,
+        additionalInfo: patientProfile.additionalInfo,
         createdAt: patientProfile.createdAt.toISOString(),
         updatedAt: patientProfile.updatedAt.toISOString(),
       }),
@@ -300,8 +301,18 @@ export class UserService {
       await this.userRepository.getPatientProfiles(userId);
 
     // DEBUG LOG: Log userId and number of profiles found
-    console.log(`[DEBUG] getPatientProfiles - userId: ${userId}, found ${patientProfiles.length} profiles`);
-    console.log(`[DEBUG] Profile IDs:`, patientProfiles.map(p => ({ id: p.id, firstName: p.firstName, lastName: p.lastName, managerId: p.managerId })));
+    console.log(
+      `[DEBUG] getPatientProfiles - userId: ${userId}, found ${patientProfiles.length} profiles`,
+    );
+    console.log(
+      `[DEBUG] Profile IDs:`,
+      patientProfiles.map((p) => ({
+        id: p.id,
+        firstName: p.firstName,
+        lastName: p.lastName,
+        managerId: p.managerId,
+      })),
+    );
 
     return {
       profiles: patientProfiles.map((profile) => ({
@@ -318,6 +329,7 @@ export class UserService {
         nationality: profile.nationality,
         address: profile.address,
         healthDetailsJson: profile.healthDetailsJson,
+        additionalInfo: profile.additionalInfo,
         createdAt: profile.createdAt.toISOString(),
         updatedAt: profile.updatedAt.toISOString(),
       })),
@@ -346,6 +358,7 @@ export class UserService {
       nationality: createData.nationality,
       address: createData.address,
       healthDetailsJson: createData.healthDetailsJson,
+      additionalInfo: createData.additionalInfo,
       managerId: userId,
     });
 
@@ -364,6 +377,7 @@ export class UserService {
         nationality: patientProfile.nationality,
         address: patientProfile.address,
         healthDetailsJson: patientProfile.healthDetailsJson,
+        additionalInfo: patientProfile.additionalInfo,
         createdAt: patientProfile.createdAt.toISOString(),
         updatedAt: patientProfile.updatedAt.toISOString(),
       },
@@ -412,6 +426,8 @@ export class UserService {
       updateDataFormatted.address = updateData.address;
     if (updateData.healthDetailsJson !== undefined)
       updateDataFormatted.healthDetailsJson = updateData.healthDetailsJson;
+    if (updateData.additionalInfo !== undefined)
+      updateDataFormatted.additionalInfo = updateData.additionalInfo;
 
     const updatedProfile = await this.userRepository.updatePatientProfile(
       profileId,
@@ -433,6 +449,7 @@ export class UserService {
         nationality: updatedProfile.nationality,
         address: updatedProfile.address,
         healthDetailsJson: updatedProfile.healthDetailsJson,
+        additionalInfo: updatedProfile.additionalInfo,
         createdAt: updatedProfile.createdAt.toISOString(),
         updatedAt: updatedProfile.updatedAt.toISOString(),
       },

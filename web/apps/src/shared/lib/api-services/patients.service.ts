@@ -16,6 +16,7 @@ export interface PatientProfile {
     nationality?: string
     address?: string
     healthDetailsJson?: Record<string, any> | null
+    additionalInfo?: Record<string, any> | null
     managerId: number
     createdAt: string
     updatedAt: string
@@ -62,6 +63,7 @@ export interface CreatePatientProfileRequest {
     nationality?: string
     address?: string
     healthDetailsJson?: Record<string, any>
+    additionalInfo?: Record<string, any>
 }
 
 export interface CreatePatientRequest {
@@ -85,6 +87,7 @@ export interface UpdatePatientProfileRequest {
     nationality?: string
     address?: string
     healthDetailsJson?: Record<string, any>
+    additionalInfo?: Record<string, any>
 }
 
 export interface UpdatePatientRequest {

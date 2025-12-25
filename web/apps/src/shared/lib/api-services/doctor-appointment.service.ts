@@ -18,6 +18,11 @@ export interface PatientInfo {
     phone: string
     dateOfBirth: Date
     gender: string
+    idCardNumber?: string
+    occupation?: string
+    nationality?: string
+    address?: string
+    additionalInfo?: Record<string, any> | null
 }
 
 export interface ServiceInfo {
@@ -128,11 +133,11 @@ export class DoctorAppointmentService {
             limit?: number
             sortBy?: string
             sortOrder?: 'asc' | 'desc'
-        }
+        },
     ): Promise<DoctorAppointmentsListResponse> {
         return apiClient.get<DoctorAppointmentsListResponse>(
             `/doctor/appointments/patient/${patientProfileId}/history`,
-            { params }
+            { params },
         )
     }
 }

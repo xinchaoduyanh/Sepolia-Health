@@ -1,29 +1,33 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useParams, useRouter } from 'next/navigation'
-import { useDoctorAppointment, useCreateOrUpdateAppointmentResult } from '@/shared/hooks'
-import { Card, CardContent, CardHeader, CardTitle } from '@workspace/ui/components/Card'
+import { useCreateOrUpdateAppointmentResult, useDoctorAppointment } from '@/shared/hooks'
+import { formatDate, formatTime } from '@/util/datetime'
 import { Badge } from '@workspace/ui/components/Badge'
+import { Card, CardContent, CardHeader, CardTitle } from '@workspace/ui/components/Card'
 import { Skeleton } from '@workspace/ui/components/Skeleton'
 import {
-    ArrowLeft,
-    Calendar,
-    Clock,
-    User,
-    Stethoscope,
-    Building2,
-    FileText,
-    Star,
-    CheckCircle2,
-    XCircle,
-    Save,
-    Loader2,
     AlertCircle,
+    ArrowLeft,
+    Briefcase,
+    Building2,
+    Calendar,
+    CheckCircle2,
+    Clock,
+    FileText,
+    Flag,
     History,
     Home,
+    IdCard,
+    Loader2,
+    MapPin,
+    Save,
+    Star,
+    Stethoscope,
+    User,
+    XCircle,
 } from 'lucide-react'
-import { formatDate, formatTime } from '@/util/datetime'
+import { useParams, useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
 const getStatusBadge = (status: string) => {
     switch (status) {
@@ -292,6 +296,48 @@ export default function AppointmentDetailPage() {
                                             </p>
                                         </div>
                                     )}
+                                    <div className="pt-2 border-t border-border grid grid-cols-2 gap-4">
+                                        <div>
+                                            <p className="text-sm text-muted-foreground mb-1 flex items-center gap-1">
+                                                <IdCard className="h-3 w-3" /> CMND/CCCD
+                                            </p>
+                                            <p className="font-semibold text-foreground text-sm">
+                                                {appointment.patient.idCardNumber || 'Chưa có'}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm text-muted-foreground mb-1 flex items-center gap-1">
+                                                <Briefcase className="h-3 w-3" /> Nghề nghiệp
+                                            </p>
+                                            <p className="font-semibold text-foreground text-sm">
+                                                {appointment.patient.occupation || 'Chưa có'}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm text-muted-foreground mb-1 flex items-center gap-1">
+                                                <Flag className="h-3 w-3" /> Quốc tịch
+                                            </p>
+                                            <p className="font-semibold text-foreground text-sm">
+                                                {appointment.patient.nationality || 'Chưa có'}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm text-muted-foreground mb-1 flex items-center gap-1">
+                                                <User className="h-3 w-3" /> Dân tộc
+                                            </p>
+                                            <p className="font-semibold text-foreground text-sm">
+                                                {appointment.patient.additionalInfo?.ethnicity || 'Chưa có'}
+                                            </p>
+                                        </div>
+                                        <div className="col-span-2">
+                                            <p className="text-sm text-muted-foreground mb-1 flex items-center gap-1">
+                                                <MapPin className="h-3 w-3" /> Địa chỉ
+                                            </p>
+                                            <p className="font-semibold text-foreground text-sm">
+                                                {appointment.patient.address || 'Chưa có'}
+                                            </p>
+                                        </div>
+                                    </div>
                                 </div>
                             </CardContent>
                         </Card>
@@ -339,7 +385,9 @@ export default function AppointmentDetailPage() {
                                         </svg>
                                         Tham gia cuộc gọi
                                     </a>
-                                    <p className="text-xs text-muted-foreground mt-3 break-all">{appointment.hostUrl}</p>
+                                    <p className="text-xs text-muted-foreground mt-3 break-all">
+                                        {appointment.hostUrl}
+                                    </p>
                                 </CardContent>
                             </Card>
                         ) : appointment.clinic ? (

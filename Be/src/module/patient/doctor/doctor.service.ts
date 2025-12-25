@@ -1,27 +1,27 @@
+import { ERROR_MESSAGES } from '@/common/constants/error-messages';
+import { PaginationResponseDto, SuccessResponseDto } from '@/common/dto';
+import { paginate } from '@/common/helper/paginate';
+import { PrismaService } from '@/common/prisma/prisma.service';
+import { DateUtil } from '@/common/utils';
 import {
   ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { paginate } from '@/common/helper/paginate';
 import { Prisma } from '@prisma/client';
-import { PrismaService } from '@/common/prisma/prisma.service';
-import {
-  GetDoctorServiceResponseDto,
-  getTimeslotByDoctorIdAndDayResponseDto,
-} from './dto/response';
-import { DateUtil } from '@/common/utils';
 import {
   CreateDoctorProfileBodyDto,
   GetDoctorServiceQueryDto,
   updateDoctorProfileBodyDto,
 } from './dto/request';
-import { PaginationResponseDto, SuccessResponseDto } from '@/common/dto';
+import {
+  GetDoctorServiceResponseDto,
+  getTimeslotByDoctorIdAndDayResponseDto,
+} from './dto/response';
 import {
   CreateDoctorProfileResponseDto,
   GetDoctorProfileByServiceIdResponseDto,
 } from './dto/response/doctor-profile.dto';
-import { ERROR_MESSAGES } from '@/common/constants/error-messages';
 
 @Injectable()
 export class DoctorService {

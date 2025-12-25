@@ -1,15 +1,15 @@
 'use client';
 
-import { View, Text, TouchableOpacity, ScrollView, StatusBar, Image, Alert } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Path } from 'react-native-svg';
-import { useAuth } from '@/lib/hooks/useAuth';
-import { router } from 'expo-router';
-import { PatientProfile } from '@/types/auth';
-import * as ImagePicker from 'expo-image-picker';
 import { useUploadPatientProfileAvatar, useUploadUserAvatar } from '@/lib/api/user';
+import { useAuth } from '@/lib/hooks/useAuth';
+import { PatientProfile } from '@/types/auth';
 import { getRelationshipLabel } from '@/utils/relationshipTranslator';
+import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
+import { Alert, Image, ScrollView, StatusBar, Text, TouchableOpacity, View } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 
 const ProfileScreen = () => {
   const { user } = useAuth();
@@ -267,7 +267,16 @@ const ProfileScreen = () => {
               </TouchableOpacity>
               <TouchableOpacity
                 className="flex-row items-center border-b border-gray-100 p-4"
-                onPress={() => router.push('/(profile)/additional-info' as any)}>
+                onPress={() => {
+                  if (primaryProfile) {
+                    router.push({
+                      pathname: '/(homes)/(profile)/additional-info',
+                      params: { profile: JSON.stringify(primaryProfile) },
+                    });
+                  } else {
+                    router.push('/(homes)/(profile)/additional-info' as any);
+                  }
+                }}>
                 <View className="mr-4 h-10 w-10 items-center justify-center rounded-full bg-cyan-100">
                   <Ionicons name="add-circle-outline" size={20} color="#0284C7" />
                 </View>
