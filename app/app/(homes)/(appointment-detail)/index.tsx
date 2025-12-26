@@ -157,8 +157,16 @@ const AppointmentDetailSkeleton = () => {
 
 export default function AppointmentDetailScreen() {
   const { id } = useLocalSearchParams();
-  const { data: appointment, isLoading } = useAppointment(Number(id));
+  const { data: appointment, isLoading, refetch } = useAppointment(Number(id));
   const cancelMutation = useCancelAppointment();
+
+  // Debug: Log appointment data
+  React.useEffect(() => {
+    if (appointment) {
+      console.log('📋 Appointment data:', JSON.stringify(appointment, null, 2));
+      console.log('📁 Result files:', appointment.result?.files);
+    }
+  }, [appointment]);
 
   const handleCancel = () => {
     if (!appointment) return;
@@ -434,6 +442,12 @@ export default function AppointmentDetailScreen() {
                     </Text>
                   </View>
                 )}
+
+                {/* File Attachments */}
+                {appointment.result.files && appointment.result.files.length > 0 && (
+                  <ResultFileList files={appointment.result.files} />
+                )}
+
                 <Text style={{ fontSize: 12, color: '#9CA3AF', marginTop: 8 }}>
                   Cập nhật lần cuối: {formatDate(appointment.result.updatedAt)}
                 </Text>

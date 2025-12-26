@@ -1,11 +1,21 @@
 import { apiClient } from '../api-client'
 
+export interface AppointmentResultFile {
+    id: number
+    fileUrl: string
+    fileType: string
+    fileName: string
+    fileSize: number
+    createdAt: Date
+}
+
 export interface AppointmentResult {
     id: number
     diagnosis?: string | null
     notes?: string | null
     prescription?: string | null
     recommendations?: string | null
+    files?: AppointmentResultFile[]
     appointmentId: number
     createdAt: Date
     updatedAt: Date

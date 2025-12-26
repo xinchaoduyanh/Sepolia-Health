@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useDoctorAppointment, useCreateOrUpdateAppointmentResult } from '@/shared/hooks'
+import { useCreateOrUpdateAppointmentResult, useDoctorAppointment } from '@/shared/hooks'
 import { Skeleton } from '@workspace/ui/components/Skeleton'
-import { X, Save, Loader2 } from 'lucide-react'
+import { Loader2, Save, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 interface AppointmentResultModalProps {
     isOpen: boolean
@@ -162,6 +162,17 @@ export function AppointmentResultModal({ isOpen, onClose, appointmentId }: Appoi
                                     rows={3}
                                     className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
                                     placeholder="Nhập khuyến nghị, lời dặn cho bệnh nhân (ví dụ: Tái khám sau 1 tuần nếu không thuyên giảm)..."
+                                />
+                            </div>
+
+                            {/* File Upload */}
+                            <div>
+                                <label className="block text-sm font-medium text-foreground mb-2">
+                                    File đính kèm (Ảnh, PDF)
+                                </label>
+                                <ResultFileUpload
+                                    resultId={appointment?.result?.id}
+                                    existingFiles={appointment?.result?.files || []}
                                 />
                             </div>
 

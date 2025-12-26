@@ -1,35 +1,42 @@
+import { CurrentUser, Roles } from '@/common/decorators';
+import { JwtAuthGuard, RolesGuard } from '@/common/guards';
 import {
-  Controller,
-  Get,
-  Post,
-  Put,
+  BadRequestException,
   Body,
-  Param,
-  Query,
-  ParseIntPipe,
+  Controller,
+  Delete,
+  Get,
   HttpCode,
   HttpStatus,
+  Param,
+  ParseIntPipe,
+  Post,
+  Put,
+  Query,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
   ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
+  ApiOperation,
   ApiParam,
+  ApiResponse,
+  ApiTags,
 } from '@nestjs/swagger';
+import { Role } from '@prisma/client';
 import { DoctorAppointmentService } from './doctor-appointment.service';
 import {
-  GetDoctorAppointmentsQueryDto,
-  DoctorAppointmentsListResponseDto,
-  DoctorAppointmentDetailDto,
-  CreateAppointmentResultDto,
   AppointmentResultDto,
+  CreateAppointmentResultDto,
+  DoctorAppointmentDetailDto,
+  DoctorAppointmentsListResponseDto,
+  GetDoctorAppointmentsQueryDto,
 } from './dto';
-import { JwtAuthGuard, RolesGuard } from '@/common/guards';
-import { Roles } from '@/common/decorators';
-import { Role } from '@prisma/client';
-import { CurrentUser } from '@/common/decorators';
+import { AppointmentResultFileDto } from './dto/appointment-result-file.dto';
 
 @ApiTags('Doctor Appointments')
 @Controller('doctor/appointments')
@@ -181,5 +188,96 @@ export class DoctorAppointmentController {
       query,
       userId,
     );
+  }
+
+  @Post('results/:resultId/files')
+  @HttpCode(HttpStatus.CREATED)
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiOperation({ summary: 'Upload file đính kèm cho kết quả khám' })
+  @ApiConsumes('multipart/form-data')
+  @ApiParam({
+    name: 'resultId',
+    type: 'number',
+    description: 'ID kết quả khám',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'File ảnh (JPEG, PNG) hoặc PDF (tối đa 10MB)',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Upload file thành công',
+    type: AppointmentResultFileDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'File không hợp lệ hoặc vượt quá kích thước cho phép',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Không có quyền upload file cho kết quả này',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Không tìm thấy kết quả khám',
+  })
+  async uploadResultFile(
+    @Param('resultId', ParseIntPipe) resultId: number,
+    @UploadedFile() file: any,
+    @CurrentUser('userId') userId: number,
+  ): Promise<AppointmentResultFileDto> {
+    if (!file) {
+      throw new BadRequestException('Vui lòng chọn file');
+    }
+    return this.doctorAppointmentService.uploadResultFile(
+      resultId,
+      file,
+      userId,
+    );
+  }
+
+  @Delete('results/:resultId/files/:fileId')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Xóa file đính kèm khỏi kết quả khám' })
+  @ApiParam({
+    name: 'resultId',
+    type: 'number',
+    description: 'ID kết quả khám',
+  })
+  @ApiParam({ name: 'fileId', type: 'number', description: 'ID file cần xóa' })
+  @ApiResponse({
+    status: 200,
+    description: 'Xóa file thành công',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Không có quyền xóa file này',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Không tìm thấy file',
+  })
+  async deleteResultFile(
+    @Param('resultId', ParseIntPipe) resultId: number,
+    @Param('fileId', ParseIntPipe) fileId: number,
+    @CurrentUser('userId') userId: number,
+  ): Promise<{ success: boolean; message: string }> {
+    await this.doctorAppointmentService.deleteResultFile(
+      resultId,
+      fileId,
+      userId,
+    );
+    return {
+      success: true,
+      message: 'Xóa file thành công',
+    };
   }
 }

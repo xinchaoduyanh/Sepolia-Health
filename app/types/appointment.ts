@@ -20,6 +20,16 @@ export interface Feedback {
   createdAt: string;
 }
 
+// File attachment for appointment result
+export interface AppointmentResultFile {
+  id: number;
+  fileUrl: string;
+  fileType: string; // MIME type: image/jpeg, image/png, application/pdf
+  fileName: string;
+  fileSize: number; // in bytes
+  createdAt: string;
+}
+
 // Appointment Result from doctor
 export interface AppointmentResult {
   id: number;
@@ -27,6 +37,7 @@ export interface AppointmentResult {
   notes?: string | null;
   prescription?: string | null;
   recommendations?: string | null;
+  files?: AppointmentResultFile[]; // File attachments
   appointmentId: number;
   createdAt: string;
   updatedAt: string;

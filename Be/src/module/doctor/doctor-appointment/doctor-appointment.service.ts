@@ -1,4 +1,5 @@
 import { ERROR_MESSAGES, MESSAGES } from '@/common/constants';
+import { UploadService } from '@/common/modules';
 import { PrismaService } from '@/common/prisma/prisma.service';
 import {
   BadRequestException,
@@ -7,6 +8,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { AppointmentStatus } from '@prisma/client';
+import { fileTypeFromBuffer } from 'file-type';
 import {
   AppointmentResultDto,
   CreateAppointmentResultDto,
@@ -14,10 +16,14 @@ import {
   DoctorAppointmentsListResponseDto,
   GetDoctorAppointmentsQueryDto,
 } from './dto';
+import { AppointmentResultFileDto } from './dto/appointment-result-file.dto';
 
 @Injectable()
 export class DoctorAppointmentService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly uploadService: UploadService,
+  ) {}
 
   /**
    * Lấy danh sách appointments của doctor
@@ -115,6 +121,17 @@ export class DoctorAppointmentService {
               appointmentId: true,
               createdAt: true,
               updatedAt: true,
+              files: {
+                select: {
+                  id: true,
+                  fileUrl: true,
+                  fileType: true,
+                  fileName: true,
+                  fileSize: true,
+                  createdAt: true,
+                },
+                orderBy: { createdAt: 'desc' },
+              },
             },
           },
         },
@@ -265,11 +282,22 @@ export class DoctorAppointmentService {
             appointmentId: true,
             createdAt: true,
             updatedAt: true,
+            files: {
+              select: {
+                id: true,
+                fileUrl: true,
+                fileType: true,
+                fileName: true,
+                fileSize: true,
+                createdAt: true,
+              },
+              orderBy: { createdAt: 'desc' },
+            },
           },
         },
       },
     });
-
+    console.log(appointment)
     if (!appointment) {
       throw new NotFoundException(ERROR_MESSAGES.COMMON.RESOURCE_NOT_FOUND);
     }
@@ -339,6 +367,14 @@ export class DoctorAppointmentService {
             appointmentId: appointment.result.appointmentId,
             createdAt: appointment.result.createdAt,
             updatedAt: appointment.result.updatedAt,
+            files: appointment.result.files.map((file) => ({
+              id: file.id,
+              fileUrl: file.fileUrl,
+              fileType: file.fileType,
+              fileName: file.fileName,
+              fileSize: file.fileSize,
+              createdAt: file.createdAt,
+            })),
           }
         : null,
       createdAt: appointment.createdAt,
@@ -538,6 +574,17 @@ export class DoctorAppointmentService {
               appointmentId: true,
               createdAt: true,
               updatedAt: true,
+              files: {
+                select: {
+                  id: true,
+                  fileUrl: true,
+                  fileType: true,
+                  fileName: true,
+                  fileSize: true,
+                  createdAt: true,
+                },
+                orderBy: { createdAt: 'desc' },
+              },
             },
           },
         },
@@ -616,5 +663,167 @@ export class DoctorAppointmentService {
       page,
       limit,
     };
+  }
+
+  /**
+   * Upload file đính kèm cho kết quả khám
+   */
+  async uploadResultFile(
+    resultId: number,
+    file: any,
+    userId: number,
+  ): Promise<AppointmentResultFileDto> {
+    // Get doctor profile
+    const doctorProfile = await this.prisma.doctorProfile.findUnique({
+      where: { userId },
+    });
+
+    if (!doctorProfile) {
+      throw new NotFoundException(
+        MESSAGES.APPOINTMENT.DOCTOR_SERVICE_NOT_FOUND,
+      );
+    }
+
+    // Get result and verify ownership
+    const result = await this.prisma.appointmentResult.findUnique({
+      where: { id: resultId },
+      include: {
+        appointment: true,
+        files: true,
+      },
+    });
+
+    if (!result) {
+      throw new NotFoundException('Không tìm thấy kết quả khám');
+    }
+
+    // Verify doctor owns this result
+    if (result.doctorId !== doctorProfile.id) {
+      throw new ForbiddenException(
+        'Bạn không có quyền upload file cho kết quả này',
+      );
+    }
+
+    // Check file count limit (max 10 files)
+    if (result.files.length >= 10) {
+      throw new BadRequestException(
+        'Đã đạt giới hạn tối đa 10 file cho mỗi kết quả khám',
+      );
+    }
+
+    // Validate file type using magic number detection
+    const fileType = await fileTypeFromBuffer(file.buffer);
+    if (!fileType) {
+      throw new BadRequestException('Không thể xác định loại file');
+    }
+
+    // Allowed types: images and PDF
+    const allowedMimeTypes = [
+      'image/jpeg',
+      'image/png',
+      'image/jpg',
+      'application/pdf',
+    ];
+
+    if (!allowedMimeTypes.includes(fileType.mime)) {
+      throw new BadRequestException(
+        'Chỉ chấp nhận file ảnh (JPEG, PNG) hoặc PDF',
+      );
+    }
+
+    // Validate file size (10MB max)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      throw new BadRequestException('Kích thước file không được vượt quá 10MB');
+    }
+
+    // Generate unique filename
+    const safeExtension = fileType.ext || 'dat';
+    const fileName = `results/${resultId}-${Date.now()}-${Math.random().toString(36).substring(2)}.${safeExtension}`;
+
+    // Upload to S3
+    const uploadResult = await this.uploadService.uploadFile({
+      key: fileName,
+      body: file.buffer,
+      contentType: fileType.mime,
+    });
+
+    if (!uploadResult.success) {
+      throw new BadRequestException(
+        'Lỗi khi upload file: ' + uploadResult.error,
+      );
+    }
+
+    // Save file metadata to database
+    const resultFile = await this.prisma.appointmentResultFile.create({
+      data: {
+        resultId: resultId,
+        fileUrl: uploadResult.url!,
+        fileType: fileType.mime,
+        fileName: file.originalname || 'file',
+        fileSize: file.size,
+      },
+    });
+
+    return {
+      id: resultFile.id,
+      fileUrl: resultFile.fileUrl,
+      fileType: resultFile.fileType,
+      fileName: resultFile.fileName,
+      fileSize: resultFile.fileSize,
+      createdAt: resultFile.createdAt,
+    };
+  }
+
+  /**
+   * Xóa file đính kèm khỏi kết quả khám
+   */
+  async deleteResultFile(
+    resultId: number,
+    fileId: number,
+    userId: number,
+  ): Promise<void> {
+    // Get doctor profile
+    const doctorProfile = await this.prisma.doctorProfile.findUnique({
+      where: { userId },
+    });
+
+    if (!doctorProfile) {
+      throw new NotFoundException(
+        MESSAGES.APPOINTMENT.DOCTOR_SERVICE_NOT_FOUND,
+      );
+    }
+
+    // Get result and verify ownership
+    const result = await this.prisma.appointmentResult.findUnique({
+      where: { id: resultId },
+    });
+
+    if (!result) {
+      throw new NotFoundException('Không tìm thấy kết quả khám');
+    }
+
+    // Verify doctor owns this result
+    if (result.doctorId !== doctorProfile.id) {
+      throw new ForbiddenException('Bạn không có quyền xóa file này');
+    }
+
+    // Get file and verify it belongs to this result
+    const file = await this.prisma.appointmentResultFile.findUnique({
+      where: { id: fileId },
+    });
+
+    if (!file) {
+      throw new NotFoundException('Không tìm thấy file');
+    }
+
+    if (file.resultId !== resultId) {
+      throw new BadRequestException('File không thuộc kết quả khám này');
+    }
+
+    // Delete from database (file will remain in S3 for backup)
+    await this.prisma.appointmentResultFile.delete({
+      where: { id: fileId },
+    });
   }
 }

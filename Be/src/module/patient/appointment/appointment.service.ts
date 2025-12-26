@@ -146,6 +146,19 @@ export class AppointmentService {
               appointmentId: true,
               createdAt: true,
               updatedAt: true,
+              files: {
+                select: {
+                  id: true,
+                  fileUrl: true,
+                  fileType: true,
+                  fileName: true,
+                  fileSize: true,
+                  createdAt: true,
+                },
+                orderBy: {
+                  createdAt: 'desc',
+                },
+              },
             },
           },
         },
@@ -232,6 +245,19 @@ export class AppointmentService {
             appointmentId: true,
             createdAt: true,
             updatedAt: true,
+            files: {
+              select: {
+                id: true,
+                fileUrl: true,
+                fileType: true,
+                fileName: true,
+                fileSize: true,
+                createdAt: true,
+              },
+              orderBy: {
+                createdAt: 'desc',
+              },
+            },
           },
         },
       },
@@ -367,6 +393,19 @@ export class AppointmentService {
             appointmentId: true,
             createdAt: true,
             updatedAt: true,
+            files: {
+              select: {
+                id: true,
+                fileUrl: true,
+                fileType: true,
+                fileName: true,
+                fileSize: true,
+                createdAt: true,
+              },
+              orderBy: {
+                createdAt: 'desc',
+              },
+            },
           },
         },
       },
@@ -778,6 +817,19 @@ export class AppointmentService {
               appointmentId: true,
               createdAt: true,
               updatedAt: true,
+              files: {
+                select: {
+                  id: true,
+                  fileUrl: true,
+                  fileType: true,
+                  fileName: true,
+                  fileSize: true,
+                  createdAt: true,
+                },
+                orderBy: {
+                  createdAt: 'desc',
+                },
+              },
             },
           },
         },

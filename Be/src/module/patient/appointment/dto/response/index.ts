@@ -110,6 +110,26 @@ export class FeedbackDto {
   createdAt: Date;
 }
 
+export class AppointmentResultFileDto {
+  @ApiProperty()
+  id: number;
+
+  @ApiProperty()
+  fileUrl: string;
+
+  @ApiProperty()
+  fileType: string;
+
+  @ApiProperty()
+  fileName: string;
+
+  @ApiProperty()
+  fileSize: number;
+
+  @ApiProperty()
+  createdAt: Date;
+}
+
 export class AppointmentResultDto {
   @ApiProperty()
   id: number;
@@ -125,6 +145,9 @@ export class AppointmentResultDto {
 
   @ApiProperty()
   recommendations?: string | null;
+
+  @ApiProperty({ type: [AppointmentResultFileDto], required: false })
+  files?: AppointmentResultFileDto[];
 
   @ApiProperty()
   appointmentId: number;

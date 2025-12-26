@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { AppointmentResultFileDto } from '../appointment-result-file.dto';
 
 export class AppointmentResultDto {
   @ApiProperty({
@@ -34,6 +35,13 @@ export class AppointmentResultDto {
     nullable: true,
   })
   recommendations?: string | null;
+
+  @ApiProperty({
+    description: 'File đính kèm (ảnh, PDF)',
+    type: [AppointmentResultFileDto],
+    required: false,
+  })
+  files?: AppointmentResultFileDto[];
 
   @ApiProperty({
     description: 'ID appointment',

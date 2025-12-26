@@ -328,8 +328,27 @@ model AppointmentResult {
   doctorId Int
   doctor   DoctorProfile @relation("DoctorResults", fields: [doctorId], references: [id])
 
+  // Quan hệ với files đính kèm
+  files AppointmentResultFile[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+/// File đính kèm kết quả khám (ảnh, PDF)
+model AppointmentResultFile {
+  id        Int    @id @default(autoincrement())
+  fileUrl   String // URL file từ S3
+  fileType  String // MIME type: image/jpeg, image/png, application/pdf
+  fileName  String // Tên file gốc
+  fileSize  Int    // Kích thước file (bytes)
+
+  resultId Int
+  result   AppointmentResult @relation(fields: [resultId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([resultId])
 }
 
 // ----------------- OTHER MODELS (Giữ nguyên hoặc ít thay đổi) -----------------
