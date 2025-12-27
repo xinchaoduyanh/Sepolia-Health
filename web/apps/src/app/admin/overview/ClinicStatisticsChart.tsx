@@ -42,6 +42,94 @@ function ChartSkeleton() {
     )
 }
 
+// Custom Tooltip Component with Premium Styling
+function CustomTooltip({ active, payload, label }: any) {
+    if (!active || !payload || !payload.length) {
+        return null
+    }
+
+    return (
+        <div
+            className="bg-gradient-to-br from-white via-white to-gray-50/80 backdrop-blur-sm border-2 border-primary/20 rounded-xl shadow-2xl p-4 min-w-[200px]"
+            style={{
+                boxShadow:
+                    '0 20px 40px -10px rgba(0, 0, 0, 0.15), 0 10px 20px -8px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.5) inset',
+            }}
+        >
+            <div className="border-b border-primary/10 pb-2 mb-3">
+                <p className="text-sm font-bold text-foreground bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                    {label}
+                </p>
+            </div>
+            <div className="space-y-2">
+                {payload.map((entry: any, index: number) => (
+                    <div
+                        key={index}
+                        className="flex items-center justify-between gap-4 group hover:bg-primary/5 rounded-md px-2 py-1.5 transition-all duration-200"
+                    >
+                        <div className="flex items-center gap-2">
+                            <div
+                                className="w-3 h-3 rounded-sm shadow-sm ring-1 ring-black/10"
+                                style={{ backgroundColor: entry.color }}
+                            />
+                            <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+                                {entry.name}
+                            </span>
+                        </div>
+                        <span className="text-sm font-bold text-foreground tabular-nums">
+                            {formatNumber(entry.value)}
+                        </span>
+                    </div>
+                ))}
+            </div>
+        </div>
+    )
+}
+
+// Custom Revenue Tooltip Component with Premium Styling
+function CustomRevenueTooltip({ active, payload, label }: any) {
+    if (!active || !payload || !payload.length) {
+        return null
+    }
+
+    return (
+        <div
+            className="bg-gradient-to-br from-white via-white to-gray-50/80 backdrop-blur-sm border-2 border-primary/20 rounded-xl shadow-2xl p-4 min-w-[200px]"
+            style={{
+                boxShadow:
+                    '0 20px 40px -10px rgba(0, 0, 0, 0.15), 0 10px 20px -8px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.5) inset',
+            }}
+        >
+            <div className="border-b border-primary/10 pb-2 mb-3">
+                <p className="text-sm font-bold text-foreground bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                    {label}
+                </p>
+            </div>
+            <div className="space-y-2">
+                {payload.map((entry: any, index: number) => (
+                    <div
+                        key={index}
+                        className="flex items-center justify-between gap-4 group hover:bg-primary/5 rounded-md px-2 py-1.5 transition-all duration-200"
+                    >
+                        <div className="flex items-center gap-2">
+                            <div
+                                className="w-3 h-3 rounded-sm shadow-sm ring-1 ring-black/10"
+                                style={{ backgroundColor: entry.color }}
+                            />
+                            <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+                                {entry.name}
+                            </span>
+                        </div>
+                        <span className="text-sm font-bold text-foreground tabular-nums">
+                            {formatCurrency(entry.value)}
+                        </span>
+                    </div>
+                ))}
+            </div>
+        </div>
+    )
+}
+
 // Revenue Chart Component
 function RevenueChart() {
     const [period, setPeriod] = useState<'1month' | '3months' | 'year'>('1month')
@@ -191,17 +279,7 @@ function RevenueChart() {
                                 tick={{ fill: 'currentColor', fontSize: 12 }}
                                 width={80}
                             />
-                            <Tooltip
-                                formatter={(value: number) => formatCurrency(value)}
-                                contentStyle={{
-                                    backgroundColor: 'hsl(var(--card))',
-                                    border: '1px solid hsl(var(--border))',
-                                    borderRadius: '0.5rem',
-                                    color: 'hsl(var(--foreground))',
-                                    padding: '8px 12px',
-                                }}
-                                labelStyle={{ color: 'hsl(var(--foreground))', marginBottom: '4px' }}
-                            />
+                            <Tooltip content={<CustomRevenueTooltip />} cursor={{ fill: 'rgba(0, 0, 0, 0.05)' }} />
                             <Legend
                                 wrapperStyle={{ color: 'hsl(var(--foreground))', paddingTop: '20px' }}
                                 iconType="line"
@@ -385,16 +463,7 @@ function AppointmentsChart() {
                                 tick={{ fill: 'currentColor', fontSize: 12 }}
                                 width={60}
                             />
-                            <Tooltip
-                                formatter={(value: number) => formatNumber(value)}
-                                contentStyle={{
-                                    backgroundColor: 'hsl(var(--card))',
-                                    border: '1px solid hsl(var(--border))',
-                                    borderRadius: '0.5rem',
-                                    color: 'hsl(var(--foreground))',
-                                }}
-                                labelStyle={{ color: 'hsl(var(--foreground))', marginBottom: '4px' }}
-                            />
+                            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0, 0, 0, 0.05)' }} />
                             <Legend
                                 wrapperStyle={{ color: 'hsl(var(--foreground))', paddingTop: '20px' }}
                                 iconType="rect"
