@@ -181,7 +181,7 @@ export function AppointmentResultModal({ isOpen, onClose, appointmentId }: Appoi
                                 <div className="p-4 bg-muted rounded-lg">
                                     <p className="text-sm font-medium text-foreground mb-2">Thông tin bệnh nhân:</p>
                                     <p className="text-sm text-muted-foreground">
-                                        {appointment.patient.firstName} {appointment.patient.lastName} -{' '}
+                                        {appointment.patient.lastName} {appointment.patient.firstName} -{' '}
                                         {appointment.patient.phone}
                                     </p>
                                 </div>

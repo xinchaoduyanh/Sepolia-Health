@@ -552,7 +552,7 @@ export default function ScheduleAppointmentPage() {
                                                 <div className="flex items-center justify-between">
                                                     <div>
                                                         <h3 className="font-medium">
-                                                            {profile.firstName} {profile.lastName}
+                                                            {profile.lastName} {profile.firstName}
                                                         </h3>
                                                         <p className="text-sm text-muted-foreground">
                                                             {profile.phone} •{' '}
@@ -770,7 +770,7 @@ export default function ScheduleAppointmentPage() {
                                 <h3 className="font-medium mb-2 text-foreground">Thông tin bệnh nhân</h3>
                                 <p className="text-sm">
                                     <strong>
-                                        {selectedProfile.firstName} {selectedProfile.lastName}
+                                        {selectedProfile.lastName} {selectedProfile.firstName}
                                     </strong>{' '}
                                     • {selectedProfile.phone}
                                 </p>
@@ -829,7 +829,7 @@ export default function ScheduleAppointmentPage() {
                                             <option value={0}>Chọn bác sĩ</option>
                                             {doctorServices?.map(doctorService => (
                                                 <option key={doctorService.id} value={doctorService.id}>
-                                                    {doctorService.doctor.firstName} {doctorService.doctor.lastName}
+                                                    {doctorService.doctor.lastName} {doctorService.doctor.firstName}
                                                 </option>
                                             ))}
                                         </select>
@@ -974,8 +974,8 @@ export default function ScheduleAppointmentPage() {
                                                 <strong>Mã lịch hẹn:</strong> #{createdAppointment.id}
                                             </p>
                                             <p>
-                                                <strong>Bác sĩ:</strong> {createdAppointment.doctor.firstName}{' '}
-                                                {createdAppointment.doctor.lastName}
+                                                <strong>Bác sĩ:</strong> {createdAppointment.doctor.lastName}{' '}
+                                                {createdAppointment.doctor.firstName}
                                             </p>
                                             <p>
                                                 <strong>Dịch vụ:</strong> {createdAppointment.service.name}

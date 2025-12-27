@@ -200,7 +200,7 @@ export default function AppointmentHistoryScreen() {
                         fontWeight: '600',
                         color: selectedProfileId === profile.id ? 'white' : '#374151',
                       }}>
-                      {profile.firstName} {profile.lastName}
+                      {profile.lastName} {profile.firstName}
                     </Text>
                     <Text
                       style={{
@@ -425,8 +425,8 @@ export default function AppointmentHistoryScreen() {
                             color: '#0284C7',
                             fontWeight: '600',
                           }}>
-                          {appointment.patient?.firstName || appointment.patientProfile?.firstName}{' '}
-                          {appointment.patient?.lastName || appointment.patientProfile?.lastName}
+                          {appointment.patient?.lastName || appointment.patientProfile?.lastName}{' '}
+                          {appointment.patient?.firstName || appointment.patientProfile?.firstName}
                           {(appointment.patient?.relationship ||
                             appointment.patientProfile?.relationship) && (
                             <Text style={{ fontSize: 12, color: '#6B7280', fontWeight: '400' }}>
@@ -442,7 +442,7 @@ export default function AppointmentHistoryScreen() {
                         </Text>
                       )}
                       <Text style={{ marginTop: 4, fontSize: 14, color: '#6B7280' }}>
-                        BS. {appointment.doctor.firstName} {appointment.doctor.lastName}
+                        BS. {appointment.doctor.lastName} {appointment.doctor.firstName}
                       </Text>
                       <Text style={{ marginTop: 2, fontSize: 13, color: '#9CA3AF' }}>
                         {appointment.clinic?.name || 'Bệnh viện'}

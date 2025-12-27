@@ -379,7 +379,7 @@ export default function DoctorScheduleAppointmentsPage() {
                                         // Get doctor name from current user
                                         const doctorProfile = (user as any)?.doctorProfile
                                         const doctorName = doctorProfile
-                                            ? `BS. ${doctorProfile.firstName} ${doctorProfile.lastName}`
+                                            ? `BS. ${doctorProfile.lastName} ${doctorProfile.firstName}`
                                             : 'Bạn'
 
                                         return (
@@ -395,8 +395,8 @@ export default function DoctorScheduleAppointmentsPage() {
                                                             </div>
                                                             <div>
                                                                 <p className="font-semibold text-foreground">
-                                                                    {appointment.patient.firstName}{' '}
-                                                                    {appointment.patient.lastName}
+                                                                    {appointment.patient.lastName}{' '}
+                                                                    {appointment.patient.firstName}
                                                                 </p>
                                                                 <p className="text-sm text-muted-foreground">
                                                                     {appointment.patient.phone}

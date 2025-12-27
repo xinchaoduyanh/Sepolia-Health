@@ -517,7 +517,7 @@ export default function AppointmentsListScreen() {
                         {appointment.service.name}
                       </Text>
                       <Text className="mt-1 text-sm text-gray-600">
-                        BS. {appointment.doctor.firstName} {appointment.doctor.lastName}
+                        BS. {appointment.doctor.lastName} {appointment.doctor.firstName}
                       </Text>
                       <Text className="mt-1 text-sm text-gray-500">
                         {appointment.clinic?.name || 'Bệnh viện'}

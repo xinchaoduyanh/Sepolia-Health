@@ -53,7 +53,7 @@ export default function OnlineDoctorSelectionScreen() {
 
   const filteredDoctors = doctors.filter(
     (doctor: any) =>
-      `${doctor.firstName || ''} ${doctor.lastName || ''}`
+      `${doctor.lastName || ''} ${doctor.firstName || ''}`
         .toLowerCase()
         .includes(searchQuery.toLowerCase()) ||
       (doctor.specialty && doctor.specialty.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -67,7 +67,7 @@ export default function OnlineDoctorSelectionScreen() {
     if (selectedDoctor) {
       const doctor = doctors.find((d: any) => d.id === selectedDoctor);
       if (doctor) {
-        setContextDoctor(`${doctor.firstName || ''} ${doctor.lastName || ''}`);
+        setContextDoctor(`${doctor.lastName || ''} ${doctor.firstName || ''}`);
         setSelectedDoctorServiceId(doctor.id);
         setSelectedDate(getTodayDateString());
         router.push('/(homes)/(appointment)/create-online');
@@ -204,7 +204,7 @@ export default function OnlineDoctorSelectionScreen() {
               <View className="flex-1">
                 <View className="flex-row items-start justify-between">
                   <Text className="text-lg font-semibold text-slate-900">
-                    BS. {doctor.firstName} {doctor.lastName}
+                    BS. {doctor.lastName} {doctor.firstName}
                   </Text>
                   {selectedDoctor === doctor.id && (
                     <View className="h-6 w-6 items-center justify-center rounded-full bg-emerald-500">

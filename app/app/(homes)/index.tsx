@@ -274,9 +274,9 @@ export default function HomeScreen() {
               <Text style={{ fontSize: 20, fontWeight: '700', color: '#FFFFFF', marginBottom: 6 }}>
                 Xin chào,{' '}
                 {primaryProfile
-                  ? `${primaryProfile.firstName} ${primaryProfile.lastName}`
+                  ? `${primaryProfile.lastName} ${primaryProfile.firstName}`
                   : user
-                    ? `${user.firstName} ${user.lastName}`
+                    ? `${user.lastName} ${user.firstName}`
                     : 'Nguyễn Văn A'}
               </Text>
               <Text style={{ fontSize: 14, color: 'rgba(255,255,255,0.9)', lineHeight: 20 }}>
@@ -566,8 +566,8 @@ export default function HomeScreen() {
                   <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
                     <Ionicons name="person-outline" size={16} color="#475569" />
                     <Text style={{ fontSize: 14, color: '#475569', marginLeft: 8 }}>
-                      Bác sĩ {closestAppointment.doctor.firstName}{' '}
-                      {closestAppointment.doctor.lastName}
+                      Bác sĩ {closestAppointment.doctor.lastName}{' '}
+                      {closestAppointment.doctor.firstName}
                     </Text>
                   </View>
                   {closestAppointment.type === 'ONLINE' ? (

@@ -138,7 +138,7 @@ export function AppointmentList({
                         </div>
                         <div>
                             <div className="font-medium text-slate-900 dark:text-slate-100">
-                                {patient ? `${patient.firstName} ${patient.lastName}` : 'N/A'}
+                                {patient ? `${patient.lastName} ${patient.firstName}` : 'N/A'}
                             </div>
                             {patient?.phone && (
                                 <div className="flex items-center text-sm text-slate-500 dark:text-slate-400 mt-1">
@@ -158,7 +158,7 @@ export function AppointmentList({
                 const doctor = row.original.doctor
                 return (
                     <div className="text-slate-700 dark:text-slate-300">
-                        {doctor ? `BS. ${doctor.firstName} ${doctor.lastName}` : 'N/A'}
+                        {doctor ? `BS. ${doctor.lastName} ${doctor.firstName}` : 'N/A'}
                     </div>
                 )
             },

@@ -194,7 +194,7 @@ export default function AppointmentDetailPage() {
                                 <span className="text-sm font-medium text-muted-foreground w-32">Họ và tên:</span>
                                 <span className="text-sm text-foreground font-medium flex-1">
                                     {appointment.patientProfile
-                                        ? `${appointment.patientProfile.firstName} ${appointment.patientProfile.lastName}`
+                                        ? `${appointment.patientProfile.lastName} ${appointment.patientProfile.firstName}`
                                         : 'N/A'}
                                 </span>
                             </div>
@@ -228,7 +228,7 @@ export default function AppointmentDetailPage() {
                                 <span className="text-sm text-foreground font-medium flex-1 flex items-center">
                                     <Stethoscope className="h-4 w-4 mr-2 text-muted-foreground" />
                                     {appointment.doctor
-                                        ? `BS. ${appointment.doctor.firstName} ${appointment.doctor.lastName}`
+                                        ? `BS. ${appointment.doctor.lastName} ${appointment.doctor.firstName}`
                                         : 'N/A'}
                                 </span>
                             </div>

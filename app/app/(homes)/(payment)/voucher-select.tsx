@@ -280,7 +280,7 @@ export default function VoucherSelectScreen() {
               <Text className="mb-3 text-lg font-bold text-gray-900">Thông tin lịch hẹn</Text>
               <Text className="text-gray-600">Dịch vụ: {appointment.service.name}</Text>
               <Text className="text-gray-600">
-                Bác sĩ: BS. {appointment.doctor.firstName} {appointment.doctor.lastName}
+                Bác sĩ: BS. {appointment.doctor.lastName} {appointment.doctor.firstName}
               </Text>
               <View className="mt-3 border-t border-gray-200 pt-3">
                 <View className="flex-row items-center justify-between">

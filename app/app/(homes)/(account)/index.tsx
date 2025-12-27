@@ -139,9 +139,9 @@ export default function AccountScreen() {
 
               <Text style={{ fontSize: 20, fontWeight: '700', color: '#FFFFFF', marginBottom: 6 }}>
                 {primaryProfile
-                  ? `${primaryProfile.firstName} ${primaryProfile.lastName}`
+                  ? `${primaryProfile.lastName} ${primaryProfile.firstName}`
                   : user
-                    ? `${user.firstName} ${user.lastName}`
+                    ? `${user.lastName} ${user.firstName}`
                     : 'Người dùng'}
               </Text>
               {/* <Text style={{ fontSize: 14, color: 'rgba(255,255,255,0.9)', lineHeight: 20 }}>

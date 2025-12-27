@@ -145,7 +145,7 @@ export default function FeedbackScreen() {
             Thông tin bác sĩ
           </Text>
           <Text style={{ fontSize: 16, fontWeight: '600', color: '#1F2937' }}>
-            BS. {appointment.doctor.firstName} {appointment.doctor.lastName}
+            BS. {appointment.doctor.lastName} {appointment.doctor.firstName}
           </Text>
           <Text style={{ fontSize: 14, color: '#6B7280', marginTop: 4 }}>
             {appointment.service.name}

@@ -253,8 +253,8 @@ export default function AppointmentDetailScreen() {
           <View style={{ marginBottom: 8 }}>
             <Text style={{ fontSize: 14, color: '#6B7280' }}>Họ và tên</Text>
             <Text style={{ fontSize: 16, fontWeight: '600', color: '#1F2937' }}>
-              {appointment.patient?.firstName || appointment.patientProfile?.firstName}{' '}
-              {appointment.patient?.lastName || appointment.patientProfile?.lastName}
+              {appointment.patient?.lastName || appointment.patientProfile?.lastName}{' '}
+              {appointment.patient?.firstName || appointment.patientProfile?.firstName}
             </Text>
           </View>
           {(appointment.patient?.dateOfBirth || appointment.patientProfile?.dateOfBirth) && (
@@ -317,7 +317,7 @@ export default function AppointmentDetailScreen() {
           <View style={{ marginBottom: 8 }}>
             <Text style={{ fontSize: 14, color: '#6B7280' }}>Bác sĩ</Text>
             <Text style={{ fontSize: 16, fontWeight: '600', color: '#1F2937' }}>
-              BS. {appointment.doctor.firstName} {appointment.doctor.lastName}
+              BS. {appointment.doctor.lastName} {appointment.doctor.firstName}
             </Text>
           </View>
           <View style={{ marginBottom: 8 }}>

@@ -226,9 +226,9 @@ const ProfileScreen = () => {
 
               <Text style={{ fontSize: 20, fontWeight: '700', color: '#FFFFFF', marginBottom: 6 }}>
                 {primaryProfile
-                  ? `${primaryProfile.firstName} ${primaryProfile.lastName}`
+                  ? `${primaryProfile.lastName} ${primaryProfile.firstName}`
                   : user
-                    ? `${user.firstName} ${user.lastName}`
+                    ? `${user.lastName} ${user.firstName}`
                     : 'Người dùng'}
               </Text>
               {/* <Text style={{ fontSize: 14, color: 'rgba(255,255,255,0.9)', lineHeight: 20 }}>
@@ -346,7 +346,7 @@ const ProfileScreen = () => {
                         });
                       }}>
                       <Text className="text-base font-medium text-slate-900">
-                        {profile.firstName} {profile.lastName}
+                        {profile.lastName} {profile.firstName}
                       </Text>
                       <Text className="text-sm text-slate-500">
                         {getRelationshipLabel(profile.relationship)}

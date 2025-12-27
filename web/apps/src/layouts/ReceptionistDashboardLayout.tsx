@@ -1,7 +1,9 @@
 'use client'
 
+import { ThemeSwitcher } from '@/shared/components/ThemeSwitcher'
+import { useAuth, useLogout } from '@/shared/hooks/useAuth'
+import { getClinicInfo, getUserProfile } from '@/shared/lib/user-profile'
 import { Avatar, AvatarFallback } from '@workspace/ui/components/Avatar'
-import { SidebarNavigationMenu, SidebarNavigationMenuItem } from '@workspace/ui/components/Sidebar.helpers'
 import {
     Sidebar,
     SidebarContent,
@@ -11,14 +13,12 @@ import {
     SidebarProvider,
     useSidebar,
 } from '@workspace/ui/components/Sidebar'
-import { ThemeSwitcher } from '@/shared/components/ThemeSwitcher'
-import { useAuth, useLogout } from '@/shared/hooks/useAuth'
-import { getUserProfile, getClinicInfo } from '@/shared/lib/user-profile'
+import { SidebarNavigationMenu, SidebarNavigationMenuItem } from '@workspace/ui/components/Sidebar.helpers'
+import { Calendar, FileText, LogOut, Monitor, MoreHorizontal, User } from 'lucide-react'
 import Image from 'next/image'
-import { Monitor, FileText, User, LogOut, Calendar, ScanLine, MoreVertical, MoreHorizontal } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useState, useRef, useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 // Component cho tên lễ tân có thể toggle sidebar
 function ToggleLogo({ userProfile }: { userProfile: { name: string } }) {
@@ -117,16 +117,13 @@ export function ReceptionistDashboardLayout({ children, defaultOpen = true }: Re
     return (
         <SidebarProvider defaultOpen={defaultOpen}>
             <Sidebar collapsible="icon">
-                <SidebarHeader className="border-b border-border">
-                    <div className="flex items-center gap-2 px-2 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                            <Monitor className="h-4 w-4" />
+                <SidebarHeader className="border-b-2 border-border bg-gradient-to-r from-primary/5 to-primary/10">
+                    <div className="flex items-center gap-3 px-4 py-4 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg">
+                            <Monitor className="h-5 w-5" />
                         </div>
                         <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
-                            <span className="truncate font-semibold">
-                                {clinicInfo ? `Phòng khám ${clinicInfo.name}` : 'Phòng khám Sepolia'}
-                            </span>
-                            <span className="truncate text-xs text-sidebar-foreground/70">RECEPTIONIST Dashboard</span>
+                            <span className="truncate font-bold text-foreground">Sepolia Healthcare</span>
                         </div>
                     </div>
                 </SidebarHeader>
@@ -195,28 +192,34 @@ export function ReceptionistDashboardLayout({ children, defaultOpen = true }: Re
             </Sidebar>
 
             <SidebarInset>
-                <header className="sticky top-0 z-10 bg-background flex h-16 shrink-0 items-center gap-2 border-b w-full">
+                <header className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex h-16 shrink-0 items-center gap-2 border-b-2 border-border shadow-lg w-full">
                     <div className="flex items-center justify-between px-6 w-full">
                         <div className="flex items-center space-x-4">
                             <ToggleLogo userProfile={userProfile} />
+                            <div className="h-8 w-px bg-border" />
+                            <div className="flex items-center gap-2">
+                                <span className="text-sm font-semibold text-foreground hidden sm:block">
+                                    Xin chào, {userProfile.name || 'Lễ tân'}
+                                </span>
+                            </div>
                         </div>
                         <div className="flex items-center space-x-4">
                             <ThemeSwitcher />
                             <div className="relative" ref={dropdownRef}>
                                 <button
                                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                                    className="ml-auto cursor-pointer hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
+                                    className="ml-auto cursor-pointer hover:opacity-80 transition-all duration-200 hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-full shadow-md hover:shadow-lg"
                                 >
-                                    <Avatar>
-                                        <AvatarFallback className="bg-primary text-primary-foreground">
-                                            {userProfile.name ? userProfile.name.charAt(0).toUpperCase() : 'A'}
+                                    <Avatar className="border-2 border-primary/20">
+                                        <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-bold">
+                                            {userProfile.name ? userProfile.name.charAt(0).toUpperCase() : 'R'}
                                         </AvatarFallback>
                                         {userProfile.image && userProfile.image.startsWith('/') && (
                                             <Image
                                                 src={userProfile.image}
                                                 alt={userProfile.name}
-                                                width={32}
-                                                height={32}
+                                                width={40}
+                                                height={40}
                                                 className="object-cover"
                                             />
                                         )}

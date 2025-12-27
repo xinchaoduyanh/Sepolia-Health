@@ -226,7 +226,7 @@ export function UpdateAppointmentDialog({
                                 <option value={0}>Chọn bác sĩ</option>
                                 {doctorServices.map(ds => (
                                     <option key={ds.id} value={ds.id}>
-                                        {ds.doctor.firstName} {ds.doctor.lastName}
+                                        {ds.doctor.lastName} {ds.doctor.firstName}
                                     </option>
                                 ))}
                             </select>

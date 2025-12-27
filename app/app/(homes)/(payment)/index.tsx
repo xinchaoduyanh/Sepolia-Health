@@ -238,7 +238,7 @@ export default function PaymentScreen() {
                 <View className="mb-4">
                   <Text className="text-gray-600">Dịch vụ: {appointment.service.name}</Text>
                   <Text className="text-gray-600">
-                    Bác sĩ: BS. {appointment.doctor.firstName} {appointment.doctor.lastName}
+                    Bác sĩ: BS. {appointment.doctor.lastName} {appointment.doctor.firstName}
                   </Text>
                   <Text className="text-gray-600">Ngày: {formatDate(appointment.startTime)}</Text>
                   <Text className="text-gray-600">

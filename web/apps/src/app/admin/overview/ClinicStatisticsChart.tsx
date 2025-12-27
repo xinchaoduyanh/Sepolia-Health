@@ -1,23 +1,23 @@
 'use client'
 
-import { useState, useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { Card, CardContent, CardHeader, CardTitle } from '@workspace/ui/components/Card'
-import { Button } from '@workspace/ui/components/Button'
-import { Skeleton } from '@workspace/ui/components/Skeleton'
 import { statisticsService, type AppointmentsChartDataByClinic } from '@/shared/lib/api-services/statistics.service'
 import { queryKeys } from '@/shared/lib/query-keys'
+import { useQuery } from '@tanstack/react-query'
+import { Button } from '@workspace/ui/components/Button'
+import { Card, CardContent, CardHeader, CardTitle } from '@workspace/ui/components/Card'
+import { Skeleton } from '@workspace/ui/components/Skeleton'
+import { useMemo, useState } from 'react'
 import {
-    LineChart,
-    Line,
-    BarChart,
     Bar,
+    BarChart,
+    CartesianGrid,
+    Legend,
+    Line,
+    LineChart,
+    ResponsiveContainer,
+    Tooltip,
     XAxis,
     YAxis,
-    CartesianGrid,
-    Tooltip,
-    Legend,
-    ResponsiveContainer,
 } from 'recharts'
 
 function formatCurrency(num: number): string {
@@ -362,28 +362,55 @@ function AppointmentsChart() {
                     </div>
                 </div>
             </CardHeader>
-            <CardContent>
-                <ResponsiveContainer width="100%" height={400}>
-                    <BarChart data={chartDataFormatted}>
-                        <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                        <XAxis dataKey="label" className="text-muted-foreground" tick={{ fill: 'currentColor' }} />
-                        <YAxis className="text-muted-foreground" tick={{ fill: 'currentColor' }} />
-                        <Tooltip
-                            formatter={(value: number) => formatNumber(value)}
-                            contentStyle={{
-                                backgroundColor: 'hsl(var(--card))',
-                                border: '1px solid hsl(var(--border))',
-                                borderRadius: '0.5rem',
-                                color: 'hsl(var(--foreground))',
-                            }}
-                            labelStyle={{ color: 'hsl(var(--foreground))' }}
-                        />
-                        <Legend wrapperStyle={{ color: 'hsl(var(--foreground))' }} />
-                        {clinicNames.map((clinicName, index) => (
-                            <Bar key={clinicName} dataKey={clinicName} fill={colors[index % colors.length]} />
-                        ))}
-                    </BarChart>
-                </ResponsiveContainer>
+            <CardContent className="px-6 py-6">
+                <div className="pl-4 pr-2">
+                    <ResponsiveContainer width="100%" height={500}>
+                        <BarChart
+                            data={chartDataFormatted}
+                            margin={{ top: 10, right: 30, left: 20, bottom: 80 }}
+                            barGap={8}
+                            barCategoryGap="20%"
+                        >
+                            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                            <XAxis
+                                dataKey="label"
+                                className="text-muted-foreground"
+                                tick={{ fill: 'currentColor', fontSize: 12 }}
+                                angle={-45}
+                                textAnchor="end"
+                                height={100}
+                            />
+                            <YAxis
+                                className="text-muted-foreground"
+                                tick={{ fill: 'currentColor', fontSize: 12 }}
+                                width={60}
+                            />
+                            <Tooltip
+                                formatter={(value: number) => formatNumber(value)}
+                                contentStyle={{
+                                    backgroundColor: 'hsl(var(--card))',
+                                    border: '1px solid hsl(var(--border))',
+                                    borderRadius: '0.5rem',
+                                    color: 'hsl(var(--foreground))',
+                                }}
+                                labelStyle={{ color: 'hsl(var(--foreground))', marginBottom: '4px' }}
+                            />
+                            <Legend
+                                wrapperStyle={{ color: 'hsl(var(--foreground))', paddingTop: '20px' }}
+                                iconType="rect"
+                            />
+                            {clinicNames.map((clinicName, index) => (
+                                <Bar
+                                    key={clinicName}
+                                    dataKey={clinicName}
+                                    fill={colors[index % colors.length]}
+                                    fillOpacity={0.8}
+                                    radius={[4, 4, 0, 0]}
+                                />
+                            ))}
+                        </BarChart>
+                    </ResponsiveContainer>
+                </div>
             </CardContent>
         </Card>
     )

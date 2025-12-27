@@ -85,7 +85,7 @@ export default function DoctorSelectionScreen() {
 
   const filteredDoctors = doctors.filter(
     (doctor: any) =>
-      `${doctor.firstName || ''} ${doctor.lastName || ''}`
+      `${doctor.lastName || ''} ${doctor.firstName || ''}`
         .toLowerCase()
         .includes(searchQuery.toLowerCase()) ||
       (doctor.specialty && doctor.specialty.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -99,7 +99,7 @@ export default function DoctorSelectionScreen() {
     if (selectedDoctor) {
       const doctor = doctors.find((d: any) => d.id === selectedDoctor);
       if (doctor) {
-        setContextDoctor(`${doctor.firstName || ''} ${doctor.lastName || ''}`);
+        setContextDoctor(`${doctor.lastName || ''} ${doctor.firstName || ''}`);
         // Lưu doctorServiceId (id từ API response)
         setSelectedDoctorServiceId(doctor.id);
         // Set ngày mặc định là hôm nay (ISO date format)
@@ -362,7 +362,7 @@ export default function DoctorSelectionScreen() {
                     <View className="flex-1">
                       <View className="mb-1 flex-row items-center justify-between">
                         <Text className="text-base font-semibold text-slate-900">
-                          Bác sĩ {doctor.firstName || ''} {doctor.lastName || ''}
+                          Bác sĩ {doctor.lastName || ''} {doctor.firstName || ''}
                         </Text>
                         {selectedDoctor === doctor.id && (
                           <View className="rounded-full bg-blue-600 p-1">

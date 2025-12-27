@@ -273,7 +273,7 @@ export default function AppointmentDetailPage() {
                                     <div>
                                         <p className="text-sm text-muted-foreground">Họ và tên</p>
                                         <p className="font-semibold text-foreground">
-                                            {appointment.patient.firstName} {appointment.patient.lastName}
+                                            {appointment.patient.lastName} {appointment.patient.firstName}
                                         </p>
                                     </div>
                                     <div>

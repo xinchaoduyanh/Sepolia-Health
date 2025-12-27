@@ -192,7 +192,7 @@ export default function PersonalInfoScreen() {
                     fontWeight: 'bold',
                     color: '#0F172A',
                   }}>
-                  {profileData ? `${profileData.firstName} ${profileData.lastName}` : 'Vũ Duy anh'}
+                  {profileData ? `${profileData.lastName} ${profileData.firstName}` : 'Vũ Duy anh'}
                 </Text>
               </View>
 

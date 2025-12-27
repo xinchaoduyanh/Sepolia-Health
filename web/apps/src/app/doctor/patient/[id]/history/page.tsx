@@ -171,7 +171,7 @@ export default function PatientHistoryPage() {
                                         <Stethoscope className="h-4 w-4 text-primary" />
                                         <span className="text-muted-foreground">Bác sĩ:</span>
                                         <span className="font-medium text-foreground">
-                                            BS. {apt.doctor.firstName} {apt.doctor.lastName}
+                                            BS. {apt.doctor.lastName} {apt.doctor.firstName}
                                         </span>
                                     </div>
                                 )}

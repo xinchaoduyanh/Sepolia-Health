@@ -32,25 +32,25 @@ export function getUserProfile(user: any): UserProfile {
             // Find SELF relationship profile for patient
             const selfProfile = user.patientProfiles?.find((profile: any) => profile.relationship === 'SELF')
             return {
-                name: selfProfile ? `${selfProfile.firstName} ${selfProfile.lastName}` : 'Patient',
+                name: selfProfile ? `${selfProfile.lastName} ${selfProfile.firstName}` : 'Patient',
                 image: selfProfile?.avatar,
             }
         }
         case 'DOCTOR':
             return {
-                name: user.doctorProfile ? `${user.doctorProfile.firstName} ${user.doctorProfile.lastName}` : 'Doctor',
+                name: user.doctorProfile ? `${user.doctorProfile.lastName} ${user.doctorProfile.firstName}` : 'Doctor',
                 image: user.doctorProfile?.avatar,
             }
         case 'RECEPTIONIST':
             return {
                 name: user.receptionistProfile
-                    ? `${user.receptionistProfile.firstName} ${user.receptionistProfile.lastName}`
+                    ? `${user.receptionistProfile.lastName} ${user.receptionistProfile.firstName}`
                     : 'Receptionist',
                 image: user.receptionistProfile?.avatar,
             }
         case 'ADMIN':
             return {
-                name: user.adminProfile ? `${user.adminProfile.firstName} ${user.adminProfile.lastName}` : 'Admin',
+                name: user.adminProfile ? `${user.adminProfile.lastName} ${user.adminProfile.firstName}` : 'Admin',
                 image: user.adminProfile?.avatar,
             }
         default:
