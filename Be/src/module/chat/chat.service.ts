@@ -1,3 +1,5 @@
+import { appConfig } from '@/common/config';
+import { PrismaService } from '@/common/prisma/prisma.service';
 import {
   Inject,
   Injectable,
@@ -6,11 +8,9 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
-import { StreamChat } from 'stream-chat';
-import { PrismaService } from '@/common/prisma/prisma.service';
-import { appConfig } from '@/common/config';
-import { ChatChannelDto, ClinicDto, UserSearchResultDto } from './chat.dto';
 import crypto from 'crypto';
+import { StreamChat } from 'stream-chat';
+import { ChatChannelDto, ClinicDto, UserSearchResultDto } from './chat.dto';
 @Injectable()
 export class ChatService implements OnModuleInit {
   private streamClient: StreamChat;
@@ -98,7 +98,7 @@ export class ChatService implements OnModuleInit {
     await this.streamClient.upsertUser({
       id: patientUserId.toString(),
       name: patient
-        ? `${patient.firstName} ${patient.lastName}`
+        ? `${patient.lastName} ${patient.firstName}`
         : `Patient ${patientUserId}`,
       role: 'user',
       image: patient?.avatar || undefined,
@@ -109,7 +109,7 @@ export class ChatService implements OnModuleInit {
     for (const receptionist of receptionists) {
       const userData = {
         id: receptionist.userId.toString(),
-        name: `${receptionist.firstName} ${receptionist.lastName}`,
+        name: `${receptionist.lastName} ${receptionist.firstName}`,
         role: 'user',
         // Temporarily use test avatar if no avatar in DB
         image:
@@ -153,7 +153,7 @@ export class ChatService implements OnModuleInit {
     if (receptionistUserIds.length > 0) {
       // Lấy thông tin của lễ tân đầu tiên để gửi tin nhắn chào
       const firstReceptionist = receptionists[0];
-      welcomeMessage = `Xin chào! Đây là tin nhắn tự động từ ${firstReceptionist.firstName} ${firstReceptionist.lastName}`;
+      welcomeMessage = `Xin chào! Đây là tin nhắn tự động từ ${firstReceptionist.lastName} ${firstReceptionist.firstName}`;
       senderUserId = receptionistUserIds[0]; // ID của lễ tân trong Stream Chat
     } else {
       // Fallback: gửi từ system nếu không có lễ tân
@@ -228,18 +228,21 @@ export class ChatService implements OnModuleInit {
     let avatar: string | undefined = undefined;
 
     if (user.doctorProfile) {
-      name = `${user.doctorProfile.firstName} ${user.doctorProfile.lastName}`;
+      name = `${user.doctorProfile.lastName} ${user.doctorProfile.firstName}`;
       avatar = user.doctorProfile.avatar || undefined;
     } else if (user.receptionistProfile) {
-      name = `${user.receptionistProfile.firstName} ${user.receptionistProfile.lastName}`;
+      name = `${user.receptionistProfile.lastName} ${user.receptionistProfile.firstName}`;
       avatar = user.receptionistProfile.avatar || undefined;
     } else if (user.adminProfile) {
-      name = `${user.adminProfile.firstName} ${user.adminProfile.lastName}`;
+      name = `${user.adminProfile.lastName} ${user.adminProfile.firstName}`;
       avatar = user.adminProfile.avatar || undefined;
     } else if (user.patientProfiles.length > 0) {
       // Lấy patient profile với relationship: 'SELF' (hồ sơ chính của user)
-      const patientProfile = user.patientProfiles.find(profile => profile.relationship === 'SELF') || user.patientProfiles[0];
-      name = `${patientProfile.firstName} ${patientProfile.lastName}`;
+      const patientProfile =
+        user.patientProfiles.find(
+          (profile) => profile.relationship === 'SELF',
+        ) || user.patientProfiles[0];
+      name = `${patientProfile.lastName} ${patientProfile.firstName}`;
       avatar = patientProfile.avatar || undefined;
     }
 
@@ -357,18 +360,21 @@ export class ChatService implements OnModuleInit {
     let avatar: string | undefined = undefined;
 
     if (user.doctorProfile) {
-      name = `${user.doctorProfile.firstName} ${user.doctorProfile.lastName}`;
+      name = `${user.doctorProfile.lastName} ${user.doctorProfile.firstName}`;
       avatar = user.doctorProfile.avatar || undefined;
     } else if (user.receptionistProfile) {
-      name = `${user.receptionistProfile.firstName} ${user.receptionistProfile.lastName}`;
+      name = `${user.receptionistProfile.lastName} ${user.receptionistProfile.firstName}`;
       avatar = user.receptionistProfile.avatar || undefined;
     } else if (user.adminProfile) {
-      name = `${user.adminProfile.firstName} ${user.adminProfile.lastName}`;
+      name = `${user.adminProfile.lastName} ${user.adminProfile.firstName}`;
       avatar = user.adminProfile.avatar || undefined;
     } else if (user.patientProfiles.length > 0) {
       // Lấy patient profile với relationship: 'SELF' (hồ sơ chính của user)
-      const patientProfile = user.patientProfiles.find(profile => profile.relationship === 'SELF') || user.patientProfiles[0];
-      name = `${patientProfile.firstName} ${patientProfile.lastName}`;
+      const patientProfile =
+        user.patientProfiles.find(
+          (profile) => profile.relationship === 'SELF',
+        ) || user.patientProfiles[0];
+      name = `${patientProfile.lastName} ${patientProfile.firstName}`;
       avatar = patientProfile.avatar || undefined;
     }
 
@@ -440,17 +446,17 @@ export class ChatService implements OnModuleInit {
     let targetAvatar: string | undefined = undefined;
 
     if (targetUser.doctorProfile) {
-      targetUserName = `${targetUser.doctorProfile.firstName} ${targetUser.doctorProfile.lastName}`;
+      targetUserName = `${targetUser.doctorProfile.lastName} ${targetUser.doctorProfile.firstName}`;
       targetAvatar = targetUser.doctorProfile.avatar || undefined;
     } else if (targetUser.receptionistProfile) {
-      targetUserName = `${targetUser.receptionistProfile.firstName} ${targetUser.receptionistProfile.lastName}`;
+      targetUserName = `${targetUser.receptionistProfile.lastName} ${targetUser.receptionistProfile.firstName}`;
       targetAvatar = targetUser.receptionistProfile.avatar || undefined;
     } else if (targetUser.adminProfile) {
-      targetUserName = `${targetUser.adminProfile.firstName} ${targetUser.adminProfile.lastName}`;
+      targetUserName = `${targetUser.adminProfile.lastName} ${targetUser.adminProfile.firstName}`;
       targetAvatar = targetUser.adminProfile.avatar || undefined;
     } else if (targetUser.patientProfiles.length > 0) {
       const patientProfile = targetUser.patientProfiles[0];
-      targetUserName = `${patientProfile.firstName} ${patientProfile.lastName}`;
+      targetUserName = `${patientProfile.lastName} ${patientProfile.firstName}`;
       targetAvatar = patientProfile.avatar || undefined;
     }
 
@@ -459,17 +465,17 @@ export class ChatService implements OnModuleInit {
     let currentAvatar: string | undefined = undefined;
 
     if (currentUser.doctorProfile) {
-      currentUserName = `${currentUser.doctorProfile.firstName} ${currentUser.doctorProfile.lastName}`;
+      currentUserName = `${currentUser.doctorProfile.lastName} ${currentUser.doctorProfile.firstName}`;
       currentAvatar = currentUser.doctorProfile.avatar || undefined;
     } else if (currentUser.receptionistProfile) {
-      currentUserName = `${currentUser.receptionistProfile.firstName} ${currentUser.receptionistProfile.lastName}`;
+      currentUserName = `${currentUser.receptionistProfile.lastName} ${currentUser.receptionistProfile.firstName}`;
       currentAvatar = currentUser.receptionistProfile.avatar || undefined;
     } else if (currentUser.adminProfile) {
-      currentUserName = `${currentUser.adminProfile.firstName} ${currentUser.adminProfile.lastName}`;
+      currentUserName = `${currentUser.adminProfile.lastName} ${currentUser.adminProfile.firstName}`;
       currentAvatar = currentUser.adminProfile.avatar || undefined;
     } else if (currentUser.patientProfiles.length > 0) {
       const patientProfile = currentUser.patientProfiles[0];
-      currentUserName = `${patientProfile.firstName} ${patientProfile.lastName}`;
+      currentUserName = `${patientProfile.lastName} ${patientProfile.firstName}`;
       currentAvatar = patientProfile.avatar || undefined;
     }
 
