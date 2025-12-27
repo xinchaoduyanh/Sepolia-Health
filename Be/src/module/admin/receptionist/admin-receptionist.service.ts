@@ -1,18 +1,18 @@
+import { PrismaService } from '@/common/prisma/prisma.service';
 import {
+  ConflictException,
   Injectable,
   NotFoundException,
-  ConflictException,
 } from '@nestjs/common';
-import { PrismaService } from '@/common/prisma/prisma.service';
-import { UserStatus, Role } from '@prisma/client';
+import { Role, UserStatus } from '@prisma/client';
 import {
   CreateReceptionistDto,
+  CreateReceptionistResponseDto,
+  GetReceptionistsQueryDto,
+  ReceptionistDetailResponseDto,
+  ReceptionistListResponseDto,
   UpdateReceptionistDto,
   UpdateReceptionistStatusDto,
-  CreateReceptionistResponseDto,
-  ReceptionistListResponseDto,
-  ReceptionistDetailResponseDto,
-  GetReceptionistsQueryDto,
 } from './admin-receptionist.dto';
 
 @Injectable()
@@ -62,9 +62,10 @@ export class AdminReceptionistService {
     return {
       id: result.receptionistProfile.id,
       email: result.user.email,
-      fullName: `${result.receptionistProfile.firstName} ${result.receptionistProfile.lastName}`,
+      fullName: `${result.receptionistProfile.lastName} ${result.receptionistProfile.firstName}`,
       phone: result.user.phone || '',
       status: result.user.status,
+      avatar: result.receptionistProfile.avatar || null,
       createdAt: result.receptionistProfile.createdAt,
     };
   }
@@ -104,9 +105,10 @@ export class AdminReceptionistService {
       receptionists: receptionists.map((receptionist) => ({
         id: receptionist.receptionistProfile!.id,
         email: receptionist.email,
-        fullName: `${receptionist.receptionistProfile!.firstName} ${receptionist.receptionistProfile!.lastName}`,
+        fullName: `${receptionist.receptionistProfile!.lastName} ${receptionist.receptionistProfile!.firstName}`,
         phone: receptionist.phone || '',
         status: receptionist.status,
+        avatar: receptionist.receptionistProfile!.avatar || null,
         createdAt: receptionist.createdAt,
       })),
       total,
@@ -132,7 +134,7 @@ export class AdminReceptionistService {
     return {
       id: receptionist.id,
       email: receptionist.user.email,
-      fullName: `${receptionist.firstName} ${receptionist.lastName}`,
+      fullName: `${receptionist.lastName} ${receptionist.firstName}`,
       phone: receptionist.user.phone || '',
       address: receptionist.user.phone || '',
       status: 'ACTIVE',
@@ -173,7 +175,7 @@ export class AdminReceptionistService {
     return {
       id: updatedReceptionist.id,
       email: updatedReceptionist.user.email,
-      fullName: `${updatedReceptionist.firstName} ${updatedReceptionist.lastName}`,
+      fullName: `${updatedReceptionist.lastName} ${updatedReceptionist.firstName}`,
       phone: updatedReceptionist.user.phone || '',
       status: updatedReceptionist.user.status,
     };
@@ -233,7 +235,7 @@ export class AdminReceptionistService {
     return {
       id: profile.id,
       email: updatedUser.email,
-      fullName: `${profile.firstName} ${profile.lastName}`,
+      fullName: `${profile.lastName} ${profile.firstName}`,
       phone: updatedUser.phone || '',
       status: updatedUser.status,
       createdAt: profile.createdAt,

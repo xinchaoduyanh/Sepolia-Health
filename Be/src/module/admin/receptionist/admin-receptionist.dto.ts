@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { z } from 'zod';
 import { UserStatus } from '@prisma/client';
+import { z } from 'zod';
 
 // Password regex: tối thiểu 6 ký tự, có chữ IN HOA, có số, có ký tự đặc biệt
 const PASSWORD_REGEX =
@@ -134,6 +134,13 @@ export class CreateReceptionistResponseDto {
     example: 'ACTIVE',
   })
   status: string;
+
+  @ApiProperty({
+    description: 'Avatar lễ tân',
+    example: 'https://example.com/avatar.jpg',
+    required: false,
+  })
+  avatar?: string | null;
 
   @ApiProperty({
     description: 'Ngày tạo',

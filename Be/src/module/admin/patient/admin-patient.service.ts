@@ -1,17 +1,17 @@
-import {
-  Injectable,
-  NotFoundException,
-  ConflictException,
-} from '@nestjs/common';
 import { PrismaService } from '@/common/prisma/prisma.service';
 import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import {
   CreatePatientDto,
+  CreatePatientResponseDto,
+  GetPatientsQueryDto,
+  PatientDetailResponseDto,
+  PatientListResponseDto,
   UpdatePatientDto,
   UpdatePatientStatusDto,
-  CreatePatientResponseDto,
-  PatientListResponseDto,
-  PatientDetailResponseDto,
-  GetPatientsQueryDto,
 } from './admin-patient.dto';
 
 @Injectable()
@@ -91,7 +91,7 @@ export class AdminPatientService {
         id: profile.id,
         firstName: profile.firstName,
         lastName: profile.lastName,
-        fullName: `${profile.firstName} ${profile.lastName}`,
+        fullName: `${profile.lastName} ${profile.firstName}`,
         dateOfBirth: profile.dateOfBirth.toISOString().split('T')[0],
         gender: profile.gender,
         phone: profile.phone,
@@ -170,7 +170,7 @@ export class AdminPatientService {
           id: profile.id,
           firstName: profile.firstName,
           lastName: profile.lastName,
-          fullName: `${profile.firstName} ${profile.lastName}`,
+          fullName: `${profile.lastName} ${profile.firstName}`,
           dateOfBirth: profile.dateOfBirth.toISOString().split('T')[0],
           gender: profile.gender,
           phone: profile.phone,
@@ -214,7 +214,7 @@ export class AdminPatientService {
         id: profile.id,
         firstName: profile.firstName,
         lastName: profile.lastName,
-        fullName: `${profile.firstName} ${profile.lastName}`,
+        fullName: `${profile.lastName} ${profile.firstName}`,
         dateOfBirth: profile.dateOfBirth.toISOString().split('T')[0],
         gender: profile.gender,
         phone: profile.phone,
@@ -360,7 +360,7 @@ export class AdminPatientService {
         id: profile.id,
         firstName: profile.firstName,
         lastName: profile.lastName,
-        fullName: `${profile.firstName} ${profile.lastName}`,
+        fullName: `${profile.lastName} ${profile.firstName}`,
         dateOfBirth: profile.dateOfBirth.toISOString().split('T')[0],
         gender: profile.gender,
         phone: profile.phone,
@@ -410,7 +410,7 @@ export class AdminPatientService {
         id: profile.id,
         firstName: profile.firstName,
         lastName: profile.lastName,
-        fullName: `${profile.firstName} ${profile.lastName}`,
+        fullName: `${profile.lastName} ${profile.firstName}`,
         dateOfBirth: profile.dateOfBirth.toISOString().split('T')[0],
         gender: profile.gender,
         phone: profile.phone,

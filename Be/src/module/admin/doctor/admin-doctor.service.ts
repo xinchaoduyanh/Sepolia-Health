@@ -157,7 +157,7 @@ export class AdminDoctorService {
     return {
       id: result.doctorProfile.id,
       email: result.user.email,
-      fullName: `${result.doctorProfile.firstName} ${result.doctorProfile.lastName}`,
+      fullName: `${result.doctorProfile.lastName} ${result.doctorProfile.firstName}`,
       phone: result.user.phone || '',
       services: doctorServices.map((s) => s.service.name),
       specialties: doctorSpecialties.map((ds) => ({
@@ -276,7 +276,7 @@ export class AdminDoctorService {
       doctors: validDoctors.map((doctor) => ({
         id: doctor.doctorProfile!.id,
         email: doctor.email,
-        fullName: `${doctor.doctorProfile!.firstName} ${doctor.doctorProfile!.lastName}`,
+        fullName: `${doctor.doctorProfile!.lastName} ${doctor.doctorProfile!.firstName}`,
         phone: doctor.phone || '',
         services: doctor.doctorProfile!.services.map((s) => s.service.name),
         specialties: doctor.doctorProfile!.specialties.map((ds) => ({
@@ -366,7 +366,7 @@ export class AdminDoctorService {
     return {
       id: doctor.id,
       email: doctor.user.email,
-      fullName: `${doctor.firstName} ${doctor.lastName}`,
+      fullName: `${doctor.lastName} ${doctor.firstName}`,
       avatar: doctor.avatar,
       phone: doctor.user.phone || '',
       services: doctor.services.map((s) => ({
@@ -500,7 +500,7 @@ export class AdminDoctorService {
     return {
       id: updatedDoctor.id,
       email: updatedDoctor.user.email,
-      fullName: `${updatedDoctor.firstName} ${updatedDoctor.lastName}`,
+      fullName: `${updatedDoctor.lastName} ${updatedDoctor.firstName}`,
       services: doctorServices.map((s) => s.service.name),
       specialties: doctorSpecialties.map((ds) => ({
         id: ds.specialty.id,
@@ -569,7 +569,7 @@ export class AdminDoctorService {
     return {
       id: updatedDoctor.id,
       email: updatedDoctor.user.email,
-      fullName: `${updatedDoctor.firstName} ${updatedDoctor.lastName}`,
+      fullName: `${updatedDoctor.lastName} ${updatedDoctor.firstName}`,
       services: updatedDoctor.services.map((s) => s.service.name),
       specialties: updatedDoctor.specialties.map((ds) => ({
         id: ds.specialty.id,
@@ -659,7 +659,7 @@ export class AdminDoctorService {
 
     return {
       doctorId,
-      doctorName: `${doctor.firstName} ${doctor.lastName}`,
+      doctorName: `${doctor.lastName} ${doctor.firstName}`,
       schedules: schedules.map((schedule) => ({
         id: schedule.id,
         dayOfWeek: schedule.dayOfWeek,

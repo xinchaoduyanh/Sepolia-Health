@@ -2,7 +2,7 @@
 
 import { DoctorActionDialog } from '@/components/DoctorActionDialog'
 import { useClinicsDropdown, useDoctors, useServicesDropdown } from '@/shared/hooks'
-import { Avatar, AvatarFallback } from '@workspace/ui/components/Avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@workspace/ui/components/Avatar'
 import { Badge } from '@workspace/ui/components/Badge'
 import { Button } from '@workspace/ui/components/Button'
 import { DataTable } from '@workspace/ui/components/DataTable'
@@ -135,7 +135,7 @@ const columns: any[] = [
             return (
                 <div className="flex items-center space-x-3">
                     <Avatar className="h-8 w-8">
-                        {avatarUrl && <img src={avatarUrl} alt={fullName} className="h-full w-full object-cover" />}
+                        <AvatarImage src={avatarUrl} alt={fullName} className="object-cover" />
                         <AvatarFallback className="text-xs bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300">
                             {fullName
                                 .split(' ')

@@ -1,16 +1,16 @@
 'use client'
 
-import { useState, useMemo, useEffect, useCallback } from 'react'
-import { DataTable } from '@workspace/ui/components/DataTable'
-import { BsSearchField } from '@workspace/ui/components/Searchfield'
-import { Pagination } from '@workspace/ui/components/Pagination'
-import { Button } from '@workspace/ui/components/Button'
-import { Badge } from '@workspace/ui/components/Badge'
-import { Avatar, AvatarFallback } from '@workspace/ui/components/Avatar'
-import { Eye, Plus, Trash2 } from 'lucide-react'
-import { usePatients } from '@/shared/hooks'
-import { Skeleton } from '@workspace/ui/components/Skeleton'
 import { PatientActionDialog } from '@/components/PatientActionDialog'
+import { usePatients } from '@/shared/hooks'
+import { Avatar, AvatarFallback, AvatarImage } from '@workspace/ui/components/Avatar'
+import { Badge } from '@workspace/ui/components/Badge'
+import { Button } from '@workspace/ui/components/Button'
+import { DataTable } from '@workspace/ui/components/DataTable'
+import { Pagination } from '@workspace/ui/components/Pagination'
+import { BsSearchField } from '@workspace/ui/components/Searchfield'
+import { Skeleton } from '@workspace/ui/components/Skeleton'
+import { Eye, Plus, Trash2 } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 // Skeleton table component for loading state
 const SkeletonTable = ({ columns }: { columns: any[] }) => {
@@ -131,9 +131,11 @@ const columns: any[] = [
             const selfProfile = profiles?.find((profile: any) => profile.relationship === 'SELF')
 
             if (selfProfile) {
+                const avatarUrl = selfProfile.avatar
                 return (
                     <div className="flex items-center space-x-3">
                         <Avatar className="h-8 w-8">
+                            <AvatarImage src={avatarUrl} alt={selfProfile.fullName} className="object-cover" />
                             <AvatarFallback className="text-xs bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300">
                                 {selfProfile.fullName
                                     .split(' ')

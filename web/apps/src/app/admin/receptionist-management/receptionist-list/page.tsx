@@ -1,16 +1,16 @@
 'use client'
 
-import { useState, useMemo, useEffect, useCallback } from 'react'
-import { DataTable } from '@workspace/ui/components/DataTable'
-import { BsSearchField } from '@workspace/ui/components/Searchfield'
-import { Pagination } from '@workspace/ui/components/Pagination'
-import { Button } from '@workspace/ui/components/Button'
-import { Badge } from '@workspace/ui/components/Badge'
-import { Avatar, AvatarFallback } from '@workspace/ui/components/Avatar'
-import { Eye, Plus, MoreHorizontal } from 'lucide-react'
-import { useReceptionists } from '@/shared/hooks'
 import { ReceptionistActionDialog } from '@/components/ReceptionistActionDialog'
+import { useReceptionists } from '@/shared/hooks'
+import { Avatar, AvatarFallback, AvatarImage } from '@workspace/ui/components/Avatar'
+import { Badge } from '@workspace/ui/components/Badge'
+import { Button } from '@workspace/ui/components/Button'
+import { DataTable } from '@workspace/ui/components/DataTable'
+import { Pagination } from '@workspace/ui/components/Pagination'
+import { BsSearchField } from '@workspace/ui/components/Searchfield'
 import { Skeleton } from '@workspace/ui/components/Skeleton'
+import { Eye, MoreHorizontal, Plus } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 // Skeleton table component for loading state
 const SkeletonTable = ({ columns }: { columns: any[] }) => {
@@ -113,11 +113,14 @@ const columns: any[] = [
     {
         accessorKey: 'fullName',
         header: 'Họ và tên',
-        cell: ({ getValue }: { getValue: () => any }) => {
-            const fullName = getValue() as string
+        cell: ({ row }: { row: any }) => {
+            const receptionist = row.original
+            const fullName = receptionist.fullName
+            const avatarUrl = receptionist.avatar
             return (
                 <div className="flex items-center space-x-3">
                     <Avatar className="h-8 w-8">
+                        <AvatarImage src={avatarUrl} alt={fullName} className="object-cover" />
                         <AvatarFallback className="text-xs bg-purple-100 text-purple-600 dark:bg-purple-900 dark:text-purple-300">
                             {fullName
                                 .split(' ')
