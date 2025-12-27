@@ -1,14 +1,14 @@
 'use client'
 
-import { useState, useMemo, useEffect, useCallback } from 'react'
-import { DataTable } from '@workspace/ui/components/DataTable'
-import { BsSearchField } from '@workspace/ui/components/Searchfield'
-import { Pagination } from '@workspace/ui/components/Pagination'
-import { Button } from '@workspace/ui/components/Button'
-import { Eye, Plus, Trash2 } from 'lucide-react'
-import { useTags, useDeleteTag } from '@/shared/hooks'
-import { Skeleton } from '@workspace/ui/components/Skeleton'
+import { useDeleteTag, useTags } from '@/shared/hooks'
 import { Badge } from '@workspace/ui/components/Badge'
+import { Button } from '@workspace/ui/components/Button'
+import { DataTable } from '@workspace/ui/components/DataTable'
+import { Pagination } from '@workspace/ui/components/Pagination'
+import { BsSearchField } from '@workspace/ui/components/Searchfield'
+import { Skeleton } from '@workspace/ui/components/Skeleton'
+import { Eye, Plus, Trash2 } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 // Skeleton table component for loading state
 const SkeletonTable = ({ columns }: { columns: any[] }) => {
@@ -108,17 +108,39 @@ const columns: any[] = [
         header: 'ID',
         size: 80,
         cell: ({ getValue }: { getValue: () => any }) => (
-            <span className="font-medium text-primary text-sm">{getValue() as string}</span>
+            <div className="flex items-center">
+                <span className="font-semibold text-sm bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text text-transparent">
+                    #{getValue() as string}
+                </span>
+            </div>
         ),
     },
     {
         accessorKey: 'name',
         header: 'Tên tag',
+        size: 220,
         cell: ({ getValue }: { getValue: () => any }) => {
             const name = getValue() as string
+            // Generate a consistent color based on tag name
+            const colors = [
+                'from-pink-500 to-rose-500',
+                'from-purple-500 to-indigo-500',
+                'from-blue-500 to-cyan-500',
+                'from-green-500 to-emerald-500',
+                'from-yellow-500 to-orange-500',
+                'from-red-500 to-pink-500',
+            ]
+            const colorIndex = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length
+
             return (
-                <div className="max-w-xs">
-                    <span className="font-medium text-foreground text-sm">{name}</span>
+                <div className="flex items-center gap-2">
+                    <div className={`w-2 h-2 rounded-full bg-gradient-to-r ${colors[colorIndex]}`} />
+                    <Badge
+                        variant="outline"
+                        className={`bg-gradient-to-r ${colors[colorIndex]} text-white border-0 font-medium shadow-sm hover:shadow-md transition-shadow`}
+                    >
+                        {name}
+                    </Badge>
                 </div>
             )
         },
@@ -129,7 +151,11 @@ const columns: any[] = [
         size: 200,
         cell: ({ getValue }: { getValue: () => any }) => {
             const slug = getValue() as string
-            return <span className="text-muted-foreground text-sm font-mono">{slug}</span>
+            return (
+                <code className="px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-mono border border-slate-200 dark:border-slate-700">
+                    {slug}
+                </code>
+            )
         },
     },
     {
@@ -140,9 +166,9 @@ const columns: any[] = [
             const description = getValue() as string
             return (
                 <div className="max-w-sm">
-                    <span className="text-muted-foreground text-sm line-clamp-2">
-                        {description || 'Không có mô tả'}
-                    </span>
+                    <p className="text-muted-foreground text-sm line-clamp-2 leading-relaxed">
+                        {description || <span className="italic text-slate-400">Không có mô tả</span>}
+                    </p>
                 </div>
             )
         },
@@ -150,21 +176,33 @@ const columns: any[] = [
     {
         accessorKey: 'usageCount',
         header: 'Số lần sử dụng',
-        size: 120,
+        size: 140,
         cell: ({ getValue }: { getValue: () => any }) => {
             const count = getValue() as number
+            const getCountColor = (count: number) => {
+                if (count >= 50) return 'from-green-500 to-emerald-500'
+                if (count >= 20) return 'from-blue-500 to-cyan-500'
+                if (count >= 10) return 'from-yellow-500 to-orange-500'
+                return 'from-slate-400 to-slate-500'
+            }
+
             return (
-                <Badge variant="secondary" className="font-medium">
-                    {count}
-                </Badge>
+                <div className="flex items-center gap-2">
+                    <div
+                        className={`px-3 py-1 rounded-full bg-gradient-to-r ${getCountColor(count)} text-white text-xs font-semibold shadow-sm`}
+                    >
+                        {count} lần
+                    </div>
+                </div>
             )
         },
     },
     {
         accessorKey: 'createdAt',
         header: 'Ngày tạo',
+        size: 120,
         cell: ({ getValue }: { getValue: () => any }) => (
-            <span className="text-muted-foreground text-sm">
+            <span className="text-muted-foreground text-sm font-medium">
                 {typeof window !== 'undefined'
                     ? new Date(getValue() as string).toLocaleDateString('vi-VN')
                     : (getValue() as string)}
@@ -232,11 +270,16 @@ export default function TagListPage() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold text-foreground">Quản lý danh sách tags</h1>
-                    <p className="text-sm text-muted-foreground mt-1">Quản lý thông tin tags trong hệ thống</p>
+                    <h1 className="text-3xl font-bold bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text text-transparent">
+                        Quản lý danh sách tags
+                    </h1>
+                    <p className="text-sm text-muted-foreground mt-2 flex items-center gap-2">
+                        <span className="inline-block w-1 h-1 rounded-full bg-cyan-500"></span>
+                        Quản lý và phân loại nội dung với tags
+                    </p>
                 </div>
                 <Button
-                    className="flex items-center space-x-2"
+                    className="flex items-center gap-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white shadow-lg shadow-cyan-500/30 hover:shadow-xl hover:shadow-cyan-500/40 transition-all duration-200"
                     onClick={() => (window.location.href = '/admin/tag-management/create')}
                 >
                     <Plus className="h-4 w-4" />
@@ -245,17 +288,26 @@ export default function TagListPage() {
             </div>
 
             {/* Main Content */}
-            <div className="bg-card rounded-lg shadow-sm border border-border">
+            <div className="relative bg-card rounded-xl shadow-xl border border-border overflow-hidden">
+                {/* Gradient overlay */}
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500"></div>
+
                 {/* Search and Filters Bar */}
-                <div className="p-6 border-b border-border">
+                <div className="p-6 border-b border-border bg-gradient-to-br from-slate-50/50 to-transparent dark:from-slate-900/50">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
+                        <div className="md:col-span-2">
                             <BsSearchField
-                                placeholder="Tìm theo tên hoặc slug"
+                                placeholder="🔍 Tìm theo tên hoặc slug..."
                                 value={searchTerm}
                                 onChange={handleSearchChange}
                                 className="w-full"
                             />
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                                <span className="font-medium">{tagsResponse?.total || 0} tags</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -270,11 +322,16 @@ export default function TagListPage() {
                 </div>
 
                 {/* Pagination */}
-                <div className="px-6 py-4 border-t border-border flex items-center justify-between">
-                    <div className="text-sm text-muted-foreground">
-                        Hiển thị {(currentPage - 1) * itemsPerPage + 1} đến{' '}
-                        {Math.min(currentPage * itemsPerPage, tagsResponse?.total || 0)} trong tổng số{' '}
-                        {tagsResponse?.total || 0} tags
+                <div className="px-6 py-4 border-t border-border bg-gradient-to-br from-slate-50/50 to-transparent dark:from-slate-900/50 flex items-center justify-between">
+                    <div className="text-sm text-muted-foreground font-medium">
+                        Hiển thị{' '}
+                        <span className="text-foreground font-semibold">{(currentPage - 1) * itemsPerPage + 1}</span>{' '}
+                        đến{' '}
+                        <span className="text-foreground font-semibold">
+                            {Math.min(currentPage * itemsPerPage, tagsResponse?.total || 0)}
+                        </span>{' '}
+                        trong tổng số <span className="text-foreground font-semibold">{tagsResponse?.total || 0}</span>{' '}
+                        tags
                     </div>
                     <Pagination value={currentPage} pageCount={totalPages} onChange={handlePageChange} />
                 </div>
