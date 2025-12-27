@@ -18,15 +18,31 @@ export class CronJobProcessor extends WorkerHost {
   private async cancelOrCompleteAppointment(): Promise<void> {
     const now = new Date();
     now.setSeconds(0, 0);
-    await this.prisma.appointment.updateMany({
-      where: { endTime: now, status: AppointmentStatus.ON_GOING },
+
+    // Update ON_GOING appointments that have passed their endTime to COMPLETED
+    const completedResult = await this.prisma.appointment.updateMany({
+      where: {
+        endTime: { lte: now }, // Less than or equal - catches all past appointments
+        status: AppointmentStatus.ON_GOING,
+      },
       data: { status: AppointmentStatus.COMPLETED },
     });
 
-    await this.prisma.appointment.updateMany({
-      where: { status: AppointmentStatus.UPCOMING, endTime: now },
+    // Update UPCOMING appointments that have passed their endTime to CANCELLED
+    const cancelledResult = await this.prisma.appointment.updateMany({
+      where: {
+        status: AppointmentStatus.UPCOMING,
+        endTime: { lte: now }, // Less than or equal - catches all past appointments
+      },
       data: { status: AppointmentStatus.CANCELLED },
     });
+
+    // Log the results for monitoring
+    if (completedResult.count > 0 || cancelledResult.count > 0) {
+      console.log(
+        `📅 Updated appointments: ${completedResult.count} completed, ${cancelledResult.count} cancelled`,
+      );
+    }
   }
 
   private async sendReminderEmail(): Promise<void> {
@@ -49,16 +65,19 @@ export class CronJobProcessor extends WorkerHost {
 
   @OnWorkerEvent('completed')
   onCompleted(job: Job<any>) {
-    console.log(`Job with data ${job.data.appointmentId} completed`);
+    console.log(`✅ Appointment status update job #${job.id} completed`);
   }
 
   @OnWorkerEvent('failed')
   onFailed(job: Job<any>, error: Error) {
-    console.log(`Job ${job.data.appointmentId} failed: `, error.message);
+    console.log(
+      `❌ Appointment status update job #${job.id} failed:`,
+      error.message,
+    );
   }
 
   @OnWorkerEvent('active')
   onActive(job: Job<any>) {
-    console.log(`Job ${job.data.appointmentId} is active`);
+    console.log(`🔄 Appointment status update job #${job.id} is running...`);
   }
 }

@@ -1,11 +1,29 @@
+import { InjectQueue } from '@nestjs/bullmq';
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import { CronJobProcessor } from './cron-job.processor';
+import { Queue } from 'bullmq';
+import { CRON_JOB } from './cron-job.constant';
 
 @Injectable()
 export class CronJobService implements OnModuleInit {
-  constructor(private readonly cronJobProcessor: CronJobProcessor) {}
+  constructor(
+    @InjectQueue(CRON_JOB.APPOINTMENT.QUEUE_NAME)
+    private readonly appointmentQueue: Queue,
+  ) {}
 
   async onModuleInit() {
-    await this.cronJobProcessor.process();
+    // Add repeatable job that runs every hour
+    await this.appointmentQueue.add(
+      CRON_JOB.APPOINTMENT.JOB_NAME,
+      {},
+      {
+        repeat: {
+          pattern: '0 * * * *', // Every hour at minute 0 (e.g., 1:00, 2:00, 3:00...)
+        },
+        removeOnComplete: true,
+        removeOnFail: false,
+      },
+    );
+
+    console.log('✅ Appointment status update cronjob scheduled (every hour)');
   }
 }
