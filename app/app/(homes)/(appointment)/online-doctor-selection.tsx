@@ -2,11 +2,10 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
+  Pressable,
   ScrollView,
   TextInput,
   StatusBar,
-  ActivityIndicator,
   Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -16,6 +15,7 @@ import { router } from 'expo-router';
 import { useAppointment } from '@/contexts/AppointmentContext';
 import { useOnlineDoctorServices } from '@/lib/api/appointments';
 import { getTodayDateString } from '@/utils/datetime';
+import { DoctorSkeleton } from '@/components/SkeletonLoader';
 
 export default function OnlineDoctorSelectionScreen() {
   const [selectedDoctor, setSelectedDoctor] = useState<number | null>(null);
@@ -97,18 +97,6 @@ export default function OnlineDoctorSelectionScreen() {
     return stars;
   };
 
-  if (isLoading) {
-    return (
-      <SafeAreaView className="flex-1 bg-slate-50">
-        <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#10B981" />
-          <Text className="mt-4 text-base text-slate-600">Đang tải danh sách bác sĩ...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
   if (error) {
     return (
       <SafeAreaView className="flex-1 bg-slate-50">
@@ -118,11 +106,11 @@ export default function OnlineDoctorSelectionScreen() {
           <Text className="mt-4 text-center text-base font-semibold text-slate-900">
             Không thể tải danh sách bác sĩ
           </Text>
-          <TouchableOpacity
+          <Pressable
             onPress={handleBack}
             className="mt-4 rounded-lg bg-emerald-500 px-6 py-3">
             <Text className="font-semibold text-white">Quay lại</Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </SafeAreaView>
     );
@@ -139,9 +127,9 @@ export default function OnlineDoctorSelectionScreen() {
         end={{ x: 1, y: 1 }}
         style={{ paddingTop: 60, paddingBottom: 24, paddingHorizontal: 24 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <TouchableOpacity onPress={handleBack} style={{ marginRight: 16 }}>
+          <Pressable onPress={handleBack} style={{ marginRight: 16 }}>
             <Ionicons name="arrow-back" size={24} color="white" />
-          </TouchableOpacity>
+          </Pressable>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Ionicons name="person" size={24} color="white" style={{ marginRight: 8 }} />
             <Text style={{ fontSize: 24, fontWeight: 'bold', color: 'white' }}>Chọn bác sĩ</Text>
@@ -170,59 +158,72 @@ export default function OnlineDoctorSelectionScreen() {
       </View>
 
       <ScrollView className="flex-1 px-5" showsVerticalScrollIndicator={false}>
-        {filteredDoctors.length === 0 && !isLoading && (
-          <View className="items-center py-12">
-            <Ionicons name="person-outline" size={48} color="#9CA3AF" />
-            <Text className="mt-4 text-center text-base text-slate-500">
-              Không có bác sĩ nào khả dụng cho dịch vụ này
-            </Text>
-          </View>
-        )}
+        {isLoading ? (
+          // Show skeleton loaders while loading
+          <>
+            {Array.from({ length: 5 }).map((_, index) => (
+              <DoctorSkeleton key={index} />
+            ))}
+          </>
+        ) : (
+          <>
+            {filteredDoctors.length === 0 && !isLoading && (
+              <View className="items-center py-12">
+                <Ionicons name="person-outline" size={48} color="#9CA3AF" />
+                <Text className="mt-4 text-center text-base text-slate-500">
+                  Không có bác sĩ nào khả dụng cho dịch vụ này
+                </Text>
+              </View>
+            )}
 
-        {filteredDoctors.map((doctor: any) => (
-          <TouchableOpacity
-            key={doctor.id}
-            onPress={() => handleDoctorSelect(doctor.id)}
-            className={`mb-4 rounded-xl border-2 p-4 ${
-              selectedDoctor === doctor.id ? 'border-emerald-500' : 'border-emerald-200'
-            }`}
-            style={{
-              backgroundColor: selectedDoctor === doctor.id ? '#D1FAE5' : '#ECFDF5',
-            }}>
-            <View className="flex-row">
-              <View className="mr-4 h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-emerald-100">
-                {doctor.avatar ? (
-                  <Image
-                    source={{ uri: doctor.avatar }}
-                    className="h-full w-full"
-                    resizeMode="cover"
-                  />
-                ) : (
-                  <Ionicons name="person" size={32} color="#10B981" />
-                )}
-              </View>
-              <View className="flex-1">
-                <View className="flex-row items-start justify-between">
-                  <Text className="text-lg font-semibold text-slate-900">
-                    BS. {doctor.lastName} {doctor.firstName}
-                  </Text>
-                  {selectedDoctor === doctor.id && (
-                    <View className="h-6 w-6 items-center justify-center rounded-full bg-emerald-500">
-                      <Ionicons name="checkmark" size={16} color="white" />
+            {filteredDoctors.map((doctor: any) => (
+              <Pressable
+                key={doctor.id}
+                onPress={() => handleDoctorSelect(doctor.id)}
+                className={`mb-4 rounded-xl border-2 p-4 ${
+                  selectedDoctor === doctor.id ? 'border-emerald-500' : 'border-emerald-200'
+                }`}
+                style={{
+                  backgroundColor: selectedDoctor === doctor.id ? '#D1FAE5' : '#ECFDF5',
+                }}>
+                <View className="flex-row">
+                  <View className="mr-4 h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-emerald-100">
+                    {doctor.avatar ? (
+                      <Image
+                        source={{ uri: doctor.avatar }}
+                        className="h-full w-full"
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <Ionicons name="person" size={32} color="#10B981" />
+                    )}
+                  </View>
+                  <View className="flex-1">
+                    <View className="flex-row items-start justify-between">
+                      <Text className="text-lg font-semibold text-slate-900">
+                        BS. {doctor.lastName} {doctor.firstName}
+                      </Text>
+                      {selectedDoctor === doctor.id && (
+                        <View className="h-6 w-6 items-center justify-center rounded-full bg-emerald-500">
+                          <Ionicons name="checkmark" size={16} color="white" />
+                        </View>
+                      )}
                     </View>
-                  )}
+                    {doctor.specialty && (
+                      <Text className="mt-1 text-sm text-emerald-600">{doctor.specialty}</Text>
+                    )}
+                    {doctor.experience && (
+                      <Text className="mt-1 text-sm text-slate-500">
+                        {new Date().getFullYear() - doctor.experience} năm kinh nghiệm
+                      </Text>
+                    )}
+                    <View className="mt-2 flex-row items-center">{renderStars(doctor.rating)}</View>
+                  </View>
                 </View>
-                {doctor.specialty && (
-                  <Text className="mt-1 text-sm text-emerald-600">{doctor.specialty}</Text>
-                )}
-                {doctor.experience && (
-                  <Text className="mt-1 text-sm text-slate-500">{doctor.experience}</Text>
-                )}
-                <View className="mt-2 flex-row items-center">{renderStars(doctor.rating)}</View>
-              </View>
-            </View>
-          </TouchableOpacity>
-        ))}
+              </Pressable>
+            ))}
+          </>
+        )}
 
         <View className="h-24" />
       </ScrollView>
@@ -230,7 +231,7 @@ export default function OnlineDoctorSelectionScreen() {
       {/* Continue Button */}
       {selectedDoctor && (
         <View className="absolute bottom-0 left-0 right-0 bg-white px-5 py-4 shadow-lg">
-          <TouchableOpacity
+          <Pressable
             onPress={handleContinue}
             className="items-center rounded-xl py-4"
             style={{ backgroundColor: '#10B981' }}>
@@ -238,7 +239,7 @@ export default function OnlineDoctorSelectionScreen() {
               <Text className="text-base font-bold text-white">Tiếp tục đặt lịch</Text>
               <Ionicons name="arrow-forward" size={20} color="white" style={{ marginLeft: 8 }} />
             </View>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       )}
     </View>

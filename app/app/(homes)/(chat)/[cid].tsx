@@ -491,8 +491,6 @@ export default function ChannelScreen() {
       <Stack.Screen
         options={{
           headerShown: true,
-          headerBackTitle: 'Quay lại',
-          headerBackVisible: true,
           headerStyle: {
             backgroundColor: isAIChannel ? '#7C3AED' : '#2563EB',
           },
@@ -500,6 +498,17 @@ export default function ChannelScreen() {
           headerTitleStyle: {
             fontWeight: 'bold',
           },
+          headerLeft: () => (
+            <TouchableOpacity
+              onPress={() => router.back()}
+              style={{ marginLeft: 16 }}>
+              <Ionicons 
+                name="arrow-back" 
+                size={24} 
+                color="white" 
+              />
+            </TouchableOpacity>
+          ),
           headerTitle: () => (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               {/* Avatar */}
@@ -564,7 +573,7 @@ export default function ChannelScreen() {
           ),
           headerRight: () =>
             isAIChannel ? (
-              // For AI channels, show a small AI badge instead of call buttons
+              // For AI channels, show a small AI badge
               <View style={{ flexDirection: 'row', marginRight: 8, gap: 8, alignItems: 'center' }}>
                 <View
                   style={{
@@ -580,31 +589,7 @@ export default function ChannelScreen() {
                   <Text style={{ color: 'white', fontSize: 12, fontWeight: '600' }}>AI</Text>
                 </View>
               </View>
-            ) : (
-              <View style={{ flexDirection: 'row', marginRight: 8, gap: 12 }}>
-                {/* Audio Call Button */}
-                <TouchableOpacity
-                  onPress={handleAudioCall}
-                  style={{
-                    padding: 8,
-                    borderRadius: 20,
-                    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                  }}>
-                  <Ionicons name="call" size={22} color="white" />
-                </TouchableOpacity>
-
-                {/* Video Call Button */}
-                <TouchableOpacity
-                  onPress={handleVideoCall}
-                  style={{
-                    padding: 8,
-                    borderRadius: 20,
-                    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                  }}>
-                  <Ionicons name="videocam" size={22} color="white" />
-                </TouchableOpacity>
-              </View>
-            ),
+            ) : null,
         }}
       />
 
@@ -664,6 +649,7 @@ export default function ChannelScreen() {
               // paddingTop: isAIChannel ? 60 : 0, // Add padding when Banner is shown to avoid overlap
             }}>
             <MessageList
+              disableTypingIndicator={true}
               additionalFlatListProps={{
                 contentContainerStyle: {
                   paddingTop: 16,

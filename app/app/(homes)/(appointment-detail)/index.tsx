@@ -17,6 +17,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import ResultFileList from '@/components/ResultFileList';
 
 // Skeleton Component
 const SkeletonBox = ({

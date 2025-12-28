@@ -150,6 +150,35 @@ export class DoctorAppointmentService {
             { params },
         )
     }
+
+    /**
+     * Upload file for appointment result
+     * POST /doctor/appointments/results/:resultId/files
+     */
+    async uploadResultFile(resultId: number, file: File): Promise<AppointmentResultFile> {
+        const formData = new FormData()
+        formData.append('file', file)
+
+        return apiClient.post<AppointmentResultFile>(
+            `/doctor/appointments/results/${resultId}/files`,
+            formData,
+            {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            },
+        )
+    }
+
+    /**
+     * Delete file from appointment result
+     * DELETE /doctor/appointments/results/:resultId/files/:fileId
+     */
+    async deleteResultFile(resultId: number, fileId: number): Promise<{ success: boolean; message: string }> {
+        return apiClient.delete<{ success: boolean; message: string }>(
+            `/doctor/appointments/results/${resultId}/files/${fileId}`,
+        )
+    }
 }
 
 export const doctorAppointmentService = new DoctorAppointmentService()

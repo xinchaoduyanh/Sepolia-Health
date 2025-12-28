@@ -1,4 +1,4 @@
-import { useQueryClient } from '@tanstack/react-query';
+                                                                                                                                                                  import { useQueryClient } from '@tanstack/react-query';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { router } from 'expo-router';
 import { Alert } from 'react-native';
@@ -118,11 +118,16 @@ export const useAuth = () => {
   // Clear all auth data
   const clearAuth = useCallback(async () => {
     // Cancel all ongoing queries first
-    queryClient.cancelQueries({ queryKey: authKeys.all });
+    queryClient.cancelQueries();
 
+    // ✅ Remove ALL AsyncStorage items that might contain user data
     await AsyncStorage.removeItem('auth_token');
     await AsyncStorage.removeItem('refresh_token');
     await AsyncStorage.removeItem('user_data');
+    await AsyncStorage.removeItem('user_deactive'); // Flag for deactivated users
+    
+    // ✅ Also clear payment cache if exists (user-specific)
+    await AsyncStorage.removeItem('payment_data');
 
     // Clear token from apiClient memory
     await apiClient.clearToken();
@@ -130,10 +135,9 @@ export const useAuth = () => {
     // Clear cached user data
     setCachedUser(null);
 
-    // Set profile data về null để UI cập nhật ngay lập tức
-    queryClient.setQueryData(authKeys.profile(), null);
-    // Remove all auth-related queries
-    queryClient.removeQueries({ queryKey: authKeys.all });
+    // ✅ CRITICAL: Clear ALL React Query cache to prevent data leakage between users
+    // This ensures appointment history, medical records, etc. from old user are completely removed
+    queryClient.clear();
   }, [queryClient]);
 
   // Logout function

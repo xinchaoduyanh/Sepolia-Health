@@ -20,7 +20,7 @@ import {
   StatusBar,
   Text,
   TextInput,
-  TouchableOpacity,
+  Pressable,
   View,
 } from 'react-native';
 
@@ -233,9 +233,9 @@ export default function OnlineAppointmentScreen() {
         end={{ x: 1, y: 1 }}
         style={{ paddingTop: 60, paddingBottom: 24, paddingHorizontal: 24 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <TouchableOpacity onPress={() => router.push('/(homes)')} style={{ marginRight: 16 }}>
+          <Pressable onPress={() => router.push('/(homes)')} style={{ marginRight: 16 }}>
             <Ionicons name="arrow-back" size={24} color="white" />
-          </TouchableOpacity>
+          </Pressable>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Ionicons name="videocam" size={24} color="white" style={{ marginRight: 8 }} />
             <Text style={{ fontSize: 24, fontWeight: 'bold', color: 'white' }}>Khám Online</Text>
@@ -274,7 +274,7 @@ export default function OnlineAppointmentScreen() {
                 {/* Primary Profile (Tôi) */}
                 {primaryProfile && (
                   <View className="items-center">
-                    <TouchableOpacity
+                    <Pressable
                       onPress={() => handleCustomerSelect('me', primaryProfile)}
                       className={`h-16 w-16 items-center justify-center rounded-full border-2 ${
                         selectedCustomer === 'me' ? 'border-emerald-500' : 'border-emerald-300'
@@ -298,8 +298,8 @@ export default function OnlineAppointmentScreen() {
                           />
                         </View>
                       )}
-                    </TouchableOpacity>
-                    <TouchableOpacity
+                    </Pressable>
+                    <Pressable
                       onPress={() => handleCustomerSelect('me', primaryProfile)}
                       className={`mt-2 rounded-full px-4 py-2 ${
                         selectedCustomer === 'me' ? 'bg-emerald-500' : 'bg-emerald-50'
@@ -320,14 +320,14 @@ export default function OnlineAppointmentScreen() {
                           />
                         )}
                       </View>
-                    </TouchableOpacity>
+                    </Pressable>
                   </View>
                 )}
 
                 {/* Other Patient Profiles */}
                 {otherProfiles.map((profile) => (
                   <View key={profile.id} className="items-center">
-                    <TouchableOpacity
+                    <Pressable
                       onPress={() => handleCustomerSelect(`profile-${profile.id}`, profile)}
                       className={`h-16 w-16 items-center justify-center rounded-full border-2 ${
                         selectedCustomer === `profile-${profile.id}`
@@ -349,8 +349,8 @@ export default function OnlineAppointmentScreen() {
                           </Text>
                         </View>
                       )}
-                    </TouchableOpacity>
-                    <TouchableOpacity
+                    </Pressable>
+                    <Pressable
                       onPress={() => handleCustomerSelect(`profile-${profile.id}`, profile)}
                       className={`mt-2 rounded-full px-4 py-2 ${
                         selectedCustomer === `profile-${profile.id}`
@@ -375,13 +375,13 @@ export default function OnlineAppointmentScreen() {
                           />
                         )}
                       </View>
-                    </TouchableOpacity>
+                    </Pressable>
                   </View>
                 ))}
 
                 {/* Add New Profile */}
                 <View className="items-center">
-                  <TouchableOpacity
+                  <Pressable
                     onPress={() => handleCustomerSelect('add')}
                     className={`h-16 w-16 items-center justify-center rounded-full border-2 ${
                       selectedCustomer === 'add' ? 'border-emerald-500' : 'border-emerald-300'
@@ -391,8 +391,8 @@ export default function OnlineAppointmentScreen() {
                       size={32}
                       color={selectedCustomer === 'add' ? '#10B981' : '#6EE7B7'}
                     />
-                  </TouchableOpacity>
-                  <TouchableOpacity
+                  </Pressable>
+                  <Pressable
                     onPress={() => handleCustomerSelect('add')}
                     className={`mt-2 rounded-full px-4 py-2 ${
                       selectedCustomer === 'add' ? 'bg-emerald-500' : 'bg-emerald-50'
@@ -413,7 +413,7 @@ export default function OnlineAppointmentScreen() {
                         />
                       )}
                     </View>
-                  </TouchableOpacity>
+                  </Pressable>
                 </View>
               </View>
             </ScrollView>
@@ -552,9 +552,8 @@ export default function OnlineAppointmentScreen() {
               </View>
 
               {/* Chọn dịch vụ */}
-              <TouchableOpacity
+              <Pressable
                 onPress={handleServiceSelect}
-                activeOpacity={0.7}
                 className="flex-row items-center rounded-xl border px-5 py-4"
                 style={{ backgroundColor: '#ECFDF5', borderColor: '#A7F3D0' }}>
                 <Ionicons name="medical" size={22} color="#10B981" />
@@ -567,13 +566,12 @@ export default function OnlineAppointmentScreen() {
                   color="#10B981"
                   style={{ marginLeft: 'auto' }}
                 />
-              </TouchableOpacity>
+              </Pressable>
 
               {/* Chọn bác sĩ */}
-              <TouchableOpacity
+              <Pressable
                 onPress={handleDoctorSelect}
                 disabled={!selectedService}
-                activeOpacity={0.7}
                 className={`flex-row items-center rounded-xl border px-5 py-4 ${
                   selectedService ? 'border-[#A7F3D0]' : 'border-[#D1D5DB]'
                 }`}
@@ -593,7 +591,7 @@ export default function OnlineAppointmentScreen() {
                   color={selectedService ? '#10B981' : '#9CA3AF'}
                   style={{ marginLeft: 'auto' }}
                 />
-              </TouchableOpacity>
+              </Pressable>
             </View>
           </View>
 
@@ -617,7 +615,7 @@ export default function OnlineAppointmentScreen() {
               {generateFutureDates()
                 .slice(0, 3)
                 .map((date, index) => (
-                  <TouchableOpacity
+                  <Pressable
                     key={index}
                     onPress={() => handlePresetDateSelect(date)}
                     className={`flex-1 rounded-xl px-4 py-4 ${
@@ -639,10 +637,10 @@ export default function OnlineAppointmentScreen() {
                       }`}>
                       {index === 0 ? 'Hôm nay' : index === 1 ? 'Ngày mai' : 'Ngày kia'}
                     </Text>
-                  </TouchableOpacity>
+                  </Pressable>
                 ))}
 
-              <TouchableOpacity
+              <Pressable
                 onPress={handleCustomDatePress}
                 className="flex-1 items-center justify-center rounded-xl px-4 py-4"
                 style={{
@@ -665,7 +663,7 @@ export default function OnlineAppointmentScreen() {
                 ) : (
                   <Ionicons name="add" size={24} color="#10B981" />
                 )}
-              </TouchableOpacity>
+              </Pressable>
             </View>
 
             {/* Time Slots */}
@@ -758,8 +756,7 @@ export default function OnlineAppointmentScreen() {
 
             {/* Book Appointment Button */}
             <View className="mt-8">
-              <TouchableOpacity
-                activeOpacity={0.7}
+              <Pressable
                 onPress={handleBookAppointment}
                 disabled={createAppointmentMutation.isPending}
                 className="items-center rounded-xl py-4"
@@ -777,7 +774,7 @@ export default function OnlineAppointmentScreen() {
                     {createAppointmentMutation.isPending ? 'ĐANG XỬ LÝ...' : 'ĐẶT LỊCH KHÁM ONLINE'}
                   </Text>
                 </View>
-              </TouchableOpacity>
+              </Pressable>
             </View>
           </View>
         </View>
@@ -796,13 +793,12 @@ export default function OnlineAppointmentScreen() {
                 <Text className="text-lg font-bold" style={{ color: '#0F172A' }}>
                   Chọn ngày khám
                 </Text>
-                <TouchableOpacity
-                  activeOpacity={0.7}
+                <Pressable
                   onPress={() => setShowDatePicker(false)}
                   className="h-8 w-8 items-center justify-center rounded-full"
                   style={{ backgroundColor: '#A7F3D0' }}>
                   <Ionicons name="close" size={20} color="#10B981" />
-                </TouchableOpacity>
+                </Pressable>
               </View>
 
               <ScrollView showsVerticalScrollIndicator={false}>
@@ -810,9 +806,8 @@ export default function OnlineAppointmentScreen() {
                   {generateFutureDates()
                     .slice(3)
                     .map((date, index) => (
-                      <TouchableOpacity
+                      <Pressable
                         key={index}
-                        activeOpacity={0.7}
                         onPress={() => {
                           const selectedDate = new Date(date.year, date.month - 1, date.day);
                           handleCustomDateConfirm(selectedDate);
@@ -867,7 +862,7 @@ export default function OnlineAppointmentScreen() {
                           }`}>
                           Thg {date.month}
                         </Text>
-                      </TouchableOpacity>
+                      </Pressable>
                     ))}
                 </View>
               </ScrollView>
@@ -911,8 +906,7 @@ export default function OnlineAppointmentScreen() {
             </Text>
 
             <View className="w-full space-y-3">
-              <TouchableOpacity
-                activeOpacity={0.7}
+              <Pressable
                 onPress={() => {
                   setShowSuccessModal(false);
                   router.push(`/(homes)/(appointment-detail)?id=${createdAppointmentId}`);
@@ -920,10 +914,9 @@ export default function OnlineAppointmentScreen() {
                 className="w-full items-center rounded-xl py-4"
                 style={{ backgroundColor: '#10B981' }}>
                 <Text className="text-base font-bold text-white">Xem chi tiết lịch hẹn</Text>
-              </TouchableOpacity>
+              </Pressable>
 
-              <TouchableOpacity
-                activeOpacity={0.7}
+              <Pressable
                 onPress={() => {
                   setShowSuccessModal(false);
                   router.push('/(homes)');
@@ -933,7 +926,7 @@ export default function OnlineAppointmentScreen() {
                 <Text className="text-base font-bold" style={{ color: '#10B981' }}>
                   Về trang chủ
                 </Text>
-              </TouchableOpacity>
+              </Pressable>
             </View>
           </View>
         </View>

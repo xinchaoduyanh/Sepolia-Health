@@ -1,10 +1,11 @@
 'use client'
 
-import { useCreateOrUpdateAppointmentResult, useDoctorAppointment } from '@/shared/hooks'
+import { useCreateOrUpdateAppointmentResult, useDoctorAppointment, useUploadResultFile, useDeleteResultFile } from '@/shared/hooks'
 import { formatDate, formatTime } from '@/util/datetime'
 import { Badge } from '@workspace/ui/components/Badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@workspace/ui/components/Card'
 import { Skeleton } from '@workspace/ui/components/Skeleton'
+import { toast } from '@workspace/ui/components/Sonner'
 import {
     AlertCircle,
     ArrowLeft,
@@ -13,6 +14,7 @@ import {
     Calendar,
     CheckCircle2,
     Clock,
+    Download,
     FileText,
     Flag,
     History,
@@ -20,10 +22,14 @@ import {
     IdCard,
     Loader2,
     MapPin,
+    Paperclip,
     Save,
     Star,
     Stethoscope,
+    Trash2,
+    Upload,
     User,
+    X,
     XCircle,
 } from 'lucide-react'
 import { useParams, useRouter } from 'next/navigation'
@@ -71,6 +77,8 @@ export default function AppointmentDetailPage() {
 
     const { data: appointment, isLoading } = useDoctorAppointment(appointmentId, !!id)
     const createOrUpdateMutation = useCreateOrUpdateAppointmentResult()
+    const uploadFileMutation = useUploadResultFile()
+    const deleteFileMutation = useDeleteResultFile()
 
     const [formData, setFormData] = useState({
         diagnosis: '',
@@ -80,6 +88,8 @@ export default function AppointmentDetailPage() {
     })
 
     const [isEditing, setIsEditing] = useState(false)
+    const [selectedFile, setSelectedFile] = useState<File | null>(null)
+    const [uploadError, setUploadError] = useState<string>('')
 
     // Load existing result when appointment data is available
     useEffect(() => {
@@ -127,6 +137,83 @@ export default function AppointmentDetailPage() {
             ...prev,
             [name]: value,
         }))
+    }
+
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+
+        // Validate file type
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf']
+        if (!allowedTypes.includes(file.type)) {
+            setUploadError('Chỉ chấp nhận file ảnh (JPEG, PNG) hoặc PDF')
+            setSelectedFile(null)
+            return
+        }
+
+        // Validate file size (10MB)
+        const maxSize = 10 * 1024 * 1024
+        if (file.size > maxSize) {
+            setUploadError('Kích thước file không được vượt quá 10MB')
+            setSelectedFile(null)
+            return
+        }
+
+        setUploadError('')
+        setSelectedFile(file)
+    }
+
+    const handleFileUpload = async () => {
+        if (!selectedFile || !appointment?.result) return
+
+        try {
+            await uploadFileMutation.mutateAsync({
+                resultId: appointment.result.id,
+                file: selectedFile,
+                appointmentId: appointmentId,
+            })
+            
+            // Success feedback
+            toast.success({
+                title: 'Thành công',
+                description: 'Đã tải lên file thành công!',
+            })
+            setSelectedFile(null)
+            setUploadError('')
+            
+            // Reset file input
+            const fileInput = document.getElementById('file-upload') as HTMLInputElement
+            if (fileInput) fileInput.value = ''
+        } catch (error: any) {
+            const errorMessage = error?.message || 'Lỗi khi upload file'
+            setUploadError(errorMessage)
+            toast.error({
+                title: 'Lỗi',
+                description: errorMessage,
+            })
+        }
+    }
+
+    const handleFileDelete = async (fileId: number) => {
+        if (!appointment?.result) return
+
+        if (!confirm('Bạn có chắc chắn muốn xóa file này?')) return
+
+        try {
+            await deleteFileMutation.mutateAsync({
+                resultId: appointment.result.id,
+                fileId: fileId,
+                appointmentId: appointmentId,
+            })
+        } catch (error: any) {
+            alert(error?.message || 'Lỗi khi xóa file')
+        }
+    }
+
+    const formatFileSize = (bytes: number) => {
+        if (bytes < 1024) return bytes + ' B'
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
     }
 
     if (isLoading) {
@@ -260,7 +347,7 @@ export default function AppointmentDetailPage() {
                                         <CardTitle className="text-xl font-bold">Thông tin bệnh nhân</CardTitle>
                                     </div>
                                     <button
-                                        onClick={() => router.push(`/doctor/patient/${appointment.patient.id}/history`)}
+                                        onClick={() => router.push(`/doctor/patient/${appointment.patient?.id}/history`)}
                                         className="flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-primary hover:bg-primary/90 text-white rounded-lg transition-all duration-200 hover:scale-105 shadow-md hover:shadow-lg"
                                     >
                                         <History className="h-4 w-4" />
@@ -559,6 +646,130 @@ export default function AppointmentDetailPage() {
                                     <p className="text-sm text-muted-foreground">
                                         Chỉ có thể điền kết quả khám khi lịch khám đang diễn ra hoặc đã hoàn thành.
                                     </p>
+                                </div>
+                            )}
+
+                            {/* File Upload Section - Outside Form and canEditResult check */}
+                            {hasResult && (
+                                <div className="mt-6 pt-6 border-t border-border space-y-4">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <Paperclip className="h-4 w-4 text-primary" />
+                                        <h3 className="text-sm font-semibold text-foreground">File đính kèm</h3>
+                                        <span className="text-xs text-muted-foreground">
+                                            ({appointment.result?.files?.length || 0}/10)
+                                        </span>
+                                    </div>
+
+                                    {/* File Input */}
+                                    <div className="space-y-2">
+                                        <div className="flex gap-2">
+                                            <div className="flex-1 relative">
+                                                <input
+                                                    id="file-upload"
+                                                    type="file"
+                                                    accept=".jpg,.jpeg,.png,.pdf"
+                                                    onChange={handleFileSelect}
+                                                    className="hidden"
+                                                    disabled={uploadFileMutation.isPending || (appointment.result?.files?.length || 0) >= 10}
+                                                />
+                                                <label
+                                                    htmlFor="file-upload"
+                                                    className="flex items-center justify-between w-full px-4 py-2 text-sm border border-border rounded-lg bg-background hover:bg-muted/50 cursor-pointer transition-colors"
+                                                >
+                                                    <span className="text-muted-foreground truncate">
+                                                        {selectedFile ? selectedFile.name : 'Chọn file...'}
+                                                    </span>
+                                                    <span className="ml-2 px-3 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-md whitespace-nowrap">
+                                                        Chọn file
+                                                    </span>
+                                                </label>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={handleFileUpload}
+                                                disabled={!selectedFile || uploadFileMutation.isPending || (appointment.result?.files?.length || 0) >= 10}
+                                                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary/90 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                                            >
+                                                {uploadFileMutation.isPending ? (
+                                                    <>
+                                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                                        Đang tải...
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Upload className="h-4 w-4" />
+                                                        Tải lên
+                                                    </>
+                                                )}
+                                            </button>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground">
+                                            Chấp nhận: JPEG, PNG, PDF (tối đa 10MB)
+                                        </p>
+                                        {uploadError && (
+                                            <div className="flex items-center gap-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                                                <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                                                <p className="text-xs text-red-600 dark:text-red-400">{uploadError}</p>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Files List */}
+                                    {appointment.result?.files && appointment.result.files.length > 0 && (
+                                        <div className="space-y-2">
+                                            <p className="text-xs font-medium text-muted-foreground">Danh sách file:</p>
+                                            <div className="space-y-2">
+                                                {appointment.result.files.map((file) => (
+                                                    <div
+                                                        key={file.id}
+                                                        className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border border-border hover:bg-muted/70 transition-colors"
+                                                    >
+                                                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                                                            <div className="p-2 bg-primary/10 rounded-lg">
+                                                                {file.fileType.startsWith('image/') ? (
+                                                                    <FileText className="h-4 w-4 text-primary" />
+                                                                ) : (
+                                                                    <FileText className="h-4 w-4 text-red-600" />
+                                                                )}
+                                                            </div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <p className="text-sm font-medium text-foreground truncate">
+                                                                    {file.fileName}
+                                                                </p>
+                                                                <p className="text-xs text-muted-foreground">
+                                                                    {formatFileSize(file.fileSize)} • {new Date(file.createdAt).toLocaleDateString('vi-VN')}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <a
+                                                                href={file.fileUrl}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="p-2 hover:bg-primary/10 rounded-lg transition-colors"
+                                                                title="Tải xuống"
+                                                            >
+                                                                <Download className="h-4 w-4 text-primary" />
+                                                            </a>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleFileDelete(file.id)}
+                                                                disabled={deleteFileMutation.isPending}
+                                                                className="p-2 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50"
+                                                                title="Xóa file"
+                                                            >
+                                                                {deleteFileMutation.isPending ? (
+                                                                    <Loader2 className="h-4 w-4 text-red-600 animate-spin" />
+                                                                ) : (
+                                                                    <Trash2 className="h-4 w-4 text-red-600" />
+                                                                )}
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </CardContent>

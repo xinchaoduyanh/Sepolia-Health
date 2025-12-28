@@ -5,6 +5,7 @@ import {
     type DoctorAppointmentsListResponse,
     type CreateAppointmentResultDto,
     type AppointmentResult,
+    type AppointmentResultFile,
 } from '../lib/api-services'
 import { queryKeys } from '../lib/query-keys'
 
@@ -108,3 +109,52 @@ export function usePatientMedicalHistory(
         refetchOnWindowFocus: false,
     })
 }
+
+/**
+ * Hook to upload file for appointment result
+ */
+export function useUploadResultFile() {
+    const queryClient = useQueryClient()
+
+    return useMutation<AppointmentResultFile, Error, { resultId: number; file: File; appointmentId: number }>({
+        mutationFn: ({ resultId, file }) => doctorAppointmentService.uploadResultFile(resultId, file),
+        onSuccess: (_, variables) => {
+            // Invalidate with exact query key pattern
+            const queryKey = queryKeys.doctor?.appointments?.detail(variables.appointmentId.toString()) || ['doctor', 'appointments', variables.appointmentId]
+            
+            queryClient.invalidateQueries({
+                queryKey: queryKey,
+            })
+            
+            // Force refetch to ensure immediate update
+            queryClient.refetchQueries({
+                queryKey: queryKey,
+            })
+        },
+    })
+}
+
+/**
+ * Hook to delete file from appointment result
+ */
+export function useDeleteResultFile() {
+    const queryClient = useQueryClient()
+
+    return useMutation<{ success: boolean; message: string }, Error, { resultId: number; fileId: number; appointmentId: number }>({
+        mutationFn: ({ resultId, fileId }) => doctorAppointmentService.deleteResultFile(resultId, fileId),
+        onSuccess: (_, variables) => {
+            // Invalidate with exact query key pattern
+            const queryKey = queryKeys.doctor?.appointments?.detail(variables.appointmentId.toString()) || ['doctor', 'appointments', variables.appointmentId]
+            
+            queryClient.invalidateQueries({
+                queryKey: queryKey,
+            })
+            
+            // Force refetch to ensure immediate update
+            queryClient.refetchQueries({
+                queryKey: queryKey,
+            })
+        },
+    })
+}
+
