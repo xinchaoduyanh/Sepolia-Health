@@ -621,24 +621,6 @@ export default function AppointmentDetailPage() {
                                         />
                                     </div>
 
-                                    {/* Submit Button */}
-                                    <button
-                                        type="submit"
-                                        disabled={createOrUpdateMutation.isPending}
-                                        className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary/90 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        {createOrUpdateMutation.isPending ? (
-                                            <>
-                                                <Loader2 className="h-4 w-4 animate-spin" />
-                                                Đang lưu...
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Save className="h-4 w-4" />
-                                                {hasResult ? 'Cập nhật kết quả' : 'Lưu kết quả'}
-                                            </>
-                                        )}
-                                    </button>
                                 </form>
                             ) : (
                                 <div className="text-center py-8">
@@ -770,6 +752,25 @@ export default function AppointmentDetailPage() {
                                             </div>
                                         </div>
                                     )}
+
+                                    {/* Submit Button - Moved here after file section */}
+                                    <button
+                                        onClick={handleSubmit}
+                                        disabled={createOrUpdateMutation.isPending}
+                                        className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary/90 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-4"
+                                    >
+                                        {createOrUpdateMutation.isPending ? (
+                                            <>
+                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                                Đang lưu...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Save className="h-4 w-4" />
+                                                {hasResult ? 'Cập nhật kết quả' : 'Lưu kết quả'}
+                                            </>
+                                        )}
+                                    </button>
                                 </div>
                             )}
                         </CardContent>

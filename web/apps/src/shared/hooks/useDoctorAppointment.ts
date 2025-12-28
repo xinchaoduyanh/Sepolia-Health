@@ -8,6 +8,7 @@ import {
     type AppointmentResultFile,
 } from '../lib/api-services'
 import { queryKeys } from '../lib/query-keys'
+import { toast } from '@workspace/ui/components/Sonner'
 
 /**
  * Hook to get doctor's appointments list
@@ -60,6 +61,18 @@ export function useCreateOrUpdateAppointmentResult() {
             // Invalidate specific appointment
             queryClient.invalidateQueries({
                 queryKey: ['doctor', 'appointments', variables.appointmentId],
+            })
+            
+            // Show success toast
+            toast.success({
+                title: 'Thành công',
+                description: 'Đã cập nhật kết quả khám thành công!',
+            })
+        },
+        onError: (error: any) => {
+            toast.error({
+                title: 'Lỗi',
+                description: error?.message || 'Không thể cập nhật kết quả khám',
             })
         },
     })
