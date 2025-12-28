@@ -1312,6 +1312,7 @@ export class AppointmentService {
             appointmentId: appointment.result.appointmentId,
             createdAt: appointment.result.createdAt,
             updatedAt: appointment.result.updatedAt,
+            files: appointment.result.files || [], // ✅ Include files array
           }
         : undefined,
       doctorServiceId: appointment.doctorServiceId,

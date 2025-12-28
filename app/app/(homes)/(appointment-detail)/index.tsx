@@ -446,7 +446,7 @@ export default function AppointmentDetailScreen() {
 
                 {/* File Attachments */}
                 {appointment.result.files && appointment.result.files.length > 0 && (
-                  <ResultFileList files={appointment.result.files} />
+                  <ResultFileList files={appointment.result.files || []} />
                 )}
 
                 <Text style={{ fontSize: 12, color: '#9CA3AF', marginTop: 8 }}>
