@@ -15,6 +15,7 @@ export * from './useDoctorAppointment'
 export * from './useDoctorProfile'
 export * from './usePromotions'
 export * from './usePromotionDisplays'
+export * from './useSpeechToText'
 // Export QNA hooks (excluding useTags to avoid conflict with admin useTags)
 export {
     useQuestions,

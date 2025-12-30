@@ -1,6 +1,7 @@
 'use client'
 
-import { useCreateOrUpdateAppointmentResult, useDoctorAppointment, useUploadResultFile, useDeleteResultFile } from '@/shared/hooks'
+import { useCreateOrUpdateAppointmentResult, useDoctorAppointment, useUploadResultFile, useDeleteResultFile, useSpeechToText } from '@/shared/hooks'
+import { VoiceInputButton } from '@/shared/components/VoiceInputButton'
 import { formatDate, formatTime } from '@/util/datetime'
 import { Badge } from '@workspace/ui/components/Badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@workspace/ui/components/Card'
@@ -22,6 +23,7 @@ import {
     IdCard,
     Loader2,
     MapPin,
+    Mic,
     Paperclip,
     Save,
     Star,
@@ -90,6 +92,18 @@ export default function AppointmentDetailPage() {
     const [isEditing, setIsEditing] = useState(false)
     const [selectedFile, setSelectedFile] = useState<File | null>(null)
     const [uploadError, setUploadError] = useState<string>('')
+    const [activeVoiceField, setActiveVoiceField] = useState<string | null>(null)
+
+    // Speech-to-Text hook
+    const {
+        transcript,
+        isListening,
+        isSupported: isSpeechSupported,
+        startListening,
+        stopListening,
+        resetTranscript,
+        error: speechError,
+    } = useSpeechToText()
 
     // Load existing result when appointment data is available
     useEffect(() => {
@@ -138,6 +152,33 @@ export default function AppointmentDetailPage() {
             [name]: value,
         }))
     }
+
+    const handleVoiceToggle = (fieldName: string) => {
+        if (isListening && activeVoiceField === fieldName) {
+            // Stop listening for this field
+            stopListening()
+            setActiveVoiceField(null)
+        } else {
+            // Start listening for this field
+            if (isListening) {
+                stopListening()
+            }
+            resetTranscript()
+            setActiveVoiceField(fieldName)
+            startListening()
+        }
+    }
+
+    // Update form data when transcript changes
+    useEffect(() => {
+        if (transcript && activeVoiceField) {
+            setFormData(prev => ({
+                ...prev,
+                [activeVoiceField]: prev[activeVoiceField as keyof typeof prev] + transcript,
+            }))
+            resetTranscript()
+        }
+    }, [transcript, activeVoiceField, resetTranscript])
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
@@ -546,12 +587,19 @@ export default function AppointmentDetailPage() {
                                 <form onSubmit={handleSubmit} className="space-y-4">
                                     {/* Diagnosis */}
                                     <div>
-                                        <label
-                                            htmlFor="diagnosis"
-                                            className="block text-sm font-medium text-foreground mb-2"
-                                        >
-                                            Chẩn đoán <span className="text-red-500">*</span>
-                                        </label>
+                                        <div className="flex items-center justify-between mb-2">
+                                            <label
+                                                htmlFor="diagnosis"
+                                                className="block text-sm font-medium text-foreground"
+                                            >
+                                                Chẩn đoán <span className="text-red-500">*</span>
+                                            </label>
+                                            <VoiceInputButton
+                                                isListening={isListening && activeVoiceField === 'diagnosis'}
+                                                isSupported={isSpeechSupported}
+                                                onToggle={() => handleVoiceToggle('diagnosis')}
+                                            />
+                                        </div>
                                         <textarea
                                             id="diagnosis"
                                             name="diagnosis"
@@ -562,16 +610,29 @@ export default function AppointmentDetailPage() {
                                             placeholder="Nhập chẩn đoán..."
                                             required
                                         />
+                                        {isListening && activeVoiceField === 'diagnosis' && (
+                                            <p className="text-xs text-red-600 dark:text-red-400 mt-1 flex items-center gap-1">
+                                                <span className="inline-block w-2 h-2 bg-red-600 rounded-full animate-pulse"></span>
+                                                Đang ghi âm...
+                                            </p>
+                                        )}
                                     </div>
 
                                     {/* Notes */}
                                     <div>
-                                        <label
-                                            htmlFor="notes"
-                                            className="block text-sm font-medium text-foreground mb-2"
-                                        >
-                                            Ghi chú
-                                        </label>
+                                        <div className="flex items-center justify-between mb-2">
+                                            <label
+                                                htmlFor="notes"
+                                                className="block text-sm font-medium text-foreground"
+                                            >
+                                                Ghi chú
+                                            </label>
+                                            <VoiceInputButton
+                                                isListening={isListening && activeVoiceField === 'notes'}
+                                                isSupported={isSpeechSupported}
+                                                onToggle={() => handleVoiceToggle('notes')}
+                                            />
+                                        </div>
                                         <textarea
                                             id="notes"
                                             name="notes"
@@ -581,16 +642,29 @@ export default function AppointmentDetailPage() {
                                             className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none text-sm"
                                             placeholder="Nhập ghi chú của bác sĩ..."
                                         />
+                                        {isListening && activeVoiceField === 'notes' && (
+                                            <p className="text-xs text-red-600 dark:text-red-400 mt-1 flex items-center gap-1">
+                                                <span className="inline-block w-2 h-2 bg-red-600 rounded-full animate-pulse"></span>
+                                                Đang ghi âm...
+                                            </p>
+                                        )}
                                     </div>
 
                                     {/* Prescription */}
                                     <div>
-                                        <label
-                                            htmlFor="prescription"
-                                            className="block text-sm font-medium text-foreground mb-2"
-                                        >
-                                            Đơn thuốc
-                                        </label>
+                                        <div className="flex items-center justify-between mb-2">
+                                            <label
+                                                htmlFor="prescription"
+                                                className="block text-sm font-medium text-foreground"
+                                            >
+                                                Đơn thuốc
+                                            </label>
+                                            <VoiceInputButton
+                                                isListening={isListening && activeVoiceField === 'prescription'}
+                                                isSupported={isSpeechSupported}
+                                                onToggle={() => handleVoiceToggle('prescription')}
+                                            />
+                                        </div>
                                         <textarea
                                             id="prescription"
                                             name="prescription"
@@ -600,16 +674,29 @@ export default function AppointmentDetailPage() {
                                             className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none text-sm"
                                             placeholder="Nhập đơn thuốc..."
                                         />
+                                        {isListening && activeVoiceField === 'prescription' && (
+                                            <p className="text-xs text-red-600 dark:text-red-400 mt-1 flex items-center gap-1">
+                                                <span className="inline-block w-2 h-2 bg-red-600 rounded-full animate-pulse"></span>
+                                                Đang ghi âm...
+                                            </p>
+                                        )}
                                     </div>
 
                                     {/* Recommendations */}
                                     <div>
-                                        <label
-                                            htmlFor="recommendations"
-                                            className="block text-sm font-medium text-foreground mb-2"
-                                        >
-                                            Khuyến nghị, lời dặn
-                                        </label>
+                                        <div className="flex items-center justify-between mb-2">
+                                            <label
+                                                htmlFor="recommendations"
+                                                className="block text-sm font-medium text-foreground"
+                                            >
+                                                Khuyến nghị, lời dặn
+                                            </label>
+                                            <VoiceInputButton
+                                                isListening={isListening && activeVoiceField === 'recommendations'}
+                                                isSupported={isSpeechSupported}
+                                                onToggle={() => handleVoiceToggle('recommendations')}
+                                            />
+                                        </div>
                                         <textarea
                                             id="recommendations"
                                             name="recommendations"
@@ -619,7 +706,21 @@ export default function AppointmentDetailPage() {
                                             className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none text-sm"
                                             placeholder="Nhập khuyến nghị, lời dặn..."
                                         />
+                                        {isListening && activeVoiceField === 'recommendations' && (
+                                            <p className="text-xs text-red-600 dark:text-red-400 mt-1 flex items-center gap-1">
+                                                <span className="inline-block w-2 h-2 bg-red-600 rounded-full animate-pulse"></span>
+                                                Đang ghi âm...
+                                            </p>
+                                        )}
                                     </div>
+
+                                    {/* Speech Error Display */}
+                                    {speechError && (
+                                        <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                                            <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400 flex-shrink-0" />
+                                            <p className="text-sm text-red-600 dark:text-red-400">{speechError}</p>
+                                        </div>
+                                    )}
 
                                 </form>
                             ) : (

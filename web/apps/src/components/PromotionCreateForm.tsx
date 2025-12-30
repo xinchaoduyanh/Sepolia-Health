@@ -72,15 +72,18 @@ export function PromotionCreateForm({ promotionId }: PromotionCreateFormProps) {
             errors.code = 'Mã voucher không được để trống'
         }
 
-        if (formData.discountPercent < 0 || formData.discountPercent > 100) {
-            errors.discountPercent = 'Phần trăm giảm giá phải từ 0 đến 100'
+        // Validate discount percent: must be between 1 and 100
+        if (formData.discountPercent < 1 || formData.discountPercent > 100) {
+            errors.discountPercent = 'Phần trăm giảm giá phải từ 1% đến 100%'
         }
 
-        if (formData.maxDiscountAmount < 1000) {
-            errors.maxDiscountAmount = 'Số tiền giảm giá tối đa phải >= 1000 VND'
-        }
+        // Validate max discount amount: must be integer between 1,000 and 1,000,000 VND
         if (!Number.isInteger(formData.maxDiscountAmount)) {
             errors.maxDiscountAmount = 'Số tiền giảm giá tối đa phải là số nguyên'
+        } else if (formData.maxDiscountAmount < 1000) {
+            errors.maxDiscountAmount = 'Số tiền giảm giá tối đa phải >= 1,000 VND'
+        } else if (formData.maxDiscountAmount > 1000000) {
+            errors.maxDiscountAmount = 'Số tiền giảm giá tối đa phải < 1,000,000 VND'
         }
 
         if (!formData.validFrom) {
@@ -225,7 +228,7 @@ export function PromotionCreateForm({ promotionId }: PromotionCreateFormProps) {
                             <InputField
                                 id="discountPercent"
                                 type="number"
-                                min="0"
+                                min="1"
                                 max="100"
                                 step="0.1"
                                 placeholder="10"
@@ -249,6 +252,7 @@ export function PromotionCreateForm({ promotionId }: PromotionCreateFormProps) {
                                 id="maxDiscountAmount"
                                 type="number"
                                 min="1000"
+                                max="1000000"
                                 step="1000"
                                 placeholder="100000"
                                 value={formData.maxDiscountAmount.toString()}
