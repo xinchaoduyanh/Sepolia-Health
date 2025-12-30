@@ -135,7 +135,7 @@ export function DoctorCreateForm() {
             password: accountInfo.password,
             phone: accountInfo.phone,
             fullName: `${doctorProfile.firstName} ${doctorProfile.lastName}`.trim(),
-            experienceYears: 2025 - doctorProfile.experienceYear,
+            experienceYears: doctorProfile.experienceYear,
             description: doctorProfile.description || undefined,
             address: doctorProfile.address || undefined,
             clinicId: doctorProfile.clinicId,

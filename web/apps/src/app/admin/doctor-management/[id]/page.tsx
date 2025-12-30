@@ -17,8 +17,7 @@ export default function DoctorDetailPage() {
     }
 
     const handleEdit = (id: string) => {
-        // TODO: Navigate to edit page
-        console.log('Edit doctor:', id)
+        router.push(`/admin/doctor-management/edit/${id}`)
     }
 
     if (isLoading) {
@@ -60,7 +59,7 @@ export default function DoctorDetailPage() {
         totalPatients: doctor.appointmentStats.total, // Use total appointments as proxy for patients
         totalAppointments: doctor.appointmentStats.total,
         rating: 4.5, // TODO: Add rating
-        experience: `${doctor.experienceYears} năm`,
+        experience: `${new Date().getFullYear() - (doctor.experienceYears || 0)} năm`,
         education: 'Đại học Y khoa', // TODO: Add education field
         certifications: ['Chứng chỉ hành nghề'], // TODO: Add certifications
         languages: ['Tiếng Việt'], // TODO: Add languages

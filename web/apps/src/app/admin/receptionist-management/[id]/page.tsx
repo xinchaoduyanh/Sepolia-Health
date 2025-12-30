@@ -17,8 +17,7 @@ export default function ReceptionistDetailPage() {
     }
 
     const handleEdit = (id: string) => {
-        // TODO: Navigate to edit page
-        console.log('Edit receptionist:', id)
+        router.push(`/admin/receptionist-management/edit/${id}`)
     }
 
     if (isLoading) {
