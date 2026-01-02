@@ -61,6 +61,8 @@ export default function NotificationScreen() {
         return { icon: 'checkmark-circle', color: '#10B981' };
       case 'PAYMENT_FAILED':
         return { icon: 'alert-circle-outline', color: '#EF4444' };
+      case 'APPOINTMENT_RESULT_PATIENT':
+        return { icon: 'document-text', color: '#10B981' };
       default:
         return { icon: 'notifications', color: '#0284C7' };
     }

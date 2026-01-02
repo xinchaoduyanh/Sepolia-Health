@@ -494,3 +494,52 @@ export class CreateDoctorScheduleDtoClass {
   })
   notes?: string;
 }
+
+export const UpdateDoctorScheduleSchema = z.object({
+  dayOfWeek: z.number().min(0).max(6).optional(),
+  startTime: z.string().optional(),
+  endTime: z.string().optional(),
+  locationId: z.number().optional(),
+  notes: z.string().optional(),
+});
+
+export type UpdateDoctorScheduleDto = z.infer<
+  typeof UpdateDoctorScheduleSchema
+>;
+
+export class UpdateDoctorScheduleDtoClass {
+  @ApiProperty({
+    description: 'Thứ trong tuần (0 = Chủ nhật, 6 = Thứ 7)',
+    example: 1,
+    required: false,
+  })
+  dayOfWeek?: number;
+
+  @ApiProperty({
+    description: 'Giờ bắt đầu',
+    example: '08:00',
+    required: false,
+  })
+  startTime?: string;
+
+  @ApiProperty({
+    description: 'Giờ kết thúc',
+    example: '17:00',
+    required: false,
+  })
+  endTime?: string;
+
+  @ApiProperty({
+    description: 'ID cơ sở phòng khám',
+    example: 1,
+    required: false,
+  })
+  locationId?: number;
+
+  @ApiProperty({
+    description: 'Ghi chú',
+    example: 'Lịch làm việc cập nhật',
+    required: false,
+  })
+  notes?: string;
+}

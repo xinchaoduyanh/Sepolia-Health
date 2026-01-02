@@ -7,6 +7,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { NotificationService } from '@/module/notification/notification.service';
 import { AppointmentStatus } from '@prisma/client';
 import { fileTypeFromBuffer } from 'file-type';
 import {
@@ -23,6 +24,7 @@ export class DoctorAppointmentService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly uploadService: UploadService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   /**
@@ -297,7 +299,7 @@ export class DoctorAppointmentService {
         },
       },
     });
-    console.log(appointment)
+    console.log(appointment);
     if (!appointment) {
       throw new NotFoundException(ERROR_MESSAGES.COMMON.RESOURCE_NOT_FOUND);
     }
@@ -406,6 +408,11 @@ export class DoctorAppointmentService {
       where: { id: appointmentId },
       include: {
         result: true,
+        patientProfile: {
+          include: {
+            manager: true,
+          },
+        },
       },
     });
 
@@ -429,6 +436,7 @@ export class DoctorAppointmentService {
 
     // Create or update result
     let result;
+    const isUpdate = !!appointment.result;
     if (appointment.result) {
       // Update existing result
       result = await this.prisma.appointmentResult.update({
@@ -455,6 +463,24 @@ export class DoctorAppointmentService {
           recommendations: createResultDto.recommendations || null,
         },
       });
+    }
+
+    // Send notification to patient
+    try {
+      if (appointment.patientProfile?.manager?.id) {
+        await this.notificationService.sendAppointmentResultPatientNotification(
+          {
+            appointmentId: appointment.id,
+            diagnosis: result.diagnosis || 'Chưa có chẩn đoán',
+            doctorName: `${doctorProfile.firstName} ${doctorProfile.lastName}`,
+            recipientId: appointment.patientProfile.manager.id.toString(),
+            isUpdate,
+          },
+        );
+      }
+    } catch (error) {
+      console.error('Failed to send appointment result notification:', error);
+      // Don't throw error to not block the result creation/update
     }
 
     return {

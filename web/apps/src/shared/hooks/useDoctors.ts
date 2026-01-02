@@ -7,6 +7,8 @@ import {
     type Service,
     type CreateDoctorRequest,
     type UpdateDoctorRequest,
+    type CreateDoctorScheduleRequest,
+    type UpdateDoctorScheduleRequest,
 } from '../lib/api-services/doctors.service'
 import { queryKeys } from '../lib/query-keys'
 
@@ -174,6 +176,109 @@ export function useDeleteDoctor() {
         },
         onError: (error: any) => {
             const message = error?.response?.data?.message || 'Có lỗi xảy ra khi xóa bác sĩ'
+            toast.error({
+                title: 'Lỗi',
+                description: message,
+            })
+        },
+    })
+}
+
+/**
+ * Hook to get doctor schedule
+ */
+export function useDoctorSchedule(doctorId: number) {
+    return useQuery({
+        queryKey: queryKeys.admin.doctors.schedule(doctorId.toString()),
+        queryFn: () => doctorsService.getDoctorSchedule(doctorId),
+        enabled: !!doctorId,
+        staleTime: 5 * 60 * 1000,
+    })
+}
+
+/**
+ * Hook to create doctor schedule
+ */
+export function useCreateDoctorSchedule() {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: ({ doctorId, data }: { doctorId: number; data: CreateDoctorScheduleRequest }) =>
+            doctorsService.createDoctorSchedule(doctorId, data),
+        onSuccess: (_response, { doctorId }) => {
+            queryClient.invalidateQueries({
+                queryKey: queryKeys.admin.doctors.schedule(doctorId.toString()),
+            })
+            toast.success({
+                title: 'Thành công',
+                description: 'Thêm lịch làm việc thành công',
+            })
+        },
+        onError: (error: any) => {
+            const message = error?.response?.data?.message || 'Có lỗi xảy ra khi thêm lịch làm việc'
+            toast.error({
+                title: 'Lỗi',
+                description: message,
+            })
+        },
+    })
+}
+
+/**
+ * Hook to update doctor schedule
+ */
+export function useUpdateDoctorSchedule() {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: ({
+            doctorId,
+            scheduleId,
+            data,
+        }: {
+            doctorId: number
+            scheduleId: number
+            data: UpdateDoctorScheduleRequest
+        }) => doctorsService.updateDoctorSchedule(doctorId, scheduleId, data),
+        onSuccess: (_response, { doctorId }) => {
+            queryClient.invalidateQueries({
+                queryKey: queryKeys.admin.doctors.schedule(doctorId.toString()),
+            })
+            toast.success({
+                title: 'Thành công',
+                description: 'Cập nhật lịch làm việc thành công',
+            })
+        },
+        onError: (error: any) => {
+            const message = error?.response?.data?.message || 'Có lỗi xảy ra khi cập nhật lịch làm việc'
+            toast.error({
+                title: 'Lỗi',
+                description: message,
+            })
+        },
+    })
+}
+
+/**
+ * Hook to delete doctor schedule
+ */
+export function useDeleteDoctorSchedule() {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: ({ doctorId, scheduleId }: { doctorId: number; scheduleId: number }) =>
+            doctorsService.deleteDoctorSchedule(doctorId, scheduleId),
+        onSuccess: (_response, { doctorId }) => {
+            queryClient.invalidateQueries({
+                queryKey: queryKeys.admin.doctors.schedule(doctorId.toString()),
+            })
+            toast.success({
+                title: 'Thành công',
+                description: 'Xóa lịch làm việc thành công',
+            })
+        },
+        onError: (error: any) => {
+            const message = error?.response?.data?.message || 'Có lỗi xảy ra khi xóa lịch làm việc'
             toast.error({
                 title: 'Lỗi',
                 description: message,

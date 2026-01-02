@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from 'next/navigation'
 import { DoctorDetail } from '@/components/DoctorDetail'
-import { useDoctor } from '@/shared/hooks/useDoctors'
+import { useDoctor, useDoctorSchedule, useAdminAppointments } from '@/shared/hooks'
 import { Spinner } from '@workspace/ui/components/Spinner'
 
 export default function DoctorDetailPage() {
@@ -10,7 +10,9 @@ export default function DoctorDetailPage() {
     const router = useRouter()
     const doctorId = parseInt(params.id as string)
 
-    const { data: doctor, isLoading, error } = useDoctor(doctorId)
+    const { data: doctor, isLoading: isLoadingDoctor, error: errorDoctor } = useDoctor(doctorId)
+    const { data: scheduleData, isLoading: isLoadingSchedule } = useDoctorSchedule(doctorId)
+    const { data: appointmentsData, isLoading: isLoadingAppointments } = useAdminAppointments({ doctorId }, true)
 
     const handleBack = () => {
         router.push('/admin/doctor-management')
@@ -20,7 +22,7 @@ export default function DoctorDetailPage() {
         router.push(`/admin/doctor-management/edit/${id}`)
     }
 
-    if (isLoading) {
+    if (isLoadingDoctor || isLoadingSchedule || isLoadingAppointments) {
         return (
             <div className="flex items-center justify-center min-h-[400px]">
                 <Spinner />
@@ -28,7 +30,7 @@ export default function DoctorDetailPage() {
         )
     }
 
-    if (error || !doctor) {
+    if (errorDoctor || !doctor) {
         return (
             <div className="flex items-center justify-center min-h-[400px]">
                 <div className="text-center">
@@ -45,7 +47,7 @@ export default function DoctorDetailPage() {
         fullName: doctor.fullName,
         email: doctor.email,
         phone: doctor.phone || '',
-        specialty: doctor.services.map(s => s.name) || [],
+        specialty: doctor.services?.map(s => s.name) || [],
         site: doctor.clinic?.name || 'Chưa xác định',
         cm: 'CM1', // TODO: Add clinic manager info
         status: doctor.status.toLowerCase(),
@@ -56,19 +58,38 @@ export default function DoctorDetailPage() {
         gender: 'male', // TODO: Add gender field
         joinDate: '2024-01-01', // TODO: Add join date
         lastActive: new Date().toISOString().split('T')[0],
-        totalPatients: doctor.appointmentStats.total, // Use total appointments as proxy for patients
-        totalAppointments: doctor.appointmentStats.total,
+        totalPatients: doctor.appointmentStats?.total || 0,
+        totalAppointments: doctor.appointmentStats?.total || 0,
+        completedAppointments: doctor.appointmentStats?.completed || 0,
+        upcomingAppointments: doctor.appointmentStats?.upcoming || 0,
         rating: 4.5, // TODO: Add rating
-        experience: `${new Date().getFullYear() - (doctor.experienceYears || 0)} năm`,
+        experience: `${new Date().getFullYear() - (doctor.experienceYears || new Date().getFullYear())} năm`,
         education: 'Đại học Y khoa', // TODO: Add education field
         certifications: ['Chứng chỉ hành nghề'], // TODO: Add certifications
         languages: ['Tiếng Việt'], // TODO: Add languages
         bio: doctor.description || 'Chưa có mô tả',
-        schedule: [], // TODO: Add schedule data
-        recentAppointments: [], // TODO: Add recent appointments
+        schedule: scheduleData?.schedules?.map(s => ({
+            day: ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'][s.dayOfWeek] || 'Thứ 2',
+            time: `${s.startTime} - ${s.endTime}`,
+            location: 'Phòng khám',
+            id: s.id
+        })) || [],
+        recentAppointments: appointmentsData?.appointments?.map(a => ({
+            id: a.id.toString(),
+            patient: a.patientName,
+            serviceName: a.service.name,
+            date: a.date,
+            time: a.startTime,
+            status: a.status.toLowerCase()
+        })) || [],
     }
 
     return (
-        <DoctorDetail doctorId={doctorId.toString()} onBack={handleBack} onEdit={handleEdit} data={doctorDetailData} />
+        <DoctorDetail 
+            doctorId={doctorId.toString()} 
+            onBack={handleBack} 
+            onEdit={handleEdit} 
+            data={doctorDetailData} 
+        />
     )
 }

@@ -29,14 +29,17 @@ import {
   DoctorListResponseDto,
   DoctorDetailResponseDto,
   CreateDoctorScheduleDto,
+  UpdateDoctorScheduleDto,
   CreateDoctorDtoClass,
   UpdateDoctorDtoClass,
   UpdateDoctorStatusDtoClass,
   CreateDoctorScheduleDtoClass,
+  UpdateDoctorScheduleDtoClass,
   CreateDoctorSchema,
   UpdateDoctorSchema,
   UpdateDoctorStatusSchema,
   CreateDoctorScheduleSchema,
+  UpdateDoctorScheduleSchema,
   GetDoctorsQueryDto,
   GetDoctorsQuerySchema,
 } from './admin-doctor.dto';
@@ -202,5 +205,47 @@ export class AdminDoctorController {
   })
   async getDoctorSchedule(@Param('id') id: string) {
     return this.adminDoctorService.getDoctorSchedule(Number(id));
+  }
+
+  @Patch(':id/schedule/:scheduleId')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Cập nhật lịch làm việc của bác sĩ' })
+  @ApiParam({ name: 'id', description: 'ID bác sĩ' })
+  @ApiParam({ name: 'scheduleId', description: 'ID lịch làm việc' })
+  @ApiBody({ type: UpdateDoctorScheduleDtoClass })
+  @ApiResponse({
+    status: 200,
+    description: 'Cập nhật lịch làm việc thành công',
+  })
+  async updateDoctorSchedule(
+    @Param('id') id: string,
+    @Param('scheduleId') scheduleId: string,
+    @Body(new CustomZodValidationPipe(UpdateDoctorScheduleSchema))
+    updateScheduleDto: UpdateDoctorScheduleDto,
+  ): Promise<{ message: string }> {
+    return this.adminDoctorService.updateDoctorSchedule(
+      Number(id),
+      Number(scheduleId),
+      updateScheduleDto,
+    );
+  }
+
+  @Delete(':id/schedule/:scheduleId')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Xóa lịch làm việc của bác sĩ' })
+  @ApiParam({ name: 'id', description: 'ID bác sĩ' })
+  @ApiParam({ name: 'scheduleId', description: 'ID lịch làm việc' })
+  @ApiResponse({
+    status: 200,
+    description: 'Xóa lịch làm việc thành công',
+  })
+  async deleteDoctorSchedule(
+    @Param('id') id: string,
+    @Param('scheduleId') scheduleId: string,
+  ): Promise<{ message: string }> {
+    return this.adminDoctorService.deleteDoctorSchedule(
+      Number(id),
+      Number(scheduleId),
+    );
   }
 }

@@ -14,6 +14,7 @@ import {
   GetDoctorsQueryDto,
   UpdateDoctorDto,
   UpdateDoctorStatusDto,
+  UpdateDoctorScheduleDto,
 } from './admin-doctor.dto';
 
 @Injectable()
@@ -603,72 +604,6 @@ export class AdminDoctorService {
 
     return { message: 'Xóa bác sĩ thành công' };
   }
-
-  async createDoctorSchedule(
-    doctorId: number,
-    createScheduleDto: CreateDoctorScheduleDto,
-  ): Promise<{ message: string }> {
-    // Check if doctor exists
-    const doctor = await this.prisma.doctorProfile.findUnique({
-      where: { id: doctorId },
-    });
-
-    if (!doctor) {
-      throw new NotFoundException('Không tìm thấy bác sĩ');
-    }
-
-    // Check if schedule already exists for this day
-    const existingSchedule = await this.prisma.doctorAvailability.findFirst({
-      where: {
-        doctorId,
-        dayOfWeek: createScheduleDto.dayOfWeek,
-      },
-    });
-
-    if (existingSchedule) {
-      throw new ConflictException('Lịch làm việc cho ngày này đã tồn tại');
-    }
-
-    // Create new schedule
-    await this.prisma.doctorAvailability.create({
-      data: {
-        doctorId,
-        dayOfWeek: createScheduleDto.dayOfWeek,
-        startTime: createScheduleDto.startTime,
-        endTime: createScheduleDto.endTime,
-      },
-    });
-
-    return { message: 'Tạo lịch làm việc thành công' };
-  }
-
-  async getDoctorSchedule(doctorId: number) {
-    // Check if doctor exists
-    const doctor = await this.prisma.doctorProfile.findUnique({
-      where: { id: doctorId, deletedAt: null },
-    });
-
-    if (!doctor) {
-      throw new NotFoundException('Không tìm thấy bác sĩ');
-    }
-
-    const schedules = await this.prisma.doctorAvailability.findMany({
-      where: { doctorId },
-      orderBy: { dayOfWeek: 'asc' },
-    });
-
-    return {
-      doctorId,
-      doctorName: `${doctor.lastName} ${doctor.firstName}`,
-      schedules: schedules.map((schedule) => ({
-        id: schedule.id,
-        dayOfWeek: schedule.dayOfWeek,
-        startTime: schedule.startTime,
-        endTime: schedule.endTime,
-      })),
-    };
-  }
-
   async getClinics() {
     const clinics = await this.prisma.clinic.findMany({
       where: {
@@ -705,5 +640,119 @@ export class AdminDoctorService {
     });
 
     return services;
+  }
+
+  async getDoctorSchedule(doctorId: number) {
+    const doctor = await this.prisma.doctorProfile.findUnique({
+      where: { id: doctorId },
+      include: {
+        availabilities: {
+          orderBy: {
+            dayOfWeek: 'asc',
+          },
+        },
+      },
+    });
+
+    if (!doctor) {
+      throw new NotFoundException('Không tìm thấy bác sĩ');
+    }
+
+    return {
+      doctorId: doctor.id,
+      fullName: `${doctor.firstName} ${doctor.lastName}`,
+      schedules: doctor.availabilities,
+    };
+  }
+
+  async createDoctorSchedule(
+    doctorId: number,
+    dto: CreateDoctorScheduleDto,
+  ): Promise<{ message: string }> {
+    // Validate doctor existence
+    const doctor = await this.prisma.doctorProfile.findUnique({
+      where: { id: doctorId },
+    });
+
+    if (!doctor) {
+      throw new NotFoundException('Không tìm thấy bác sĩ');
+    }
+
+    // Check if schedule for this day already exists
+    const existingSchedule = await this.prisma.doctorAvailability.findFirst({
+      where: {
+        doctorId,
+        dayOfWeek: dto.dayOfWeek,
+      },
+    });
+
+    if (existingSchedule) {
+      // Update existing instead of creating new
+      await this.prisma.doctorAvailability.update({
+        where: { id: existingSchedule.id },
+        data: {
+          startTime: dto.startTime,
+          endTime: dto.endTime,
+        },
+      });
+      return { message: 'Cập nhật lịch làm việc thành công' };
+    }
+
+    await this.prisma.doctorAvailability.create({
+      data: {
+        doctorId,
+        dayOfWeek: dto.dayOfWeek,
+        startTime: dto.startTime,
+        endTime: dto.endTime,
+      },
+    });
+
+    return { message: 'Thêm lịch làm việc thành công' };
+  }
+
+  async updateDoctorSchedule(
+    doctorId: number,
+    scheduleId: number,
+    dto: UpdateDoctorScheduleDto,
+  ): Promise<{ message: string }> {
+    const schedule = await this.prisma.doctorAvailability.findFirst({
+      where: {
+        id: scheduleId,
+        doctorId,
+      },
+    });
+
+    if (!schedule) {
+      throw new NotFoundException('Không tìm thấy lịch làm việc');
+    }
+
+    await this.prisma.doctorAvailability.update({
+      where: { id: scheduleId },
+      data: dto,
+    });
+
+    return { message: 'Cập nhật lịch làm việc thành công' };
+  }
+
+  async deleteDoctorSchedule(
+    doctorId: number,
+    scheduleId: number,
+  ): Promise<{ message: string }> {
+    const schedule = await this.prisma.doctorAvailability.findFirst({
+      where: {
+        id: scheduleId,
+        doctorId,
+      },
+    });
+
+    if (!schedule) {
+      throw new NotFoundException('Không tìm thấy lịch làm việc');
+    }
+
+    await this.prisma.doctorAvailability.delete({
+      where: { id: scheduleId },
+    });
+
+    return { message: 'Xóa lịch làm việc thành công' };
   }
 }

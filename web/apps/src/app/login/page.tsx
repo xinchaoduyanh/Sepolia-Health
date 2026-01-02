@@ -41,9 +41,13 @@ export default function LoginPage() {
     return (
         <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
             <div className="max-w-md w-full space-y-8">
-                <div className="text-center">
-                    <img className="mx-auto h-12 w-auto" src="/image/sepolia-icon.png" alt="Sepolia Health" />
-                    <h2 className="mt-6 text-3xl font-extrabold text-foreground">Đăng Nhập</h2>
+                <div className="text-center relative pt-24">
+                    <img 
+                        className="absolute top-0 left-1/2 -translate-x-1/2 h-32 w-auto pointer-events-none" 
+                        src="/image/sepolia-icon.png" 
+                        alt="Sepolia Health" 
+                    />
+                    <h2 className="mt-8 text-3xl font-extrabold text-foreground">Đăng Nhập</h2>
                     <p className="mt-2 text-sm text-muted-foreground">Đăng nhập vào tài khoản của bạn</p>
                 </div>
 

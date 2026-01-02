@@ -18,6 +18,9 @@ export enum NotificationType {
 
   // General System Notifications
   SYSTEM_NOTIFICATION = 'SYSTEM_NOTIFICATION',
+
+  // Appointment Result Notifications
+  APPOINTMENT_RESULT_PATIENT = 'APPOINTMENT_RESULT_PATIENT',
 }
 
 /**
@@ -153,6 +156,14 @@ export interface PaymentSuccessNotificationPatient {
   doctorName?: string;
   transactionId?: string;
   paymentMethod?: string;
+}
+
+export interface AppointmentResultNotificationPatient {
+  appointmentId: number;
+  diagnosis: string;
+  doctorName: string;
+  recipientId: string;
+  isUpdate?: boolean;
 }
 
 export interface NotificationResponse {

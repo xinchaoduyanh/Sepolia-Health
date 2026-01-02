@@ -4,6 +4,7 @@ import {
   HttpStatus,
   Param,
   ParseIntPipe,
+  Patch,
   Query,
 } from '@nestjs/common';
 import {
@@ -56,5 +57,17 @@ export class AdminAppointmentController {
     @Param('id', ParseIntPipe) id: number,
   ): Promise<AppointmentDetailResponseDto> {
     return this.adminAppointmentService.getAppointmentById(id);
+  }
+
+  @Patch(':id/cancel')
+  @ApiOperation({ summary: 'Hủy cuộc hẹn' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Hủy cuộc hẹn thành công',
+  })
+  async cancelAppointment(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<{ message: string }> {
+    return this.adminAppointmentService.cancelAppointment(id);
   }
 }

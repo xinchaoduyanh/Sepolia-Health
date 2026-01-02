@@ -82,6 +82,11 @@ export class AdminAppointmentService {
               firstName: true,
               lastName: true,
               avatar: true,
+              specialties: {
+                include: {
+                  specialty: true,
+                },
+              },
             },
           },
           service: {
@@ -147,7 +152,13 @@ export class AdminAppointmentService {
           select: {
             id: true,
             firstName: true,
+            lastName: true,
             avatar: true,
+            specialties: {
+              include: {
+                specialty: true,
+              },
+            },
           },
         },
         service: {
@@ -212,7 +223,11 @@ export class AdminAppointmentService {
       doctor: {
         id: appointment.doctor.id,
         fullName: `${appointment.doctor.firstName} ${appointment.doctor.lastName}`,
-        specialty: appointment.doctor.specialty,
+        specialty: appointment.doctor.specialties
+          ? appointment.doctor.specialties
+              .map((s: any) => s.specialty.name)
+              .join(', ')
+          : '',
         avatar: appointment.doctor.avatar || undefined,
       },
       service: {
@@ -252,5 +267,28 @@ export class AdminAppointmentService {
       createdAt: appointment.createdAt,
       updatedAt: appointment.updatedAt,
     };
+  }
+
+  async cancelAppointment(id: number): Promise<{ message: string }> {
+    const appointment = await this.prisma.appointment.findUnique({
+      where: { id },
+    });
+
+    if (!appointment) {
+      throw new NotFoundException('Không tìm thấy cuộc hẹn');
+    }
+
+    if (appointment.status === 'CANCELLED') {
+      return { message: 'Cuộc hẹn đã được hủy trước đó' };
+    }
+
+    await this.prisma.appointment.update({
+      where: { id },
+      data: {
+        status: 'CANCELLED',
+      },
+    });
+
+    return { message: 'Hủy cuộc hẹn thành công' };
   }
 }

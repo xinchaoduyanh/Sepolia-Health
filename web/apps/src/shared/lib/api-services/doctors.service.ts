@@ -28,6 +28,19 @@ export interface Doctor {
     createdAt: string
 }
 
+export interface DoctorSchedule {
+    id: number
+    dayOfWeek: number
+    startTime: string
+    endTime: string
+}
+
+export interface DoctorScheduleResponse {
+    doctorId: number
+    doctorName: string
+    schedules: DoctorSchedule[]
+}
+
 export interface DoctorsListParams {
     page?: number
     limit?: number
@@ -102,6 +115,22 @@ export interface UpdateDoctorStatusRequest {
     status: 'UNVERIFIED' | 'ACTIVE' | 'DEACTIVE'
 }
 
+export interface CreateDoctorScheduleRequest {
+    dayOfWeek: number
+    startTime: string
+    endTime: string
+    locationId: number
+    notes?: string
+}
+
+export interface UpdateDoctorScheduleRequest {
+    dayOfWeek?: number
+    startTime?: string
+    endTime?: string
+    locationId?: number
+    notes?: string
+}
+
 export type CreateDoctorResponse = Doctor
 
 export class DoctorsService {
@@ -167,6 +196,42 @@ export class DoctorsService {
      */
     async getServices(): Promise<Service[]> {
         return apiClient.get<Service[]>('admin/doctors/services/list')
+    }
+
+    /**
+     * Get doctor schedule
+     * GET /admin/doctors/{id}/schedule
+     */
+    async getDoctorSchedule(doctorId: number): Promise<DoctorScheduleResponse> {
+        return apiClient.get<DoctorScheduleResponse>(`/admin/doctors/${doctorId}/schedule`)
+    }
+
+    /**
+     * Create doctor schedule
+     * POST /admin/doctors/{id}/schedule
+     */
+    async createDoctorSchedule(doctorId: number, data: CreateDoctorScheduleRequest): Promise<{ message: string }> {
+        return apiClient.post<{ message: string }>(`/admin/doctors/${doctorId}/schedule`, data)
+    }
+
+    /**
+     * Update doctor schedule
+     * PATCH /admin/doctors/{id}/schedule/{scheduleId}
+     */
+    async updateDoctorSchedule(
+        doctorId: number,
+        scheduleId: number,
+        data: UpdateDoctorScheduleRequest
+    ): Promise<{ message: string }> {
+        return apiClient.patch<{ message: string }>(`/admin/doctors/${doctorId}/schedule/${scheduleId}`, data)
+    }
+
+    /**
+     * Delete doctor schedule
+     * DELETE /admin/doctors/{id}/schedule/{scheduleId}
+     */
+    async deleteDoctorSchedule(doctorId: number, scheduleId: number): Promise<{ message: string }> {
+        return apiClient.delete<{ message: string }>(`/admin/doctors/${doctorId}/schedule/${scheduleId}`)
     }
 }
 

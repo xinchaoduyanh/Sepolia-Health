@@ -20,6 +20,7 @@ import {
   PaymentSuccessNotificationPatient,
   UpdateAppointmentNotificationDoctor,
   UpdateAppointmentNotificationPatient,
+  AppointmentResultNotificationPatient,
 } from './notification.types';
 
 @Injectable()
@@ -424,6 +425,33 @@ export class NotificationService {
         amount: dto.amount,
         transactionId: dto.transactionId,
         paymentMethod: dto.paymentMethod,
+      },
+    });
+  }
+
+  /**
+   * Send notification when doctor creates or updates an appointment result for a patient
+   */
+  async sendAppointmentResultPatientNotification(
+    dto: AppointmentResultNotificationPatient,
+  ): Promise<NotificationResponse> {
+    const title = dto.isUpdate ? 'Kết quả khám đã cập nhật' : 'Kết quả khám mới';
+    const message = dto.isUpdate
+      ? `Bác sĩ ${dto.doctorName} đã cập nhật kết quả khám cho lịch hẹn #${dto.appointmentId}. Chẩn đoán: ${dto.diagnosis}.`
+      : `Bác sĩ ${dto.doctorName} đã hoàn tất kết quả khám cho lịch hẹn #${dto.appointmentId}. Chẩn đoán: ${dto.diagnosis}.`;
+
+    return this.sendNotification({
+      type: NotificationType.APPOINTMENT_RESULT_PATIENT,
+      priority: NotificationPriority.HIGH,
+      recipientId: dto.recipientId,
+      senderId: 'system',
+      title,
+      message,
+      metadata: {
+        appointmentId: dto.appointmentId,
+        diagnosis: dto.diagnosis,
+        doctorName: dto.doctorName,
+        isUpdate: dto.isUpdate,
       },
     });
   }
