@@ -106,7 +106,7 @@ export default function LoginScreen() {
                 />
                 <TextInput
                   className="ml-3 flex-1 text-base text-gray-800"
-                  placeholder="Số điện thoại/email đã đăng ký"
+                  placeholder="Email đã đăng ký"
                   placeholderTextColor="#9CA3AF"
                   value={email}
                   onChangeText={(text) => {

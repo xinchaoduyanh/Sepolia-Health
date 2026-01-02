@@ -762,26 +762,6 @@ export default function HomeScreen() {
               </View>
 
               <View style={{ width: '22%', alignItems: 'center' }}>
-                <TouchableOpacity style={{ alignItems: 'center' }}>
-                  <View
-                    style={{
-                      height: 56,
-                      width: 56,
-                      borderRadius: 16,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      backgroundColor: '#A7F3D0',
-                      marginBottom: 8,
-                    }}>
-                    <Ionicons name="card-outline" size={26} color="#10B981" />
-                  </View>
-                  <Text style={{ fontSize: 12, color: '#0F172A', textAlign: 'center' }}>
-                    Thanh toán
-                  </Text>
-                </TouchableOpacity>
-              </View>
-
-              <View style={{ width: '22%', alignItems: 'center' }}>
                 <TouchableOpacity
                   activeOpacity={0.7}
                   style={{ alignItems: 'center' }}
@@ -825,26 +805,6 @@ export default function HomeScreen() {
                   </View>
                   <Text style={{ fontSize: 12, color: '#0F172A', textAlign: 'center' }}>
                     Tin nhắn
-                  </Text>
-                </TouchableOpacity>
-              </View>
-
-              <View style={{ width: '22%', alignItems: 'center' }}>
-                <TouchableOpacity style={{ alignItems: 'center' }}>
-                  <View
-                    style={{
-                      height: 56,
-                      width: 56,
-                      borderRadius: 16,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      backgroundColor: '#A7F3D0',
-                      marginBottom: 8,
-                    }}>
-                    <Ionicons name="heart-outline" size={26} color="#10B981" />
-                  </View>
-                  <Text style={{ fontSize: 12, color: '#0F172A', textAlign: 'center' }}>
-                    Sức khỏe
                   </Text>
                 </TouchableOpacity>
               </View>
