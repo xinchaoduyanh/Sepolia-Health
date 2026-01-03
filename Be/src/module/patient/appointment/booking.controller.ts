@@ -79,6 +79,7 @@ export class BookingController {
   })
   @ApiResponse({
     status: HttpStatus.OK,
+    type: GetDoctorAvailabilityResponseDto,
     description: 'Lấy lịch bận thành công',
   })
   async getDoctorAvailability(

@@ -53,14 +53,6 @@ export default function AccountScreen() {
             end={{ x: 1, y: 1 }}
             style={{ flex: 1 }}
           />
-          {/* Curved bottom edge using SVG */}
-          <Svg
-            height="70"
-            width="200%"
-            viewBox="0 0 1440 120"
-            style={{ position: 'absolute', bottom: -1, left: 0, right: 0 }}>
-            <Path d="M0,0 Q720,120 1440,0 L1440,120 L0,120 Z" fill="#E0F2FE" />
-          </Svg>
 
           {/* Decorative circles */}
           <View
@@ -85,7 +77,6 @@ export default function AccountScreen() {
               backgroundColor: 'rgba(255,255,255,0.08)',
             }}
           />
-
           {/* Header + Avatar positioned within gradient */}
           <View
             style={{
@@ -144,10 +135,6 @@ export default function AccountScreen() {
                     ? `${user.lastName} ${user.firstName}`
                     : 'Người dùng'}
               </Text>
-              {/* <Text style={{ fontSize: 14, color: 'rgba(255,255,255,0.9)', lineHeight: 20 }}>
-                {primaryProfile?.phone || user?.phone || 'Chưa cập nhật'} •{' '}
-                {user?.email || 'Chưa cập nhật'}
-              </Text> */}
             </View>
           </View>
         </View>
@@ -158,26 +145,6 @@ export default function AccountScreen() {
           <View className="mb-6">
             <Text className="mb-4 text-lg font-bold text-slate-900">Quản lý yêu cầu và ưu đãi</Text>
             <View className="overflow-hidden rounded-2xl bg-white shadow-lg shadow-sky-600/10">
-              <TouchableOpacity className="flex-row items-center border-b border-sky-50 p-4">
-                <View className="mr-4 h-10 w-10 items-center justify-center rounded-lg bg-sky-50">
-                  <Ionicons name="cube-outline" size={20} color="#0284C7" />
-                </View>
-                <Text className="flex-1 text-base font-medium text-slate-900">
-                  Yêu cầu giao thuốc
-                </Text>
-                <Ionicons name="chevron-forward" size={18} color="#06B6D4" />
-              </TouchableOpacity>
-
-              <TouchableOpacity className="flex-row items-center border-b border-sky-50 p-4">
-                <View className="mr-4 h-10 w-10 items-center justify-center rounded-lg bg-green-100">
-                  <Ionicons name="chatbubbles-outline" size={20} color="#10B981" />
-                </View>
-                <Text className="flex-1 text-base font-medium text-slate-900">
-                  Yêu cầu hỗ trợ CSKH
-                </Text>
-                <Ionicons name="chevron-forward" size={18} color="#06B6D4" />
-              </TouchableOpacity>
-
               <TouchableOpacity
                 onPress={() => router.push('/(homes)/(account)/promotions')}
                 className="flex-row items-center p-4">
@@ -201,24 +168,6 @@ export default function AccountScreen() {
                   <Ionicons name="lock-closed-outline" size={20} color="#10B981" />
                 </View>
                 <Text className="flex-1 text-base font-medium text-slate-900">Đổi mật khẩu</Text>
-                <Ionicons name="chevron-forward" size={18} color="#06B6D4" />
-              </TouchableOpacity>
-
-              <TouchableOpacity className="flex-row items-center border-b border-sky-50 p-4">
-                <View className="mr-4 h-10 w-10 items-center justify-center rounded-lg bg-sky-50">
-                  <Ionicons name="globe-outline" size={20} color="#0284C7" />
-                </View>
-                <Text className="flex-1 text-base font-medium text-slate-900">Ngôn ngữ</Text>
-                <Text className="mr-2 text-sm text-slate-500">Tiếng Việt</Text>
-                <Ionicons name="chevron-forward" size={18} color="#06B6D4" />
-              </TouchableOpacity>
-
-              <TouchableOpacity className="flex-row items-center p-4">
-                <View className="mr-4 h-10 w-10 items-center justify-center rounded-lg bg-sky-50">
-                  <Ionicons name="shield-outline" size={20} color="#0284C7" />
-                </View>
-                <Text className="flex-1 text-base font-medium text-slate-900">Bảo mật</Text>
-                <Text className="mr-2 text-sm text-slate-500">Chưa thiết lập</Text>
                 <Ionicons name="chevron-forward" size={18} color="#06B6D4" />
               </TouchableOpacity>
             </View>
@@ -272,16 +221,6 @@ export default function AccountScreen() {
                 </View>
                 <Text className="flex-1 text-base font-medium text-slate-900">
                   Hỏi đáp về ứng dụng
-                </Text>
-                <Ionicons name="chevron-forward" size={18} color="#06B6D4" />
-              </TouchableOpacity>
-
-              <TouchableOpacity className="flex-row items-center border-b border-sky-50 p-4">
-                <View className="mr-4 h-10 w-10 items-center justify-center rounded-lg bg-green-100">
-                  <Ionicons name="share-outline" size={20} color="#10B981" />
-                </View>
-                <Text className="flex-1 text-base font-medium text-slate-900">
-                  Chia sẻ ứng dụng
                 </Text>
                 <Ionicons name="chevron-forward" size={18} color="#06B6D4" />
               </TouchableOpacity>

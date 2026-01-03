@@ -229,7 +229,7 @@ model PatientProfile {
 /// Lịch làm việc cố định hàng tuần của bác sĩ
 model DoctorAvailability {
   id        Int    @id @default(autoincrement())
-  dayOfWeek Int // 0 = Sunday, 1 = Monday, 2 = Tuesday, ..., 6 = Saturday
+  dayOfWeek Int    // 0 = Sunday, 1 = Monday, 2 = Tuesday, ..., 6 = Saturday
   startTime String
   endTime   String
 

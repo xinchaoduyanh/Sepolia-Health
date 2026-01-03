@@ -7,6 +7,8 @@ import { useArticles } from '@/lib/api/articles';
 import { useClaimPromotion, useFeaturedPromotion } from '@/lib/api/promotion';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { formatTime } from '@/utils/datetime';
+import { STRINGS } from '@/constants/strings';
+import Colors from '@/constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -21,10 +23,10 @@ import {
   StatusBar,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
   ViewStyle,
 } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
 
 interface SkeletonProps {
   width?: DimensionValue;
@@ -60,13 +62,43 @@ const Skeleton = ({ width, height, borderRadius, style }: SkeletonProps) => {
           width,
           height,
           borderRadius: borderRadius || 4,
-          backgroundColor: '#E1E9EE',
+          backgroundColor: Colors.skeleton,
           opacity,
         },
         style,
       ]}
     />
   );
+};
+
+// Responsive utilities
+const useResponsive = () => {
+  const { width: screenWidth } = useWindowDimensions();
+
+  return {
+    screenWidth,
+    isSmall: screenWidth < 375,
+    isMedium: screenWidth >= 375 && screenWidth < 768,
+    isLarge: screenWidth >= 768,
+    horizontalPadding: screenWidth < 375 ? 16 : 24,
+    // Responsive font sizes
+    fontSize: {
+      xs: screenWidth < 375 ? 11 : 12,
+      sm: screenWidth < 375 ? 12 : 14,
+      base: screenWidth < 375 ? 14 : 16,
+      lg: screenWidth < 375 ? 16 : 18,
+      xl: screenWidth < 375 ? 18 : 20,
+      xxl: screenWidth < 375 ? 20 : 22,
+    },
+    // Responsive spacing
+    spacing: {
+      xs: screenWidth < 375 ? 4 : 6,
+      sm: screenWidth < 375 ? 8 : 12,
+      base: screenWidth < 375 ? 12 : 16,
+      lg: screenWidth < 375 ? 16 : 20,
+      xl: screenWidth < 375 ? 24 : 32,
+    },
+  };
 };
 
 export default function HomeScreen() {
@@ -76,6 +108,7 @@ export default function HomeScreen() {
   const { data: closestAppointment, isLoading: isLoadingAppointment } = useClosestAppointment();
   const { data: featuredPromotion } = useFeaturedPromotion();
   const claimPromotion = useClaimPromotion();
+  const responsive = useResponsive();
 
   // Fetch articles for Tin tức & Sự kiện section
   const { data: articlesResponse, isLoading: isLoadingArticles } = useArticles({
@@ -109,13 +142,13 @@ export default function HomeScreen() {
     const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
 
     if (diffInHours < 1) {
-      return 'Vừa xong';
+      return STRINGS.JUST_NOW;
     } else if (diffInHours < 24) {
-      return `${diffInHours} giờ trước`;
+      return `${diffInHours} ${STRINGS.HOURS_AGO}`;
     } else if (diffInDays === 1) {
-      return 'Hôm qua';
+      return STRINGS.YESTERDAY;
     } else if (diffInDays < 7) {
-      return `${diffInDays} ngày trước`;
+      return `${diffInDays} ${STRINGS.DAYS_AGO}`;
     } else {
       return date.toLocaleDateString('vi-VN', {
         day: 'numeric',
@@ -126,7 +159,7 @@ export default function HomeScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#E0F2FE' }}>
+    <View style={{ flex: 1, backgroundColor: Colors.background }}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
       <ScrollView
@@ -139,21 +172,14 @@ export default function HomeScreen() {
         contentInsetAdjustmentBehavior="never"
         automaticallyAdjustContentInsets={false}>
         {/* Background Gradient - now scrollable and extends to top */}
-        <View style={{ height: 380, position: 'relative', marginTop: -60 }}>
+        <View
+          style={{ height: responsive.isSmall ? 320 : 380, position: 'relative', marginTop: -60 }}>
           <LinearGradient
-            colors={['#0284C7', '#06B6D4', '#10B981']}
+            colors={Colors.gradientPrimary}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={{ flex: 1 }}
           />
-          {/* Curved bottom edge using SVG */}
-          <Svg
-            height="70"
-            width="200%"
-            viewBox="0 0 1440 120"
-            style={{ position: 'absolute', bottom: -1, left: 0, right: 0 }}>
-            <Path d="M0,0 Q720,120 1440,0 L1440,120 L0,120 Z" fill="#E0F2FE" />
-          </Svg>
 
           {/* Decorative circles */}
           <View
@@ -161,10 +187,10 @@ export default function HomeScreen() {
               position: 'absolute',
               top: -60,
               right: -40,
-              height: 180,
-              width: 180,
-              borderRadius: 90,
-              backgroundColor: 'rgba(255,255,255,0.12)',
+              height: responsive.isSmall ? 140 : 180,
+              width: responsive.isSmall ? 140 : 180,
+              borderRadius: responsive.isSmall ? 70 : 90,
+              backgroundColor: 'rgba(255, 255, 255, 0.12)',
             }}
           />
           <View
@@ -172,10 +198,10 @@ export default function HomeScreen() {
               position: 'absolute',
               top: 120,
               left: -50,
-              height: 150,
-              width: 150,
-              borderRadius: 75,
-              backgroundColor: 'rgba(255,255,255,0.08)',
+              height: responsive.isSmall ? 120 : 150,
+              width: responsive.isSmall ? 120 : 150,
+              borderRadius: responsive.isSmall ? 60 : 75,
+              backgroundColor: 'rgba(255, 255, 255, 0.08)',
             }}
           />
 
@@ -185,22 +211,22 @@ export default function HomeScreen() {
             style={{
               position: 'absolute',
               top: 120,
-              right: 24,
+              right: responsive.horizontalPadding,
               zIndex: 10,
               height: 48,
               width: 48,
               borderRadius: 24,
               alignItems: 'center',
               justifyContent: 'center',
-              backgroundColor: '#FFFFFF',
-              shadowColor: '#000000',
+              backgroundColor: Colors.primaryForeground,
+              shadowColor: Colors.shadow,
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.15,
               shadowRadius: 12,
               elevation: 6,
               opacity: 0.9,
             }}>
-            <Ionicons name="notifications-outline" size={24} color="#0284C7" />
+            <Ionicons name="notifications-outline" size={24} color={Colors.primary} />
             {unreadCount > 0 && (
               <View
                 style={{
@@ -210,15 +236,15 @@ export default function HomeScreen() {
                   height: 20,
                   width: unreadCount > 99 ? 28 : 20,
                   borderRadius: 10,
-                  backgroundColor: '#10B981',
+                  backgroundColor: Colors.secondary,
                   borderWidth: 2,
-                  borderColor: '#FFFFFF',
+                  borderColor: Colors.primaryForeground,
                   alignItems: 'center',
                   justifyContent: 'center',
                   paddingHorizontal: unreadCount > 99 ? 4 : 0,
                 }}>
-                <Text style={{ fontSize: 10, fontWeight: 'bold', color: 'white' }}>
-                  {unreadCount > 99 ? '99+' : unreadCount}
+                <Text style={{ fontSize: 10, fontWeight: 'bold', color: Colors.primaryForeground }}>
+                  {unreadCount > 99 ? STRINGS.MORE_THAN_99 : unreadCount}
                 </Text>
               </View>
             )}
@@ -229,40 +255,45 @@ export default function HomeScreen() {
             style={{
               position: 'absolute',
               top: 120,
-              left: 24,
-              right: 24,
+              left: responsive.horizontalPadding,
+              right: responsive.horizontalPadding,
               flexDirection: 'row',
               alignItems: 'center',
-              paddingRight: 60,
+              paddingRight: responsive.isSmall ? 50 : 60,
             }}>
             <View
               style={{
-                height: 72,
-                width: 72,
-                borderRadius: 36,
+                height: responsive.isSmall ? 60 : 72,
+                width: responsive.isSmall ? 60 : 72,
+                borderRadius: responsive.isSmall ? 30 : 36,
                 alignItems: 'center',
                 justifyContent: 'center',
-                backgroundColor: 'rgba(255,255,255,0.25)',
+                backgroundColor: 'rgba(255, 255, 255, 0.25)',
                 borderWidth: 3,
-                borderColor: 'rgba(255,255,255,0.4)',
-                shadowColor: '#000000',
+                borderColor: 'rgba(255, 255, 255, 0.4)',
+                shadowColor: Colors.shadow,
                 shadowOffset: { width: 0, height: 4 },
                 shadowOpacity: 0.2,
                 shadowRadius: 8,
                 elevation: 4,
-                marginRight: 16,
+                marginRight: responsive.spacing.base,
               }}>
               {primaryProfile?.avatar ? (
                 <Image
                   source={{ uri: primaryProfile.avatar }}
                   style={{
-                    height: 66,
-                    width: 66,
-                    borderRadius: 33,
+                    height: responsive.isSmall ? 54 : 66,
+                    width: responsive.isSmall ? 54 : 66,
+                    borderRadius: responsive.isSmall ? 27 : 33,
                   }}
                 />
               ) : (
-                <Text style={{ fontSize: 32, fontWeight: 'bold', color: '#FFFFFF' }}>
+                <Text
+                  style={{
+                    fontSize: responsive.isSmall ? 24 : 32,
+                    fontWeight: 'bold',
+                    color: Colors.primaryForeground,
+                  }}>
                   {primaryProfile
                     ? primaryProfile.firstName.charAt(0).toUpperCase()
                     : user?.firstName?.charAt(0).toUpperCase() || 'A'}
@@ -271,17 +302,28 @@ export default function HomeScreen() {
             </View>
 
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 20, fontWeight: '700', color: '#FFFFFF', marginBottom: 6 }}>
-                Xin chào,{' '}
+              <Text
+                style={{
+                  fontSize: responsive.fontSize.xl,
+                  fontWeight: '700',
+                  color: Colors.primaryForeground,
+                  marginBottom: 6,
+                }}>
+                {STRINGS.GREETING},{' '}
                 {primaryProfile
                   ? `${primaryProfile.lastName} ${primaryProfile.firstName}`
                   : user
                     ? `${user.lastName} ${user.firstName}`
                     : 'Nguyễn Văn A'}
               </Text>
-              <Text style={{ fontSize: 14, color: 'rgba(255,255,255,0.9)', lineHeight: 20 }}>
-                {primaryProfile?.phone || user?.phone || 'Chưa cập nhật'} •{' '}
-                {user?.email || 'Chưa cập nhật'}
+              <Text
+                style={{
+                  fontSize: responsive.fontSize.sm,
+                  color: 'rgba(255, 255, 255, 0.9)',
+                  lineHeight: 20,
+                }}>
+                {primaryProfile?.phone || user?.phone || STRINGS.NOT_UPDATED} •{' '}
+                {user?.email || STRINGS.NOT_UPDATED}
               </Text>
             </View>
           </View>
@@ -310,7 +352,7 @@ export default function HomeScreen() {
             const containerStyle = {
               borderRadius: 24,
               overflow: 'hidden' as const,
-              shadowColor: '#000000',
+              shadowColor: Colors.shadow,
               shadowOffset: { width: 0, height: 8 },
               shadowOpacity: 0.25,
               shadowRadius: 16,
@@ -347,7 +389,7 @@ export default function HomeScreen() {
                       marginBottom: 16,
                     }}>
                     {featuredPromotion.promotion.description ||
-                      `Nhận ngay voucher ${featuredPromotion.promotion.discountPercent}%`}
+                      `${STRINGS.GET_VOUCHER} ${featuredPromotion.promotion.discountPercent}%`}
                   </Text>
                   <TouchableOpacity
                     onPress={async () => {
@@ -355,25 +397,33 @@ export default function HomeScreen() {
                         const result = await claimPromotion.mutateAsync(
                           featuredPromotion.promotion.id
                         );
-                        Alert.alert(result.success ? 'Thành công' : 'Thông báo', result.message, [
-                          {
-                            text: 'OK',
-                            onPress: () => {
-                              // Reset mutation state after Alert is dismissed
-                              claimPromotion.reset();
+                        Alert.alert(
+                          result.success ? STRINGS.SUCCESS : STRINGS.NOTIFICATION,
+                          result.message,
+                          [
+                            {
+                              text: STRINGS.OK,
+                              onPress: () => {
+                                // Reset mutation state after Alert is dismissed
+                                claimPromotion.reset();
+                              },
                             },
-                          },
-                        ]);
+                          ]
+                        );
                       } catch (error: any) {
-                        Alert.alert('Lỗi', error?.response?.data?.message || 'Có lỗi xảy ra', [
-                          {
-                            text: 'OK',
-                            onPress: () => {
-                              // Reset mutation state after Alert is dismissed
-                              claimPromotion.reset();
+                        Alert.alert(
+                          STRINGS.ERROR,
+                          error?.response?.data?.message || STRINGS.ERROR_OCCURRED,
+                          [
+                            {
+                              text: STRINGS.OK,
+                              onPress: () => {
+                                // Reset mutation state after Alert is dismissed
+                                claimPromotion.reset();
+                              },
                             },
-                          },
-                        ]);
+                          ]
+                        );
                       }
                     }}
                     disabled={claimPromotion.isPending}
@@ -397,7 +447,7 @@ export default function HomeScreen() {
                         color: featuredPromotion.display.buttonTextColor,
                         marginRight: 8,
                       }}>
-                      {featuredPromotion.display.buttonText || 'Nhận ngay'}
+                      {featuredPromotion.display.buttonText || STRINGS.GET_NOW}
                     </Text>
                     <Ionicons
                       name={(featuredPromotion.display.iconName || 'gift-outline') as any}
@@ -413,7 +463,7 @@ export default function HomeScreen() {
                     borderRadius: 40,
                     alignItems: 'center',
                     justifyContent: 'center',
-                    backgroundColor: 'rgba(255,255,255,0.2)',
+                    backgroundColor: 'rgba(255, 255, 255, 0.2)',
                   }}>
                   <Ionicons
                     name={(featuredPromotion.display.iconName || 'gift-outline') as any}
@@ -425,7 +475,12 @@ export default function HomeScreen() {
             );
 
             return (
-              <View style={{ paddingHorizontal: 24, marginTop: -150, marginBottom: 24 }}>
+              <View
+                style={{
+                  paddingHorizontal: responsive.horizontalPadding,
+                  marginTop: -150,
+                  marginBottom: responsive.spacing.lg,
+                }}>
                 <View style={containerStyle}>
                   {featuredPromotion.display.imageUrl ? (
                     // Use image background with overlay
@@ -436,13 +491,13 @@ export default function HomeScreen() {
                       imageStyle={{ borderRadius: 24 }}>
                       <View
                         style={{
-                          backgroundColor: 'rgba(0,0,0,0.3)',
+                          backgroundColor: 'rgba(0, 0, 0, 0.3)',
                           borderRadius: 24,
-                          padding: 24,
-                          marginTop: -24,
-                          marginLeft: -24,
-                          marginRight: -24,
-                          marginBottom: -24,
+                          padding: responsive.spacing.lg,
+                          marginTop: -responsive.spacing.lg,
+                          marginLeft: -responsive.spacing.lg,
+                          marginRight: -responsive.spacing.lg,
+                          marginBottom: -responsive.spacing.lg,
                         }}>
                         {renderContent()}
                       </View>
@@ -463,41 +518,66 @@ export default function HomeScreen() {
           })()}
 
         {/* Lịch trình Section */}
-        <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
+        <View
+          style={{
+            paddingHorizontal: responsive.horizontalPadding,
+            marginBottom: responsive.spacing.lg,
+          }}>
           <View
             style={{
               flexDirection: 'row',
               alignItems: 'center',
               justifyContent: 'space-between',
-              marginBottom: 16,
+              marginBottom: responsive.spacing.base,
             }}>
-            <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#0F172A' }}>
-              Lịch trình sắp tới
+            <Text
+              style={{ fontSize: responsive.fontSize.xl, fontWeight: 'bold', color: Colors.text }}>
+              {STRINGS.UPCOMING_SCHEDULE}
             </Text>
             <TouchableOpacity
               onPress={() => router.push('/(homes)/(appointment)')}
               activeOpacity={0.7}
               style={{ padding: 4 }}>
-              <Text style={{ fontSize: 14, fontWeight: '600', color: '#0284C7' }}>Xem tất cả</Text>
+              <Text
+                style={{
+                  fontSize: responsive.fontSize.sm,
+                  fontWeight: '600',
+                  color: Colors.primary,
+                }}>
+                {STRINGS.SEE_ALL}
+              </Text>
             </TouchableOpacity>
           </View>
           {isLoadingAppointment ? (
             <View
               style={{
                 borderRadius: 20,
-                padding: 16,
-                backgroundColor: '#FFFFFF',
-                shadowColor: '#000',
+                padding: responsive.spacing.base,
+                backgroundColor: Colors.primaryForeground,
+                shadowColor: Colors.shadow,
                 shadowOffset: { width: 0, height: 2 },
                 shadowOpacity: 0.05,
                 shadowRadius: 8,
                 elevation: 2,
               }}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Skeleton width={56} height={56} borderRadius={16} style={{ marginRight: 16 }} />
+                <Skeleton
+                  width={56}
+                  height={56}
+                  borderRadius={16}
+                  style={{ marginRight: responsive.spacing.base }}
+                />
                 <View style={{ flex: 1 }}>
-                  <Skeleton width="40%" height={14} style={{ marginBottom: 8 }} />
-                  <Skeleton width="80%" height={16} style={{ marginBottom: 8 }} />
+                  <Skeleton
+                    width="40%"
+                    height={14}
+                    style={{ marginBottom: responsive.spacing.xs }}
+                  />
+                  <Skeleton
+                    width="80%"
+                    height={16}
+                    style={{ marginBottom: responsive.spacing.xs }}
+                  />
                   <Skeleton width="60%" height={14} />
                 </View>
               </View>
@@ -509,11 +589,11 @@ export default function HomeScreen() {
               }
               style={{
                 borderRadius: 20,
-                padding: 20,
-                backgroundColor: '#FFFFFF',
+                padding: responsive.spacing.base,
+                backgroundColor: Colors.primaryForeground,
               }}>
               <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-                <View style={{ marginRight: 16, alignItems: 'center' }}>
+                <View style={{ marginRight: responsive.spacing.base, alignItems: 'center' }}>
                   <View
                     style={{
                       height: 56,
@@ -521,16 +601,16 @@ export default function HomeScreen() {
                       borderRadius: 16,
                       alignItems: 'center',
                       justifyContent: 'center',
-                      backgroundColor: '#E0F2FE',
+                      backgroundColor: Colors.background,
                     }}>
-                    <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#0284C7' }}>
+                    <Text style={{ fontSize: 20, fontWeight: 'bold', color: Colors.primary }}>
                       {formatAppointmentDate(closestAppointment.startTime).day}
                     </Text>
                     <Text
                       style={{
                         fontSize: 11,
                         fontWeight: '600',
-                        color: '#0284C7',
+                        color: Colors.primary,
                         marginTop: 2,
                       }}>
                       {formatAppointmentDate(closestAppointment.startTime).month}
@@ -538,17 +618,27 @@ export default function HomeScreen() {
                   </View>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      marginBottom: responsive.spacing.xs,
+                    }}>
                     <View
                       style={{
                         height: 6,
                         width: 6,
                         borderRadius: 3,
-                        backgroundColor: '#10B981',
-                        marginRight: 8,
+                        backgroundColor: Colors.secondary,
+                        marginRight: responsive.spacing.xs,
                       }}
                     />
-                    <Text style={{ fontSize: 13, fontWeight: '600', color: '#10B981' }}>
+                    <Text
+                      style={{
+                        fontSize: responsive.fontSize.sm,
+                        fontWeight: '600',
+                        color: Colors.secondary,
+                      }}>
                       {formatTime(closestAppointment.startTime)} -{' '}
                       {(() => {
                         const startDate = new Date(closestAppointment.startTime);
@@ -560,28 +650,53 @@ export default function HomeScreen() {
                     </Text>
                   </View>
                   <Text
-                    style={{ fontSize: 18, fontWeight: '600', color: '#0F172A', marginBottom: 12 }}>
+                    style={{
+                      fontSize: responsive.fontSize.lg,
+                      fontWeight: '600',
+                      color: Colors.text,
+                      marginBottom: responsive.spacing.sm,
+                    }}>
                     {closestAppointment.service.name}
                   </Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-                    <Ionicons name="person-outline" size={16} color="#475569" />
-                    <Text style={{ fontSize: 14, color: '#475569', marginLeft: 8 }}>
-                      Bác sĩ {closestAppointment.doctor.lastName}{' '}
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      marginBottom: responsive.spacing.xs,
+                    }}>
+                    <Ionicons name="person-outline" size={16} color={Colors.textSecondary} />
+                    <Text
+                      style={{
+                        fontSize: responsive.fontSize.sm,
+                        color: Colors.textSecondary,
+                        marginLeft: responsive.spacing.xs,
+                      }}>
+                      {STRINGS.DOCTOR} {closestAppointment.doctor.lastName}{' '}
                       {closestAppointment.doctor.firstName}
                     </Text>
                   </View>
                   {closestAppointment.type === 'ONLINE' ? (
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                      <Ionicons name="videocam-outline" size={16} color="#10B981" />
-                      <Text style={{ fontSize: 14, color: '#10B981', marginLeft: 8 }}>
-                        Khám trực tuyến (Online)
+                      <Ionicons name="videocam-outline" size={16} color={Colors.secondary} />
+                      <Text
+                        style={{
+                          fontSize: responsive.fontSize.sm,
+                          color: Colors.secondary,
+                          marginLeft: responsive.spacing.xs,
+                        }}>
+                        {STRINGS.ONLINE_APPOINTMENT_TYPE}
                       </Text>
                     </View>
                   ) : (
                     closestAppointment.clinic && (
                       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                        <Ionicons name="location-outline" size={16} color="#475569" />
-                        <Text style={{ fontSize: 14, color: '#475569', marginLeft: 8 }}>
+                        <Ionicons name="location-outline" size={16} color={Colors.textSecondary} />
+                        <Text
+                          style={{
+                            fontSize: responsive.fontSize.sm,
+                            color: Colors.textSecondary,
+                            marginLeft: responsive.spacing.xs,
+                          }}>
                           {closestAppointment.clinic.name}
                         </Text>
                       </View>
@@ -594,8 +709,8 @@ export default function HomeScreen() {
             <View
               style={{
                 borderRadius: 20,
-                padding: 32,
-                backgroundColor: '#FFFFFF',
+                padding: responsive.spacing.lg,
+                backgroundColor: Colors.white,
                 alignItems: 'center',
                 justifyContent: 'center',
                 minHeight: 180,
@@ -612,36 +727,36 @@ export default function HomeScreen() {
                   borderRadius: 40,
                   alignItems: 'center',
                   justifyContent: 'center',
-                  backgroundColor: '#E0F2FE',
-                  marginBottom: 16,
-                  shadowColor: '#0284C7',
+                  backgroundColor: Colors.background,
+                  marginBottom: responsive.spacing.base,
+                  shadowColor: Colors.primary,
                   shadowOffset: { width: 0, height: 4 },
                   shadowOpacity: 0.15,
                   shadowRadius: 8,
                   elevation: 4,
                 }}>
-                <Ionicons name="calendar-outline" size={40} color="#0284C7" />
+                <Ionicons name="calendar-outline" size={40} color={Colors.primary} />
               </View>
               <Text
                 style={{
-                  fontSize: 18,
+                  fontSize: responsive.fontSize.lg,
                   fontWeight: '600',
-                  color: '#0F172A',
-                  marginBottom: 8,
+                  color: Colors.text,
+                  marginBottom: responsive.spacing.xs,
                   textAlign: 'center',
                 }}>
-                Chưa có lịch khám sắp tới
+                {STRINGS.NO_UPCOMING_APPOINTMENTS}
               </Text>
               <Text
                 style={{
-                  fontSize: 14,
-                  color: '#64748B',
+                  fontSize: responsive.fontSize.sm,
+                  color: Colors.textMuted,
                   textAlign: 'center',
-                  marginBottom: 20,
+                  marginBottom: responsive.spacing.base,
                   lineHeight: 20,
-                  paddingHorizontal: 8,
+                  paddingHorizontal: responsive.spacing.xs,
                 }}>
-                Hãy đặt lịch khám để chăm sóc sức khỏe của bạn
+                {STRINGS.SCHEDULE_APPOINTMENT_MESSAGE}
               </Text>
               <TouchableOpacity
                 onPress={() => router.push('/(homes)/(appointment)/create')}
@@ -649,24 +764,24 @@ export default function HomeScreen() {
                   flexDirection: 'row',
                   alignItems: 'center',
                   borderRadius: 12,
-                  paddingHorizontal: 20,
-                  paddingVertical: 12,
-                  backgroundColor: '#0284C7',
-                  shadowColor: '#0284C7',
+                  paddingHorizontal: responsive.spacing.base,
+                  paddingVertical: responsive.spacing.sm,
+                  backgroundColor: Colors.primary,
+                  shadowColor: Colors.primary,
                   shadowOffset: { width: 0, height: 4 },
                   shadowOpacity: 0.3,
                   shadowRadius: 8,
                   elevation: 4,
                 }}>
-                <Ionicons name="add-circle-outline" size={20} color="#FFFFFF" />
+                <Ionicons name="add-circle-outline" size={20} color={Colors.primaryForeground} />
                 <Text
                   style={{
-                    fontSize: 14,
+                    fontSize: responsive.fontSize.sm,
                     fontWeight: '600',
-                    color: '#FFFFFF',
-                    marginLeft: 8,
+                    color: Colors.primaryForeground,
+                    marginLeft: responsive.spacing.xs,
                   }}>
-                  Đặt lịch ngay
+                  {STRINGS.BOOK_NOW}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -674,109 +789,153 @@ export default function HomeScreen() {
         </View>
 
         {/* Dịch vụ Section */}
-        <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
+        <View
+          style={{
+            paddingHorizontal: responsive.horizontalPadding,
+            marginBottom: responsive.spacing.lg,
+          }}>
           <View
             style={{
               flexDirection: 'row',
               alignItems: 'center',
               justifyContent: 'space-between',
-              marginBottom: 16,
+              marginBottom: responsive.spacing.base,
             }}>
-            <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#0F172A' }}>Dịch vụ</Text>
+            <Text
+              style={{ fontSize: responsive.fontSize.xl, fontWeight: 'bold', color: Colors.text }}>
+              {STRINGS.SERVICES}
+            </Text>
           </View>
 
           <View
             style={{
               borderRadius: 24,
-              padding: 20,
-              backgroundColor: '#FFFFFF',
+              padding: responsive.spacing.base,
+              backgroundColor: Colors.white,
             }}>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
-              <View style={{ width: '22%', alignItems: 'center' }}>
+            <View
+              style={{
+                flexDirection: 'row',
+                flexWrap: 'wrap',
+                gap: responsive.spacing.sm,
+                justifyContent: 'space-between',
+              }}>
+              <View style={{ width: responsive.isSmall ? '23%' : '22%', alignItems: 'center' }}>
                 <TouchableOpacity
                   activeOpacity={0.7}
                   style={{ alignItems: 'center' }}
                   onPress={() => router.push('/(homes)/(appointment)/create')}>
                   <View
                     style={{
-                      height: 56,
-                      width: 56,
-                      borderRadius: 16,
+                      height: responsive.isSmall ? 48 : 56,
+                      width: responsive.isSmall ? 48 : 56,
+                      borderRadius: responsive.isSmall ? 12 : 16,
                       alignItems: 'center',
                       justifyContent: 'center',
-                      backgroundColor: '#E0F2FE',
-                      marginBottom: 8,
+                      backgroundColor: Colors.background,
+                      marginBottom: responsive.spacing.xs,
                     }}>
-                    <Ionicons name="calendar-outline" size={26} color="#0284C7" />
+                    <Ionicons
+                      name="calendar-outline"
+                      size={responsive.isSmall ? 22 : 26}
+                      color={Colors.primary}
+                    />
                   </View>
-                  <Text style={{ fontSize: 12, color: '#0F172A', textAlign: 'center' }}>
-                    Đặt lịch
+                  <Text
+                    style={{
+                      fontSize: responsive.fontSize.xs,
+                      color: Colors.text,
+                      textAlign: 'center',
+                    }}>
+                    {STRINGS.SCHEDULE}
                   </Text>
                 </TouchableOpacity>
               </View>
 
-              <View style={{ width: '22%', alignItems: 'center' }}>
+              <View style={{ width: responsive.isSmall ? '23%' : '22%', alignItems: 'center' }}>
                 <TouchableOpacity
                   activeOpacity={0.7}
                   style={{ alignItems: 'center' }}
                   onPress={() => router.push('/(homes)/(appointment)/create-online')}>
                   <View
                     style={{
-                      height: 56,
-                      width: 56,
-                      borderRadius: 16,
+                      height: responsive.isSmall ? 48 : 56,
+                      width: responsive.isSmall ? 48 : 56,
+                      borderRadius: responsive.isSmall ? 12 : 16,
                       alignItems: 'center',
                       justifyContent: 'center',
-                      backgroundColor: '#A7F3D0',
-                      marginBottom: 8,
+                      backgroundColor: Colors.background,
+                      marginBottom: responsive.spacing.xs,
                     }}>
-                    <Ionicons name="videocam-outline" size={26} color="#10B981" />
+                    <Ionicons
+                      name="videocam-outline"
+                      size={responsive.isSmall ? 22 : 26}
+                      color={Colors.secondary}
+                    />
                   </View>
-                  <Text style={{ fontSize: 12, color: '#0F172A', textAlign: 'center' }}>
-                    Khám Online
+                  <Text
+                    style={{
+                      fontSize: responsive.fontSize.xs,
+                      color: Colors.text,
+                      textAlign: 'center',
+                    }}>
+                    {STRINGS.ONLINE_CONSULTATION}
                   </Text>
                 </TouchableOpacity>
               </View>
 
-              <View style={{ width: '22%', alignItems: 'center' }}>
+              <View style={{ width: responsive.isSmall ? '23%' : '22%', alignItems: 'center' }}>
                 <TouchableOpacity
                   activeOpacity={0.7}
                   style={{ alignItems: 'center' }}
                   onPress={() => router.push('/(homes)/(history-appointment)')}>
                   <View
                     style={{
-                      height: 56,
-                      width: 56,
-                      borderRadius: 16,
+                      height: responsive.isSmall ? 48 : 56,
+                      width: responsive.isSmall ? 48 : 56,
+                      borderRadius: responsive.isSmall ? 12 : 16,
                       alignItems: 'center',
                       justifyContent: 'center',
-                      backgroundColor: '#E0F2FE',
-                      marginBottom: 8,
+                      backgroundColor: Colors.background,
+                      marginBottom: responsive.spacing.xs,
                     }}>
-                    <Ionicons name="time-outline" size={26} color="#0284C7" />
+                    <Ionicons
+                      name="time-outline"
+                      size={responsive.isSmall ? 22 : 26}
+                      color={Colors.primary}
+                    />
                   </View>
-                  <Text style={{ fontSize: 12, color: '#0F172A', textAlign: 'center' }}>
-                    Lịch sử
+                  <Text
+                    style={{
+                      fontSize: responsive.fontSize.xs,
+                      color: Colors.text,
+                      textAlign: 'center',
+                    }}>
+                    {STRINGS.HISTORY}
                   </Text>
                 </TouchableOpacity>
               </View>
 
-              <View style={{ width: '22%', alignItems: 'center' }}>
+              <View style={{ width: responsive.isSmall ? '23%' : '22%', alignItems: 'center' }}>
                 <TouchableOpacity
                   activeOpacity={0.7}
                   style={{ alignItems: 'center' }}
                   onPress={() => router.push('/(homes)/(chat)/channels')}>
                   <View
                     style={{
-                      height: 56,
-                      width: 56,
-                      borderRadius: 16,
+                      height: responsive.isSmall ? 48 : 56,
+                      width: responsive.isSmall ? 48 : 56,
+                      borderRadius: responsive.isSmall ? 12 : 16,
                       alignItems: 'center',
                       justifyContent: 'center',
-                      backgroundColor: '#E0F2FE',
-                      marginBottom: 8,
+                      backgroundColor: Colors.background,
+                      marginBottom: responsive.spacing.xs,
                     }}>
-                    <Ionicons name="chatbubbles-outline" size={26} color="#0284C7" />
+                    <Ionicons
+                      name="chatbubbles-outline"
+                      size={responsive.isSmall ? 22 : 26}
+                      color={Colors.primary}
+                    />
                     {/* Unread message badge */}
                     {totalUnreadCount > 0 && (
                       <View
@@ -784,7 +943,7 @@ export default function HomeScreen() {
                           position: 'absolute',
                           top: -4,
                           right: -4,
-                          backgroundColor: '#EF4444',
+                          backgroundColor: Colors.error,
                           borderRadius: 10,
                           minWidth: 20,
                           height: 20,
@@ -794,40 +953,54 @@ export default function HomeScreen() {
                         }}>
                         <Text
                           style={{
-                            color: '#FFFFFF',
+                            color: Colors.primaryForeground,
                             fontSize: 11,
                             fontWeight: '600',
                           }}>
-                          {totalUnreadCount > 99 ? '99+' : totalUnreadCount}
+                          {totalUnreadCount > 99 ? STRINGS.MORE_THAN_99 : totalUnreadCount}
                         </Text>
                       </View>
                     )}
                   </View>
-                  <Text style={{ fontSize: 12, color: '#0F172A', textAlign: 'center' }}>
-                    Tin nhắn
+                  <Text
+                    style={{
+                      fontSize: responsive.fontSize.xs,
+                      color: Colors.text,
+                      textAlign: 'center',
+                    }}>
+                    {STRINGS.MESSAGES}
                   </Text>
                 </TouchableOpacity>
               </View>
 
-              <View style={{ width: '22%', alignItems: 'center' }}>
+              <View style={{ width: responsive.isSmall ? '23%' : '22%', alignItems: 'center' }}>
                 <TouchableOpacity
                   activeOpacity={0.7}
                   style={{ alignItems: 'center' }}
                   onPress={() => router.push('/(homes)/(qna)')}>
                   <View
                     style={{
-                      height: 56,
-                      width: 56,
-                      borderRadius: 16,
+                      height: responsive.isSmall ? 48 : 56,
+                      width: responsive.isSmall ? 48 : 56,
+                      borderRadius: responsive.isSmall ? 12 : 16,
                       alignItems: 'center',
                       justifyContent: 'center',
-                      backgroundColor: '#E0F2FE',
-                      marginBottom: 8,
+                      backgroundColor: Colors.background,
+                      marginBottom: responsive.spacing.xs,
                     }}>
-                    <Ionicons name="people-outline" size={26} color="#0284C7" />
+                    <Ionicons
+                      name="people-outline"
+                      size={responsive.isSmall ? 22 : 26}
+                      color={Colors.primary}
+                    />
                   </View>
-                  <Text style={{ fontSize: 12, color: '#0F172A', textAlign: 'center' }}>
-                    Cộng đồng
+                  <Text
+                    style={{
+                      fontSize: responsive.fontSize.xs,
+                      color: Colors.text,
+                      textAlign: 'center',
+                    }}>
+                    {STRINGS.COMMUNITY}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -836,27 +1009,37 @@ export default function HomeScreen() {
         </View>
 
         {/* Mẹo sức khỏe Section */}
-        <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
+        <View
+          style={{
+            paddingHorizontal: responsive.horizontalPadding,
+            marginBottom: responsive.spacing.lg,
+          }}>
           <View
             style={{
               flexDirection: 'row',
               alignItems: 'center',
               justifyContent: 'space-between',
-              marginBottom: 16,
+              marginBottom: responsive.spacing.base,
             }}>
-            <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#0F172A' }}>Mẹo sức khỏe</Text>
+            <Text
+              style={{ fontSize: responsive.fontSize.xl, fontWeight: 'bold', color: Colors.text }}>
+              {STRINGS.HEALTH_TIPS}
+            </Text>
           </View>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            style={{ marginHorizontal: -24, paddingHorizontal: 24 }}>
+            style={{
+              marginHorizontal: -responsive.horizontalPadding,
+              paddingHorizontal: responsive.horizontalPadding,
+            }}>
             <View
               style={{
-                marginRight: 16,
-                width: 260,
+                marginRight: responsive.spacing.base,
+                width: responsive.isSmall ? 220 : 260,
                 borderRadius: 20,
-                padding: 20,
-                backgroundColor: '#FFFFFF',
+                padding: responsive.spacing.base,
+                backgroundColor: Colors.white,
               }}>
               <View
                 style={{
@@ -865,26 +1048,37 @@ export default function HomeScreen() {
                   borderRadius: 24,
                   alignItems: 'center',
                   justifyContent: 'center',
-                  backgroundColor: '#E0F2FE',
-                  marginBottom: 12,
+                  backgroundColor: Colors.background,
+                  marginBottom: responsive.spacing.sm,
                 }}>
-                <Ionicons name="water-outline" size={24} color="#0284C7" />
+                <Ionicons name="water-outline" size={24} color={Colors.primary} />
               </View>
-              <Text style={{ fontSize: 16, fontWeight: '600', color: '#0F172A', marginBottom: 8 }}>
-                Uống đủ nước
+              <Text
+                style={{
+                  fontSize: responsive.fontSize.base,
+                  fontWeight: '600',
+                  color: Colors.text,
+                  marginBottom: responsive.spacing.xs,
+                }}>
+                {STRINGS.DRINK_WATER}
               </Text>
-              <Text style={{ fontSize: 14, color: '#475569', lineHeight: 20 }}>
-                Uống ít nhất 2 lít nước mỗi ngày để duy trì sức khỏe tốt
+              <Text
+                style={{
+                  fontSize: responsive.fontSize.sm,
+                  color: Colors.textSecondary,
+                  lineHeight: 20,
+                }}>
+                {STRINGS.DRINK_WATER_DESC}
               </Text>
             </View>
 
             <View
               style={{
-                marginRight: 16,
-                width: 260,
+                marginRight: responsive.spacing.base,
+                width: responsive.isSmall ? 220 : 260,
                 borderRadius: 20,
-                padding: 20,
-                backgroundColor: '#FFFFFF',
+                padding: responsive.spacing.base,
+                backgroundColor: Colors.white,
               }}>
               <View
                 style={{
@@ -893,26 +1087,37 @@ export default function HomeScreen() {
                   borderRadius: 24,
                   alignItems: 'center',
                   justifyContent: 'center',
-                  backgroundColor: '#A7F3D0',
-                  marginBottom: 12,
+                  backgroundColor: Colors.secondaryLight2,
+                  marginBottom: responsive.spacing.sm,
                 }}>
-                <Ionicons name="sunny-outline" size={24} color="#10B981" />
+                <Ionicons name="sunny-outline" size={24} color={Colors.secondary} />
               </View>
-              <Text style={{ fontSize: 16, fontWeight: '600', color: '#0F172A', marginBottom: 8 }}>
-                Tắm nắng sáng
+              <Text
+                style={{
+                  fontSize: responsive.fontSize.base,
+                  fontWeight: '600',
+                  color: Colors.text,
+                  marginBottom: responsive.spacing.xs,
+                }}>
+                {STRINGS.MORNING_SUNBATHING}
               </Text>
-              <Text style={{ fontSize: 14, color: '#475569', lineHeight: 20 }}>
-                15-20 phút tắm nắng buổi sáng giúp cơ thể tổng hợp vitamin D
+              <Text
+                style={{
+                  fontSize: responsive.fontSize.sm,
+                  color: Colors.textSecondary,
+                  lineHeight: 20,
+                }}>
+                {STRINGS.SUNBATHING_DESC}
               </Text>
             </View>
 
             <View
               style={{
-                marginRight: 16,
-                width: 260,
+                marginRight: responsive.spacing.base,
+                width: responsive.isSmall ? 220 : 260,
                 borderRadius: 20,
-                padding: 20,
-                backgroundColor: '#FFFFFF',
+                padding: responsive.spacing.base,
+                backgroundColor: Colors.white,
               }}>
               <View
                 style={{
@@ -921,42 +1126,65 @@ export default function HomeScreen() {
                   borderRadius: 24,
                   alignItems: 'center',
                   justifyContent: 'center',
-                  backgroundColor: '#E0F2FE',
-                  marginBottom: 12,
+                  backgroundColor: Colors.background,
+                  marginBottom: responsive.spacing.sm,
                 }}>
-                <Ionicons name="bed-outline" size={24} color="#0284C7" />
+                <Ionicons name="bed-outline" size={24} color={Colors.primary} />
               </View>
-              <Text style={{ fontSize: 16, fontWeight: '600', color: '#0F172A', marginBottom: 8 }}>
-                Ngủ đủ giấc
+              <Text
+                style={{
+                  fontSize: responsive.fontSize.base,
+                  fontWeight: '600',
+                  color: Colors.text,
+                  marginBottom: responsive.spacing.xs,
+                }}>
+                {STRINGS.GET_SLEEP}
               </Text>
-              <Text style={{ fontSize: 14, color: '#475569', lineHeight: 20 }}>
-                7-8 tiếng ngủ mỗi đêm giúp cơ thể phục hồi và tái tạo năng lượng
+              <Text
+                style={{
+                  fontSize: responsive.fontSize.sm,
+                  color: Colors.textSecondary,
+                  lineHeight: 20,
+                }}>
+                {STRINGS.SLEEP_DESC}
               </Text>
             </View>
           </ScrollView>
         </View>
 
         {/* Tin tức & Sự kiện Section */}
-        <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
+        <View
+          style={{
+            paddingHorizontal: responsive.horizontalPadding,
+            marginBottom: responsive.spacing.lg,
+          }}>
           <View
             style={{
               flexDirection: 'row',
               alignItems: 'center',
               justifyContent: 'space-between',
-              marginBottom: 16,
+              marginBottom: responsive.spacing.base,
             }}>
-            <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#0F172A' }}>
-              Tin tức & Sự kiện
+            <Text
+              style={{ fontSize: responsive.fontSize.xl, fontWeight: 'bold', color: Colors.text }}>
+              {STRINGS.NEWS_EVENTS}
             </Text>
             <TouchableOpacity
               onPress={() => router.push('/(homes)/(articles)')}
               activeOpacity={0.7}
               style={{ padding: 4 }}>
-              <Text style={{ fontSize: 14, fontWeight: '600', color: '#0284C7' }}>Xem tất cả</Text>
+              <Text
+                style={{
+                  fontSize: responsive.fontSize.sm,
+                  fontWeight: '600',
+                  color: Colors.primary,
+                }}>
+                {STRINGS.SEE_ALL}
+              </Text>
             </TouchableOpacity>
           </View>
 
-          <View style={{ gap: 12 }}>
+          <View style={{ gap: responsive.spacing.sm }}>
             {isLoadingArticles ? (
               // Loading skeleton
               [1, 2, 3].map((index) => (
@@ -964,18 +1192,22 @@ export default function HomeScreen() {
                   key={index}
                   style={{
                     borderRadius: 20,
-                    backgroundColor: '#FFFFFF',
-                    padding: 16,
+                    backgroundColor: Colors.white,
+                    padding: responsive.spacing.base,
                   }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <Skeleton
                       width={48}
                       height={48}
                       borderRadius={14}
-                      style={{ marginRight: 16 }}
+                      style={{ marginRight: responsive.spacing.base }}
                     />
                     <View style={{ flex: 1 }}>
-                      <Skeleton width="80%" height={14} style={{ marginBottom: 8 }} />
+                      <Skeleton
+                        width="80%"
+                        height={14}
+                        style={{ marginBottom: responsive.spacing.xs }}
+                      />
                       <Skeleton width="40%" height={12} />
                     </View>
                   </View>
@@ -989,11 +1221,16 @@ export default function HomeScreen() {
                     activeOpacity={0.7}
                     style={{
                       borderRadius: 20,
-                      backgroundColor: '#FFFFFF',
+                      backgroundColor: Colors.white,
                       overflow: 'hidden',
                     }}
                     onPress={() => router.push(`/(homes)/(articles)/${article.id}`)}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16 }}>
+                    <View
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        padding: responsive.spacing.base,
+                      }}>
                       {article.image ? (
                         <Image
                           source={{ uri: article.image }}
@@ -1001,8 +1238,8 @@ export default function HomeScreen() {
                             height: 48,
                             width: 48,
                             borderRadius: 14,
-                            backgroundColor: '#F3F4F6',
-                            marginRight: 16,
+                            backgroundColor: Colors.backgroundSecondary,
+                            marginRight: responsive.spacing.base,
                           }}
                           resizeMode="cover"
                         />
@@ -1014,28 +1251,29 @@ export default function HomeScreen() {
                             borderRadius: 14,
                             alignItems: 'center',
                             justifyContent: 'center',
-                            backgroundColor: '#E0F2FE',
-                            marginRight: 16,
+                            backgroundColor: Colors.background,
+                            marginRight: responsive.spacing.base,
                           }}>
-                          <Ionicons name="newspaper-outline" size={24} color="#0284C7" />
+                          <Ionicons name="newspaper-outline" size={24} color={Colors.primary} />
                         </View>
                       )}
                       <View style={{ flex: 1 }}>
                         <Text
                           style={{
-                            fontSize: 14,
+                            fontSize: responsive.fontSize.sm,
                             fontWeight: '600',
-                            color: '#0F172A',
-                            marginBottom: 4,
+                            color: Colors.text,
+                            marginBottom: responsive.spacing.xs,
                           }}
                           numberOfLines={2}>
                           {article.title}
                         </Text>
-                        <Text style={{ fontSize: 12, color: '#475569' }}>
+                        <Text
+                          style={{ fontSize: responsive.fontSize.xs, color: Colors.textSecondary }}>
                           {formatArticleTime(article.createdAt)}
                         </Text>
                       </View>
-                      <Ionicons name="chevron-forward" size={20} color="#0284C7" />
+                      <Ionicons name="chevron-forward" size={20} color={Colors.primary} />
                     </View>
                   </TouchableOpacity>
                 );
@@ -1045,13 +1283,18 @@ export default function HomeScreen() {
               <View
                 style={{
                   borderRadius: 20,
-                  backgroundColor: '#FFFFFF',
-                  padding: 24,
+                  backgroundColor: Colors.white,
+                  padding: responsive.spacing.lg,
                   alignItems: 'center',
                 }}>
-                <Ionicons name="newspaper-outline" size={32} color="#9CA3AF" />
-                <Text style={{ fontSize: 14, color: '#6B7280', marginTop: 8 }}>
-                  Chưa có tin tức nào
+                <Ionicons name="newspaper-outline" size={32} color={Colors.textMuted} />
+                <Text
+                  style={{
+                    fontSize: responsive.fontSize.sm,
+                    color: Colors.textMuted,
+                    marginTop: responsive.spacing.xs,
+                  }}>
+                  {STRINGS.NO_NEWS}
                 </Text>
               </View>
             )}
@@ -1060,15 +1303,15 @@ export default function HomeScreen() {
 
         {/* Footer Section with Gradient Background */}
         <LinearGradient
-          colors={['#0284C7', '#10B981']}
+          colors={Colors.gradientSecondary}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={{
-            marginHorizontal: 24,
-            marginBottom: 32,
+            marginHorizontal: responsive.horizontalPadding,
+            marginBottom: responsive.spacing.lg,
             borderRadius: 24,
-            padding: 32,
-            shadowColor: '#000000',
+            padding: responsive.spacing.lg,
+            shadowColor: Colors.shadow,
             shadowOffset: { width: 0, height: 8 },
             shadowOpacity: 0.25,
             shadowRadius: 20,
@@ -1077,14 +1320,14 @@ export default function HomeScreen() {
           <View style={{ alignItems: 'center' }}>
             <View
               style={{
-                height: 140,
-                width: 140,
-                borderRadius: 70,
+                height: responsive.isSmall ? 120 : 140,
+                width: responsive.isSmall ? 120 : 140,
+                borderRadius: responsive.isSmall ? 60 : 70,
                 alignItems: 'center',
                 justifyContent: 'center',
                 backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                marginBottom: 24,
-                shadowColor: '#000000',
+                marginBottom: responsive.spacing.lg,
+                shadowColor: Colors.shadow,
                 shadowOffset: { width: 0, height: 4 },
                 shadowOpacity: 0.1,
                 shadowRadius: 12,
@@ -1092,8 +1335,8 @@ export default function HomeScreen() {
               <Image
                 source={require('../../assets/Hospital building-rafiki.png')}
                 style={{
-                  width: 120,
-                  height: 120,
+                  width: responsive.isSmall ? 100 : 120,
+                  height: responsive.isSmall ? 100 : 120,
                   resizeMode: 'contain',
                 }}
                 fadeDuration={200}
@@ -1101,45 +1344,45 @@ export default function HomeScreen() {
             </View>
             <Text
               style={{
-                fontSize: 22,
+                fontSize: responsive.fontSize.xl,
                 fontWeight: 'bold',
-                color: '#FFFFFF',
+                color: Colors.primaryForeground,
                 textAlign: 'center',
-                marginBottom: 8,
+                marginBottom: responsive.spacing.xs,
               }}>
-              Trải nghiệm dịch vụ y tế tốt nhất
+              {STRINGS.FOOTER_TITLE}
             </Text>
             <Text
               style={{
-                fontSize: 14,
-                color: 'rgba(255,255,255,0.9)',
+                fontSize: responsive.fontSize.sm,
+                color: 'rgba(255, 255, 255, 0.9)',
                 textAlign: 'center',
-                marginBottom: 20,
+                marginBottom: responsive.spacing.base,
               }}>
-              Chăm sóc sức khỏe toàn diện với công nghệ hiện đại
+              {STRINGS.FOOTER_SUBTITLE}
             </Text>
             <View
               style={{
                 height: 1,
                 width: 64,
                 backgroundColor: 'rgba(255, 255, 255, 0.3)',
-                marginBottom: 20,
+                marginBottom: responsive.spacing.base,
               }}
             />
             {/* Sepolia Logo */}
-            <View style={{ alignItems: 'center', marginBottom: 16 }}>
+            <View style={{ alignItems: 'center', marginBottom: responsive.spacing.base }}>
               <Image
                 source={require('../../assets/sepolia-icon.png')}
                 style={{
-                  width: 140,
-                  height: 50,
+                  width: responsive.isSmall ? 120 : 140,
+                  height: responsive.isSmall ? 40 : 50,
                   resizeMode: 'contain',
                 }}
                 fadeDuration={200}
               />
             </View>
-            <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)' }}>
-              © 2025 DUYANH. All rights reserved.
+            <Text style={{ fontSize: responsive.fontSize.xs, color: 'rgba(255, 255, 255, 0.8)' }}>
+              {STRINGS.COPYRIGHT}
             </Text>
           </View>
         </LinearGradient>

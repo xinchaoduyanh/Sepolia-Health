@@ -1333,20 +1333,8 @@ export class AppointmentService {
     const doctorService = await this.prisma.doctorService.findUnique({
       where: { id: doctorServiceId },
       include: {
-        doctor: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-          },
-        },
-        service: {
-          select: {
-            id: true,
-            name: true,
-            duration: true,
-          },
-        },
+        doctor: true,
+        service: true,
       },
     });
 
@@ -1540,7 +1528,11 @@ export class AppointmentService {
       displayTime: string;
       period: 'morning' | 'afternoon';
     }> = [];
-    const start = TimeUtil.timeToMinutes(startTime);
+    const now = new Date();
+    const start =
+      new Date(startTime) > now
+        ? TimeUtil.timeToMinutes(startTime)
+        : TimeUtil.dateToMinutes(now);
     const end = TimeUtil.timeToMinutes(endTime);
     const duration = serviceDuration;
 
