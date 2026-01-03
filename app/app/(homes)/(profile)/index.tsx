@@ -85,11 +85,6 @@ const ProfileScreen = () => {
     }
   };
 
-  // TODO: Thêm API call để lấy danh sách PatientProfile
-  // useEffect(() => {
-  //   fetchPatientProfiles();
-  // }, []);
-
   return (
     <View style={{ flex: 1, backgroundColor: '#E0F2FE' }}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
@@ -111,14 +106,6 @@ const ProfileScreen = () => {
             end={{ x: 1, y: 1 }}
             style={{ flex: 1 }}
           />
-          {/* Curved bottom edge using SVG */}
-          <Svg
-            height="70"
-            width="200%"
-            viewBox="0 0 1440 120"
-            style={{ position: 'absolute', bottom: -1, left: 0, right: 0 }}>
-            <Path d="M0,0 Q720,120 1440,0 L1440,120 L0,120 Z" fill="#E0F2FE" />
-          </Svg>
 
           {/* Decorative circles */}
           <View
@@ -231,10 +218,6 @@ const ProfileScreen = () => {
                     ? `${user.lastName} ${user.firstName}`
                     : 'Người dùng'}
               </Text>
-              {/* <Text style={{ fontSize: 14, color: 'rgba(255,255,255,0.9)', lineHeight: 20 }}>
-                {primaryProfile?.phone || user?.phone || 'Chưa cập nhật'} •{' '}
-                {user?.email || 'Chưa cập nhật'}
-              </Text> */}
             </View>
           </View>
         </View>
@@ -262,37 +245,6 @@ const ProfileScreen = () => {
                 </View>
                 <Text className="flex-1 text-base font-medium text-slate-900">
                   Thông tin cá nhân
-                </Text>
-                <Ionicons name="chevron-forward" size={20} color="#06B6D4" />
-              </TouchableOpacity>
-              <TouchableOpacity
-                className="flex-row items-center border-b border-gray-100 p-4"
-                onPress={() => {
-                  if (primaryProfile) {
-                    router.push({
-                      pathname: '/(homes)/(profile)/additional-info',
-                      params: { profile: JSON.stringify(primaryProfile) },
-                    });
-                  } else {
-                    router.push('/(homes)/(profile)/additional-info' as any);
-                  }
-                }}>
-                <View className="mr-4 h-10 w-10 items-center justify-center rounded-full bg-cyan-100">
-                  <Ionicons name="add-circle-outline" size={20} color="#0284C7" />
-                </View>
-                <Text className="flex-1 text-base font-medium text-slate-900">
-                  Thông tin bổ sung
-                </Text>
-                <Ionicons name="chevron-forward" size={20} color="#06B6D4" />
-              </TouchableOpacity>
-              <TouchableOpacity
-                className="flex-row items-center p-4"
-                onPress={() => router.push('/(profile)/health-info' as any)}>
-                <View className="mr-4 h-10 w-10 items-center justify-center rounded-full bg-cyan-100">
-                  <Ionicons name="heart-outline" size={20} color="#0284C7" />
-                </View>
-                <Text className="flex-1 text-base font-medium text-slate-900">
-                  Thông tin sức khỏe
                 </Text>
                 <Ionicons name="chevron-forward" size={20} color="#06B6D4" />
               </TouchableOpacity>
@@ -383,5 +335,4 @@ const ProfileScreen = () => {
   );
 };
 
-// Thay đổi cuối cùng: Tách riêng export default để đảm bảo tính ổn định
 export default ProfileScreen;

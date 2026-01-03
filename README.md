@@ -176,41 +176,6 @@ npm run web      # Web
 - **QR Scanner**: Quét mã QR để check-in
 - **Tài khoản**: Thông tin người dùng và cài đặt
 
-## 🔧 API Endpoints
-
-### Authentication
-
-- `POST /api/auth/register` - Đăng ký tài khoản
-- `POST /api/auth/login` - Đăng nhập
-- `POST /api/auth/verify-email` - Xác thực email
-- `POST /api/auth/refresh-token` - Làm mới token
-
-### Appointments
-
-- `GET /api/appointments/patient/my-appointments` - Lịch hẹn của bệnh nhân
-- `POST /api/appointments` - Tạo lịch hẹn mới
-- `PUT /api/appointments/:id` - Cập nhật lịch hẹn
-- `DELETE /api/appointments/:id` - Hủy lịch hẹn
-
-### Doctors
-
-- `GET /api/doctor` - Danh sách bác sĩ
-- `GET /api/doctor/services` - Dịch vụ của bác sĩ
-- `GET /api/doctor/timeslot` - Lịch làm việc của bác sĩ
-
-## 🗄️ Database Schema
-
-### Các bảng chính
-
-- **User**: Thông tin người dùng (bệnh nhân, bác sĩ, lễ tân, admin)
-- **DoctorProfile**: Hồ sơ bác sĩ với chuyên khoa và kinh nghiệm
-- **Appointment**: Lịch hẹn khám bệnh
-- **Service**: Dịch vụ khám bệnh
-- **Prescription**: Đơn thuốc
-- **Medicine**: Thuốc trong hệ thống
-- **Clinic**: Thông tin cơ sở phòng khám
-- **Transaction**: Giao dịch thanh toán
-
 ## 🔐 Bảo mật
 
 - **JWT Authentication** cho API access
@@ -261,8 +226,8 @@ Dự án này được phân phối dưới MIT License. Xem file `LICENSE` đ�
 ## 📞 Liên hệ
 
 - **Email**: contact@sepolia-health.com
-- **Website**: https://sepolia-health.com
-- **GitHub**: https://github.com/sepolia-health
+- **Website**: https://vuduyanh.id.vn/
+- **GitHub**: https://github.com/xinchaoduyanh/Sepolia-Health
 
 ---
 

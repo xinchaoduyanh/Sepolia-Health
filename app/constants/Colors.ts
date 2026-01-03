@@ -14,6 +14,7 @@ const Colors = {
     // Secondary colors
     secondary: '#10B981',
     secondaryLight: '#6EE7B7',
+    secondaryLight2: '#A7F3D0',
     secondaryForeground: '#FFFFFF',
 
     // Accent
@@ -24,6 +25,8 @@ const Colors = {
     background: '#E0F2FE',
     backgroundSecondary: '#D1ECFD',
     surface: '#BAE6FD',
+    white: '#FFFFFF',
+    darkText: '#0F172A',
 
     // Text
     text: '#0F172A',
@@ -34,6 +37,8 @@ const Colors = {
     border: '#93D5F8',
     input: '#BAE6FD',
     card: '#BAE6FD',
+    skeleton: '#E1E9EE',
+    shadow: '#000000',
 
     // Status
     success: '#10B981',

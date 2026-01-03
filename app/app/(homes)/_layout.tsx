@@ -50,10 +50,10 @@ export default function TabLayout() {
           }}
         />
 
-        <Tabs.Screen
-          name="(qr-scanner)"
+        {/* <Tabs.Screen
+          name="(appointment)"
           options={{
-            title: 'Quét QR',
+            title: 'Đặt lịch',
             tabBarIcon: ({ color, size }) => (
               <View style={{ alignItems: 'center', justifyContent: 'center' }}>
                 <View
@@ -70,9 +70,7 @@ export default function TabLayout() {
                     shadowRadius: 12,
                     elevation: 8,
                     marginTop: -20,
-                  }}>
-                  <Ionicons name="qr-code" size={28} color="white" />
-                </View>
+                  }}></View>
               </View>
             ),
             tabBarButton: (props) => {
@@ -111,14 +109,15 @@ export default function TabLayout() {
                         color: '#0284C7',
                         marginTop: 4,
                       }}>
-                      Quét QR
+                      Đặt lích
                     </Text>
                   </View>
                 </TouchableOpacity>
               );
             },
           }}
-        />
+        /> */}
+
         <Tabs.Screen
           name="(profile)"
           options={{

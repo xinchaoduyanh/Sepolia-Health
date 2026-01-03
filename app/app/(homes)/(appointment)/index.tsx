@@ -2,6 +2,7 @@ import { usePayment } from '@/contexts/PaymentContext';
 import { useCancelAppointment, useMyAppointments } from '@/lib/api/appointments';
 import { AppointmentStatus, PaymentStatus } from '@/types';
 import { formatTime } from '@/utils/datetime';
+import Colors from '@/constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -20,6 +21,7 @@ import {
   TouchableOpacity,
   View,
   ViewStyle,
+  useWindowDimensions,
 } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import Svg, { Path } from 'react-native-svg';
@@ -30,6 +32,35 @@ interface SkeletonProps {
   borderRadius?: number;
   style?: ViewStyle;
 }
+
+const useResponsive = () => {
+  const { width: screenWidth } = useWindowDimensions();
+
+  return {
+    screenWidth,
+    isSmall: screenWidth < 375,
+    isMedium: screenWidth >= 375 && screenWidth < 768,
+    isLarge: screenWidth >= 768,
+    horizontalPadding: screenWidth < 375 ? 16 : 24,
+    // Responsive font sizes
+    fontSize: {
+      xs: screenWidth < 375 ? 11 : 12,
+      sm: screenWidth < 375 ? 12 : 14,
+      base: screenWidth < 375 ? 14 : 16,
+      lg: screenWidth < 375 ? 16 : 18,
+      xl: screenWidth < 375 ? 18 : 20,
+      xxl: screenWidth < 375 ? 20 : 22,
+    },
+    // Responsive spacing
+    spacing: {
+      xs: screenWidth < 375 ? 4 : 6,
+      sm: screenWidth < 375 ? 8 : 12,
+      base: screenWidth < 375 ? 12 : 16,
+      lg: screenWidth < 375 ? 16 : 20,
+      xl: screenWidth < 375 ? 24 : 32,
+    },
+  };
+};
 
 const Skeleton = ({ width, height, borderRadius, style }: SkeletonProps) => {
   const opacity = useRef(new Animated.Value(0.3)).current;
@@ -58,7 +89,7 @@ const Skeleton = ({ width, height, borderRadius, style }: SkeletonProps) => {
           width,
           height,
           borderRadius: borderRadius || 4,
-          backgroundColor: '#E1E9EE',
+          backgroundColor: Colors.skeleton,
           opacity,
         },
         style,
@@ -67,12 +98,13 @@ const Skeleton = ({ width, height, borderRadius, style }: SkeletonProps) => {
   );
 };
 
-const AppointmentSkeleton = () => (
+const AppointmentSkeleton = ({ responsive }: { responsive: ReturnType<typeof useResponsive> }) => (
   <View
     className="mb-4 rounded-xl bg-white p-4"
     style={{
       borderLeftWidth: 4,
       borderLeftColor: '#E5E7EB',
+      marginBottom: responsive.spacing.base,
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.1,
@@ -83,28 +115,64 @@ const AppointmentSkeleton = () => (
       {/* Date Block Skeleton */}
       <View
         className="mr-4 items-center justify-center rounded-lg px-3 py-2"
-        style={{ backgroundColor: '#F0FDFA', width: 60, height: 60 }}>
-        <Skeleton width={30} height={12} style={{ marginBottom: 4 }} />
-        <Skeleton width={40} height={24} />
+        style={{
+          backgroundColor: '#F0FDFA',
+          width: responsive.isSmall ? 55 : 60,
+          height: responsive.isSmall ? 55 : 60,
+          marginRight: responsive.spacing.sm,
+        }}>
+        <Skeleton
+          width={responsive.isSmall ? 25 : 30}
+          height={responsive.isSmall ? 10 : 12}
+          style={{ marginBottom: responsive.spacing.xs }}
+        />
+        <Skeleton width={responsive.isSmall ? 35 : 40} height={responsive.isSmall ? 20 : 24} />
       </View>
 
       {/* Details Skeleton */}
       <View className="flex-1">
-        <Skeleton width={100} height={16} style={{ marginBottom: 8, borderRadius: 10 }} />
-        <Skeleton width="80%" height={20} style={{ marginBottom: 8 }} />
-        <Skeleton width="60%" height={14} style={{ marginBottom: 6 }} />
-        <Skeleton width="50%" height={14} style={{ marginBottom: 10 }} />
+        <Skeleton
+          width={100}
+          height={responsive.fontSize.sm}
+          style={{ marginBottom: responsive.spacing.sm, borderRadius: 10 }}
+        />
+        <Skeleton
+          width="80%"
+          height={responsive.fontSize.lg}
+          style={{ marginBottom: responsive.spacing.sm }}
+        />
+        <Skeleton
+          width="60%"
+          height={responsive.fontSize.sm}
+          style={{ marginBottom: responsive.spacing.xs }}
+        />
+        <Skeleton
+          width="50%"
+          height={responsive.fontSize.sm}
+          style={{ marginBottom: responsive.spacing.base }}
+        />
         <View className="flex-row items-center">
-          <Skeleton width={16} height={16} borderRadius={8} style={{ marginRight: 6 }} />
-          <Skeleton width={120} height={14} />
+          <Skeleton
+            width={16}
+            height={16}
+            borderRadius={8}
+            style={{ marginRight: responsive.spacing.xs }}
+          />
+          <Skeleton width={120} height={responsive.fontSize.sm} />
         </View>
-        <Skeleton width={80} height={20} borderRadius={10} style={{ marginTop: 10 }} />
+        <Skeleton
+          width={80}
+          height={responsive.fontSize.lg}
+          borderRadius={10}
+          style={{ marginTop: responsive.spacing.base }}
+        />
       </View>
     </View>
   </View>
 );
 
 export default function AppointmentsListScreen() {
+  const responsive = useResponsive();
   const [page, setPage] = useState(1);
   const [dateSortOrder, setDateSortOrder] = useState<'asc' | 'desc'>('desc');
   const [paymentFilter, setPaymentFilter] = useState<'all' | 'PENDING' | 'PAID'>('all');
@@ -164,14 +232,14 @@ export default function AppointmentsListScreen() {
   ) => {
     // If already paid, don't check pending payment status
     if (billingStatus && billingStatus.toUpperCase() === 'PAID') {
-      return { text: 'Đã thanh toán', color: '#10B981', bgColor: '#D1FAE5' };
+      return { text: 'Đã thanh toán', color: Colors.secondary, bgColor: '#D1FAE5' };
     }
 
     // Check if this appointment has a pending payment
     if (isPendingPaymentForAppointment(appointmentId)) {
       return {
         text: 'Đang thanh toán',
-        color: '#10B981',
+        color: Colors.secondary,
         bgColor: '#D1FAE5',
       };
     }
@@ -182,11 +250,11 @@ export default function AppointmentsListScreen() {
       case 'ON_GOING':
         return { text: 'Đang diễn ra', color: '#3B82F6', bgColor: '#DBEAFE' };
       case 'COMPLETED':
-        return { text: 'Hoàn thành', color: '#6B7280', bgColor: '#F3F4F6' };
+        return { text: 'Hoàn thành', color: Colors.textMuted, bgColor: '#F3F4F6' };
       case 'CANCELLED':
-        return { text: 'Đã hủy', color: '#EF4444', bgColor: '#FEE2E2' };
+        return { text: 'Đã hủy', color: Colors.error, bgColor: '#FEE2E2' };
       default:
-        return { text: 'Chờ xác nhận', color: '#6B7280', bgColor: '#F3F4F6' };
+        return { text: 'Chờ xác nhận', color: Colors.textMuted, bgColor: '#F3F4F6' };
     }
   };
 
@@ -197,10 +265,10 @@ export default function AppointmentsListScreen() {
     const normalizedBillingStatus = billingStatus?.toUpperCase();
 
     if (status === 'UPCOMING' && normalizedBillingStatus === 'PENDING') return '#F59E0B';
-    if (status === 'UPCOMING' && normalizedBillingStatus === 'PAID') return '#10B981';
+    if (status === 'UPCOMING' && normalizedBillingStatus === 'PAID') return Colors.secondary;
     if (status === 'ON_GOING') return '#3B82F6';
-    if (status === 'COMPLETED') return '#6B7280';
-    if (status === 'CANCELLED') return '#EF4444';
+    if (status === 'COMPLETED') return Colors.textMuted;
+    if (status === 'CANCELLED') return Colors.error;
     return '#E5E7EB';
   };
 
@@ -246,7 +314,7 @@ export default function AppointmentsListScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#E0F2FE' }}>
+    <View style={{ flex: 1, backgroundColor: Colors.background }}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
       <ScrollView
@@ -260,21 +328,14 @@ export default function AppointmentsListScreen() {
         automaticallyAdjustContentInsets={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}>
         {/* Background Gradient - now scrollable and extends to top */}
-        <View style={{ height: 320, position: 'relative', marginTop: -60 }}>
+        <View
+          style={{ height: responsive.isSmall ? 280 : 300, position: 'relative', marginTop: -60 }}>
           <LinearGradient
-            colors={['#0284C7', '#06B6D4', '#10B981']}
+            colors={Colors.gradientPrimary}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={{ flex: 1 }}
           />
-          {/* Curved bottom edge using SVG */}
-          <Svg
-            height="70"
-            width="200%"
-            viewBox="0 0 1440 120"
-            style={{ position: 'absolute', bottom: -1, left: 0, right: 0 }}>
-            <Path d="M0,0 Q720,120 1440,0 L1440,120 L0,120 Z" fill="#E0F2FE" />
-          </Svg>
 
           {/* Decorative circles */}
           <View
@@ -282,9 +343,9 @@ export default function AppointmentsListScreen() {
               position: 'absolute',
               top: -60,
               right: -40,
-              height: 180,
-              width: 180,
-              borderRadius: 90,
+              height: responsive.isSmall ? 150 : 180,
+              width: responsive.isSmall ? 150 : 180,
+              borderRadius: responsive.isSmall ? 75 : 90,
               backgroundColor: 'rgba(255,255,255,0.12)',
             }}
           />
@@ -293,9 +354,9 @@ export default function AppointmentsListScreen() {
               position: 'absolute',
               top: 120,
               left: -50,
-              height: 150,
-              width: 150,
-              borderRadius: 75,
+              height: responsive.isSmall ? 120 : 150,
+              width: responsive.isSmall ? 120 : 150,
+              borderRadius: responsive.isSmall ? 60 : 75,
               backgroundColor: 'rgba(255,255,255,0.08)',
             }}
           />
@@ -304,14 +365,19 @@ export default function AppointmentsListScreen() {
           <View
             style={{
               position: 'absolute',
-              top: 120,
-              left: 24,
-              right: 24,
+              top: responsive.isSmall ? 90 : 120,
+              left: responsive.horizontalPadding,
+              right: responsive.horizontalPadding,
               flexDirection: 'row',
               alignItems: 'center',
               justifyContent: 'space-between',
             }}>
-            <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#FFFFFF' }}>
+            <Text
+              style={{
+                fontSize: responsive.fontSize.xxl,
+                fontWeight: 'bold',
+                color: Colors.white,
+              }}>
               Lịch hẹn của tôi
             </Text>
             <TouchableOpacity
@@ -321,35 +387,62 @@ export default function AppointmentsListScreen() {
                 alignItems: 'center',
                 backgroundColor: 'rgba(255,255,255,0.25)',
                 borderRadius: 999,
-                paddingHorizontal: 16,
-                paddingVertical: 10,
+                paddingHorizontal: responsive.spacing.base,
+                paddingVertical: responsive.spacing.sm,
                 borderWidth: 1,
                 borderColor: 'rgba(255,255,255,0.3)',
               }}>
-              <Ionicons name="add-circle" size={18} color="#FFFFFF" />
-              <Text style={{ marginLeft: 6, fontSize: 14, fontWeight: '600', color: '#FFFFFF' }}>
+              <Ionicons
+                name="add-circle"
+                size={responsive.isSmall ? 16 : 18}
+                color={Colors.white}
+              />
+              <Text
+                style={{
+                  marginLeft: responsive.spacing.sm,
+                  fontSize: responsive.fontSize.sm,
+                  fontWeight: '600',
+                  color: Colors.white,
+                }}>
                 Đặt lịch ngay
               </Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        <View style={{ paddingHorizontal: 24, marginTop: -100, marginBottom: 24 }}>
+        <View
+          style={{
+            paddingHorizontal: responsive.horizontalPadding,
+            marginTop: -100,
+            marginBottom: responsive.spacing.lg,
+          }}>
           {/* Sort Fields */}
-          <View className="mb-4 flex-row gap-3">
+          <View className="mb-4 flex-row gap-3" style={{ marginBottom: responsive.spacing.lg }}>
             {/* Date Sort Dropdown */}
             <View className="flex-1">
-              <View className="mb-2 flex-row items-center">
-                <Ionicons name="time-outline" size={16} color="#0284C7" />
-                <Text className="ml-1.5 text-sm font-semibold text-gray-700">Thời gian khám</Text>
+              <View
+                className="mb-2 flex-row items-center"
+                style={{ marginBottom: responsive.spacing.sm }}>
+                <Ionicons
+                  name="time-outline"
+                  size={responsive.isSmall ? 14 : 16}
+                  color={Colors.primary}
+                />
+                <Text
+                  className="ml-1.5 text-sm font-semibold text-gray-700"
+                  style={{ marginLeft: responsive.spacing.sm, fontSize: responsive.fontSize.sm }}>
+                  Thời gian khám
+                </Text>
               </View>
               <TouchableOpacity
                 onPress={() => setDateSortModalVisible(true)}
                 activeOpacity={0.7}
                 className="flex-row items-center justify-between rounded-xl border-2 bg-white px-4 py-3.5"
                 style={{
+                  paddingHorizontal: responsive.spacing.base,
+                  paddingVertical: responsive.spacing.sm,
                   borderColor: '#E5E7EB',
-                  shadowColor: '#0284C7',
+                  shadowColor: Colors.primary,
                   shadowOffset: { width: 0, height: 2 },
                   shadowOpacity: 0.1,
                   shadowRadius: 4,
@@ -358,30 +451,49 @@ export default function AppointmentsListScreen() {
                 <View className="flex-row items-center">
                   <Ionicons
                     name={dateSortOrder === 'asc' ? 'calendar-outline' : 'calendar'}
-                    size={18}
-                    color="#0284C7"
+                    size={responsive.isSmall ? 16 : 18}
+                    color={Colors.primary}
                   />
-                  <Text className="ml-2 text-sm font-semibold text-gray-900">
+                  <Text
+                    numberOfLines={1}
+                    className="ml-2 text-sm font-semibold text-gray-900"
+                    style={{ marginLeft: responsive.spacing.sm, fontSize: responsive.fontSize.sm }}>
                     {dateSortOrder === 'asc' ? 'Cũ nhất' : 'Sớm nhất'}
                   </Text>
                 </View>
-                <Ionicons name="chevron-down" size={18} color="#0284C7" />
+                <Ionicons
+                  name="chevron-down"
+                  size={responsive.isSmall ? 16 : 18}
+                  color={Colors.primary}
+                />
               </TouchableOpacity>
             </View>
 
             {/* Payment Status Filter Dropdown */}
             <View className="flex-1">
-              <View className="mb-2 flex-row items-center">
-                <Ionicons name="card-outline" size={16} color="#10B981" />
-                <Text className="ml-1.5 text-sm font-semibold text-gray-700">Thanh toán</Text>
+              <View
+                className="mb-2 flex-row items-center"
+                style={{ marginBottom: responsive.spacing.sm }}>
+                <Ionicons
+                  name="card-outline"
+                  size={responsive.isSmall ? 14 : 16}
+                  color={Colors.secondary}
+                />
+                <Text
+                  className="ml-1.5 text-sm font-semibold text-gray-700"
+                  style={{ marginLeft: responsive.spacing.sm, fontSize: responsive.fontSize.sm }}>
+                  Thanh toán
+                </Text>
               </View>
               <TouchableOpacity
                 onPress={() => setPaymentFilterModalVisible(true)}
                 activeOpacity={0.7}
                 className="flex-row items-center justify-between rounded-xl border-2 bg-white px-4 py-3.5"
                 style={{
+                  paddingHorizontal: responsive.spacing.base,
+                  paddingVertical: responsive.spacing.sm,
                   borderColor: '#E5E7EB',
-                  shadowColor: '#10B981',
+                  shadowColor: Colors.secondary,
                   shadowOffset: { width: 0, height: 2 },
                   shadowOpacity: 0.1,
                   shadowRadius: 4,
@@ -396,16 +508,19 @@ export default function AppointmentsListScreen() {
                           ? 'time-outline'
                           : 'checkmark-circle-outline'
                     }
-                    size={18}
+                    size={responsive.isSmall ? 16 : 18}
                     color={
                       paymentFilter === 'all'
-                        ? '#6B7280'
+                        ? Colors.textMuted
                         : paymentFilter === 'PENDING'
                           ? '#F59E0B'
-                          : '#10B981'
+                          : Colors.secondary
                     }
                   />
-                  <Text className="ml-2 text-sm font-semibold text-gray-900">
+                  <Text
+                    numberOfLines={1}
+                    className="ml-2 text-sm font-semibold text-gray-900"
+                    style={{ marginLeft: responsive.spacing.sm, fontSize: responsive.fontSize.sm }}>
                     {paymentFilter === 'all'
                       ? 'Tất cả'
                       : paymentFilter === 'PENDING'
@@ -413,7 +528,11 @@ export default function AppointmentsListScreen() {
                         : 'Đã thanh toán'}
                   </Text>
                 </View>
-                <Ionicons name="chevron-down" size={18} color="#10B981" />
+                <Ionicons
+                  name="chevron-down"
+                  size={responsive.isSmall ? 16 : 18}
+                  color={Colors.secondary}
+                />
               </TouchableOpacity>
             </View>
           </View>
@@ -421,33 +540,55 @@ export default function AppointmentsListScreen() {
           {/* Appointments List */}
           {isLoading ? (
             <View>
-              <AppointmentSkeleton />
-              <AppointmentSkeleton />
-              <AppointmentSkeleton />
+              <AppointmentSkeleton responsive={responsive} />
             </View>
           ) : appointments.length === 0 ? (
-            <View className="items-center py-20">
+            <View className="items-center py-20" style={{ paddingVertical: responsive.spacing.xl }}>
               <View
                 className="items-center justify-center rounded-full bg-white p-6"
                 style={{
+                  padding: responsive.spacing.lg,
                   shadowColor: '#000',
                   shadowOffset: { width: 0, height: 2 },
                   shadowOpacity: 0.1,
                   shadowRadius: 4,
                   elevation: 3,
                 }}>
-                <Ionicons name="calendar-outline" size={64} color="#0284C7" />
+                <Ionicons
+                  name="calendar-outline"
+                  size={responsive.isSmall ? 56 : 64}
+                  color={Colors.primary}
+                />
               </View>
-              <Text className="mt-6 text-xl font-bold text-gray-900">Chưa có lịch hẹn nào</Text>
-              <Text className="mt-2 text-center text-base text-gray-500">
+              <Text
+                className="mt-6 text-xl font-bold text-gray-900"
+                style={{ marginTop: responsive.spacing.lg, fontSize: responsive.fontSize.lg }}>
+                Chưa có lịch hẹn nào
+              </Text>
+              <Text
+                className="mt-2 text-center text-base text-gray-500"
+                style={{ marginTop: responsive.spacing.sm, fontSize: responsive.fontSize.base }}>
                 Hãy đặt lịch khám để bắt đầu chăm sóc sức khỏe
               </Text>
               <TouchableOpacity
                 onPress={() => router.push('/(homes)/(appointment)/create')}
                 className="mt-6 flex-row items-center rounded-lg px-6 py-3"
-                style={{ backgroundColor: '#0284C7' }}>
-                <Ionicons name="add-circle-outline" size={20} color="white" />
-                <Text className="ml-2 text-base font-semibold text-white">Đặt lịch ngay</Text>
+                style={{
+                  marginTop: responsive.spacing.lg,
+                  paddingHorizontal: responsive.spacing.lg,
+                  paddingVertical: responsive.spacing.base,
+                  backgroundColor: Colors.primary,
+                }}>
+                <Ionicons
+                  name="add-circle-outline"
+                  size={responsive.isSmall ? 18 : 20}
+                  color="white"
+                />
+                <Text
+                  className="ml-2 text-base font-semibold text-white"
+                  style={{ marginLeft: responsive.spacing.sm, fontSize: responsive.fontSize.base }}>
+                  Đặt lịch ngay
+                </Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -481,6 +622,9 @@ export default function AppointmentsListScreen() {
                   onPress={() => router.push(`/(homes)/(appointment-detail)?id=${appointment.id}`)}
                   className="mb-4 rounded-xl bg-white p-4"
                   style={{
+                    marginTop: responsive.spacing.base,
+                    paddingHorizontal: responsive.spacing.base,
+                    paddingVertical: responsive.spacing.base,
                     borderLeftWidth: 4,
                     borderLeftColor: borderColor,
                     shadowColor: '#000',
@@ -493,11 +637,19 @@ export default function AppointmentsListScreen() {
                     {/* Date Block */}
                     <View
                       className="mr-4 items-center justify-center rounded-lg px-3 py-2"
-                      style={{ backgroundColor: '#F0FDFA' }}>
-                      <Text className="text-sm font-medium text-gray-600">
+                      style={{
+                        backgroundColor: '#F0FDFA',
+                        paddingHorizontal: responsive.spacing.sm,
+                        paddingVertical: responsive.spacing.sm,
+                      }}>
+                      <Text
+                        className="text-sm font-medium text-gray-600"
+                        style={{ fontSize: responsive.fontSize.sm }}>
                         {month}/{year}
                       </Text>
-                      <Text className="text-2xl font-bold" style={{ color: '#0284C7' }}>
+                      <Text
+                        className="text-2xl font-bold"
+                        style={{ color: Colors.primary, fontSize: responsive.fontSize.xxl }}>
                         {day.toString().padStart(2, '0')}
                       </Text>
                     </View>
@@ -505,36 +657,76 @@ export default function AppointmentsListScreen() {
                     {/* Appointment Details */}
                     <View className="flex-1">
                       {/* Patient Info Badge - Move to top */}
-                      <View className="mb-2">
-                        <View className="self-start rounded-full bg-blue-50 px-3 py-1">
-                          <Text className="text-xs font-medium text-blue-600">
+                      <View className="mb-2" style={{ marginBottom: responsive.spacing.sm }}>
+                        <View
+                          className="self-start rounded-full bg-blue-50 px-3 py-1"
+                          style={{
+                            paddingHorizontal: responsive.spacing.sm,
+                            paddingVertical: responsive.spacing.xs,
+                          }}>
+                          <Text
+                            className="text-xs font-medium text-blue-600"
+                            style={{ fontSize: responsive.fontSize.xs }}>
                             {(appointment as any).patientProfile?.relationship || 'Bản thân'}
                           </Text>
                         </View>
                       </View>
 
-                      <Text className="text-lg font-bold text-gray-900">
+                      <Text
+                        numberOfLines={2}
+                        className="text-lg font-bold text-gray-900"
+                        style={{ fontSize: responsive.fontSize.lg }}>
                         {appointment.service.name}
                       </Text>
-                      <Text className="mt-1 text-sm text-gray-600">
+                      <Text
+                        numberOfLines={1}
+                        className="mt-1 text-sm text-gray-600"
+                        style={{
+                          marginTop: responsive.spacing.xs,
+                          fontSize: responsive.fontSize.sm,
+                        }}>
                         BS. {appointment.doctor.lastName} {appointment.doctor.firstName}
                       </Text>
-                      <Text className="mt-1 text-sm text-gray-500">
+                      <Text
+                        numberOfLines={1}
+                        className="mt-1 text-sm text-gray-500"
+                        style={{
+                          marginTop: responsive.spacing.xs,
+                          fontSize: responsive.fontSize.sm,
+                        }}>
                         {appointment.clinic?.name || 'Bệnh viện'}
                       </Text>
 
-                      <View className="mt-2 flex-row items-center">
-                        <Ionicons name="time-outline" size={16} color="#6B7280" />
-                        <Text className="ml-1 text-sm text-gray-600">{timeRange}</Text>
+                      <View
+                        className="mt-2 flex-row items-center"
+                        style={{ marginTop: responsive.spacing.sm }}>
+                        <Ionicons
+                          name="time-outline"
+                          size={responsive.isSmall ? 14 : 16}
+                          color={Colors.textMuted}
+                        />
+                        <Text
+                          numberOfLines={1}
+                          className="ml-1 text-sm text-gray-600"
+                          style={{
+                            marginLeft: responsive.spacing.xs,
+                            fontSize: responsive.fontSize.sm,
+                          }}>
+                          {timeRange}
+                        </Text>
                       </View>
 
-                      <View className="mt-2">
+                      <View className="mt-2" style={{ marginTop: responsive.spacing.sm }}>
                         <View
                           className="self-start rounded-full px-3 py-1"
-                          style={{ backgroundColor: statusInfo.bgColor }}>
+                          style={{
+                            backgroundColor: statusInfo.bgColor,
+                            paddingHorizontal: responsive.spacing.sm,
+                            paddingVertical: responsive.spacing.xs,
+                          }}>
                           <Text
                             className="text-xs font-semibold"
-                            style={{ color: statusInfo.color }}>
+                            style={{ color: statusInfo.color, fontSize: responsive.fontSize.xs }}>
                             {statusInfo.text}
                           </Text>
                         </View>
@@ -542,7 +734,7 @@ export default function AppointmentsListScreen() {
 
                       {/* Action Buttons - Only for UPCOMING appointments */}
                       {isUpcoming && (
-                        <View className="mt-3">
+                        <View className="mt-3" style={{ marginTop: responsive.spacing.base }}>
                           {/* Payment Button */}
                           {hasUnpaidBilling && (
                             <TouchableOpacity
@@ -560,6 +752,7 @@ export default function AppointmentsListScreen() {
                                     : 'bg-gray-400'
                               }`}
                               style={{
+                                paddingVertical: responsive.spacing.base,
                                 shadowColor: '#000',
                                 shadowOffset: { width: 0, height: 2 },
                                 shadowOpacity: 0.2,
@@ -569,15 +762,33 @@ export default function AppointmentsListScreen() {
                               <View className="flex-row items-center">
                                 {isPaymentPending ? (
                                   <>
-                                    <Ionicons name="qr-code" size={18} color="white" />
-                                    <Text className="ml-2 text-sm font-bold text-white">
+                                    <Ionicons
+                                      name="qr-code"
+                                      size={responsive.isSmall ? 16 : 18}
+                                      color="white"
+                                    />
+                                    <Text
+                                      className="ml-2 text-sm font-bold text-white"
+                                      style={{
+                                        marginLeft: responsive.spacing.sm,
+                                        fontSize: responsive.fontSize.sm,
+                                      }}>
                                       Xem QR thanh toán
                                     </Text>
                                   </>
                                 ) : (
                                   <>
-                                    <Ionicons name="card" size={18} color="white" />
-                                    <Text className="ml-2 text-sm font-bold text-white">
+                                    <Ionicons
+                                      name="card"
+                                      size={responsive.isSmall ? 16 : 18}
+                                      color="white"
+                                    />
+                                    <Text
+                                      className="ml-2 text-sm font-bold text-white"
+                                      style={{
+                                        marginLeft: responsive.spacing.sm,
+                                        fontSize: responsive.fontSize.sm,
+                                      }}>
                                       Thanh toán
                                     </Text>
                                   </>
@@ -587,18 +798,29 @@ export default function AppointmentsListScreen() {
                           )}
 
                           {!canCreatePayment && !isPaymentPending && hasUnpaidBilling && (
-                            <Text className="mt-2 text-center text-xs text-red-500">
+                            <Text
+                              className="mt-2 text-center text-xs text-red-500"
+                              style={{
+                                marginTop: responsive.spacing.sm,
+                                fontSize: responsive.fontSize.xs,
+                              }}>
                               Vui lòng hoàn tất giao dịch đang chờ trước
                             </Text>
                           )}
 
                           {/* Other Action Buttons */}
-                          <View className="mt-3 flex-row gap-2">
+                          <View
+                            className="mt-3 flex-row gap-2"
+                            style={{
+                              marginTop: responsive.spacing.base,
+                              gap: responsive.spacing.sm,
+                            }}>
                             <TouchableOpacity
                               className="flex-1 flex-row items-center justify-center rounded-lg border-2 bg-white py-2.5"
                               style={{
-                                borderColor: '#0284C7',
-                                shadowColor: '#0284C7',
+                                paddingVertical: responsive.spacing.sm,
+                                borderColor: Colors.primary,
+                                shadowColor: Colors.primary,
                                 shadowOffset: { width: 0, height: 1 },
                                 shadowOpacity: 0.1,
                                 shadowRadius: 2,
@@ -608,20 +830,29 @@ export default function AppointmentsListScreen() {
                                 setQrAppointmentId(appointment.id);
                                 setQrModalVisible(true);
                               }}>
-                              <Ionicons name="qr-code-outline" size={16} color="#0284C7" />
+                              <Ionicons
+                                name="qr-code-outline"
+                                size={responsive.isSmall ? 14 : 16}
+                                color={Colors.primary}
+                              />
                               <Text
                                 className="ml-1.5 text-sm font-semibold"
-                                style={{ color: '#0284C7' }}>
-                                Mã QR
+                                style={{
+                                  marginLeft: responsive.spacing.xs,
+                                  fontSize: responsive.fontSize.sm,
+                                  color: Colors.primary,
+                                }}>
+                                QR
                               </Text>
                             </TouchableOpacity>
                             <TouchableOpacity
                               className="flex-1 flex-row items-center justify-center rounded-lg border-2 bg-white py-2.5"
                               style={{
+                                paddingVertical: responsive.spacing.sm,
                                 borderColor: isWithin4Hours(appointment.startTime)
                                   ? '#9CA3AF'
-                                  : '#0284C7',
-                                shadowColor: '#0284C7',
+                                  : Colors.primary,
+                                shadowColor: Colors.primary,
                                 shadowOffset: { width: 0, height: 1 },
                                 shadowOpacity: 0.1,
                                 shadowRadius: 2,
@@ -632,19 +863,13 @@ export default function AppointmentsListScreen() {
                               onPress={() =>
                                 router.push(`/(homes)/(appointment)/update?id=${appointment.id}`)
                               }>
-                              <Ionicons
-                                name="calendar-outline"
-                                size={16}
-                                color={
-                                  isWithin4Hours(appointment.startTime) ? '#9CA3AF' : '#0284C7'
-                                }
-                              />
                               <Text
-                                className="ml-1.5 text-sm font-semibold"
+                                className="text-sm font-semibold"
                                 style={{
+                                  fontSize: responsive.fontSize.sm,
                                   color: isWithin4Hours(appointment.startTime)
                                     ? '#9CA3AF'
-                                    : '#0284C7',
+                                    : Colors.primary,
                                 }}>
                                 Đổi lịch
                               </Text>
@@ -652,10 +877,11 @@ export default function AppointmentsListScreen() {
                             <TouchableOpacity
                               className="flex-1 flex-row items-center justify-center rounded-lg border-2 bg-white py-2.5"
                               style={{
+                                paddingVertical: responsive.spacing.sm,
                                 borderColor: isWithin4Hours(appointment.startTime)
                                   ? '#9CA3AF'
-                                  : '#EF4444',
-                                shadowColor: '#EF4444',
+                                  : Colors.error,
+                                shadowColor: Colors.error,
                                 shadowOffset: { width: 0, height: 1 },
                                 shadowOpacity: 0.1,
                                 shadowRadius: 2,
@@ -672,22 +898,16 @@ export default function AppointmentsListScreen() {
                               }
                               onPress={() => handleCancelAppointment(appointment.id)}>
                               {cancellingId === appointment.id ? (
-                                <ActivityIndicator size="small" color="#EF4444" />
+                                <ActivityIndicator size="small" color={Colors.error} />
                               ) : (
                                 <>
-                                  <Ionicons
-                                    name="close-circle-outline"
-                                    size={16}
-                                    color={
-                                      isWithin4Hours(appointment.startTime) ? '#9CA3AF' : '#EF4444'
-                                    }
-                                  />
                                   <Text
-                                    className="ml-1.5 text-sm font-semibold"
+                                    className="text-sm font-semibold"
                                     style={{
+                                      fontSize: responsive.fontSize.sm,
                                       color: isWithin4Hours(appointment.startTime)
                                         ? '#9CA3AF'
-                                        : '#EF4444',
+                                        : Colors.error,
                                     }}>
                                     Hủy lịch
                                   </Text>
@@ -696,7 +916,12 @@ export default function AppointmentsListScreen() {
                             </TouchableOpacity>
                           </View>
 
-                          <Text className="mt-2 text-xs text-gray-400">
+                          <Text
+                            className="mt-2 text-xs text-gray-400"
+                            style={{
+                              marginTop: responsive.spacing.sm,
+                              fontSize: responsive.fontSize.xs,
+                            }}>
                             (Quý khách chỉ được đổi/hủy lịch 1 lần)
                           </Text>
                         </View>
@@ -710,21 +935,27 @@ export default function AppointmentsListScreen() {
 
           {/* Pagination */}
           {!isLoading && appointments.length > 0 && totalPages > 1 && (
-            <View className="mt-6 flex-row items-center justify-center gap-2">
+            <View
+              className="mt-6 flex-row items-center justify-center gap-2"
+              style={{ marginTop: responsive.spacing.lg, gap: responsive.spacing.sm }}>
               <TouchableOpacity
                 onPress={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
                 className={`rounded-lg border px-4 py-2 ${
                   page === 1 ? 'border-gray-300 bg-gray-100' : 'border-blue-500 bg-white'
-                }`}>
+                }`}
+                style={{
+                  paddingHorizontal: responsive.spacing.base,
+                  paddingVertical: responsive.spacing.sm,
+                }}>
                 <Ionicons
                   name="chevron-back"
-                  size={20}
-                  color={page === 1 ? '#9CA3AF' : '#0284C7'}
+                  size={responsive.isSmall ? 18 : 20}
+                  color={page === 1 ? '#9CA3AF' : Colors.primary}
                 />
               </TouchableOpacity>
 
-              <View className="flex-row items-center gap-1">
+              <View className="flex-row items-center gap-1" style={{ gap: responsive.spacing.xs }}>
                 {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                   let pageNum: number;
                   if (totalPages <= 5) {
@@ -745,11 +976,16 @@ export default function AppointmentsListScreen() {
                         page === pageNum
                           ? 'border-blue-500 bg-blue-500'
                           : 'border-gray-300 bg-white'
-                      }`}>
+                      }`}
+                      style={{
+                        paddingHorizontal: responsive.spacing.base,
+                        paddingVertical: responsive.spacing.sm,
+                      }}>
                       <Text
                         className={`text-sm font-medium ${
                           page === pageNum ? 'text-white' : 'text-gray-700'
-                        }`}>
+                        }`}
+                        style={{ fontSize: responsive.fontSize.sm }}>
                         {pageNum}
                       </Text>
                     </TouchableOpacity>
@@ -762,11 +998,15 @@ export default function AppointmentsListScreen() {
                 disabled={page === totalPages}
                 className={`rounded-lg border px-4 py-2 ${
                   page === totalPages ? 'border-gray-300 bg-gray-100' : 'border-blue-500 bg-white'
-                }`}>
+                }`}
+                style={{
+                  paddingHorizontal: responsive.spacing.base,
+                  paddingVertical: responsive.spacing.sm,
+                }}>
                 <Ionicons
                   name="chevron-forward"
-                  size={20}
-                  color={page === totalPages ? '#9CA3AF' : '#0284C7'}
+                  size={responsive.isSmall ? 18 : 20}
+                  color={page === totalPages ? '#9CA3AF' : Colors.primary}
                 />
               </TouchableOpacity>
             </View>
@@ -774,7 +1014,9 @@ export default function AppointmentsListScreen() {
 
           {/* Page Info */}
           {!isLoading && appointments.length > 0 && (
-            <Text className="mt-4 text-center text-sm text-gray-500">
+            <Text
+              className="mt-4 text-center text-sm text-gray-500"
+              style={{ marginTop: responsive.spacing.lg, fontSize: responsive.fontSize.sm }}>
               Trang {page} / {totalPages} ({total} lịch hẹn)
             </Text>
           )}
@@ -793,7 +1035,7 @@ export default function AppointmentsListScreen() {
             backgroundColor: 'rgba(0,0,0,0.6)',
             justifyContent: 'center',
             alignItems: 'center',
-            padding: 20,
+            padding: responsive.horizontalPadding,
           }}
           onPress={() => setDateSortModalVisible(false)}>
           <View
@@ -803,7 +1045,7 @@ export default function AppointmentsListScreen() {
               backgroundColor: 'white',
               borderRadius: 20,
               overflow: 'hidden',
-              shadowColor: '#0284C7',
+              shadowColor: Colors.primary,
               shadowOffset: { width: 0, height: 8 },
               shadowOpacity: 0.3,
               shadowRadius: 16,
@@ -812,7 +1054,7 @@ export default function AppointmentsListScreen() {
             onStartShouldSetResponder={() => true}>
             {/* Header with Gradient */}
             <LinearGradient
-              colors={['#0284C7', '#06B6D4']}
+              colors={[Colors.primary, Colors.accent]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               className="px-5 py-4">
@@ -839,8 +1081,8 @@ export default function AppointmentsListScreen() {
                   dateSortOrder === 'asc'
                     ? {
                         borderWidth: 2,
-                        borderColor: '#0284C7',
-                        shadowColor: '#0284C7',
+                        borderColor: Colors.primary,
+                        shadowColor: Colors.primary,
                         shadowOffset: { width: 0, height: 2 },
                         shadowOpacity: 0.1,
                         shadowRadius: 4,
@@ -891,8 +1133,8 @@ export default function AppointmentsListScreen() {
                   dateSortOrder === 'desc'
                     ? {
                         borderWidth: 2,
-                        borderColor: '#0284C7',
-                        shadowColor: '#0284C7',
+                        borderColor: Colors.primary,
+                        shadowColor: Colors.primary,
                         shadowOffset: { width: 0, height: 2 },
                         shadowOpacity: 0.1,
                         shadowRadius: 4,
@@ -946,17 +1188,17 @@ export default function AppointmentsListScreen() {
             backgroundColor: 'rgba(0,0,0,0.6)',
             justifyContent: 'center',
             alignItems: 'center',
-            padding: 20,
+            padding: responsive.horizontalPadding,
           }}
           onPress={() => setPaymentFilterModalVisible(false)}>
           <View
             style={{
               width: '100%',
-              maxWidth: 320,
+              maxWidth: responsive.isSmall ? 300 : 320,
               backgroundColor: 'white',
               borderRadius: 20,
               overflow: 'hidden',
-              shadowColor: '#10B981',
+              shadowColor: Colors.secondary,
               shadowOffset: { width: 0, height: 8 },
               shadowOpacity: 0.3,
               shadowRadius: 16,
@@ -965,20 +1207,29 @@ export default function AppointmentsListScreen() {
             onStartShouldSetResponder={() => true}>
             {/* Header with Gradient */}
             <LinearGradient
-              colors={['#10B981', '#059669']}
+              colors={[Colors.secondary, Colors.secondaryLight]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
-              className="px-5 py-4">
+              style={{
+                paddingHorizontal: responsive.spacing.lg,
+                paddingVertical: responsive.spacing.base,
+              }}>
               <View className="flex-row items-center">
-                <View className="mr-3 rounded-full bg-white/20 p-2">
-                  <Ionicons name="card" size={20} color="white" />
+                <View
+                  className="mr-3 rounded-full bg-white/20 p-2"
+                  style={{ marginRight: responsive.spacing.base, padding: responsive.spacing.sm }}>
+                  <Ionicons name="card" size={responsive.isSmall ? 18 : 20} color="white" />
                 </View>
-                <Text className="flex-1 text-lg font-bold text-white">Lọc theo thanh toán</Text>
+                <Text
+                  className="flex-1 text-lg font-bold text-white"
+                  style={{ fontSize: responsive.fontSize.lg }}>
+                  Lọc theo thanh toán
+                </Text>
               </View>
             </LinearGradient>
 
             {/* Options */}
-            <View className="py-2">
+            <View className="py-2" style={{ paddingVertical: responsive.spacing.sm }}>
               <TouchableOpacity
                 onPress={() => {
                   setPaymentFilter('all');
@@ -992,8 +1243,8 @@ export default function AppointmentsListScreen() {
                   paymentFilter === 'all'
                     ? {
                         borderWidth: 2,
-                        borderColor: '#10B981',
-                        shadowColor: '#10B981',
+                        borderColor: Colors.secondary,
+                        shadowColor: Colors.secondary,
                         shadowOffset: { width: 0, height: 2 },
                         shadowOpacity: 0.1,
                         shadowRadius: 4,
@@ -1044,8 +1295,8 @@ export default function AppointmentsListScreen() {
                   paymentFilter === 'PENDING'
                     ? {
                         borderWidth: 2,
-                        borderColor: '#F59E0B',
-                        shadowColor: '#F59E0B',
+                        borderColor: Colors.warning,
+                        shadowColor: Colors.warning,
                         shadowOffset: { width: 0, height: 2 },
                         shadowOpacity: 0.1,
                         shadowRadius: 4,
@@ -1098,8 +1349,8 @@ export default function AppointmentsListScreen() {
                   paymentFilter === 'PAID'
                     ? {
                         borderWidth: 2,
-                        borderColor: '#10B981',
-                        shadowColor: '#10B981',
+                        borderColor: Colors.secondary,
+                        shadowColor: Colors.secondary,
                         shadowOffset: { width: 0, height: 2 },
                         shadowOpacity: 0.1,
                         shadowRadius: 4,
@@ -1115,7 +1366,7 @@ export default function AppointmentsListScreen() {
                     <Ionicons
                       name="checkmark-circle"
                       size={22}
-                      color={paymentFilter === 'PAID' ? '#10B981' : '#6B7280'}
+                      color={paymentFilter === 'PAID' ? Colors.secondary : Colors.textMuted}
                     />
                   </View>
                   <View className="flex-1">
@@ -1153,22 +1404,29 @@ export default function AppointmentsListScreen() {
             backgroundColor: 'rgba(0,0,0,0.5)',
             justifyContent: 'center',
             alignItems: 'center',
-            padding: 24,
+            padding: responsive.horizontalPadding,
           }}>
           <View
             style={{
               width: '100%',
-              maxWidth: 420,
+              maxWidth: responsive.isSmall ? 320 : 420,
               backgroundColor: 'white',
               borderRadius: 12,
-              padding: 20,
+              padding: responsive.spacing.lg,
               alignItems: 'center',
             }}>
-            <Text style={{ fontSize: 18, fontWeight: '700', marginBottom: 12 }}>Mã QR CheckIn</Text>
+            <Text
+              style={{
+                fontSize: responsive.fontSize.lg,
+                fontWeight: '700',
+                marginBottom: responsive.spacing.base,
+              }}>
+              Mã QR CheckIn
+            </Text>
 
             <QRCode
               value={`${process.env.EXPO_PUBLIC_WEB_URL}/receptionist/appointment/${qrAppointmentId}`}
-              size={200}
+              size={responsive.isSmall ? 180 : 200}
               color="black"
               backgroundColor="white"
               logoSize={40}
@@ -1176,7 +1434,13 @@ export default function AppointmentsListScreen() {
               logoBorderRadius={8}
             />
 
-            <Text style={{ color: '#6B7280', marginBottom: 12, marginTop: 12 }}>
+            <Text
+              style={{
+                color: Colors.textMuted,
+                marginBottom: responsive.spacing.base,
+                marginTop: responsive.spacing.base,
+                fontSize: responsive.fontSize.sm,
+              }}>
               {qrAppointmentId ? `Lịch hẹn #${qrAppointmentId}` : ''}
             </Text>
 
@@ -1184,11 +1448,13 @@ export default function AppointmentsListScreen() {
               onPress={() => setQrModalVisible(false)}
               style={{
                 backgroundColor: '#0284C7',
-                paddingVertical: 10,
-                paddingHorizontal: 18,
+                paddingVertical: responsive.spacing.sm,
+                paddingHorizontal: responsive.spacing.lg,
                 borderRadius: 8,
               }}>
-              <Text style={{ color: 'white', fontWeight: '600' }}>Đóng</Text>
+              <Text style={{ color: 'white', fontWeight: '600', fontSize: responsive.fontSize.sm }}>
+                Đóng
+              </Text>
             </Pressable>
           </View>
         </View>
