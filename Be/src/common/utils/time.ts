@@ -1,3 +1,5 @@
+import { APP_TIMEZONE_OFFSET } from '../constants';
+
 export class TimeUtil {
   static FOUR_HOURS = 4 * 60 * 60 * 1000;
   /**
@@ -14,11 +16,20 @@ export class TimeUtil {
   static minutesToTime(minutes: number): string {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
-    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+    return `${hours.toString().padStart(2, '0')}:${mins
+      .toString()
+      .padStart(2, '0')}`;
   }
 
+  /**
+   * Get total minutes from a Date object, adjusted for the application's timezone offset
+   */
   static dateToMinutes(date: Date): number {
-    return date.getHours() * 60 + date.getMinutes();
+    // Get UTC hours and minutes, then add the timezone offset
+    // We adjust the date by adding the offset in hours to get the local time
+    const utcHours = date.getUTCHours();
+    const localHours = (utcHours + APP_TIMEZONE_OFFSET) % 24;
+    return localHours * 60 + date.getUTCMinutes();
   }
 
   /**

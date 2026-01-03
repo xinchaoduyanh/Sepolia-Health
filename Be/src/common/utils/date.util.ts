@@ -1,3 +1,5 @@
+import { APP_TIMEZONE_OFFSET } from '../constants';
+
 /**
  * Date utility functions
  */
@@ -6,12 +8,15 @@ export class DateUtil {
    * Format date to string
    */
   static format(date: Date, format: string = 'YYYY-MM-DD'): string {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    const seconds = String(date.getSeconds()).padStart(2, '0');
+    // Get local values based on GMT+7
+    const localDate = new Date(date.getTime() + APP_TIMEZONE_OFFSET * 3600000);
+    
+    const year = localDate.getUTCFullYear();
+    const month = String(localDate.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(localDate.getUTCDate()).padStart(2, '0');
+    const hours = String(localDate.getUTCHours()).padStart(2, '0');
+    const minutes = String(localDate.getUTCMinutes()).padStart(2, '0');
+    const seconds = String(localDate.getUTCSeconds()).padStart(2, '0');
 
     return format
       .replace('YYYY', year.toString())
@@ -27,7 +32,13 @@ export class DateUtil {
    */
   static startOfDay(date: Date = new Date()): Date {
     const result = new Date(date);
-    result.setHours(0, 0, 0, 0);
+    // Adjustment to local midnight
+    // 1. Get current local hours
+    const utcHours = result.getUTCHours();
+    const localHours = (utcHours + APP_TIMEZONE_OFFSET) % 24;
+    
+    // 2. Subtract local hours, minutes, seconds, ms to get to local midnight
+    result.setUTCHours(utcHours - localHours, 0, 0, 0);
     return result;
   }
 
@@ -36,7 +47,12 @@ export class DateUtil {
    */
   static endOfDay(date: Date = new Date()): Date {
     const result = new Date(date);
-    result.setHours(23, 59, 59, 999);
+    // Adjustment to local 23:59:59.999
+    const utcHours = result.getUTCHours();
+    const localHours = (utcHours + APP_TIMEZONE_OFFSET) % 24;
+    
+    // Set to 23:59:59.999 local
+    result.setUTCHours(utcHours + (23 - localHours), 59, 59, 999);
     return result;
   }
 
@@ -78,10 +94,13 @@ export class DateUtil {
    * Check if two dates are the same day
    */
   static isSameDay(date1: Date, date2: Date): boolean {
+    const d1 = new Date(date1.getTime() + APP_TIMEZONE_OFFSET * 3600000);
+    const d2 = new Date(date2.getTime() + APP_TIMEZONE_OFFSET * 3600000);
+    
     return (
-      date1.getFullYear() === date2.getFullYear() &&
-      date1.getMonth() === date2.getMonth() &&
-      date1.getDate() === date2.getDate()
+      d1.getUTCFullYear() === d2.getUTCFullYear() &&
+      d1.getUTCMonth() === d2.getUTCMonth() &&
+      d1.getUTCDate() === d2.getUTCDate()
     );
   }
 
@@ -90,12 +109,16 @@ export class DateUtil {
    */
   static getAge(birthDate: Date): number {
     const today = new Date();
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
+    // Use GMT+7 for age calculation to be consistent
+    const d1 = new Date(birthDate.getTime() + APP_TIMEZONE_OFFSET * 3600000);
+    const d2 = new Date(today.getTime() + APP_TIMEZONE_OFFSET * 3600000);
+
+    let age = d2.getUTCFullYear() - d1.getUTCFullYear();
+    const monthDiff = d2.getUTCMonth() - d1.getUTCMonth();
 
     if (
       monthDiff < 0 ||
-      (monthDiff === 0 && today.getDate() < birthDate.getDate())
+      (monthDiff === 0 && d2.getUTCDate() < d1.getUTCDate())
     ) {
       age--;
     }
@@ -107,7 +130,7 @@ export class DateUtil {
    * Check if date is weekend
    */
   static isWeekend(date: Date): boolean {
-    const day = date.getDay();
+    const day = this.getDayOfWeek(date);
     return day === 0 || day === 6; // Sunday or Saturday
   }
 
@@ -142,7 +165,8 @@ export class DateUtil {
    * Get day of week from date (returns 0-6, where 0=Sunday, 6=Saturday)
    */
   static getDayOfWeek(date: Date): number {
-    return date.getDay();
+    const localDate = new Date(date.getTime() + APP_TIMEZONE_OFFSET * 3600000);
+    return localDate.getUTCDay();
   }
 
   // Helper function to parse date string safely

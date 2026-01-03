@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/common/prisma/prisma.service';
+import { DateUtil } from '@/common/utils';
 import {
   WeeklyScheduleResponseDto,
   MonthlyScheduleResponseDto,
@@ -33,11 +34,10 @@ export class DoctorScheduleService {
    */
   private getWeekStartDate(date: Date): Date {
     const d = new Date(date);
-    const day = d.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+    const day = DateUtil.getDayOfWeek(d); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
     const diff = d.getDate() - day; // Subtract days to get to Sunday
     const weekStart = new Date(d.setDate(diff));
-    weekStart.setHours(0, 0, 0, 0);
-    return weekStart;
+    return DateUtil.startOfDay(weekStart);
   }
 
   /**
@@ -57,10 +57,7 @@ export class DoctorScheduleService {
    * Format date to ISO string (YYYY-MM-DD) in local timezone
    */
   private formatDate(date: Date): string {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    return DateUtil.format(date, 'YYYY-MM-DD');
   }
 
   /**
@@ -86,10 +83,8 @@ export class DoctorScheduleService {
     doctorId: number,
     date: Date,
   ): Promise<BookedTimeSlotDto[]> {
-    const startOfDay = new Date(date);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(date);
-    endOfDay.setHours(23, 59, 59, 999);
+    const startOfDay = DateUtil.startOfDay(date);
+    const endOfDay = DateUtil.endOfDay(date);
 
     // Get appointments for the date
     const appointments = await this.prisma.appointment.findMany({
@@ -154,9 +149,7 @@ export class DoctorScheduleService {
       weekStart = this.getWeekStartDate(new Date());
     }
 
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekStart.getDate() + 6);
-    weekEnd.setHours(23, 59, 59, 999);
+    const weekEnd = DateUtil.endOfDay(DateUtil.addDays(weekStart, 6));
 
     // Get doctor info
     const doctor = await this.prisma.doctorProfile.findUnique({
@@ -300,14 +293,13 @@ export class DoctorScheduleService {
 
     // Generate full calendar grid: from start of week containing month start to end of week containing month end
     const calendarStart = this.getWeekStartDate(monthStart); // Start of week (Sunday)
-    const calendarEnd = new Date(monthEnd);
-    calendarEnd.setDate(monthEnd.getDate() + (6 - monthEnd.getDay())); // End of week (Saturday)
+    const calendarEnd = DateUtil.endOfDay(
+      DateUtil.addDays(monthEnd, 6 - DateUtil.getDayOfWeek(monthEnd)),
+    ); // End of week (Saturday)
 
-    // Ensure dates are at correct times
-    calendarStart.setHours(0, 0, 0, 0);
-    calendarEnd.setHours(23, 59, 59, 999);
-    monthStart.setHours(0, 0, 0, 0);
-    monthEnd.setHours(23, 59, 59, 999);
+    // monthStart and monthEnd should also be consistently adjusted
+    const adjMonthStart = DateUtil.startOfDay(monthStart);
+    const adjMonthEnd = DateUtil.endOfDay(monthEnd);
 
     // Get doctor info
     const doctor = await this.prisma.doctorProfile.findUnique({
@@ -360,7 +352,7 @@ export class DoctorScheduleService {
     const days: WeeklyScheduleDayDto[] = await Promise.all(
       dates.map(async (date) => {
         const dateStr = this.formatDate(date);
-        const dayOfWeek = date.getDay();
+        const dayOfWeek = DateUtil.getDayOfWeek(date);
         const availability = availabilityMap.get(dayOfWeek) || null;
         const override = overrideMap.get(dateStr) || null;
 

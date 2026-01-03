@@ -1613,7 +1613,7 @@ export class AppointmentService {
     }
 
     // Check if requested time is within working hours
-    const startMinutes = startTime.getHours() * 60 + startTime.getMinutes();
+    const startMinutes = TimeUtil.dateToMinutes(startTime);
     const workingStart = TimeUtil.timeToMinutes(workingHours.startTime);
     const workingEnd = TimeUtil.timeToMinutes(workingHours.endTime);
 
