@@ -1402,6 +1402,7 @@ export class AppointmentService {
       workingHours.endTime,
       doctorService.service.duration,
       bookedAppointments,
+      DateUtil.isSameDay(date, new Date()),
     );
 
     return {
@@ -1521,6 +1522,7 @@ export class AppointmentService {
       startTime: Date;
       endTime: Date;
     }>,
+    isToday: boolean,
   ) {
     const slots: Array<{
       startTime: string;
@@ -1528,11 +1530,6 @@ export class AppointmentService {
       displayTime: string;
       period: 'morning' | 'afternoon';
     }> = [];
-    // const now = new Date();
-    // const start =
-    //   new Date(startTime) > now
-    //     ? TimeUtil.timeToMinutes(startTime)
-    //     : TimeUtil.dateToMinutes(now);
     const start = TimeUtil.timeToMinutes(startTime);
     const end = TimeUtil.timeToMinutes(endTime);
     const duration = serviceDuration;
@@ -1540,6 +1537,9 @@ export class AppointmentService {
     // Generate time slots every 30 minutes, but each slot has the full service duration
     for (let time = start; time + duration <= end; time += 30) {
       const slotStartTime = TimeUtil.minutesToTime(time);
+      if (isToday && time <= TimeUtil.dateToMinutes(new Date())) {
+        continue;
+      }
       const slotEndTime = TimeUtil.minutesToTime(time + duration);
 
       // Check if this slot conflicts with any booked appointment

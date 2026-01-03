@@ -10,7 +10,7 @@ export class DateUtil {
   static format(date: Date, format: string = 'YYYY-MM-DD'): string {
     // Get local values based on GMT+7
     const localDate = new Date(date.getTime() + APP_TIMEZONE_OFFSET * 3600000);
-    
+
     const year = localDate.getUTCFullYear();
     const month = String(localDate.getUTCMonth() + 1).padStart(2, '0');
     const day = String(localDate.getUTCDate()).padStart(2, '0');
@@ -36,7 +36,7 @@ export class DateUtil {
     // 1. Get current local hours
     const utcHours = result.getUTCHours();
     const localHours = (utcHours + APP_TIMEZONE_OFFSET) % 24;
-    
+
     // 2. Subtract local hours, minutes, seconds, ms to get to local midnight
     result.setUTCHours(utcHours - localHours, 0, 0, 0);
     return result;
@@ -50,7 +50,7 @@ export class DateUtil {
     // Adjustment to local 23:59:59.999
     const utcHours = result.getUTCHours();
     const localHours = (utcHours + APP_TIMEZONE_OFFSET) % 24;
-    
+
     // Set to 23:59:59.999 local
     result.setUTCHours(utcHours + (23 - localHours), 59, 59, 999);
     return result;
@@ -96,7 +96,7 @@ export class DateUtil {
   static isSameDay(date1: Date, date2: Date): boolean {
     const d1 = new Date(date1.getTime() + APP_TIMEZONE_OFFSET * 3600000);
     const d2 = new Date(date2.getTime() + APP_TIMEZONE_OFFSET * 3600000);
-    
+
     return (
       d1.getUTCFullYear() === d2.getUTCFullYear() &&
       d1.getUTCMonth() === d2.getUTCMonth() &&
@@ -169,6 +169,14 @@ export class DateUtil {
     return localDate.getUTCDay();
   }
 
+  static isSameUTCDay(a: Date, b: Date): boolean {
+    return (
+      a.getUTCFullYear() === b.getUTCFullYear() &&
+      a.getUTCMonth() === b.getUTCMonth() &&
+      a.getUTCDate() === b.getUTCDate()
+    );
+  }
+
   // Helper function to parse date string safely
   static parseDate(dateString: string): Date {
     // Try different date formats
@@ -177,7 +185,7 @@ export class DateUtil {
       dateString.replace(/(\d{2})\/(\d{2})\/(\d{4})/, '$3-$2-$1'), // dd/mm/yyyy -> yyyy-mm-dd
       dateString.replace(/(\d{2})\/(\d{2})\/(\d{4})/, '$2/$1/$3'), // dd/mm/yyyy -> mm/dd/yyyy
     ];
-  
+
     for (const format of formats) {
       const date = new Date(format);
       if (
@@ -188,7 +196,7 @@ export class DateUtil {
         return date;
       }
     }
-  
+
     // Fallback to original string
     return new Date(dateString);
   }

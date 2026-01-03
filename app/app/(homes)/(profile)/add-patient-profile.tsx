@@ -10,9 +10,8 @@ import {
   Image,
   TextInput,
   Alert,
-  TouchableOpacity
+  TouchableOpacity,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path } from 'react-native-svg';
@@ -563,12 +562,13 @@ const AddPatientProfileScreen = () => {
               }}
               onPress={handleSubmit}
               disabled={isSubmitting}>
-              <Text style={{
-                textAlign: 'center',
-                fontSize: 16,
-                fontWeight: 'bold',
-                color: '#FFFFFF'
-              }}>
+              <Text
+                style={{
+                  textAlign: 'center',
+                  fontSize: 16,
+                  fontWeight: 'bold',
+                  color: '#FFFFFF',
+                }}>
                 {isSubmitting ? 'ĐANG TẠO...' : 'HOÀN TẤT'}
               </Text>
             </Pressable>

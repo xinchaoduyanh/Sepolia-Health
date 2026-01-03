@@ -61,6 +61,7 @@ export default function AppointmentScreen() {
     setGender,
     patientDescription,
     setPatientDescription,
+    clearSelections,
   } = useAppointment();
 
   // Auto-fill user info when component mounts or customer changes
@@ -779,7 +780,7 @@ export default function AppointmentScreen() {
                           Không thể tải khung giờ khả dụng. Vui lòng thử lại.
                         </Text>
                       </View>
-                    ) : ( 
+                    ) : (
                       <TimeSlotSkeleton />
                     )}
                   </View>
@@ -974,6 +975,12 @@ export default function AppointmentScreen() {
                 <TouchableOpacity
                   onPress={() => {
                     setShowSuccessModal(false);
+                    setCreatedAppointmentId(null);
+                    // Reset local state
+                    setShowDatePicker(false);
+                    setSelectedCustomDate(null);
+                    // Reset context state
+                    clearSelections();
                     // Navigate to appointment detail
                     if (createdAppointmentId) {
                       router.push(`/(homes)/(appointment-detail)?id=${createdAppointmentId}`);
@@ -981,8 +988,6 @@ export default function AppointmentScreen() {
                       // Fallback to appointments list
                       router.push('/(homes)/(appointment)/');
                     }
-                    // Reset created appointment ID
-                    setCreatedAppointmentId(null);
                   }}
                   className="w-full items-center rounded-xl py-3"
                   style={{ backgroundColor: '#0284C7' }}>
