@@ -15,10 +15,41 @@ import {
   GetPromotionsQueryDto,
   PromotionResponseDto,
 } from './admin-promotion.dto';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class AdminPromotionService {
+  private readonly QR_SECRET = process.env.QR_SECRET || 'sepolia_health_secret_2024';
+
   constructor(private readonly prisma: PrismaService) {}
+
+  // ... (existing methods)
+
+  async getQrData(id: number, interval: number = 30) {
+    const promotion = await this.prisma.promotion.findUnique({
+      where: { id },
+    });
+
+    if (!promotion) {
+      throw new NotFoundException('Không tìm thấy chương trình khuyến mãi');
+    }
+
+    const t = Math.floor(Date.now() / 1000 / interval);
+    const signature = this.generateSignature(promotion.id, promotion.updatedAt, t, interval);
+
+    return {
+      id: promotion.id,
+      t,
+      signature,
+      i: interval,
+      expiresIn: interval - (Math.floor(Date.now() / 1000) % interval),
+    };
+  }
+
+  private generateSignature(id: number, updatedAt: Date, t: number, interval: number): string {
+    const data = `${id}:${updatedAt.getTime()}:${t}:${interval}:${this.QR_SECRET}`;
+    return crypto.createHash('sha256').update(data).digest('hex');
+  }
 
   async createPromotion(
     createPromotionDto: CreatePromotionDto,
@@ -162,6 +193,26 @@ export class AdminPromotionService {
     });
 
     return { message: 'Xóa chương trình khuyến mãi thành công' };
+  }
+
+  async renewPromotionQrSignature(id: number): Promise<{ message: string }> {
+    const promotion = await this.prisma.promotion.findUnique({
+      where: { id },
+    });
+
+    if (!promotion) {
+      throw new NotFoundException('Không tìm thấy chương trình khuyến mãi');
+    }
+
+    // "Renew" by updating just the updatedAt field
+    await this.prisma.promotion.update({
+      where: { id },
+      data: {
+        updatedAt: new Date(),
+      },
+    });
+
+    return { message: 'Đã làm mới mã QR thành công' };
   }
 
   private mapToResponseDto(promotion: any): PromotionResponseDto {

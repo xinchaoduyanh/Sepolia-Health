@@ -92,6 +92,22 @@ export class PromotionsService {
     async deletePromotion(id: number): Promise<void> {
         return apiClient.delete<void>(`/admin/promotions/${id}`)
     }
+
+    /**
+     * Renew promotion QR code (invalidates old ones)
+     * POST /admin/promotions/{id}/renew-qr
+     */
+    async renewPromotionQr(id: number): Promise<void> {
+        return apiClient.post<void>(`/admin/promotions/${id}/renew-qr`)
+    }
+
+    /**
+     * Get dynamic QR data
+     * GET /admin/promotions/{id}/qr-data
+     */
+    async getQrData(id: number, interval: number = 30): Promise<{ id: number; t: number; signature: string; expiresIn: number }> {
+        return apiClient.get(`/admin/promotions/${id}/qr-data`, { params: { interval } })
+    }
 }
 
 export const promotionsService = new PromotionsService()

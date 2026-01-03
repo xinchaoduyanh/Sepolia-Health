@@ -9,11 +9,64 @@ import {
   FeaturedPromotionResponseDto,
   UserPromotionDto,
   ClaimPromotionResponseDto,
+  ClaimPromotionViaQrDto,
 } from './promotion.dto';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class PromotionService {
+  private readonly QR_SECRET = process.env.QR_SECRET || 'sepolia_health_secret_2024';
+
   constructor(private readonly prisma: PrismaService) {}
+
+
+  private generateSignature(id: number, updatedAt: Date, t: number, interval: number): string {
+    const data = `${id}:${updatedAt.getTime()}:${t}:${interval}:${this.QR_SECRET}`;
+    return crypto.createHash('sha256').update(data).digest('hex');
+  }
+
+  async claimPromotionViaQr(
+    promotionId: number,
+    userId: number,
+    qrData: ClaimPromotionViaQrDto,
+  ): Promise<ClaimPromotionResponseDto> {
+    const promotion = await this.prisma.promotion.findUnique({
+      where: { id: promotionId },
+    });
+
+    if (!promotion) {
+      throw new NotFoundException('Không tìm thấy chương trình khuyến mãi');
+    }
+
+    // Verify signature with current time block and previous time block (to allow some delay)
+    const isValid = this.verifySignature(promotion, qrData);
+    if (!isValid) {
+      throw new BadRequestException('Mã QR đã hết hạn hoặc không hợp lệ');
+    }
+
+    // Reuse existing claim logic
+    return this.claimPromotion(promotionId, userId);
+  }
+
+  private verifySignature(promotion: any, qrData: ClaimPromotionViaQrDto): boolean {
+    const { signature, t, i: interval } = qrData;
+    
+    // 1. Check if the signature matches the provided t and interval
+    const expectedSignature = this.generateSignature(promotion.id, promotion.updatedAt, t, interval);
+    if (signature !== expectedSignature) {
+      return false;
+    }
+
+    // 2. Check if t is within a reasonable window
+    const currentT = Math.floor(Date.now() / 1000 / interval);
+    
+    // Allow current and ±2 blocks to account for network lag and clock drift
+    if (t < currentT - 2 || t > currentT + 1) {
+      return false;
+    }
+
+    return true;
+  }
 
   async getFeaturedPromotion(): Promise<FeaturedPromotionResponseDto | null> {
     const display = await this.prisma.promotionDisplay.findFirst({

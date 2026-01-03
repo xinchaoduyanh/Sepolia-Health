@@ -113,6 +113,21 @@ export class AdminPromotionController {
     return this.adminPromotionService.getPromotion(id);
   }
 
+  @Get(':id/qr-data')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Lấy dữ liệu chữ ký QR hiện tại' })
+  @ApiParam({ name: 'id', type: 'number' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy dữ liệu thành công',
+  })
+  async getPromotionQrData(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('interval', ParseIntPipe) interval: number = 30,
+  ) {
+    return this.adminPromotionService.getQrData(id, interval);
+  }
+
   @Put(':id')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Cập nhật chương trình khuyến mãi' })
@@ -181,5 +196,27 @@ export class AdminPromotionController {
     @Param('id', ParseIntPipe) id: number,
   ): Promise<{ message: string }> {
     return this.adminPromotionService.deletePromotion(id);
+  }
+
+  @Post(':id/renew-qr')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Làm mới mã QR (Vô hiệu hóa các mã QR cũ)' })
+  @ApiParam({
+    name: 'id',
+    type: 'number',
+    description: 'ID chương trình khuyến mãi',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Làm mới mã QR thành công',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Không tìm thấy chương trình khuyến mãi',
+  })
+  async renewPromotionQr(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<{ message: string }> {
+    return this.adminPromotionService.renewPromotionQrSignature(id);
   }
 }

@@ -5,7 +5,7 @@ import { DataTable } from '@workspace/ui/components/DataTable'
 import { BsSearchField } from '@workspace/ui/components/Searchfield'
 import { Pagination } from '@workspace/ui/components/Pagination'
 import { Button } from '@workspace/ui/components/Button'
-import { Eye, Plus, Trash2, Settings } from 'lucide-react'
+import { Eye, Plus, Trash2, Settings, QrCode } from 'lucide-react'
 import { usePromotions, useDeletePromotion } from '@/shared/hooks'
 import { Skeleton } from '@workspace/ui/components/Skeleton'
 
@@ -226,6 +226,14 @@ export default function PromotionManagementPage() {
                     <p className="text-sm text-muted-foreground mt-1">Quản lý vouchers và cấu hình hiển thị</p>
                 </div>
                 <div className="flex items-center space-x-2">
+                    <Button
+                        variant="outline"
+                        className="flex items-center space-x-2 text-blue-600 border-blue-200 bg-blue-50 hover:bg-blue-100"
+                        onClick={() => (window.location.href = '/admin/promotion-management/qr-settings')}
+                    >
+                        <QrCode className="h-4 w-4" />
+                        <span>Mã QR Live</span>
+                    </Button>
                     <Button
                         variant="outline"
                         className="flex items-center space-x-2"

@@ -83,6 +83,7 @@ export const API_ENDPOINTS = {
     FEATURED: '/patient/promotions/featured',
     MY_VOUCHERS: '/patient/promotions/my-vouchers',
     CLAIM: (id: number) => `/patient/promotions/${id}/claim`,
+    CLAIM_QR: (id: number) => `/patient/promotions/${id}/claim-qr`,
   },
 } as const;
 

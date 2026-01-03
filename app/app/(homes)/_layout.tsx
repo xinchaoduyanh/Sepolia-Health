@@ -49,7 +49,75 @@ export default function TabLayout() {
             href: '/(homes)/(appointment)',
           }}
         />
-
+          <Tabs.Screen
+          name="(qr-code)"
+          options={{
+            title: 'Quét QR',
+            tabBarIcon: ({ color, size }) => (
+              <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+                <View
+                  style={{
+                    width: 60,
+                    height: 60,
+                    borderRadius: 30,
+                    backgroundColor: '#0284C7',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    shadowColor: '#0284C7',
+                    shadowOffset: { width: 0, height: 6 },
+                    shadowOpacity: 0.4,
+                    shadowRadius: 12,
+                    elevation: 8,
+                    marginTop: -20,
+                  }}>
+                  <Ionicons name="qr-code" size={28} color="white" />
+                </View>
+              </View>
+            ),
+            tabBarButton: (props) => {
+              const { onPress } = props;
+              return (
+                <TouchableOpacity
+                  onPress={onPress}
+                  style={{
+                    flex: 1,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    paddingTop: 10,
+                  }}>
+                  <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+                    <View
+                      style={{
+                        width: 60,
+                        height: 60,
+                        borderRadius: 30,
+                        backgroundColor: '#0284C7',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        shadowColor: '#0284C7',
+                        shadowOffset: { width: 0, height: 6 },
+                        shadowOpacity: 0.4,
+                        shadowRadius: 12,
+                        elevation: 8,
+                        marginTop: -20,
+                      }}>
+                      <Ionicons name="qr-code" size={28} color="white" />
+                    </View>
+                    <Text
+                      style={{
+                        fontSize: 10,
+                        fontWeight: '500',
+                        color: '#0284C7',
+                        marginTop: 4,
+                      }}>
+                      Quét QR
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            },
+          }}
+        />
         {/* <Tabs.Screen
           name="(appointment)"
           options={{

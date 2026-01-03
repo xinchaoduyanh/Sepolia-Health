@@ -40,6 +40,25 @@ export const promotionApi = {
     );
     return response.data;
   },
+
+  // Claim promotion via QR
+  claimPromotionViaQr: async ({ 
+    promotionId, 
+    signature, 
+    t,
+    i
+  }: { 
+    promotionId: number; 
+    signature: string; 
+    t: number;
+    i: number;
+  }): Promise<ClaimPromotionResponse> => {
+    const response = await apiClient.post<ClaimPromotionResponse>(
+      API_ENDPOINTS.PROMOTIONS.CLAIM_QR(promotionId),
+      { signature, t, i }
+    );
+    return response.data;
+  },
 };
 
 // React Query Hooks
@@ -68,6 +87,19 @@ export const useClaimPromotion = () => {
     mutationFn: promotionApi.claimPromotion,
     onSuccess: () => {
       // Invalidate vouchers list after claiming
+      queryClient.invalidateQueries({
+        queryKey: promotionKeys.myVouchers(),
+      });
+    },
+  });
+};
+
+export const useClaimPromotionViaQr = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: promotionApi.claimPromotionViaQr,
+    onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: promotionKeys.myVouchers(),
       });

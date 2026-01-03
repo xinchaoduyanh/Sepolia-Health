@@ -125,3 +125,34 @@ export function useDeletePromotion() {
         },
     })
 }
+
+/**
+ * Hook to renew promotion QR code
+ */
+export function useRenewPromotionQr() {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: (id: number) => promotionsService.renewPromotionQr(id),
+        onSuccess: (_response, id) => {
+            queryClient.invalidateQueries({
+                queryKey: queryKeys.admin.promotions.lists(),
+            })
+            queryClient.invalidateQueries({
+                queryKey: queryKeys.admin.promotions.detail(id.toString()),
+            })
+
+            toast.success({
+                title: 'Thành công',
+                description: 'Đã làm mới mã QR thành công',
+            })
+        },
+        onError: (error: any) => {
+            const message = error?.response?.data?.message || 'Có lỗi xảy ra khi làm mới mã QR'
+            toast.error({
+                title: 'Lỗi',
+                description: message,
+            })
+        },
+    })
+}

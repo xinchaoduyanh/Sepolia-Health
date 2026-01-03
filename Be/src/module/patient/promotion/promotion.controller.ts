@@ -8,6 +8,7 @@ import {
   UseGuards,
   ParseIntPipe,
   Query,
+  Body,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -21,6 +22,7 @@ import {
   FeaturedPromotionResponseDto,
   UserPromotionDto,
   ClaimPromotionResponseDto,
+  ClaimPromotionViaQrDto,
 } from './promotion.dto';
 import { JwtAuthGuard } from '@/common/guards';
 import { CurrentUser } from '@/common/decorators';
@@ -89,5 +91,23 @@ export class PromotionController {
     @CurrentUser('userId') userId: number,
   ): Promise<ClaimPromotionResponseDto> {
     return this.promotionService.claimPromotion(promotionId, userId);
+  }
+
+  @Post(':id/claim-qr')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Claim voucher qua mã QR động' })
+  @ApiParam({ name: 'id', type: 'number', description: 'ID promotion' })
+  @ApiResponse({
+    status: 200,
+    description: 'Claim voucher thành công',
+    type: ClaimPromotionResponseDto,
+  })
+  @ApiResponse({ status: 400, description: 'Mã QR hết hạn hoặc không hợp lệ' })
+  async claimPromotionViaQr(
+    @Param('id', ParseIntPipe) promotionId: number,
+    @CurrentUser('userId') userId: number,
+    @Body() qrData: ClaimPromotionViaQrDto,
+  ): Promise<ClaimPromotionResponseDto> {
+    return this.promotionService.claimPromotionViaQr(promotionId, userId, qrData);
   }
 }

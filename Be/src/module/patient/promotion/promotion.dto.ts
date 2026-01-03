@@ -151,3 +151,21 @@ export class ClaimPromotionResponseDto {
   })
   message: string;
 }
+
+export class ClaimPromotionViaQrDto {
+  @ApiProperty({
+    description: 'Signature của mã QR',
+  })
+  signature: string;
+
+  @ApiProperty({
+    description: 'Thời điểm block (X giây)',
+  })
+  t: number;
+
+  @ApiProperty({
+    description: 'Khoảng thời gian (giây)',
+    example: 30,
+  })
+  i: number;
+}
