@@ -1528,11 +1528,12 @@ export class AppointmentService {
       displayTime: string;
       period: 'morning' | 'afternoon';
     }> = [];
-    const now = new Date();
-    const start =
-      new Date(startTime) > now
-        ? TimeUtil.timeToMinutes(startTime)
-        : TimeUtil.dateToMinutes(now);
+    // const now = new Date();
+    // const start =
+    //   new Date(startTime) > now
+    //     ? TimeUtil.timeToMinutes(startTime)
+    //     : TimeUtil.dateToMinutes(now);
+    const start = TimeUtil.timeToMinutes(startTime);
     const end = TimeUtil.timeToMinutes(endTime);
     const duration = serviceDuration;
 
