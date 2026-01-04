@@ -36,6 +36,7 @@ import {
   RegisterResponseDto,
 } from './dto/response';
 import { ChatService } from '../chat/chat.service';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AuthService {
@@ -60,7 +61,13 @@ export class AuthService {
 
     const user = await this.authRepository.findByEmail(email);
 
-    if (!user || user.password !== password) {
+    if (!user) {
+      throw new UnauthorizedException(ERROR_MESSAGES.AUTH.INVALID_CREADENTIALS);
+    }
+
+    // Compare password with bcrypt
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
       throw new UnauthorizedException(ERROR_MESSAGES.AUTH.INVALID_CREADENTIALS);
     }
 
@@ -179,10 +186,13 @@ export class AuthService {
       throw new BadRequestException(ERROR_MESSAGES.AUTH.INVALID_OTP);
     }
 
+    // Hash password before storing
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     // Create user with patient profile
     const userData = {
       email,
-      password,
+      password: hashedPassword,
       phone, // Use phone for user.phone
       role,
       status: UserStatus.ACTIVE,
@@ -344,9 +354,13 @@ export class AuthService {
     if (!user) {
       throw new BadRequestException(ERROR_MESSAGES.AUTH.USER_NOT_FOUND);
     }
+
+    // Hash new password before storing
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
     await Promise.all([
       this.logout(user.id),
-      this.authRepository.updateUser(user.id, { password: newPassword }),
+      this.authRepository.updateUser(user.id, { password: hashedPassword }),
     ]);
     // todo send mail
 
@@ -364,11 +378,16 @@ export class AuthService {
 
     const user = await this.authRepository.findById(userId);
 
-    if (user.password !== oldPassword) {
+    // Compare old password with bcrypt
+    const isOldPasswordValid = await bcrypt.compare(oldPassword, user.password);
+    if (!isOldPasswordValid) {
       throw new UnauthorizedException(ERROR_MESSAGES.AUTH.INVALID_CREADENTIALS);
     }
 
-    await this.authRepository.updateUser(userId, { password: newPassword });
+    // Hash new password before storing
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await this.authRepository.updateUser(userId, { password: hashedPassword });
   }
 
   /**
