@@ -59,7 +59,8 @@ export const validatePhone = (phone: string): { isValid: boolean; message?: stri
 
 export const validateName = (name: string): { isValid: boolean; message?: string } => {
   // Cho phép chữ cái (Việt Nam và quốc tế) và khoảng trắng, không cho phép số
-  const nameRegex = /^[A-Za-zÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂÂÊÔƠưăâêôơ\s]+$/;
+  // Sử dụng Unicode range \u00C0-\u1EFF để bao phủ tất cả diacritics tiếng Việt
+  const nameRegex = /^[a-zA-Z\u00C0-\u1EFF\s]+$/;
 
   if (!name || name.trim().length === 0) {
     return { isValid: false, message: 'Tên không được để trống' };

@@ -20,7 +20,6 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
 
 interface EditProfileFormData {
   firstName: string;
@@ -156,7 +155,7 @@ export default function EditProfileScreen() {
       Alert.alert('Thành công', 'Hồ sơ bệnh nhân đã được cập nhật thành công', [
         {
           text: 'OK',
-          onPress: () => router.back(),
+          onPress: () => router.push('/(homes)/(profile)'),
         },
       ]);
     } catch (error) {
@@ -178,14 +177,6 @@ export default function EditProfileScreen() {
             end={{ x: 1, y: 1 }}
             style={{ flex: 1 }}
           />
-          {/* Curved bottom edge using SVG */}
-          <Svg
-            height="70"
-            width="200%"
-            viewBox="0 0 1440 120"
-            style={{ position: 'absolute', bottom: -1, left: 0, right: 0 }}>
-            <Path d="M0,0 Q720,120 1440,0 L1440,120 L0,120 Z" fill="#E0F2FE" />
-          </Svg>
 
           {/* Decorative circles */}
           <View

@@ -9,7 +9,6 @@ import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { Alert, Image, ScrollView, StatusBar, Text, TouchableOpacity, View } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
 
 const ProfileScreen = () => {
   const { user } = useAuth();
