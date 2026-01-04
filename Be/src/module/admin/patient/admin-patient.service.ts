@@ -20,8 +20,7 @@ export class AdminPatientService {
 
   async createPatient(
     createPatientDto: CreatePatientDto,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    _adminId: number, // Admin ID for audit purposes
+    adminId: number, // Admin ID for audit purposes
   ): Promise<CreatePatientResponseDto> {
     const { email, password, phone, patientProfiles } = createPatientDto;
 

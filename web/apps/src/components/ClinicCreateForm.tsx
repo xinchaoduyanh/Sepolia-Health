@@ -70,7 +70,7 @@ export function ClinicCreateForm() {
 
         try {
             await createClinic.mutateAsync(requestData)
-            router.push('/clinic-management/clinic-list')
+            router.push('/admin/clinic-management/clinic-list')
         } catch (_error) {
             // Error is handled by the mutation
         }

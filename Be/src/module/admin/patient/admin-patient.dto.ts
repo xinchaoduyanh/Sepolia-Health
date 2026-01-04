@@ -35,7 +35,10 @@ const PatientProfileSchema = z.object({
   phone: z
     .string()
     .min(1, 'Số điện thoại không được để trống')
-    .regex(/^((0|\+84)[0-9]{9,10}|84[0-9]{9,10})$/, 'Số điện thoại không hợp lệ (ví dụ: 0912345678)'),
+    .regex(
+      /^((0|\+84)[0-9]{9,10}|84[0-9]{9,10})$/,
+      'Số điện thoại không hợp lệ (ví dụ: 0912345678)',
+    ),
   relationship: z.enum(relationshipValues, {
     message: 'Mối quan hệ không hợp lệ',
   }),
@@ -43,11 +46,7 @@ const PatientProfileSchema = z.object({
   idCardNumber: z.string().optional(),
   occupation: z.string().optional(),
   nationality: z.string().optional(),
-  address: z
-    .string()
-    .min(5, 'Địa chỉ phải có ít nhất 5 ký tự')
-    .max(200, 'Địa chỉ không được quá 200 ký tự')
-    .optional(),
+  address: z.string().max(200, 'Địa chỉ không được quá 200 ký tự').optional(),
   healthDetailsJson: z.record(z.string(), z.any()).optional(),
 });
 
@@ -86,7 +85,7 @@ export class GetPatientsQueryDtoClass {
 // Zod schemas
 export const CreatePatientSchema = z.object({
   // User fields
-  email: z.string().email('Email không hợp lệ'),
+  email: z.email('Email không hợp lệ'),
   password: z
     .string()
     .min(6, 'Mật khẩu phải có ít nhất 6 ký tự')
@@ -97,7 +96,10 @@ export const CreatePatientSchema = z.object({
   phone: z
     .string()
     .min(1, 'Số điện thoại đăng nhập không được để trống')
-    .regex(/^((0|\+84)[0-9]{9,10}|84[0-9]{9,10})$/, 'Số điện thoại không hợp lệ (ví dụ: 0912345678)'),
+    .regex(
+      /^((0|\+84)[0-9]{9,10}|84[0-9]{9,10})$/,
+      'Số điện thoại không hợp lệ (ví dụ: 0912345678)',
+    ),
 
   // PatientProfiles - bắt buộc có ít nhất 1 profile với relationship SELF
   patientProfiles: z
@@ -246,7 +248,10 @@ export const UpdatePatientSchema = z.object({
   phone: z
     .string()
     .min(1, 'Số điện thoại đăng nhập không được để trống')
-    .regex(/^((0|\+84)[0-9]{9,10}|84[0-9]{9,10})$/, 'Số điện thoại không hợp lệ (ví dụ: 0912345678)')
+    .regex(
+      /^((0|\+84)[0-9]{9,10}|84[0-9]{9,10})$/,
+      'Số điện thoại không hợp lệ (ví dụ: 0912345678)',
+    )
     .optional(),
   status: z.enum(['UNVERIFIED', 'ACTIVE', 'DEACTIVE']).optional(),
 
@@ -270,7 +275,10 @@ export const UpdatePatientSchema = z.object({
             phone: z
               .string()
               .min(1, 'Số điện thoại không được để trống')
-              .regex(/^((0|\+84)[0-9]{9,10}|84[0-9]{9,10})$/, 'Số điện thoại không hợp lệ (ví dụ: 0912345678)')
+              .regex(
+                /^((0|\+84)[0-9]{9,10}|84[0-9]{9,10})$/,
+                'Số điện thoại không hợp lệ (ví dụ: 0912345678)',
+              )
               .optional(),
             relationship: z
               .enum(relationshipValues, { message: 'Mối quan hệ không hợp lệ' })
