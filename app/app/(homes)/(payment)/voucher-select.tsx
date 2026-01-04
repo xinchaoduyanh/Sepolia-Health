@@ -27,6 +27,7 @@ export default function VoucherSelectScreen() {
 
   const [selectedVoucherId, setSelectedVoucherId] = useState<number | null>(null);
   const [appliedVoucher, setAppliedVoucher] = useState<any>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   // Lấy original amount từ service price (billing.amount giữ nguyên)
   const originalAmount = appointment?.service?.price || appointment?.billing?.amount || 0;
@@ -75,12 +76,15 @@ export default function VoucherSelectScreen() {
   };
 
   const handleContinue = () => {
+    if (isProcessing) return;
+
     // Tính finalAmount để pass sang QR screen
     let finalAmount = originalAmount;
     if (selectedVoucherId && appliedVoucher) {
       finalAmount = appliedVoucher.finalAmount;
     }
 
+    setIsProcessing(true);
     if (selectedVoucherId) {
       router.push({
         pathname: '/(homes)/(payment)/qr-payment',
@@ -99,6 +103,7 @@ export default function VoucherSelectScreen() {
         },
       });
     }
+    setTimeout(() => setIsProcessing(false), 1000);
   };
 
   const renderVoucherCard = (voucher: UserPromotion) => {

@@ -160,6 +160,7 @@ export default function AppointmentDetailScreen() {
   const { id } = useLocalSearchParams();
   const { data: appointment, isLoading, refetch } = useAppointment(Number(id));
   const cancelMutation = useCancelAppointment();
+  const [isProcessing, setIsProcessing] = React.useState(false);
 
   // Debug: Log appointment data
   React.useEffect(() => {
@@ -197,13 +198,17 @@ export default function AppointmentDetailScreen() {
   };
 
   const handleUpdate = () => {
-    if (!appointment) return;
+    if (!appointment || isProcessing) return;
+    setIsProcessing(true);
     router.push(`/(homes)/(appointment)/update?id=${appointment.id}`);
+    setTimeout(() => setIsProcessing(false), 1000);
   };
 
   const handlePayment = () => {
-    if (!appointment) return;
+    if (!appointment || isProcessing) return;
+    setIsProcessing(true);
     router.push(`/(homes)/(payment)?id=${appointment.id}`);
+    setTimeout(() => setIsProcessing(false), 1000);
   };
 
   if (isLoading) {

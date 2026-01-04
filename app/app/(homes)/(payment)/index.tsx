@@ -110,6 +110,7 @@ const PaymentScreenSkeleton = () => {
 export default function PaymentScreen() {
   const { id } = useLocalSearchParams();
   const { data: appointment, isLoading } = useAppointment(Number(id));
+  const [isProcessing, setIsProcessing] = React.useState(false);
 
   // Early return for loading state - theo pattern AppointmentDetail
   if (isLoading) {
@@ -119,14 +120,17 @@ export default function PaymentScreen() {
   const handlePayment = () => {
     const appointmentId = Number(id);
 
-    if (!appointmentId || isNaN(appointmentId)) {
-      console.error('Invalid appointment ID');
+    if (!appointmentId || isNaN(appointmentId) || isProcessing) {
+      console.error('Invalid appointment ID or already processing');
       return;
     }
 
     try {
+      setIsProcessing(true);
       router.push(`/(homes)/(payment)/voucher-select?id=${appointmentId}`);
+      setTimeout(() => setIsProcessing(false), 1000);
     } catch (error) {
+      setIsProcessing(false);
       console.error('Navigation error:', error);
     }
   };

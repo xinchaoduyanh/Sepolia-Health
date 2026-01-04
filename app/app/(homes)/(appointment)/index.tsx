@@ -211,6 +211,7 @@ export default function AppointmentsListScreen() {
   // Modal states for dropdowns
   const [dateSortModalVisible, setDateSortModalVisible] = useState(false);
   const [paymentFilterModalVisible, setPaymentFilterModalVisible] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
 
   // Reset to page 1 when sort or filter changes
   React.useEffect(() => {
@@ -571,7 +572,12 @@ export default function AppointmentsListScreen() {
                 Hãy đặt lịch khám để bắt đầu chăm sóc sức khỏe
               </Text>
               <TouchableOpacity
-                onPress={() => router.push('/(homes)/(appointment)/create')}
+                onPress={() => {
+                  if (isNavigating) return;
+                  setIsNavigating(true);
+                  router.push('/(homes)/(appointment)/create');
+                  setTimeout(() => setIsNavigating(false), 1000);
+                }}
                 className="mt-6 flex-row items-center rounded-lg px-6 py-3"
                 style={{
                   marginTop: responsive.spacing.lg,
@@ -619,7 +625,12 @@ export default function AppointmentsListScreen() {
                 <TouchableOpacity
                   key={appointment.id}
                   activeOpacity={0.8}
-                  onPress={() => router.push(`/(homes)/(appointment-detail)?id=${appointment.id}`)}
+                  onPress={() => {
+                    if (isNavigating) return;
+                    setIsNavigating(true);
+                    router.push(`/(homes)/(appointment-detail)?id=${appointment.id}`);
+                    setTimeout(() => setIsNavigating(false), 1000);
+                  }}
                   className="mb-4 rounded-xl bg-white p-4"
                   style={{
                     marginTop: responsive.spacing.base,
@@ -739,8 +750,10 @@ export default function AppointmentsListScreen() {
                           {hasUnpaidBilling && (
                             <TouchableOpacity
                               onPress={() => {
-                                if (canCreatePayment) {
+                                if (canCreatePayment && !isNavigating) {
+                                  setIsNavigating(true);
                                   router.push(`/(homes)/(payment)?id=${appointment.id}`);
+                                  setTimeout(() => setIsNavigating(false), 1000);
                                 }
                               }}
                               disabled={!canCreatePayment}
@@ -860,9 +873,12 @@ export default function AppointmentsListScreen() {
                                 opacity: isWithin4Hours(appointment.startTime) ? 0.5 : 1,
                               }}
                               disabled={isWithin4Hours(appointment.startTime)}
-                              onPress={() =>
-                                router.push(`/(homes)/(appointment)/update?id=${appointment.id}`)
-                              }>
+                              onPress={() => {
+                                if (isNavigating) return;
+                                setIsNavigating(true);
+                                router.push(`/(homes)/(appointment)/update?id=${appointment.id}`);
+                                setTimeout(() => setIsNavigating(false), 1000);
+                              }}>
                               <Text
                                 className="text-sm font-semibold"
                                 style={{
