@@ -300,7 +300,7 @@ export function AppointmentList({
                             variant={isPaid ? 'success' : 'destructive'}
                             className="text-[9px] font-semibold px-2 py-0.5"
                         >
-                            {isPaid ? 'ĐÃ THU' : 'CHỜ THU'}
+                            {isPaid ? 'Đã thanh toán' : 'Chưa thanh toán'}
                         </Badge>
                     </div>
                 ) : (
