@@ -22,20 +22,20 @@ const statusOptions = [
     { id: 'CANCELLED', name: 'Đã hủy' },
 ]
 
-const getStatusVariant = (
-    status: string,
-): 'default' | 'secondary' | 'destructive' | 'outline' | 'success' | 'warning' | 'info' => {
+const getBadgeStyles = (status: string) => {
     switch (status.toUpperCase()) {
         case 'UPCOMING':
-            return 'info' // Sky Blue
+            return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 border-blue-300 dark:border-blue-700'
         case 'ON_GOING':
-            return 'secondary' // Soft Blue
+            return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300 border-yellow-300 dark:border-yellow-700'
         case 'COMPLETED':
-            return 'success' // Teal/Mint
+        case 'PAID':
+            return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 border-green-300 dark:border-green-700'
         case 'CANCELLED':
-            return 'destructive' // Rose
+        case 'UNPAID':
+            return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300 border-red-300 dark:border-red-700'
         default:
-            return 'default'
+            return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300 border-gray-300 dark:border-gray-700'
     }
 }
 
@@ -276,8 +276,8 @@ export function AppointmentList({
                 const status = row.original.status
                 return (
                     <Badge
-                        variant={getStatusVariant(status)}
-                        className="flex items-center gap-1.5 px-2.5 py-1 font-medium text-[10px] uppercase tracking-wider"
+                        variant="secondary"
+                        className={`${getBadgeStyles(status)} flex items-center gap-1.5 px-2.5 py-1 font-semibold text-[10px] uppercase tracking-wider border-2`}
                     >
                         {getStatusIcon(status)}
                         {getStatusLabel(status)}
@@ -297,8 +297,8 @@ export function AppointmentList({
                             {billing.amount.toLocaleString('vi-VN')} ₫
                         </div>
                         <Badge
-                            variant={isPaid ? 'success' : 'destructive'}
-                            className="text-[9px] font-semibold px-2 py-0.5"
+                            variant="secondary"
+                            className={`${getBadgeStyles(isPaid ? 'PAID' : 'UNPAID')} text-[10px] font-bold px-2 py-0.5 border-2 uppercase tracking-wide`}
                         >
                             {isPaid ? 'Đã thanh toán' : 'Chưa thanh toán'}
                         </Badge>

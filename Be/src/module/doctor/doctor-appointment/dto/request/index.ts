@@ -20,6 +20,7 @@ export const GetDoctorAppointmentsQuerySchema = z.object({
   status: z.enum(['UPCOMING', 'ON_GOING', 'COMPLETED', 'CANCELLED']).optional(),
   sortBy: z.enum(['startTime', 'createdAt']).default('startTime').optional(),
   sortOrder: z.enum(['asc', 'desc']).default('desc').optional(),
+  hasResult: z.enum(['hasResult', 'noResult']).optional(),
 });
 
 export class GetDoctorAppointmentsQueryDto extends createZodDto(

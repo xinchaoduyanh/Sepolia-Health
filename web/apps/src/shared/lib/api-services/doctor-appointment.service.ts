@@ -33,6 +33,7 @@ export interface PatientInfo {
     nationality?: string
     address?: string
     additionalInfo?: Record<string, any> | null
+    avatar?: string | null
 }
 
 export interface ServiceInfo {
@@ -59,6 +60,7 @@ export interface DoctorInfo {
     id: number
     firstName: string
     lastName: string
+    avatar?: string | null
 }
 
 export interface DoctorAppointmentDetail {
@@ -104,6 +106,7 @@ export class DoctorAppointmentService {
         status?: 'UPCOMING' | 'ON_GOING' | 'COMPLETED' | 'CANCELLED'
         sortBy?: 'startTime' | 'createdAt'
         sortOrder?: 'asc' | 'desc'
+        hasResult?: 'hasResult' | 'noResult'
     }): Promise<DoctorAppointmentsListResponse> {
         return apiClient.get<DoctorAppointmentsListResponse>('/doctor/appointments', { params })
     }
@@ -159,15 +162,11 @@ export class DoctorAppointmentService {
         const formData = new FormData()
         formData.append('file', file)
 
-        return apiClient.post<AppointmentResultFile>(
-            `/doctor/appointments/results/${resultId}/files`,
-            formData,
-            {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
+        return apiClient.post<AppointmentResultFile>(`/doctor/appointments/results/${resultId}/files`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
             },
-        )
+        })
     }
 
     /**

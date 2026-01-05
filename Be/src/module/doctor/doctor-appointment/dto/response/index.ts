@@ -96,6 +96,7 @@ export class DoctorAppointmentDetailDto {
     nationality?: string;
     address?: string;
     additionalInfo?: Record<string, any> | null;
+    avatar?: string | null;
   };
 
   @ApiProperty({
@@ -105,6 +106,7 @@ export class DoctorAppointmentDetailDto {
     id: number;
     firstName: string;
     lastName: string;
+    avatar?: string | null;
   };
 
   @ApiProperty({

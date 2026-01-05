@@ -1,29 +1,28 @@
 'use client'
 
-import { useState, useMemo, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
-import { BsSelect } from '@workspace/ui/components/Select'
-import { Badge } from '@workspace/ui/components/Badge'
-import { Skeleton } from '@workspace/ui/components/Skeleton'
-import { Pagination } from '@workspace/ui/components/Pagination'
-import { Card, CardContent, CardHeader, CardTitle } from '@workspace/ui/components/Card'
-import {
-    Calendar,
-    Clock,
-    User,
-    Star,
-    CheckCircle2,
-    Eye,
-    TrendingUp,
-    CalendarCheck,
-    Activity,
-    Filter,
-    Stethoscope,
-    XCircle,
-} from 'lucide-react'
 import { useDoctorAppointments } from '@/shared/hooks'
 import { useAuth } from '@/shared/hooks/useAuth'
 import { formatDate, formatTime } from '@/util/datetime'
+import { Avatar, AvatarFallback, AvatarImage } from '@workspace/ui/components/Avatar'
+import { Badge } from '@workspace/ui/components/Badge'
+import { Card, CardContent, CardHeader, CardTitle } from '@workspace/ui/components/Card'
+import { Pagination } from '@workspace/ui/components/Pagination'
+import { BsSelect } from '@workspace/ui/components/Select'
+import { Skeleton } from '@workspace/ui/components/Skeleton'
+import {
+    Activity,
+    Calendar,
+    CalendarCheck,
+    CheckCircle2,
+    Clock,
+    Eye,
+    Filter,
+    Star,
+    TrendingUp,
+    XCircle,
+} from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { useCallback, useMemo, useState } from 'react'
 
 // Skeleton loading component
 const TableSkeleton = () => (
@@ -98,26 +97,17 @@ export default function DoctorScheduleAppointmentsPage() {
             status: statusFilter || undefined,
             sortBy,
             sortOrder,
+            hasResult: resultFilter || undefined,
         }),
-        [currentPage, statusFilter, sortBy, sortOrder],
+        [currentPage, statusFilter, sortBy, sortOrder, resultFilter],
     )
 
     const { data, isLoading } = useDoctorAppointments(queryParams)
 
-    // Filter by result status
+    // Use data directly since filtering is now done on the server
     const appointments = useMemo(() => {
-        const allAppointments = data?.data || []
-        if (!resultFilter) return allAppointments
-        if (resultFilter === 'hasResult') {
-            return allAppointments.filter(apt => apt.result)
-        }
-        if (resultFilter === 'noResult') {
-            return allAppointments.filter(apt => !apt.result)
-        }
-        return allAppointments
-    }, [data?.data, resultFilter])
-
-    const totalPages = Math.ceil((appointments.length || 0) / itemsPerPage)
+        return data?.data || []
+    }, [data?.data])
 
     // Fetch statistics by querying each status with limit=1 to get total counts
     const upcomingQueryParams = useMemo(
@@ -133,6 +123,8 @@ export default function DoctorScheduleAppointmentsPage() {
         [sortBy, sortOrder],
     )
     const allQueryParams = useMemo(() => ({ page: 1, limit: 1, sortBy, sortOrder }), [sortBy, sortOrder])
+
+    const totalPages = Math.ceil((data?.total || 0) / itemsPerPage)
 
     const { data: upcomingData } = useDoctorAppointments(upcomingQueryParams)
     const { data: onGoingData } = useDoctorAppointments(onGoingQueryParams)
@@ -390,11 +382,18 @@ export default function DoctorScheduleAppointmentsPage() {
                                                 <td className="px-6 py-4">
                                                     {appointment.patient ? (
                                                         <div className="flex items-center gap-3">
-                                                            <div className="p-2 bg-primary/10 rounded-full">
-                                                                <User className="h-4 w-4 text-primary" />
-                                                            </div>
-                                                            <div>
-                                                                <p className="font-semibold text-foreground">
+                                                            <Avatar className="h-10 w-10 border-2 border-primary/20 shadow-sm shrink-0">
+                                                                <AvatarImage
+                                                                    src={appointment.patient.avatar || undefined}
+                                                                    alt={`${appointment.patient.lastName} ${appointment.patient.firstName}`}
+                                                                />
+                                                                <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                                                                    {appointment.patient.lastName?.[0]}
+                                                                    {appointment.patient.firstName?.[0]}
+                                                                </AvatarFallback>
+                                                            </Avatar>
+                                                            <div className="min-w-0">
+                                                                <p className="font-semibold text-foreground truncate">
                                                                     {appointment.patient.lastName}{' '}
                                                                     {appointment.patient.firstName}
                                                                 </p>
@@ -422,23 +421,38 @@ export default function DoctorScheduleAppointmentsPage() {
                                                     )}
                                                 </td>
                                                 <td className="px-6 py-4">
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="p-1.5 bg-primary/10 rounded-lg">
-                                                            <Stethoscope className="h-4 w-4 text-primary" />
-                                                        </div>
-                                                        <div>
-                                                            <p className="font-medium text-foreground">{doctorName}</p>
+                                                    <div className="flex items-center gap-3">
+                                                        <Avatar className="h-8 w-8 border-2 border-primary/20 shadow-sm shrink-0">
+                                                            <AvatarImage
+                                                                src={
+                                                                    appointment.doctor?.avatar ||
+                                                                    doctorProfile?.avatar ||
+                                                                    undefined
+                                                                }
+                                                                alt={doctorName}
+                                                            />
+                                                            <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs">
+                                                                {appointment.doctor?.lastName?.[0] ||
+                                                                    doctorProfile?.lastName?.[0]}
+                                                                {appointment.doctor?.firstName?.[0] ||
+                                                                    doctorProfile?.firstName?.[0]}
+                                                            </AvatarFallback>
+                                                        </Avatar>
+                                                        <div className="min-w-0">
+                                                            <p className="font-medium text-foreground truncate">
+                                                                {doctorName}
+                                                            </p>
                                                             {hasResult ? (
                                                                 <div className="flex items-center gap-1 mt-1">
-                                                                    <CheckCircle2 className="h-3 w-3 text-green-600" />
-                                                                    <span className="text-xs text-green-600">
+                                                                    <CheckCircle2 className="h-3 w-3 text-green-600 shadow-sm" />
+                                                                    <span className="text-xs text-green-600 font-medium">
                                                                         Đã có kết quả
                                                                     </span>
                                                                 </div>
                                                             ) : appointment.status === 'COMPLETED' ? (
                                                                 <div className="flex items-center gap-1 mt-1">
-                                                                    <XCircle className="h-3 w-3 text-yellow-600" />
-                                                                    <span className="text-xs text-yellow-600">
+                                                                    <XCircle className="h-3 w-3 text-yellow-600 shadow-sm" />
+                                                                    <span className="text-xs text-yellow-600 font-medium">
                                                                         Chưa có kết quả
                                                                     </span>
                                                                 </div>
@@ -515,8 +529,8 @@ export default function DoctorScheduleAppointmentsPage() {
                             <span className="font-semibold text-foreground">
                                 {Math.min(currentPage * itemsPerPage, data?.total || 0)}
                             </span>{' '}
-                            trong tổng số{' '}
-                            <span className="font-semibold text-foreground">{appointments.length || 0}</span> lịch khám
+                            trong tổng số <span className="font-semibold text-foreground">{data?.total || 0}</span> lịch
+                            khám
                         </div>
                         <Pagination value={currentPage} pageCount={totalPages} onChange={handlePageChange} />
                     </CardContent>

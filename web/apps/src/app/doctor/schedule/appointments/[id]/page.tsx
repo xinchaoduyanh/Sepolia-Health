@@ -1,8 +1,15 @@
 'use client'
 
-import { useCreateOrUpdateAppointmentResult, useDoctorAppointment, useUploadResultFile, useDeleteResultFile, useSpeechToText } from '@/shared/hooks'
 import { VoiceInputButton } from '@/shared/components/VoiceInputButton'
+import {
+    useCreateOrUpdateAppointmentResult,
+    useDeleteResultFile,
+    useDoctorAppointment,
+    useSpeechToText,
+    useUploadResultFile,
+} from '@/shared/hooks'
 import { formatDate, formatTime } from '@/util/datetime'
+import { Avatar, AvatarFallback, AvatarImage } from '@workspace/ui/components/Avatar'
 import { Badge } from '@workspace/ui/components/Badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@workspace/ui/components/Card'
 import { Skeleton } from '@workspace/ui/components/Skeleton'
@@ -23,7 +30,6 @@ import {
     IdCard,
     Loader2,
     MapPin,
-    Mic,
     Paperclip,
     Save,
     Star,
@@ -31,7 +37,6 @@ import {
     Trash2,
     Upload,
     User,
-    X,
     XCircle,
 } from 'lucide-react'
 import { useParams, useRouter } from 'next/navigation'
@@ -213,7 +218,7 @@ export default function AppointmentDetailPage() {
                 file: selectedFile,
                 appointmentId: appointmentId,
             })
-            
+
             // Success feedback
             toast.success({
                 title: 'Thành công',
@@ -221,7 +226,7 @@ export default function AppointmentDetailPage() {
             })
             setSelectedFile(null)
             setUploadError('')
-            
+
             // Reset file input
             const fileInput = document.getElementById('file-upload') as HTMLInputElement
             if (fileInput) fileInput.value = ''
@@ -388,7 +393,9 @@ export default function AppointmentDetailPage() {
                                         <CardTitle className="text-xl font-bold">Thông tin bệnh nhân</CardTitle>
                                     </div>
                                     <button
-                                        onClick={() => router.push(`/doctor/patient/${appointment.patient?.id}/history`)}
+                                        onClick={() =>
+                                            router.push(`/doctor/patient/${appointment.patient?.id}/history`)
+                                        }
                                         className="flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-primary hover:bg-primary/90 text-white rounded-lg transition-all duration-200 hover:scale-105 shadow-md hover:shadow-lg"
                                     >
                                         <History className="h-4 w-4" />
@@ -398,11 +405,23 @@ export default function AppointmentDetailPage() {
                             </CardHeader>
                             <CardContent className="p-6">
                                 <div className="space-y-3">
-                                    <div>
-                                        <p className="text-sm text-muted-foreground">Họ và tên</p>
-                                        <p className="font-semibold text-foreground">
-                                            {appointment.patient.lastName} {appointment.patient.firstName}
-                                        </p>
+                                    <div className="flex items-center gap-4">
+                                        <Avatar className="h-16 w-16 border-2 border-blue-500/20 shadow-md shrink-0">
+                                            <AvatarImage
+                                                src={appointment.patient.avatar || undefined}
+                                                alt={`${appointment.patient.lastName} ${appointment.patient.firstName}`}
+                                            />
+                                            <AvatarFallback className="bg-blue-100 text-blue-600 font-bold text-xl">
+                                                {appointment.patient.lastName?.[0]}
+                                                {appointment.patient.firstName?.[0]}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <div>
+                                            <p className="text-sm text-muted-foreground">Họ và tên</p>
+                                            <p className="text-xl font-bold text-foreground">
+                                                {appointment.patient.lastName} {appointment.patient.firstName}
+                                            </p>
+                                        </div>
                                     </div>
                                     <div>
                                         <p className="text-sm text-muted-foreground">Số điện thoại</p>
@@ -721,7 +740,6 @@ export default function AppointmentDetailPage() {
                                             <p className="text-sm text-red-600 dark:text-red-400">{speechError}</p>
                                         </div>
                                     )}
-
                                 </form>
                             ) : (
                                 <div className="text-center py-8">
@@ -753,7 +771,10 @@ export default function AppointmentDetailPage() {
                                                     accept=".jpg,.jpeg,.png,.pdf"
                                                     onChange={handleFileSelect}
                                                     className="hidden"
-                                                    disabled={uploadFileMutation.isPending || (appointment.result?.files?.length || 0) >= 10}
+                                                    disabled={
+                                                        uploadFileMutation.isPending ||
+                                                        (appointment.result?.files?.length || 0) >= 10
+                                                    }
                                                 />
                                                 <label
                                                     htmlFor="file-upload"
@@ -770,7 +791,11 @@ export default function AppointmentDetailPage() {
                                             <button
                                                 type="button"
                                                 onClick={handleFileUpload}
-                                                disabled={!selectedFile || uploadFileMutation.isPending || (appointment.result?.files?.length || 0) >= 10}
+                                                disabled={
+                                                    !selectedFile ||
+                                                    uploadFileMutation.isPending ||
+                                                    (appointment.result?.files?.length || 0) >= 10
+                                                }
                                                 className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary/90 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                                             >
                                                 {uploadFileMutation.isPending ? (
@@ -802,7 +827,7 @@ export default function AppointmentDetailPage() {
                                         <div className="space-y-2">
                                             <p className="text-xs font-medium text-muted-foreground">Danh sách file:</p>
                                             <div className="space-y-2">
-                                                {appointment.result.files.map((file) => (
+                                                {appointment.result.files.map(file => (
                                                     <div
                                                         key={file.id}
                                                         className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border border-border hover:bg-muted/70 transition-colors"
@@ -820,7 +845,10 @@ export default function AppointmentDetailPage() {
                                                                     {file.fileName}
                                                                 </p>
                                                                 <p className="text-xs text-muted-foreground">
-                                                                    {formatFileSize(file.fileSize)} • {new Date(file.createdAt).toLocaleDateString('vi-VN')}
+                                                                    {formatFileSize(file.fileSize)} •{' '}
+                                                                    {new Date(file.createdAt).toLocaleDateString(
+                                                                        'vi-VN',
+                                                                    )}
                                                                 </p>
                                                             </div>
                                                         </div>

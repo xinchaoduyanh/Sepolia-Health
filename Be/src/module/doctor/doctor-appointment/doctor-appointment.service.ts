@@ -1,13 +1,13 @@
 import { ERROR_MESSAGES, MESSAGES } from '@/common/constants';
 import { UploadService } from '@/common/modules';
 import { PrismaService } from '@/common/prisma/prisma.service';
+import { NotificationService } from '@/module/notification/notification.service';
 import {
   BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { NotificationService } from '@/module/notification/notification.service';
 import { AppointmentStatus } from '@prisma/client';
 import { fileTypeFromBuffer } from 'file-type';
 import {
@@ -63,6 +63,12 @@ export class DoctorAppointmentService {
       where.status = status;
     }
 
+    if (query.hasResult === 'hasResult') {
+      where.result = { isNot: null };
+    } else if (query.hasResult === 'noResult') {
+      where.result = null;
+    }
+
     // Build orderBy
     const orderBy: any = {};
     orderBy[sortBy] = sortOrder === 'asc' ? 'asc' : 'desc';
@@ -88,6 +94,7 @@ export class DoctorAppointmentService {
               nationality: true,
               address: true,
               additionalInfo: true,
+              avatar: true,
             },
           },
           service: {
@@ -165,8 +172,15 @@ export class DoctorAppointmentService {
             additionalInfo:
               (apt.patientProfile.additionalInfo as Record<string, any>) ||
               null,
+            avatar: apt.patientProfile.avatar,
           }
         : undefined,
+      doctor: {
+        id: doctorProfile.id,
+        firstName: doctorProfile.firstName,
+        lastName: doctorProfile.lastName,
+        avatar: doctorProfile.avatar,
+      },
       service: apt.service
         ? {
             id: apt.service.id,
@@ -249,6 +263,7 @@ export class DoctorAppointmentService {
             nationality: true,
             address: true,
             additionalInfo: true,
+            avatar: true,
           },
         },
         service: {
@@ -334,8 +349,15 @@ export class DoctorAppointmentService {
                 string,
                 any
               >) || null,
+            avatar: appointment.patientProfile.avatar,
           }
         : undefined,
+      doctor: {
+        id: doctorProfile.id,
+        firstName: doctorProfile.firstName,
+        lastName: doctorProfile.lastName,
+        avatar: doctorProfile.avatar,
+      },
       service: appointment.service
         ? {
             id: appointment.service.id,
@@ -558,6 +580,7 @@ export class DoctorAppointmentService {
               phone: true,
               dateOfBirth: true,
               gender: true,
+              avatar: true,
             },
           },
           doctor: {
@@ -565,6 +588,7 @@ export class DoctorAppointmentService {
               id: true,
               firstName: true,
               lastName: true,
+              avatar: true,
             },
           },
           service: {
@@ -635,6 +659,7 @@ export class DoctorAppointmentService {
             phone: apt.patientProfile.phone,
             dateOfBirth: apt.patientProfile.dateOfBirth,
             gender: apt.patientProfile.gender,
+            avatar: apt.patientProfile.avatar,
           }
         : undefined,
       doctor: apt.doctor
@@ -642,6 +667,7 @@ export class DoctorAppointmentService {
             id: apt.doctor.id,
             firstName: apt.doctor.firstName,
             lastName: apt.doctor.lastName,
+            avatar: apt.doctor.avatar,
           }
         : undefined,
       service: apt.service
