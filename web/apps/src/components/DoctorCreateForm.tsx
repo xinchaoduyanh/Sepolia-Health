@@ -23,6 +23,8 @@ import {
 import { useCreateDoctor, useClinicsDropdown, useServicesDropdown } from '@/shared/hooks'
 import type { CreateDoctorRequest } from '@/shared/lib/api-services/doctors.service'
 import { AvatarUpload } from './AvatarUpload'
+import { FormSelect } from '@workspace/ui/components/FormSelect'
+import { FormDatePicker } from '@workspace/ui/components/FormDatePicker'
 
 interface DoctorProfileForm {
     firstName: string
@@ -203,9 +205,6 @@ export function DoctorCreateForm() {
 
     const inputClassName =
         'w-full px-4 py-2.5 bg-background text-foreground border-2 border-border rounded-xl focus:ring-2 focus:ring-primary/30 focus:border-primary hover:border-primary/50 transition-all duration-200 outline-none shadow-sm'
-
-    const selectClassName =
-        'w-full px-4 py-2.5 bg-gradient-to-r from-background to-muted/20 text-foreground border-2 border-border rounded-xl focus:ring-2 focus:ring-primary/30 focus:border-primary hover:border-primary/50 hover:from-primary/5 hover:to-primary/10 transition-all duration-200 outline-none shadow-sm cursor-pointer appearance-none bg-no-repeat bg-right pr-10'
 
     const labelClassName = 'flex items-center gap-2 text-sm font-medium text-foreground mb-2'
 
@@ -410,29 +409,22 @@ export function DoctorCreateForm() {
                                         <User className="h-4 w-4 text-muted-foreground" />
                                         Giới tính <span className="text-red-500">*</span>
                                     </label>
-                                    <select
+                                    <FormSelect
                                         value={doctorProfile.gender}
-                                        onChange={e => handleProfileChange('gender', e.target.value)}
-                                        className={selectClassName}
-                                    >
-                                        {genderOptions.map(option => (
-                                            <option key={option.value} value={option.value}>
-                                                {option.label}
-                                            </option>
-                                        ))}
-                                    </select>
+                                        onChange={(value) => handleProfileChange('gender', value)}
+                                        options={genderOptions}
+                                        placeholder="Chọn giới tính"
+                                    />
                                 </div>
                                 <div>
                                     <label className={labelClassName}>
                                         <Calendar className="h-4 w-4 text-muted-foreground" />
                                         Ngày sinh
                                     </label>
-                                    <input
-                                        type="date"
+                                    <FormDatePicker
                                         value={doctorProfile.dateOfBirth}
-                                        onChange={e => handleProfileChange('dateOfBirth', e.target.value)}
-                                        max={new Date().toISOString().split('T')[0]}
-                                        className={inputClassName}
+                                        onChange={(value) => handleProfileChange('dateOfBirth', value)}
+                                        maxValue={new Date().toISOString().split('T')[0]}
                                     />
                                 </div>
                                 <div>
@@ -457,18 +449,16 @@ export function DoctorCreateForm() {
                                         <Briefcase className="h-4 w-4 text-muted-foreground" />
                                         Năm bắt đầu hành nghề <span className="text-red-500">*</span>
                                     </label>
-                                    <select
+                                    <FormSelect
                                         value={doctorProfile.experienceYear}
-                                        onChange={e => handleProfileChange('experienceYear', e.target.value)}
-                                        className={selectClassName}
+                                        onChange={(value) => handleProfileChange('experienceYear', value)}
+                                        options={experienceYearOptions.map(opt => ({
+                                            value: opt.value,
+                                            label: `${opt.label} (${currentYear - opt.value} năm kinh nghiệm)`
+                                        }))}
+                                        placeholder="Chọn năm bắt đầu"
                                         required
-                                    >
-                                        {experienceYearOptions.map(option => (
-                                            <option key={option.value} value={option.value}>
-                                                {option.label} ({currentYear - option.value} năm kinh nghiệm)
-                                            </option>
-                                        ))}
-                                    </select>
+                                    />
                                 </div>
                                 <div>
                                     <label className={labelClassName}>
@@ -505,19 +495,19 @@ export function DoctorCreateForm() {
                                     <Building2 className="h-4 w-4 text-muted-foreground" />
                                     Cơ sở phòng khám <span className="text-red-500">*</span>
                                 </label>
-                                <select
+                                <FormSelect
                                     value={doctorProfile.clinicId}
-                                    onChange={e => handleProfileChange('clinicId', parseInt(e.target.value))}
-                                    className={selectClassName}
+                                    onChange={(value) => handleProfileChange('clinicId', parseInt(value))}
+                                    options={[
+                                        { value: -1, label: 'Chọn cơ sở phòng khám' },
+                                        ...clinics.map(clinic => ({
+                                            value: clinic.id,
+                                            label: clinic.name
+                                        }))
+                                    ]}
+                                    placeholder="Chọn cơ sở phòng khám"
                                     required
-                                >
-                                    <option value={-1}>Chọn cơ sở phòng khám</option>
-                                    {clinics.map(clinic => (
-                                        <option key={clinic.id} value={clinic.id}>
-                                            {clinic.name}
-                                        </option>
-                                    ))}
-                                </select>
+                                />
 
                             </div>
 
@@ -642,19 +632,17 @@ export function DoctorCreateForm() {
                                                     <label className="text-xs text-muted-foreground mb-1 block">
                                                         Thứ trong tuần
                                                     </label>
-                                                    <select
+                                                    <FormSelect
                                                         value={availability.dayOfWeek}
-                                                        onChange={e =>
-                                                            updateAvailability(index, 'dayOfWeek', parseInt(e.target.value))
+                                                        onChange={(value) =>
+                                                            updateAvailability(index, 'dayOfWeek', parseInt(value))
                                                         }
-                                                        className={selectClassName}
-                                                    >
-                                                        {dayOfWeekOptions.map(option => (
-                                                            <option key={option.value} value={option.value}>
-                                                                {option.label}
-                                                            </option>
-                                                        ))}
-                                                    </select>
+                                                        options={dayOfWeekOptions.map(opt => ({
+                                                            value: opt.value,
+                                                            label: opt.label
+                                                        }))}
+                                                        placeholder="Chọn thứ"
+                                                    />
 
                                                 </div>
                                                 <div>
