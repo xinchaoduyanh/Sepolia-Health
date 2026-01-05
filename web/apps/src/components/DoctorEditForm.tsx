@@ -55,7 +55,7 @@ export function DoctorEditForm({ doctor, doctorId }: DoctorEditFormProps) {
         dateOfBirth: '',
         gender: 'MALE',
         avatar: '',
-        experienceYear: doctor.experienceYears || 2025,
+        experienceYear: doctor.experienceYears || new Date().getFullYear(),
         contactInfo: doctor.phone || '',
         clinicId: doctor.clinic?.id || -1,
         serviceIds: doctor.services?.map(s => s.id) || [],

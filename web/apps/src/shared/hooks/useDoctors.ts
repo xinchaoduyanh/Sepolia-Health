@@ -80,7 +80,7 @@ export function useCreateDoctor() {
 
             toast.success({
                 title: 'Thành công',
-                description: 'Tạo tài khoản bác sĩ thành công',
+                description: 'Tạo bác sĩ thành công',
             })
         },
         onError: (error: any) => {

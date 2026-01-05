@@ -2,9 +2,8 @@ import { ApiProperty } from '@nestjs/swagger';
 import { UserStatus } from '@prisma/client';
 import { z } from 'zod';
 
-// Password regex: tối thiểu 6 ký tự, có chữ IN HOA, có số, có ký tự đặc biệt
-const PASSWORD_REGEX =
-  /^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{6,}$/;
+// Password regex: tối thiểu 6 ký tự
+const PASSWORD_REGEX = /^.{6,}$/;
 
 // Helper function để validate password với regex
 const passwordRefine = (password: string) => {
@@ -30,7 +29,7 @@ export const CreateDoctorSchema = z.object({
     .min(6, 'Mật khẩu phải có ít nhất 6 ký tự')
     .refine(
       passwordRefine,
-      'Mật khẩu phải có ít nhất 6 ký tự, bao gồm chữ IN HOA, số và ký tự đặc biệt',
+      'Mật khẩu phải có ít nhất 6 ký tự',
     ),
   fullName: z.string().min(1, 'Họ tên không được để trống'),
   phone: z.string().min(1, 'Số điện thoại không được để trống'),
@@ -38,12 +37,8 @@ export const CreateDoctorSchema = z.object({
   description: z.string().optional(),
   address: z.string().optional(),
   clinicId: z.number().int().positive({ message: 'Clinic ID không hợp lệ' }),
-  serviceIds: z
-    .array(z.number().int().positive())
-    .min(1, 'Cần chọn ít nhất một dịch vụ'),
-  specialtyIds: z
-    .array(z.number().int().positive())
-    .min(1, 'Cần chọn ít nhất một chuyên khoa'),
+  serviceIds: z.array(z.number().int().positive()).optional().default([]),
+  specialtyIds: z.array(z.number().int().positive()).optional().default([]),
   availabilities: z
     .array(
       z.object({

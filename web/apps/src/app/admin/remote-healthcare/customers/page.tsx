@@ -248,7 +248,7 @@ export default function CustomersPage() {
 
             {/* Footer */}
             <div className="text-center text-sm text-slate-500 dark:text-slate-400 py-2">
-                Copyright © 2025 Sepolia. All rights reserved.
+                Copyright © {new Date().getFullYear()} Sepolia. All rights reserved.
             </div>
         </div>
     )
