@@ -1,23 +1,23 @@
 'use client'
 
+import { Badge } from '@workspace/ui/components/Badge'
+import { Button } from '@workspace/ui/components/Button'
+import { Popover } from '@workspace/ui/components/Popover'
+import { BsSearchField } from '@workspace/ui/components/Searchfield'
+import { cn } from '@workspace/ui/lib/utils'
 import { CheckIcon, ChevronDownIcon, XIcon } from 'lucide-react'
 import React from 'react'
 import type { ListBoxItemProps } from 'react-aria-components'
 import {
-    Select,
-    SelectProps,
     Autocomplete,
     ListBox,
     ListBoxItem,
+    Select,
+    SelectProps,
+    SelectStateContext,
     SelectValue,
     useFilter,
-    SelectStateContext,
 } from 'react-aria-components'
-import { cn } from '@workspace/ui/lib/utils'
-import { Button } from '@workspace/ui/components/Button'
-import { Popover } from '@workspace/ui/components/Popover'
-import { BsSearchField } from '@workspace/ui/components/Searchfield'
-import { Badge } from '@workspace/ui/components/Badge'
 
 interface BsSelectOption {
     id: string | number
@@ -99,7 +99,7 @@ export function BsSelect<T extends BsSelectOption, M extends 'single' | 'multipl
                 className={cn(
                     'justify-between w-full pr-2 h-auto py-[5px] min-h-8 font-normal text-start',
                     'group-data-[invalid]:border-destructive group-data-[disabled]:opacity-80',
-                    'hover:bg-background-secondary',
+                    'hover:bg-primary/10 hover:text-primary transition-colors',
                 )}
                 onClick={() => setIsOpen(!isOpen)}
             >

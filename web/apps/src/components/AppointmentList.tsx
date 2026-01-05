@@ -5,12 +5,13 @@ import { AppointmentDetailResponse } from '@/types/appointment'
 import { Badge } from '@workspace/ui/components/Badge'
 import { Button } from '@workspace/ui/components/Button'
 import { DataTable } from '@workspace/ui/components/DataTable'
+import { Pagination } from '@workspace/ui/components/Pagination'
 import { BsSearchField } from '@workspace/ui/components/Searchfield'
 import { BsSelect } from '@workspace/ui/components/Select'
 import { Skeleton } from '@workspace/ui/components/Skeleton'
 import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
-import { Calendar, Clock, Eye, Phone, Plus, User } from 'lucide-react'
+import { AlertCircle, Calendar, CheckCircle2, Clock, Eye, Phone, Plus, XCircle } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
 const statusOptions = [
@@ -21,18 +22,35 @@ const statusOptions = [
     { id: 'CANCELLED', name: 'Đã hủy' },
 ]
 
-const getStatusVariant = (status: string): 'default' | 'secondary' | 'destructive' | 'outline' => {
+const getStatusVariant = (
+    status: string,
+): 'default' | 'secondary' | 'destructive' | 'outline' | 'success' | 'warning' | 'info' => {
     switch (status.toUpperCase()) {
         case 'UPCOMING':
-            return 'default' // Blue for upcoming
+            return 'info' // Sky Blue
         case 'ON_GOING':
-            return 'outline' // Green outline for ongoing
+            return 'secondary' // Soft Blue
         case 'COMPLETED':
-            return 'outline' // Green outline for completed
+            return 'success' // Teal/Mint
         case 'CANCELLED':
-            return 'secondary' // Gray for cancelled (inactive)
+            return 'destructive' // Rose
         default:
             return 'default'
+    }
+}
+
+const getStatusIcon = (status: string) => {
+    switch (status.toUpperCase()) {
+        case 'UPCOMING':
+            return <Clock className="h-3 w-3" />
+        case 'ON_GOING':
+            return <AlertCircle className="h-3 w-3" />
+        case 'COMPLETED':
+            return <CheckCircle2 className="h-3 w-3" />
+        case 'CANCELLED':
+            return <XCircle className="h-3 w-3" />
+        default:
+            return null
     }
 }
 
@@ -62,6 +80,8 @@ interface AppointmentListProps {
     onStatusChange: (status: string) => void
     currentPage: number
     totalPages: number
+    totalItems?: number
+    pageSize?: number
     onPageChange: (page: number) => void
 }
 
@@ -76,6 +96,8 @@ export function AppointmentList({
     onStatusChange,
     currentPage,
     totalPages,
+    totalItems = 0,
+    pageSize = 10,
     onPageChange,
 }: AppointmentListProps) {
     const [searchTerm, setSearchTerm] = useState('')
@@ -122,8 +144,13 @@ export function AppointmentList({
         {
             accessorKey: 'id',
             header: 'Mã',
+            size: 90,
+            minSize: 80,
+            maxSize: 100,
             cell: ({ row }: any) => (
-                <span className="font-mono text-sm text-slate-600 dark:text-slate-400">#{row.original.id}</span>
+                <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-md bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 font-mono text-[11px] text-emerald-600 dark:text-emerald-400 border border-emerald-100/50 dark:border-emerald-800/30 whitespace-nowrap">
+                    #{row.original.id}
+                </span>
             ),
         },
         {
@@ -131,18 +158,31 @@ export function AppointmentList({
             header: 'Bệnh nhân',
             cell: ({ row }: any) => {
                 const patient = row.original.patientProfile
+                const initials = patient
+                    ? `${patient.lastName?.charAt(0) || ''}${patient.firstName?.charAt(0) || ''}`
+                    : '?'
                 return (
-                    <div className="flex items-start space-x-3">
-                        <div className="flex-shrink-0 mt-1">
-                            <User className="h-5 w-5 text-slate-400" />
+                    <div className="flex items-center space-x-3">
+                        <div className="flex-shrink-0">
+                            {patient?.avatar ? (
+                                <img
+                                    src={patient.avatar}
+                                    alt={`${patient.lastName} ${patient.firstName}`}
+                                    className="h-9 w-9 rounded-full object-cover ring-2 ring-emerald-100 dark:ring-emerald-800/30"
+                                />
+                            ) : (
+                                <div className="h-9 w-9 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-xs font-semibold shadow-sm">
+                                    {initials}
+                                </div>
+                            )}
                         </div>
                         <div>
-                            <div className="font-medium text-slate-900 dark:text-slate-100">
+                            <div className="font-medium text-slate-800 dark:text-slate-100 text-[13px]">
                                 {patient ? `${patient.lastName} ${patient.firstName}` : 'N/A'}
                             </div>
                             {patient?.phone && (
-                                <div className="flex items-center text-sm text-slate-500 dark:text-slate-400 mt-1">
-                                    <Phone className="h-3 w-3 mr-1" />
+                                <div className="flex items-center text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
+                                    <Phone className="h-3 w-3 mr-1 text-emerald-400" />
                                     {patient.phone}
                                 </div>
                             )}
@@ -156,9 +196,27 @@ export function AppointmentList({
             header: 'Bác sĩ',
             cell: ({ row }: any) => {
                 const doctor = row.original.doctor
+                const initials = doctor
+                    ? `${doctor.lastName?.charAt(0) || ''}${doctor.firstName?.charAt(0) || ''}`
+                    : '?'
                 return (
-                    <div className="text-slate-700 dark:text-slate-300">
-                        {doctor ? `BS. ${doctor.lastName} ${doctor.firstName}` : 'N/A'}
+                    <div className="flex items-center space-x-2.5">
+                        <div className="flex-shrink-0">
+                            {doctor?.avatar ? (
+                                <img
+                                    src={doctor.avatar}
+                                    alt={`${doctor.lastName} ${doctor.firstName}`}
+                                    className="h-8 w-8 rounded-full object-cover ring-2 ring-sky-100 dark:ring-sky-800/30"
+                                />
+                            ) : (
+                                <div className="h-8 w-8 rounded-full bg-gradient-to-br from-sky-400 to-blue-500 flex items-center justify-center text-white text-[10px] font-semibold shadow-sm">
+                                    {initials}
+                                </div>
+                            )}
+                        </div>
+                        <span className="text-slate-700 dark:text-slate-300 text-[13px]">
+                            {doctor ? `BS. ${doctor.lastName} ${doctor.firstName}` : 'N/A'}
+                        </span>
                     </div>
                 )
             },
@@ -170,10 +228,18 @@ export function AppointmentList({
                 const service = row.original.service
                 return (
                     <div>
-                        <div className="font-medium text-slate-900 dark:text-slate-100">{service?.name || 'N/A'}</div>
+                        <div className="font-medium text-slate-800 dark:text-slate-100 text-[13px]">
+                            {service?.name || 'N/A'}
+                        </div>
                         {service && (
-                            <div className="text-sm text-slate-500 dark:text-slate-400">
-                                {service.duration} phút • {service.price.toLocaleString('vi-VN')} ₫
+                            <div className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
+                                <span className="inline-flex items-center gap-1">
+                                    <span className="text-emerald-500">{service.duration} phút</span>
+                                    <span className="text-slate-300 dark:text-slate-600">•</span>
+                                    <span className="font-medium text-emerald-600 dark:text-emerald-400">
+                                        {service.price.toLocaleString('vi-VN')} ₫
+                                    </span>
+                                </span>
                             </div>
                         )}
                     </div>
@@ -186,15 +252,15 @@ export function AppointmentList({
             cell: ({ row }: any) => {
                 const startTime = new Date(row.original.startTime)
                 return (
-                    <div className="flex items-start space-x-2">
-                        <div className="flex-shrink-0 mt-1">
-                            <Calendar className="h-4 w-4 text-slate-400" />
+                    <div className="flex items-center space-x-2.5">
+                        <div className="flex-shrink-0 p-1.5 rounded-lg bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border border-emerald-100/50 dark:border-emerald-800/30">
+                            <Calendar className="h-4 w-4 text-emerald-500" />
                         </div>
                         <div>
-                            <div className="font-medium text-slate-900 dark:text-slate-100">
+                            <div className="font-medium text-emerald-700 dark:text-emerald-300 text-[13px]">
                                 {format(startTime, 'dd/MM/yyyy', { locale: vi })}
                             </div>
-                            <div className="flex items-center text-sm text-slate-500 dark:text-slate-400 mt-1">
+                            <div className="flex items-center text-[11px] text-teal-500 dark:text-teal-400 mt-0.5">
                                 <Clock className="h-3 w-3 mr-1" />
                                 {format(startTime, 'HH:mm', { locale: vi })}
                             </div>
@@ -206,37 +272,55 @@ export function AppointmentList({
         {
             accessorKey: 'status',
             header: 'Trạng thái',
-            cell: ({ row }: any) => (
-                <Badge variant={getStatusVariant(row.original.status)}>{getStatusLabel(row.original.status)}</Badge>
-            ),
+            cell: ({ row }: any) => {
+                const status = row.original.status
+                return (
+                    <Badge
+                        variant={getStatusVariant(status)}
+                        className="flex items-center gap-1.5 px-2.5 py-1 font-medium text-[10px] uppercase tracking-wider"
+                    >
+                        {getStatusIcon(status)}
+                        {getStatusLabel(status)}
+                    </Badge>
+                )
+            },
         },
         {
             accessorKey: 'billing',
             header: 'Thanh toán',
             cell: ({ row }: any) => {
                 const billing = row.original.billing
+                const isPaid = billing?.status?.toUpperCase() === 'PAID'
                 return billing ? (
-                    <div>
-                        <div className="font-medium text-slate-900 dark:text-slate-100">
+                    <div className="flex items-center gap-2.5">
+                        <div className="font-bold text-[14px] tabular-nums text-sky-600 dark:text-sky-400">
                             {billing.amount.toLocaleString('vi-VN')} ₫
                         </div>
-                        <Badge variant={billing.status === 'paid' ? 'default' : 'secondary'} className="text-xs mt-1">
-                            {billing.status === 'paid' ? 'Đã thanh toán' : 'Chưa thanh toán'}
+                        <Badge
+                            variant={isPaid ? 'success' : 'destructive'}
+                            className="text-[9px] font-semibold px-2 py-0.5"
+                        >
+                            {isPaid ? 'ĐÃ THU' : 'CHỜ THU'}
                         </Badge>
                     </div>
                 ) : (
-                    <span className="text-slate-400">N/A</span>
+                    <span className="text-slate-300 dark:text-slate-600 text-[11px] italic">Chưa có hóa đơn</span>
                 )
             },
         },
         {
             accessorKey: 'actions',
             header: 'Thao tác',
-            size: 80,
-            minSize: 80,
+            size: 70,
+            minSize: 60,
             maxSize: 80,
             cell: ({ row }: any) => (
-                <Button variant="ghost" size="sm" onClick={() => onViewDetail(row.original.id)} className="h-8 w-8 p-0">
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onViewDetail(row.original.id)}
+                    className="h-8 w-8 p-0 rounded-full hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:text-emerald-600 transition-colors"
+                >
                     <Eye className="h-4 w-4" />
                 </Button>
             ),
@@ -357,28 +441,12 @@ export function AppointmentList({
 
             {/* Pagination */}
             {totalPages > 1 && (
-                <div className="flex items-center justify-between">
-                    <div className="text-sm text-muted-foreground">
-                        Trang {currentPage} / {totalPages}
+                <div className="flex items-center justify-between mt-4 px-2">
+                    <div className="text-sm text-muted-foreground italic">
+                        Hiển thị {(currentPage - 1) * pageSize + 1} đến {Math.min(currentPage * pageSize, totalItems)}{' '}
+                        trong {totalItems} lịch hẹn
                     </div>
-                    <div className="flex gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => onPageChange(currentPage - 1)}
-                            isDisabled={currentPage === 1}
-                        >
-                            Trước
-                        </Button>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => onPageChange(currentPage + 1)}
-                            isDisabled={currentPage === totalPages}
-                        >
-                            Sau
-                        </Button>
-                    </div>
+                    <Pagination value={currentPage} pageCount={totalPages} onChange={onPageChange} />
                 </div>
             )}
         </div>

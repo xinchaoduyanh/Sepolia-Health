@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { AppointmentList } from '@/components/AppointmentList'
 import { useAppointments, useAppointmentSummary } from '@/shared/hooks/useAppointment'
+import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 
 export default function AppointmentPage() {
     const router = useRouter()
@@ -71,6 +71,8 @@ export default function AppointmentPage() {
                 onStatusChange={handleStatusChange}
                 currentPage={data?.page || 1}
                 totalPages={data?.totalPages || 1}
+                totalItems={data?.total || 0}
+                pageSize={pageSize}
                 onPageChange={handlePageChange}
             />
         </div>

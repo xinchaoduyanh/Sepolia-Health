@@ -1,38 +1,39 @@
 import { ERROR_MESSAGES, MESSAGES } from '@/common/constants';
-import { PrismaService } from '@/common/prisma/prisma.service';
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
 import { SuccessResponseDto } from '@/common/dto';
+import { SortOrder } from '@/common/enum';
+import { PrismaService } from '@/common/prisma/prisma.service';
+import { StringUtil } from '@/common/utils';
 import { AppointmentDetailResponseDto } from '@/module/patient/appointment/dto';
 import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import {
   AppointmentStatus,
+  PaymentStatus,
+  Relationship,
   Role,
   UserStatus,
-  Relationship,
 } from '@prisma/client';
-import { StringUtil } from '@/common/utils';
 import * as bcrypt from 'bcrypt';
 import {
-  FindPatientByEmailDto,
-  CreatePatientAccountDto,
   CreateAppointmentForPatientDto,
+  CreatePatientAccountDto,
+  FindPatientByEmailDto,
   GetAppointmentsQueryDto,
 } from './dto/request';
 import {
-  FindPatientResponseDto,
-  CreatePatientAccountResponseDto,
-  CreateAppointmentResponseDto,
   AppointmentsListResponseDto,
   AppointmentSummaryResponseDto,
+  CreateAppointmentResponseDto,
+  CreatePatientAccountResponseDto,
+  FindPatientResponseDto,
 } from './dto/response';
-import { SortOrder } from '@/common/enum';
 
 @Injectable()
 export class ReceptionistAppointmentService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   /**
    * Get list of appointments with pagination and filters
@@ -155,7 +156,14 @@ export class ReceptionistAppointmentService {
             firstName: true,
             lastName: true,
             phone: true,
-            managerId: true, // Cần managerId để gửi notification
+            managerId: true,
+            dateOfBirth: true,
+            gender: true,
+            avatar: true,
+            idCardNumber: true,
+            occupation: true,
+            nationality: true,
+            address: true,
           },
         },
         doctor: {
@@ -163,6 +171,18 @@ export class ReceptionistAppointmentService {
             id: true,
             firstName: true,
             lastName: true,
+            avatar: true,
+            experience: true,
+            contactInfo: true,
+            specialties: {
+              select: {
+                specialty: {
+                  select: {
+                    name: true,
+                  },
+                },
+              },
+            },
           },
         },
         service: true,
@@ -215,7 +235,11 @@ export class ReceptionistAppointmentService {
 
   async updateAppointment(
     id: number,
-    updateData: { startTime?: string; notes?: string; doctorServiceId?: number },
+    updateData: {
+      startTime?: string;
+      notes?: string;
+      doctorServiceId?: number;
+    },
   ): Promise<SuccessResponseDto> {
     const appointment = await this.prisma.appointment.findUnique({
       where: { id },
@@ -311,8 +335,8 @@ export class ReceptionistAppointmentService {
               AND: [
                 { startTime: { gte: startTime } },
                 { endTime: { lte: endTime } },
-              ]
-            }
+              ],
+            },
           ],
         },
       });
@@ -358,7 +382,6 @@ export class ReceptionistAppointmentService {
 
     return new SuccessResponseDto();
   }
-
 
   /**
    * Find patient by email
@@ -924,6 +947,15 @@ export class ReceptionistAppointmentService {
             name: true,
           },
         },
+      },
+    });
+
+    // Create billing for the appointment (matching patient module logic)
+    await this.prisma.billing.create({
+      data: {
+        amount: doctorService.service.price,
+        status: PaymentStatus.PENDING,
+        appointmentId: appointment.id,
       },
     });
 

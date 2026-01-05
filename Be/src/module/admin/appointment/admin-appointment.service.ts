@@ -1,10 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/common/prisma/prisma.service';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import {
-  GetAppointmentQueryDto,
-  AppointmentListResponseDto,
   AppointmentDetailResponseDto,
+  AppointmentListResponseDto,
   AppointmentResponseDto,
+  GetAppointmentQueryDto,
 } from './admin-appointment.dto';
 
 @Injectable()
@@ -209,17 +209,26 @@ export class AdminAppointmentService {
   }
 
   private mapAppointmentToResponse(appointment: any): AppointmentResponseDto {
+    const patientProfile = appointment.patientProfile;
+
     return {
       id: appointment.id,
-      date: appointment.date.toISOString().split('T')[0],
-      startTime: appointment.startTime,
-      endTime: appointment.endTime,
+      date: appointment.startTime.toISOString().split('T')[0],
+      startTime: appointment.startTime
+        .toISOString()
+        .split('T')[1]
+        .substring(0, 5),
+      endTime: appointment.endTime.toISOString().split('T')[1].substring(0, 5),
       status: appointment.status,
       notes: appointment.notes || undefined,
-      patientName: appointment.patientName,
-      patientDob: appointment.patientDob.toISOString().split('T')[0],
-      patientPhone: appointment.patientPhone,
-      patientGender: appointment.patientGender,
+      patientName: patientProfile
+        ? `${patientProfile.lastName} ${patientProfile.firstName}`
+        : 'N/A',
+      patientDob: patientProfile
+        ? patientProfile.dateOfBirth.toISOString().split('T')[0]
+        : '',
+      patientPhone: patientProfile?.phone || '',
+      patientGender: patientProfile?.gender || '',
       doctor: {
         id: appointment.doctor.id,
         fullName: `${appointment.doctor.firstName} ${appointment.doctor.lastName}`,
@@ -243,15 +252,13 @@ export class AdminAppointmentService {
         address: appointment.clinic.address,
         phone: appointment.clinic.phone || undefined,
       },
-      patientProfile: appointment.patientProfile
+      patientProfile: patientProfile
         ? {
-            id: appointment.patientProfile.id,
-            fullName: `${appointment.patientProfile.firstName} ${appointment.patientProfile.lastName}`,
-            phone: appointment.patientProfile.phone,
-            dateOfBirth: appointment.patientProfile.dateOfBirth
-              .toISOString()
-              .split('T')[0],
-            gender: appointment.patientProfile.gender,
+            id: patientProfile.id,
+            fullName: `${patientProfile.lastName} ${patientProfile.firstName}`,
+            phone: patientProfile.phone,
+            dateOfBirth: patientProfile.dateOfBirth.toISOString().split('T')[0],
+            gender: patientProfile.gender,
           }
         : undefined,
       billing: appointment.billing
