@@ -1,6 +1,6 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
-import { config } from './config'
 import { RefreshTokenResponse } from './api-services/auth.service'
+import { config } from './config'
 
 /**
  * Enhanced API client with interceptors for error handling
@@ -61,8 +61,18 @@ export class ApiClient {
         this.client.interceptors.response.use(
             (response: AxiosResponse) => response,
             async error => {
-                // Handle 401 - try to refresh and retry
-                if (error.response?.status === 401 && error.config && !this.isRefreshing) {
+                const requestUrl = error.config?.url || ''
+
+                // Skip refresh logic for auth endpoints (login, register, etc.)
+                const isAuthEndpoint =
+                    requestUrl.includes('/auth/login') ||
+                    requestUrl.includes('/auth/register') ||
+                    requestUrl.includes('/auth/refresh-token') ||
+                    requestUrl.includes('/auth/forgot-password') ||
+                    requestUrl.includes('/auth/reset-password')
+
+                // Handle 401 - try to refresh and retry (but NOT for auth endpoints)
+                if (error.response?.status === 401 && error.config && !this.isRefreshing && !isAuthEndpoint) {
                     this.isRefreshing = true
 
                     try {

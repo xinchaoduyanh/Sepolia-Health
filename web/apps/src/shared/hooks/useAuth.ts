@@ -1,9 +1,9 @@
 'use client'
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { jwtDecode } from 'jwt-decode'
 import { useRouter, useSearchParams } from 'next/navigation'
 import React, { useState } from 'react'
-import { jwtDecode } from 'jwt-decode'
 import { authService, type LoginRequest } from '../lib/api-services'
 import { useAuthStore } from '../stores/auth.store'
 
@@ -57,6 +57,8 @@ export function useLogin() {
             // Redirect to home page, which will handle role-based routing
             router.push('/')
         },
+        // Prevent unwanted retries that could cause page reload
+        retry: false,
     })
 }
 
