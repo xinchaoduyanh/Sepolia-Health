@@ -220,8 +220,8 @@ export function AppointmentList({
                         <div className="font-medium text-slate-900 dark:text-slate-100">
                             {billing.amount.toLocaleString('vi-VN')} ₫
                         </div>
-                        <Badge variant={billing.status === 'paid' ? 'default' : 'secondary'} className="text-xs mt-1">
-                            {billing.status === 'paid' ? 'Đã thanh toán' : 'Chưa thanh toán'}
+                        <Badge variant={billing.status === 'PAID' ? 'default' : 'secondary'} className="text-xs mt-1">
+                            {billing.status === 'PAID' ? 'Đã thanh toán' : 'Chưa thanh toán'}
                         </Badge>
                     </div>
                 ) : (
