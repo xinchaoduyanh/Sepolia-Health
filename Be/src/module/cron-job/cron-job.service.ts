@@ -8,7 +8,7 @@ export class CronJobService implements OnModuleInit {
   constructor(
     @InjectQueue(CRON_JOB.APPOINTMENT.QUEUE_NAME)
     private readonly appointmentQueue: Queue,
-  ) {}
+  ) { }
 
   async onModuleInit() {
     // Add repeatable job that runs every hour
@@ -17,7 +17,7 @@ export class CronJobService implements OnModuleInit {
       {},
       {
         repeat: {
-          pattern: '0 * * * *', // Every hour at minute 0 (e.g., 1:00, 2:00, 3:00...)
+          pattern: '0,30 * * * *', // Every hour at minute 0 (e.g., 1:00, 2:00, 3:00...)
         },
         removeOnComplete: true,
         removeOnFail: false,
