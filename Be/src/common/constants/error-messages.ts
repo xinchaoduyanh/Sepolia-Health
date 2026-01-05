@@ -40,5 +40,7 @@ export const ERROR_MESSAGES = {
     CAN_NOT_CANCEL: 'Không thể hủy lịch hẹn',
     INVALID_STATUS: 'Trạng thái không hợp lệ',
     TIME_CONFLICT: 'Thời gian hẹn bị trùng hoặc không hợp lệ',
+    NOT_PAID: 'Lịch hẹn chưa được thanh toán',
+    NOT_YET_REACHED: 'Lịch hẹn chưa đến',
   },
 };

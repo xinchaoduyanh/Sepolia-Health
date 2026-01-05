@@ -215,6 +215,7 @@ export class ReceptionistAppointmentService {
   async checkInAppointment(id: number): Promise<SuccessResponseDto> {
     const appointment = await this.prisma.appointment.findUnique({
       where: { id },
+      include: { billing: true },
     });
 
     if (!appointment) {
@@ -223,6 +224,14 @@ export class ReceptionistAppointmentService {
 
     if (appointment.status !== AppointmentStatus.UPCOMING) {
       throw new BadRequestException(ERROR_MESSAGES.APPOINTMENT.INVALID_STATUS);
+    }
+
+    if (appointment.billing?.status !== PaymentStatus.PAID) {
+      throw new BadRequestException(ERROR_MESSAGES.APPOINTMENT.NOT_PAID);
+    }
+
+    if (appointment.startTime.getTime() > Date.now() + 10 * 60 + 1000) {
+      throw new BadRequestException(ERROR_MESSAGES.APPOINTMENT.NOT_YET_REACHED);
     }
 
     await this.prisma.appointment.update({

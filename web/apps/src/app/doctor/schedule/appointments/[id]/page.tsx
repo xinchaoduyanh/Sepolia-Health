@@ -1,6 +1,12 @@
 'use client'
 
-import { useCreateOrUpdateAppointmentResult, useDoctorAppointment, useUploadResultFile, useDeleteResultFile, useSpeechToText } from '@/shared/hooks'
+import {
+    useCreateOrUpdateAppointmentResult,
+    useDoctorAppointment,
+    useUploadResultFile,
+    useDeleteResultFile,
+    useSpeechToText,
+} from '@/shared/hooks'
 import { VoiceInputButton } from '@/shared/components/VoiceInputButton'
 import { formatDate, formatTime } from '@/util/datetime'
 import { Badge } from '@workspace/ui/components/Badge'
@@ -31,7 +37,6 @@ import {
     Trash2,
     Upload,
     User,
-    X,
     XCircle,
 } from 'lucide-react'
 import { useParams, useRouter } from 'next/navigation'
@@ -213,7 +218,7 @@ export default function AppointmentDetailPage() {
                 file: selectedFile,
                 appointmentId: appointmentId,
             })
-            
+
             // Success feedback
             toast.success({
                 title: 'Thành công',
@@ -221,7 +226,7 @@ export default function AppointmentDetailPage() {
             })
             setSelectedFile(null)
             setUploadError('')
-            
+
             // Reset file input
             const fileInput = document.getElementById('file-upload') as HTMLInputElement
             if (fileInput) fileInput.value = ''
@@ -388,7 +393,9 @@ export default function AppointmentDetailPage() {
                                         <CardTitle className="text-xl font-bold">Thông tin bệnh nhân</CardTitle>
                                     </div>
                                     <button
-                                        onClick={() => router.push(`/doctor/patient/${appointment.patient?.id}/history`)}
+                                        onClick={() =>
+                                            router.push(`/doctor/patient/${appointment.patient?.id}/history`)
+                                        }
                                         className="flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-primary hover:bg-primary/90 text-white rounded-lg transition-all duration-200 hover:scale-105 shadow-md hover:shadow-lg"
                                     >
                                         <History className="h-4 w-4" />
@@ -494,30 +501,55 @@ export default function AppointmentDetailPage() {
                         )}
 
                         {appointment.type === 'ONLINE' && appointment.hostUrl ? (
-                            <Card className="border-2 shadow-lg">
-                                <CardHeader className="border-b bg-gradient-to-r from-purple-500/5 to-purple-500/10">
-                                    <div className="flex items-center gap-2">
-                                        <Building2 className="h-5 w-5 text-purple-600" />
-                                        <CardTitle className="text-lg font-bold">Liên kết trực tuyến</CardTitle>
-                                    </div>
-                                </CardHeader>
-                                <CardContent className="p-6">
-                                    <a
-                                        href={appointment.hostUrl}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="inline-flex items-center gap-2 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-medium transition-colors"
-                                    >
-                                        <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
-                                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
-                                        </svg>
-                                        Tham gia cuộc gọi
-                                    </a>
-                                    <p className="text-xs text-muted-foreground mt-3 break-all">
-                                        {appointment.hostUrl}
-                                    </p>
-                                </CardContent>
-                            </Card>
+                            (() => {
+                                const now = new Date()
+                                const appointmentTime = new Date(appointment.startTime)
+                                const minutesBefore = Math.floor((appointmentTime.getTime() - now.getTime()) / 60000)
+                                const isStartingSoon = minutesBefore <= 15 && minutesBefore >= -30 // 15 min before to 30 min after
+
+                                return (
+                                    <Card className="border-2 shadow-lg">
+                                        <CardHeader className="border-b bg-gradient-to-r from-purple-500/5 to-purple-500/10">
+                                            <div className="flex items-center gap-2">
+                                                <Building2 className="h-5 w-5 text-purple-600" />
+                                                <CardTitle className="text-lg font-bold">Liên kết trực tuyến</CardTitle>
+                                            </div>
+                                        </CardHeader>
+                                        <CardContent className="p-6 space-y-3">
+                                            {!isStartingSoon && (
+                                                <div className="flex items-start gap-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
+                                                    <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-500 flex-shrink-0 mt-0.5" />
+                                                    <p className="text-sm text-yellow-800 dark:text-yellow-300">
+                                                        Link cuộc họp sẽ khả dụng 15 phút trước giờ hẹn
+                                                    </p>
+                                                </div>
+                                            )}
+                                            <button
+                                                onClick={() => {
+                                                    if (isStartingSoon) {
+                                                        if (appointment.hostUrl) {
+                                                            window.open(appointment.hostUrl, '_blank')
+                                                        }
+                                                    } else {
+                                                        alert('Vui lòng vào cuộc họp 15 phút trước giờ hẹn quy định.')
+                                                    }
+                                                }}
+                                                disabled={!isStartingSoon}
+                                                className={`w-full inline-flex items-center justify-center gap-2 px-4 py-2 ${
+                                                    isStartingSoon
+                                                        ? 'bg-green-500 hover:bg-green-600'
+                                                        : 'bg-gray-300 cursor-not-allowed'
+                                                } text-white rounded-lg font-medium transition-colors`}
+                                            >
+                                                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                                                </svg>
+                                                Vào cuộc họp
+                                            </button>
+                                        </CardContent>
+                                    </Card>
+                                )
+                            })()
                         ) : appointment.clinic ? (
                             <Card className="border-2 shadow-lg">
                                 <CardHeader className="border-b bg-gradient-to-r from-purple-500/5 to-purple-500/10">
@@ -721,7 +753,6 @@ export default function AppointmentDetailPage() {
                                             <p className="text-sm text-red-600 dark:text-red-400">{speechError}</p>
                                         </div>
                                     )}
-
                                 </form>
                             ) : (
                                 <div className="text-center py-8">
@@ -753,7 +784,10 @@ export default function AppointmentDetailPage() {
                                                     accept=".jpg,.jpeg,.png,.pdf"
                                                     onChange={handleFileSelect}
                                                     className="hidden"
-                                                    disabled={uploadFileMutation.isPending || (appointment.result?.files?.length || 0) >= 10}
+                                                    disabled={
+                                                        uploadFileMutation.isPending ||
+                                                        (appointment.result?.files?.length || 0) >= 10
+                                                    }
                                                 />
                                                 <label
                                                     htmlFor="file-upload"
@@ -770,7 +804,11 @@ export default function AppointmentDetailPage() {
                                             <button
                                                 type="button"
                                                 onClick={handleFileUpload}
-                                                disabled={!selectedFile || uploadFileMutation.isPending || (appointment.result?.files?.length || 0) >= 10}
+                                                disabled={
+                                                    !selectedFile ||
+                                                    uploadFileMutation.isPending ||
+                                                    (appointment.result?.files?.length || 0) >= 10
+                                                }
                                                 className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary/90 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                                             >
                                                 {uploadFileMutation.isPending ? (
@@ -802,7 +840,7 @@ export default function AppointmentDetailPage() {
                                         <div className="space-y-2">
                                             <p className="text-xs font-medium text-muted-foreground">Danh sách file:</p>
                                             <div className="space-y-2">
-                                                {appointment.result.files.map((file) => (
+                                                {appointment.result.files.map(file => (
                                                     <div
                                                         key={file.id}
                                                         className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border border-border hover:bg-muted/70 transition-colors"
@@ -820,7 +858,10 @@ export default function AppointmentDetailPage() {
                                                                     {file.fileName}
                                                                 </p>
                                                                 <p className="text-xs text-muted-foreground">
-                                                                    {formatFileSize(file.fileSize)} • {new Date(file.createdAt).toLocaleDateString('vi-VN')}
+                                                                    {formatFileSize(file.fileSize)} •{' '}
+                                                                    {new Date(file.createdAt).toLocaleDateString(
+                                                                        'vi-VN',
+                                                                    )}
                                                                 </p>
                                                             </div>
                                                         </div>
