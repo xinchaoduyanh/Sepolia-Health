@@ -291,6 +291,13 @@ export default function AppointmentScreen() {
       // Lưu appointment ID để sử dụng trong modal
       setCreatedAppointmentId(result.id);
 
+      // Clear selections immediately after successful appointment creation
+      clearSelections();
+      setShowDatePicker(false);
+      setSelectedCustomDate(null);
+      setSelectedDate(null);
+      setSelectedCustomer('me');
+
       // Hiển thị success modal
       setShowSuccessModal(true);
     } catch (error: any) {
@@ -1017,11 +1024,6 @@ export default function AppointmentScreen() {
                   onPress={() => {
                     setShowSuccessModal(false);
                     setCreatedAppointmentId(null);
-                    // Reset local state
-                    setShowDatePicker(false);
-                    setSelectedCustomDate(null);
-                    // Reset context state
-                    clearSelections();
                     // Navigate to appointment detail
                     if (createdAppointmentId) {
                       router.push(`/(homes)/(appointment-detail)?id=${createdAppointmentId}`);

@@ -24,7 +24,6 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
-import Svg, { Path } from 'react-native-svg';
 
 interface SkeletonProps {
   width?: DimensionValue;

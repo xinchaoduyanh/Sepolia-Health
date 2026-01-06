@@ -574,6 +574,7 @@ export class AppointmentService {
       limit = 10,
       status,
       billingStatus,
+      patientId,
       doctorId,
       dateFrom,
       dateTo,
@@ -595,12 +596,14 @@ export class AppointmentService {
 
     if (status) where.status = status;
     if (doctorId) where.doctorId = doctorId;
+    if (patientId) where.patientProfileId = patientId;
     if (billingStatus) {
       where.billing = {
         status: billingStatus,
       };
     }
 
+    console.log(where.patientProfileId);
     // Xử lý filter theo thời gian:
     // - Cho UPCOMING/ON_GOING: chỉ lấy appointments trong tương lai
     // - Cho COMPLETED/CANCELLED: không filter thời gian (để lấy lịch sử trong quá khứ)
