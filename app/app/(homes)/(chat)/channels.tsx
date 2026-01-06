@@ -6,10 +6,10 @@ import {
   Pressable,
   ScrollView,
 } from 'react-native';
-import React from 'react';
+import React, { useCallback } from 'react';
 import { useChatContext } from '@/contexts/ChatContext';
 import { Channel } from 'stream-chat';
-import { useRouter, useNavigation } from 'expo-router';
+import { useRouter, useNavigation, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -44,7 +44,6 @@ export default function ChannelsScreen() {
   const [isCreatingAIChannel, setIsCreatingAIChannel] = React.useState(false);
   const router = useRouter();
   const navigation = useNavigation();
-  const channelsLoadedRef = React.useRef(false);
 
   // Hide tab bar when entering chat
   React.useEffect(() => {
@@ -65,44 +64,45 @@ export default function ChannelsScreen() {
     });
   }, [navigation]);
 
-  // Load channels only once when chat is ready
-  React.useEffect(() => {
-    if (!isChatReady || channelsLoadedRef.current) {
-      return;
-    }
-
-    const loadChannels = async () => {
-      setIsLoading(true);
-      try {
-        console.log('📥 Loading channels...');
-        const userChannels = await ChatService.fetchUserChannels();
-
-        // Sắp xếp: AI channel luôn đứng đầu
-        const sortedChannels = [...userChannels].sort((a, b) => {
-          const aIsAI = isAIChannel(a);
-          const bIsAI = isAIChannel(b);
-
-          if (aIsAI && !bIsAI) return -1; // AI channel lên đầu
-          if (!aIsAI && bIsAI) return 1; // AI channel lên đầu
-
-          // Nếu cùng loại, sắp xếp theo last_message_at
-          const aTime = a.state?.last_message_at?.getTime() || 0;
-          const bTime = b.state?.last_message_at?.getTime() || 0;
-          return bTime - aTime; // Mới nhất lên đầu
-        });
-
-        setChannels(sortedChannels);
-        channelsLoadedRef.current = true;
-        console.log('✅ Channels loaded:', sortedChannels.length);
-      } catch (error) {
-        console.error('❌ Error loading channels:', error);
-      } finally {
-        setIsLoading(false);
+  // Load channels when screen is focused (refresh on every focus)
+  useFocusEffect(
+    useCallback(() => {
+      if (!isChatReady) {
+        return;
       }
-    };
 
-    loadChannels();
-  }, [isChatReady]);
+      const loadChannels = async () => {
+        setIsLoading(true);
+        try {
+          console.log('📥 Loading channels (screen focused)...');
+          const userChannels = await ChatService.fetchUserChannels();
+
+          // Sắp xếp: AI channel luôn đứng đầu
+          const sortedChannels = [...userChannels].sort((a, b) => {
+            const aIsAI = isAIChannel(a);
+            const bIsAI = isAIChannel(b);
+
+            if (aIsAI && !bIsAI) return -1; // AI channel lên đầu
+            if (!aIsAI && bIsAI) return 1; // AI channel lên đầu
+
+            // Nếu cùng loại, sắp xếp theo last_message_at
+            const aTime = a.state?.last_message_at?.getTime() || 0;
+            const bTime = b.state?.last_message_at?.getTime() || 0;
+            return bTime - aTime; // Mới nhất lên đầu
+          });
+
+          setChannels(sortedChannels);
+          console.log('✅ Channels loaded:', sortedChannels.length);
+        } catch (error) {
+          console.error('❌ Error loading channels:', error);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      loadChannels();
+    }, [isChatReady, isAIChannel])
+  );
 
   // Setup realtime updates when chat client is ready
   React.useEffect(() => {
