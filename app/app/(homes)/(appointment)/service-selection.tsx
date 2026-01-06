@@ -344,28 +344,30 @@ export default function ServiceSelectionScreen() {
               ))
             )}
           </View>
-          {/* Continue Button */}
-          {selectedService && (
-            <View style={{ marginTop: 24 }}>
-              <TouchableOpacity
-                onPress={handleContinue}
-                style={{
-                  backgroundColor: '#0284C7',
-                  paddingVertical: 16,
-                  borderRadius: 12,
-                  alignItems: 'center',
-                  shadowColor: '#0284C7',
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.3,
-                  shadowRadius: 8,
-                  elevation: 4,
-                }}>
-                <Text style={{ color: 'white', fontSize: 16, fontWeight: 'bold' }}>Tiếp tục</Text>
-              </TouchableOpacity>
-            </View>
-          )}
+          <View className="h-24" />
         </View>
       </ScrollView>
+
+      {/* Continue Button */}
+      {selectedService && (
+        <View className="absolute bottom-0 left-0 right-0 bg-blue-50 px-6 py-4 shadow-lg">
+          <TouchableOpacity
+            onPress={handleContinue}
+            style={{
+              backgroundColor: '#0284C7',
+              paddingVertical: 16,
+              borderRadius: 12,
+              alignItems: 'center',
+              shadowColor: '#0284C7',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3,
+              shadowRadius: 8,
+              elevation: 4,
+            }}>
+            <Text style={{ color: 'white', fontSize: 16, fontWeight: 'bold' }}>Tiếp tục</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 }
