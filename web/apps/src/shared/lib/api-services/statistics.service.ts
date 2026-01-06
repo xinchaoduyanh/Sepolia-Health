@@ -13,6 +13,7 @@ export interface DashboardStats {
 }
 
 export interface MonthComparison {
+    absoluteTotal: number
     currentMonth: number
     previousMonth: number
     difference: number

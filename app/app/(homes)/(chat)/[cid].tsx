@@ -65,6 +65,8 @@ export default function ChannelScreen() {
     }
   }, [chatClient?.userID]);
 
+  const currentUserId = chatClient?.userID;
+
   // Hide tab bar when entering individual chat
   React.useEffect(() => {
     const parentNavigator = navigation.getParent();
@@ -86,8 +88,6 @@ export default function ChannelScreen() {
 
     const handleNewMessage = async (event: any) => {
       // Only mark as read if it's a new message (not from current user)
-      // Use StreamChat user ID from ref instead of user?.id
-      const currentUserId = currentUserIdRef.current;
       if (event.type === 'message.new' && event.user?.id !== currentUserId) {
         try {
           await channel.markRead();
@@ -177,7 +177,28 @@ export default function ChannelScreen() {
 
               // Find other user ID (not current user)
               const members = channel.state?.members ? Object.values(channel.state.members) : [];
-              const otherMember = members.find((m) => m.user_id !== currentUserIdRef.current);
+              
+              // Robustly find the other member
+              let otherMember = members.find((m) => m.user_id !== currentUserId);
+              
+              // Case: If we only found ourselves or no members are visible in state yet
+              // This can happen during initial connection
+              if (!otherMember && !channelIsAI) {
+                // Try to get other user from channel ID: patient_{patientId}_VS_clinic_{clinicId}
+                const channelIdParts = channel.id?.split('_VS_');
+                if (channelIdParts && channelIdParts.length > 1) {
+                  const patientId = channelIdParts[0].replace('patient_', '');
+                  const clinicId = channelIdParts[1].replace('clinic_', '');
+                  
+                  // If I'm the patient, the other user is the clinic identity or its receptionists
+                  // If I'm the receptionist, the other user is the patient
+                  const potentialOtherId = currentUserId === patientId ? clinicId : patientId;
+                  
+                  // Check if we have a member with this ID even if not yet in state object
+                  otherMember = members.find((m) => m.user_id === potentialOtherId);
+                }
+              }
+
               const targetUserId = otherMember?.user_id || (channelIsAI ? botUserId : '');
 
               console.log('Fetching other user info for header:', { targetUserId, channelIsAI });
@@ -189,7 +210,7 @@ export default function ChannelScreen() {
 
               const userInfo = await getChatUserInfo(targetUserId, lastOtherMessage?.user, {
                 channel,
-                currentUserId: currentUserIdRef.current,
+                currentUserId: currentUserId,
               });
 
               console.log('Header user info retrieved:', userInfo);
@@ -247,7 +268,18 @@ export default function ChannelScreen() {
 
               // Find other user ID (not current user)
               const members = channel.state?.members ? Object.values(channel.state.members) : [];
-              const otherMember = members.find((m) => m.user_id !== currentUserIdRef.current);
+              let otherMember = members.find((m) => m.user_id !== currentUserId);
+
+              // Fallback logic for fallback channel as well
+              if (!otherMember && !channelIsAI) {
+                const channelIdParts = channel.id?.split('_VS_');
+                if (channelIdParts && channelIdParts.length > 1) {
+                  const patientId = channelIdParts[0].replace('patient_', '');
+                  const potentialOtherId = currentUserId === patientId ? channelIdParts[1].replace('clinic_', '') : patientId;
+                  otherMember = members.find(m => m.user_id === potentialOtherId);
+                }
+              }
+
               const targetUserId = otherMember?.user_id || (channelIsAI ? botUserId : '');
 
               console.log('Fallback - Fetching other user info for header:', {
@@ -262,7 +294,7 @@ export default function ChannelScreen() {
 
               const userInfo = await getChatUserInfo(targetUserId, lastOtherMessage?.user, {
                 channel,
-                currentUserId: currentUserIdRef.current,
+                currentUserId: currentUserId,
               });
 
               console.log('Fallback - Header user info retrieved:', userInfo);
@@ -438,7 +470,9 @@ export default function ChannelScreen() {
 
   // Get display name with fallback
   const displayName =
-    otherUserName || channel.data?.name || (isAIChannel ? 'Trợ lý Y tế Thông minh' : 'Tư vấn y tế');
+    otherUserName && otherUserName !== 'Người dùng'
+      ? otherUserName
+      : channel.data?.name || (isAIChannel ? 'Trợ lý Y tế Thông minh' : 'Tư vấn y tế');
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50">
@@ -472,9 +506,9 @@ export default function ChannelScreen() {
                   borderColor: '#FFFFFF',
                   position: 'relative',
                 }}>
-                {otherUserAvatar ? (
+                {otherUserAvatar || channel.data?.image ? (
                   <Image
-                    source={{ uri: otherUserAvatar }}
+                    source={{ uri: (otherUserAvatar || channel.data?.image) as string }}
                     style={{
                       width: 32,
                       height: 32,

@@ -624,6 +624,7 @@ export class AdminStatisticsService {
   private calculateMonthComparison(
     current: number,
     previous: number,
+    absoluteTotal: number,
   ): MonthComparisonDto {
     const difference = current - previous;
     const percentageChange =
@@ -634,6 +635,7 @@ export class AdminStatisticsService {
         : Math.round((difference / previous) * 100 * 10) / 10;
 
     return {
+      absoluteTotal,
       currentMonth: current,
       previousMonth: previous,
       difference,
@@ -770,22 +772,49 @@ export class AdminStatisticsService {
     const revenueCurrentMonth = revenueCurrentMonthResult._sum.amount || 0;
     const revenuePreviousMonth = revenuePreviousMonthResult._sum.amount || 0;
 
+    // 5. Absolute Totals
+    const [
+      patientsAbsolute,
+      appointmentsAbsolute,
+      doctorsAbsolute,
+      revenueAbsoluteResult,
+    ] = await Promise.all([
+      this.prisma.user.count({ where: { role: Role.PATIENT } }),
+      this.prisma.appointment.count({
+        where: { status: AppointmentStatus.COMPLETED },
+      }),
+      this.prisma.user.count({ where: { role: Role.DOCTOR } }),
+      this.prisma.billing.aggregate({
+        where: {
+          status: PaymentStatus.PAID,
+          appointment: { status: AppointmentStatus.COMPLETED },
+        },
+        _sum: { amount: true },
+      }),
+    ]);
+
+    const revenueAbsolute = revenueAbsoluteResult._sum.amount || 0;
+
     return {
       totalPatients: this.calculateMonthComparison(
         patientsCurrentMonth,
         patientsPreviousMonth,
+        patientsAbsolute,
       ),
       appointments: this.calculateMonthComparison(
         appointmentsCurrentMonth,
         appointmentsPreviousMonth,
+        appointmentsAbsolute,
       ),
       doctors: this.calculateMonthComparison(
         doctorsCurrentMonth,
         doctorsPreviousMonth,
+        doctorsAbsolute,
       ),
       revenue: this.calculateMonthComparison(
         revenueCurrentMonth,
         revenuePreviousMonth,
+        revenueAbsolute,
       ),
     };
   }

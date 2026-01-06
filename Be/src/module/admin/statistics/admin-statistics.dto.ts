@@ -270,6 +270,12 @@ export class DashboardStatisticsResponseDto {
 
 export class MonthComparisonDto {
   @ApiProperty({
+    description: 'Giá trị tổng tuyệt đối',
+    example: 1500,
+  })
+  absoluteTotal: number;
+
+  @ApiProperty({
     description: 'Giá trị tháng này',
     example: 150,
   })

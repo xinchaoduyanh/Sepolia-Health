@@ -67,11 +67,11 @@ export default function OverviewPage() {
         )
     }
 
-    const stats = overviewStats || {
-        totalPatients: { currentMonth: 0, previousMonth: 0, difference: 0, percentageChange: 0 },
-        appointments: { currentMonth: 0, previousMonth: 0, difference: 0, percentageChange: 0 },
-        doctors: { currentMonth: 0, previousMonth: 0, difference: 0, percentageChange: 0 },
-        revenue: { currentMonth: 0, previousMonth: 0, difference: 0, percentageChange: 0 },
+    const stats = (overviewStats as any) || {
+        totalPatients: { absoluteTotal: 0, currentMonth: 0, previousMonth: 0, difference: 0, percentageChange: 0 },
+        appointments: { absoluteTotal: 0, currentMonth: 0, previousMonth: 0, difference: 0, percentageChange: 0 },
+        doctors: { absoluteTotal: 0, currentMonth: 0, previousMonth: 0, difference: 0, percentageChange: 0 },
+        revenue: { absoluteTotal: 0, currentMonth: 0, previousMonth: 0, difference: 0, percentageChange: 0 },
     }
 
     return (
@@ -85,9 +85,9 @@ export default function OverviewPage() {
                         <CardTitle className="text-sm font-medium">Tổng bệnh nhân</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{formatNumber(stats.totalPatients.currentMonth)}</div>
+                        <div className="text-2xl font-bold">{formatNumber(stats.totalPatients.absoluteTotal)}</div>
                         <p className="text-xs text-muted-foreground">
-                            {formatNumber(stats.totalPatients.currentMonth)} bệnh nhân mới trong tháng này
+                            +{formatNumber(stats.totalPatients.currentMonth)} bệnh nhân mới trong tháng này
                             {stats.totalPatients.percentageChange !== 0 && (
                                 <span>
                                     {' '}
@@ -103,9 +103,9 @@ export default function OverviewPage() {
                         <CardTitle className="text-sm font-medium">Lịch hẹn</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{formatNumber(stats.appointments.currentMonth)}</div>
+                        <div className="text-2xl font-bold">{formatNumber(stats.appointments.absoluteTotal)}</div>
                         <p className="text-xs text-muted-foreground">
-                            {formatNumber(stats.appointments.currentMonth)} lịch hẹn hoàn thành trong tháng này
+                            {formatNumber(stats.appointments.currentMonth)} lịch hẹn hoàn thành tháng này
                             {stats.appointments.percentageChange !== 0 && (
                                 <span>
                                     {' '}
@@ -121,9 +121,9 @@ export default function OverviewPage() {
                         <CardTitle className="text-sm font-medium">Bác sĩ</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{formatNumber(stats.doctors.currentMonth)}</div>
+                        <div className="text-2xl font-bold">{formatNumber(stats.doctors.absoluteTotal)}</div>
                         <p className="text-xs text-muted-foreground">
-                            {formatNumber(stats.doctors.currentMonth)} bác sĩ mới trong tháng này
+                            +{formatNumber(stats.doctors.currentMonth)} bác sĩ mới trong tháng này
                             {stats.doctors.percentageChange !== 0 && (
                                 <span>
                                     {' '}
@@ -139,9 +139,9 @@ export default function OverviewPage() {
                         <CardTitle className="text-sm font-medium">Doanh thu</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{formatCurrency(stats.revenue.currentMonth)}</div>
+                        <div className="text-2xl font-bold">{formatCurrency(stats.revenue.absoluteTotal)}</div>
                         <p className="text-xs text-muted-foreground">
-                            Doanh thu từ lịch hẹn hoàn thành trong tháng này
+                            {formatCurrency(stats.revenue.currentMonth)} tháng này
                             {stats.revenue.percentageChange !== 0 && (
                                 <span>
                                     {' '}

@@ -3,7 +3,7 @@
 import { ThemeSwitcher } from '@/shared/components/ThemeSwitcher'
 import { useAuth, useLogout } from '@/shared/hooks/useAuth'
 import { getClinicInfo, getUserProfile } from '@/shared/lib/user-profile'
-import { Avatar, AvatarFallback } from '@workspace/ui/components/Avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@workspace/ui/components/Avatar'
 import {
     Sidebar,
     SidebarContent,
@@ -144,18 +144,16 @@ export function ReceptionistDashboardLayout({ children, defaultOpen = true }: Re
                             className="w-full flex items-center gap-3 px-2 py-2 hover:bg-sidebar-accent rounded-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
                         >
                             <Avatar className="h-8 w-8 shrink-0">
-                                <AvatarFallback className="bg-primary text-primary-foreground">
-                                    {userProfile.name ? userProfile.name.charAt(0).toUpperCase() : 'R'}
-                                </AvatarFallback>
-                                {userProfile.image && userProfile.image.startsWith('/') && (
-                                    <Image
+                                {userProfile.image ? (
+                                    <AvatarImage
                                         src={userProfile.image}
                                         alt={userProfile.name}
-                                        width={32}
-                                        height={32}
                                         className="object-cover"
                                     />
-                                )}
+                                ) : null}
+                                <AvatarFallback className="bg-primary text-primary-foreground uppercase">
+                                    {userProfile.name ? userProfile.name.charAt(0) : 'R'}
+                                </AvatarFallback>
                             </Avatar>
                             <div className="grid flex-1 text-left text-xs group-data-[collapsible=icon]:hidden">
                                 <span className="truncate font-medium text-sidebar-foreground">
@@ -211,18 +209,16 @@ export function ReceptionistDashboardLayout({ children, defaultOpen = true }: Re
                                     className="ml-auto cursor-pointer hover:opacity-80 transition-all duration-200 hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-full shadow-md hover:shadow-lg"
                                 >
                                     <Avatar className="border-2 border-primary/20">
-                                        <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-bold">
-                                            {userProfile.name ? userProfile.name.charAt(0).toUpperCase() : 'R'}
-                                        </AvatarFallback>
-                                        {userProfile.image && userProfile.image.startsWith('/') && (
-                                            <Image
+                                        {userProfile.image ? (
+                                            <AvatarImage
                                                 src={userProfile.image}
                                                 alt={userProfile.name}
-                                                width={40}
-                                                height={40}
                                                 className="object-cover"
                                             />
-                                        )}
+                                        ) : null}
+                                        <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-bold uppercase">
+                                            {userProfile.name ? userProfile.name.charAt(0) : 'R'}
+                                        </AvatarFallback>
                                     </Avatar>
                                 </button>
 
