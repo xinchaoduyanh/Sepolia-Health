@@ -10,6 +10,7 @@ import { ChatProvider } from '@/contexts/ChatContext';
 import { NotificationProvider } from '@/contexts/NotificationContext';
 import { BackgroundPrefetch } from '@/components/BackgroundPrefetch';
 import Constants from 'expo-constants';
+import Toast from 'react-native-toast-message';
 
 // Lazy import VideoProvider to avoid loading native modules in Expo Go
 let VideoProvider: any = ({ children }: { children: React.ReactNode }) => <>{children}</>;
@@ -47,6 +48,8 @@ export default function Layout() {
           </NotificationProvider>
         </ChatProvider>
       </QueryProvider>
+      {/* Toast must be at the root level to show on all screens */}
+      <Toast />
     </GestureHandlerRootView>
   );
 }

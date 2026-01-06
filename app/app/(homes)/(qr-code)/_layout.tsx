@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Modal, Pressable } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useClaimPromotionViaQr } from '@/lib/api/promotion';
-import Toast from 'react-native-toast-message';
+
+type ResultType = 'success' | 'info' | 'error' | null;
 
 export default function QRScannerScreen() {
   console.log('--- RENDERING QR SCANNER V2 ---');
@@ -12,12 +13,63 @@ export default function QRScannerScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
   const claimMutation = useClaimPromotionViaQr();
+  
+  // Modal state
+  const [showResultModal, setShowResultModal] = useState(false);
+  const [resultType, setResultType] = useState<ResultType>(null);
+  const [resultMessage, setResultMessage] = useState('');
+  
+  // Use ref to track if we're showing result to prevent double-firing
+  const isShowingResult = useRef(false);
+
+  // Reset scanned state when screen is focused (so camera works every time)
+  // But only reset if not currently showing a result modal
+  useFocusEffect(
+    useCallback(() => {
+      console.log('QR Scanner focused - checking if should reset');
+      // Only reset if we're not showing a result modal
+      if (!isShowingResult.current) {
+        console.log('Resetting scanned state');
+        setScanned(false);
+        setShowResultModal(false);
+        setResultType(null);
+        setResultMessage('');
+      }
+    }, [])
+  );
 
   useEffect(() => {
     if (!permission) {
       requestPermission();
     }
   }, [permission]);
+
+  // Navigate to Home page
+  const goToHome = () => {
+    isShowingResult.current = false;
+    setShowResultModal(false);
+    router.replace('/(homes)');
+  };
+
+  // Navigate to Promotions page
+  const goToPromotions = () => {
+    isShowingResult.current = false;
+    setShowResultModal(false);
+    router.replace('/(homes)/(account)/promotions');
+  };
+
+  // Show result modal
+  const showResult = (type: ResultType, message: string) => {
+    // Prevent showing result if already showing one
+    if (isShowingResult.current) {
+      console.log('Already showing result, ignoring duplicate');
+      return;
+    }
+    isShowingResult.current = true;
+    setResultType(type);
+    setResultMessage(message);
+    setShowResultModal(true);
+  };
 
   if (!permission) {
     // Camera permissions are still loading
@@ -50,6 +102,7 @@ export default function QRScannerScreen() {
   }
 
   const handleBarCodeScanned = async ({ data }: { data: string }) => {
+    // Prevent double scanning
     if (scanned || claimMutation.isPending) return;
     
     setScanned(true);
@@ -66,7 +119,8 @@ export default function QRScannerScreen() {
         const i = params.get('i');
 
         if (!id || !sig || !t || !i) {
-          throw new Error('Dữ liệu mã QR không đúng định dạng');
+          showResult('error', 'Dữ liệu mã QR không đúng định dạng');
+          return;
         }
 
         // Gọi API nhận voucher
@@ -78,44 +132,75 @@ export default function QRScannerScreen() {
         });
 
         if (result.success) {
-          Alert.alert(
-            'Thành công!',
-            result.message || 'Bạn đã nhận voucher thành công.',
-            [
-              {
-                text: 'Xem kho Voucher',
-                onPress: () => router.replace('/(homes)/(account)/promotions'),
-              },
-              {
-                text: 'Đóng',
-                onPress: () => router.back(),
-                style: 'cancel',
-              },
-            ]
-          );
+          showResult('success', result.message || 'Bạn đã nhận voucher thành công!');
         } else {
-          Alert.alert('Thông báo', result.message, [
-            { text: 'OK', onPress: () => setScanned(false) }
-          ]);
+          showResult('info', result.message || 'Bạn đã có voucher này rồi.');
         }
       } else {
-        Alert.alert('Lỗi', 'Mã QR không hợp lệ hoặc không thuộc hệ thống Sepolia Health', [
-          { text: 'Quét lại', onPress: () => setScanned(false) }
-        ]);
+        showResult('error', 'Mã QR không hợp lệ hoặc không thuộc hệ thống Sepolia Health');
       }
     } catch (error: any) {
       const errorMessage = error?.response?.data?.message || error.message || 'Có lỗi xảy ra khi quét mã';
-      Alert.alert('Lỗi', errorMessage, [
-        { text: 'Thử lại', onPress: () => setScanned(false) }
-      ]);
+      showResult('error', errorMessage);
     }
   };
+
+  // Get modal config based on result type
+  const getModalConfig = () => {
+    switch (resultType) {
+      case 'success':
+        return {
+          icon: 'gift' as const,
+          iconBgColor: '#D1FAE5',
+          iconColor: '#10B981',
+          title: 'Nhận voucher thành công!',
+          titleColor: '#10B981',
+          containerBg: '#ECFDF5',
+          primaryBtnBg: '#10B981',
+          primaryBtnText: 'Xem kho voucher',
+          primaryAction: goToPromotions,
+          secondaryBtnText: 'Về trang chủ',
+          secondaryAction: goToHome,
+        };
+      case 'info':
+        return {
+          icon: 'information-circle' as const,
+          iconBgColor: '#DBEAFE',
+          iconColor: '#3B82F6',
+          title: 'Thông báo',
+          titleColor: '#3B82F6',
+          containerBg: '#EFF6FF',
+          primaryBtnBg: '#3B82F6',
+          primaryBtnText: 'Về trang chủ',
+          primaryAction: goToHome,
+          secondaryBtnText: null,
+          secondaryAction: null,
+        };
+      case 'error':
+      default:
+        return {
+          icon: 'close-circle' as const,
+          iconBgColor: '#FEE2E2',
+          iconColor: '#EF4444',
+          title: 'Lỗi',
+          titleColor: '#EF4444',
+          containerBg: '#FEF2F2',
+          primaryBtnBg: '#EF4444',
+          primaryBtnText: 'Về trang chủ',
+          primaryAction: goToHome,
+          secondaryBtnText: null,
+          secondaryAction: null,
+        };
+    }
+  };
+
+  const modalConfig = getModalConfig();
 
   return (
     <View className="flex-1 bg-black">
       <CameraView
         style={StyleSheet.absoluteFillObject}
-        onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
+        onBarcodeScanned={scanned || showResultModal ? undefined : handleBarCodeScanned}
         barcodeScannerSettings={{
           barcodeTypes: ['qr'],
         }}
@@ -133,7 +218,7 @@ export default function QRScannerScreen() {
       <View className="absolute top-12 left-6 right-6 flex-row justify-between items-center">
         <TouchableOpacity 
           className="h-10 w-10 items-center justify-center rounded-full bg-black/50"
-          onPress={() => router.back()}
+          onPress={goToHome}
         >
           <Ionicons name="close" size={24} color="white" />
         </TouchableOpacity>
@@ -141,12 +226,70 @@ export default function QRScannerScreen() {
         <View className="w-10" />
       </View>
 
+      {/* Loading Overlay */}
       {claimMutation.isPending && (
         <View className="absolute inset-0 items-center justify-center bg-black/60">
           <ActivityIndicator size="large" color="#3B82F6" />
           <Text className="mt-4 text-white font-semibold">Đang xử lý...</Text>
         </View>
       )}
+
+      {/* Result Modal */}
+      <Modal
+        visible={showResultModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={goToHome}>
+        <View className="flex-1 items-center justify-center bg-black/50">
+          <View
+            className="mx-6 w-80 items-center rounded-3xl p-8"
+            style={{ backgroundColor: modalConfig.containerBg }}>
+            {/* Icon */}
+            <View 
+              className="mb-6 h-24 w-24 items-center justify-center rounded-full"
+              style={{ backgroundColor: modalConfig.iconBgColor }}>
+              <View 
+                className="h-16 w-16 items-center justify-center rounded-full"
+                style={{ backgroundColor: modalConfig.iconColor }}>
+                <Ionicons name={modalConfig.icon} size={32} color="white" />
+              </View>
+            </View>
+
+            {/* Title */}
+            <Text 
+              className="mb-2 text-center text-2xl font-bold" 
+              style={{ color: modalConfig.titleColor }}>
+              {modalConfig.title}
+            </Text>
+
+            {/* Message */}
+            <Text className="mb-6 text-center text-base text-gray-600">
+              {resultMessage}
+            </Text>
+
+            {/* Buttons */}
+            <View className="w-full space-y-3">
+              <Pressable
+                onPress={modalConfig.primaryAction}
+                className="w-full items-center rounded-xl py-4"
+                style={{ backgroundColor: modalConfig.primaryBtnBg }}>
+                <Text className="text-base font-bold text-white">{modalConfig.primaryBtnText}</Text>
+              </Pressable>
+
+              {modalConfig.secondaryBtnText && modalConfig.secondaryAction && (
+                <Pressable
+                  onPress={modalConfig.secondaryAction}
+                  className="w-full items-center rounded-xl border-2 py-4"
+                  style={{ borderColor: modalConfig.primaryBtnBg, backgroundColor: 'white' }}>
+                  <Text className="text-base font-bold" style={{ color: modalConfig.primaryBtnBg }}>
+                    {modalConfig.secondaryBtnText}
+                  </Text>
+                </Pressable>
+              )}
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
