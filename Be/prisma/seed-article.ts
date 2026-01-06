@@ -7,6 +7,12 @@ async function seedArticles() {
   console.log('🌱 Seeding articles...');
 
   try {
+    // Xóa dữ liệu cũ trước khi tạo mới
+    console.log('🗑️ Xóa dữ liệu Article cũ...');
+    await prisma.articleTag.deleteMany({});
+    await prisma.article.deleteMany({});
+    console.log('✅ Đã xóa dữ liệu Article cũ');
+
     // Lấy admin đầu tiên để làm tác giả
     const admin = await prisma.user.findFirst({
       where: { role: 'ADMIN' },

@@ -1,6 +1,7 @@
 import { ServiceSkeleton } from '@/components/SkeletonLoader';
 import { useAppointment } from '@/contexts/AppointmentContext';
 import { useServices } from '@/lib/api/appointments';
+import { formatServiceNameWithConditions } from '@/lib/utils/serviceFormatter';
 import { Service } from '@/types/doctor';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -173,7 +174,7 @@ export default function OnlineServiceSelectionScreen() {
                 }}>
                 <View className="flex-row items-start justify-between">
                   <View className="flex-1">
-                    <Text className="text-lg font-semibold text-slate-900">{service.name}</Text>
+                    <Text className="text-lg font-semibold text-slate-900">{formatServiceNameWithConditions(service)}</Text>
                     {service.description && (
                       <Text className="mt-1 text-sm text-slate-600" numberOfLines={2}>
                         {service.description}

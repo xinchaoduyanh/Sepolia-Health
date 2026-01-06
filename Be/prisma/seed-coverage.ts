@@ -33,7 +33,7 @@ class HyperScheduler {
   }
 }
 
-const DEFAULT_PASSWORD = 'password123';
+const DEFAULT_PASSWORD = '1';
 const TODAY = new Date('2026-01-06T14:07:12+07:00');
 const SEED_RANGE = {
   start: new Date('2025-01-01T00:00:00'),
@@ -62,19 +62,51 @@ async function main() {
   console.log('--- MEGA FINAL RESET ---');
   await prisma.$executeRaw`TRUNCATE TABLE "User", "Clinic", "Specialty", "Service", "DoctorProfile", "PatientProfile", "Appointment", "DoctorAvailability", "Billing", "Feedback", "AppointmentResult", "Question", "Answer", "Tag", "QuestionTag", "Medicine", "Promotion", "UserPromotion", "Transaction", "Prescription", "PrescriptionItem" RESTART IDENTITY CASCADE;`;
 
-  // 1. Clinics
+  // 1. Clinics - Full data
+  const clinicsData = [
+    {
+      name: 'Sepolia Hoàn Kiếm',
+      address: '22 P. Lý Thường Kiệt, Phan Chu Trinh, Hoàn Kiếm, Hà Nội',
+      phone: '02439748888',
+      email: 'hoankiem@sepoliahealthcare.vn',
+      description: 'Cơ sở trung tâm tại quận Hoàn Kiếm',
+      isActive: true,
+    },
+    {
+      name: 'Sepolia Cầu Giấy',
+      address: 'Tầng 2, Tòa nhà Discovery Complex, 302 P. Cầu Giấy, Dịch Vọng, Cầu Giấy, Hà Nội',
+      phone: '02438398685',
+      email: 'caugiay@sepoliahealthcare.vn',
+      description: 'Phòng khám hiện đại tại Cầu Giấy',
+      isActive: true,
+    },
+    {
+      name: 'Sepolia Đống Đa',
+      address: '180 P. Xã Đàn, Phương Liên, Đống Đa, Hà Nội',
+      phone: '02435729999',
+      email: 'dongda@sepoliahealthcare.vn',
+      description: 'Chuyên khoa Sản phụ khoa',
+      isActive: true,
+    },
+    {
+      name: 'Sepolia Ba Đình',
+      address: '5 P. Đội Cấn, Đội Cấn, Ba Đình, Hà Nội',
+      phone: '02437622888',
+      email: 'badinh@sepoliahealthcare.vn',
+      description: 'Chuyên khoa Nhi và Nội tổng quát',
+      isActive: true,
+    },
+    {
+      name: 'Sepolia Hà Đông',
+      address: 'Tầng 1, Tòa nhà Hồ Gươm Plaza, 102 P. Trần Phú, Mộ Lao, Hà Đông, Hà Nội',
+      phone: '02439969898',
+      email: 'hadong@sepoliahealthcare.vn',
+      description: 'Cung cấp dịch vụ y tế đa dạng',
+      isActive: true,
+    },
+  ];
   const clinics = await Promise.all(
-    ['Hoàn Kiếm', 'Cầu Giấy', 'Đống Đa', 'Ba Đình', 'Hà Đông'].map((n) =>
-      prisma.clinic.create({
-        data: {
-          name: `Sepolia ${n}`,
-          address: `Hà Nội - ${n}`,
-          phone: '024',
-          email: faker.internet.email(),
-          isActive: true,
-        },
-      }),
-    ),
+    clinicsData.map((data) => prisma.clinic.create({ data })),
   );
 
   // 2. Specialties
@@ -82,34 +114,157 @@ async function main() {
     specialtiesData.map((name) => prisma.specialty.create({ data: { name } })),
   );
 
-  // 3. Services (99)
-  const svcsData: any[] = [];
-  const actionTerms = [
-    'Khám và tư vấn',
-    'Điều trị chuyên sâu',
-    'Tầm soát định kỳ',
-    'Xét nghiệm tổng quát',
-    'Chẩn đoán hình ảnh',
-    'Theo dõi định kỳ',
-    'Khám sức khỏe',
-    'Tư vấn từ xa',
-  ];
+  // 3. Services (99) - Data from data.txt
+  // Format: [specialty, serviceName, duration, price, type, targetAudience]
+  const servicesFromData = [
+    // I. Nội & Nam khoa
+    ['Nội & Nam khoa', 'Khám nội đa khoa tổng quát', 30, 300000, 'Online/Offline', null],
+    ['Nội & Nam khoa', 'Tư vấn quản lý huyết áp/tiểu đường', 30, 400000, 'Online/Offline', null],
+    ['Nội & Nam khoa', 'Tầm soát nguy cơ tim mạch sớm', 30, 450000, 'Offline', null],
+    ['Nội & Nam khoa', 'Khám tư vấn sức khỏe người cao tuổi', 60, 600000, 'Offline', null],
+    ['Nội & Nam khoa', 'Kiểm tra sức khỏe hậu Covid (Tư vấn)', 30, 450000, 'Online/Offline', null],
+    ['Nội & Nam khoa', 'Khám Nam khoa cơ bản', 30, 500000, 'Offline', 'MALE'],
+    ['Nội & Nam khoa', 'Tư vấn rối loạn chức năng sinh lý', 30, 700000, 'Online/Offline', 'MALE'],
+    ['Nội & Nam khoa', 'Gói tầm soát bệnh xã hội (STIs)', 30, 1000000, 'Offline', null],
+    // II. Nhi khoa
+    ['Nhi khoa', 'Khám Nhi nội tổng hợp', 30, 300000, 'Online/Offline', null],
+    ['Nhi khoa', 'Khám sơ sinh & Tư vấn chăm sóc bé', 60, 500000, 'Offline', null],
+    ['Nhi khoa', 'Tư vấn vaccine & Lập kế hoạch tiêm', 30, 200000, 'Online/Offline', null],
+    ['Nhi khoa', 'Khám dậy thì sớm ở trẻ', 30, 450000, 'Offline', null],
+    ['Nhi khoa', 'Khám đánh giá ngôn ngữ/vận động', 60, 600000, 'Offline', null],
+    ['Nhi khoa', 'Tư vấn xử lý sốt và co giật (Khẩn cấp)', 30, 300000, 'Online', null],
+    ['Nhi khoa', 'Khám nội soi Tai Mũi Họng nhi', 30, 300000, 'Offline', null],
+    // III. Tai Mũi Họng
+    ['Tai Mũi Họng', 'Khám & Nội soi TMH ống cứng', 30, 300000, 'Offline', null],
+    ['Tai Mũi Họng', 'Nội soi TMH ống mềm (Không đau)', 30, 500000, 'Offline', null],
+    ['Tai Mũi Họng', 'Lấy dáy tai nội soi chuyên sâu', 30, 150000, 'Offline', null],
+    ['Tai Mũi Họng', 'Khí dung mũi họng trị viêm', 30, 150000, 'Offline', null],
+    ['Tai Mũi Họng', 'Lấy dị vật tai/mũi/họng đơn giản', 30, 350000, 'Offline', null],
+    ['Tai Mũi Họng', 'Hút xoang dưới áp lực', 30, 200000, 'Offline', null],
+    ['Tai Mũi Họng', 'Đo thính lực đơn âm định lượng', 30, 250000, 'Offline', null],
+    // IV. Da liễu & Thẩm mỹ
+    ['Da liễu & Thẩm mỹ', 'Khám da liễu bệnh lý', 30, 300000, 'Online/Offline', null],
+    ['Da liễu & Thẩm mỹ', 'Lấy nhân mụn y khoa chuyên sâu', 60, 400000, 'Offline', null],
+    ['Da liễu & Thẩm mỹ', 'Điều trị mụn công nghệ cao IPL', 30, 800000, 'Offline', null],
+    ['Da liễu & Thẩm mỹ', 'Chăm sóc da mụn phục hồi (Điện di)', 60, 600000, 'Offline', null],
+    ['Da liễu & Thẩm mỹ', 'Peel da hóa học trị mụn/thâm', 60, 1200000, 'Offline', null],
+    ['Da liễu & Thẩm mỹ', 'Laser Fractional CO2 trị sẹo rỗ', 60, 2500000, 'Offline', null],
+    ['Da liễu & Thẩm mỹ', 'Laser trị nám/tàn nhang (Picosure)', 30, 2000000, 'Offline', null],
+    ['Da liễu & Thẩm mỹ', 'Mesotherapy căng bóng (Skinboosters)', 60, 3500000, 'Offline', null],
+    ['Da liễu & Thẩm mỹ', 'Mesotherapy trị mụn/kiểm soát nhờn', 60, 2500000, 'Offline', null],
+    ['Da liễu & Thẩm mỹ', 'Tiêm Meso kích thích mọc tóc', 60, 2500000, 'Offline', null],
+    ['Da liễu & Thẩm mỹ', 'Tẩy nốt ruồi/Mụn thịt bằng Laser', 30, 200000, 'Offline', null],
+    ['Da liễu & Thẩm mỹ', 'Nâng cơ trẻ hóa Hifu toàn mặt', 60, 4000000, 'Offline', null],
+    ['Da liễu & Thẩm mỹ', 'Trẻ hóa da công nghệ Tempsure Pro', 60, 5000000, 'Offline', null],
+    ['Da liễu & Thẩm mỹ', 'Điện di tinh chất Vitamin C sáng da', 30, 500000, 'Offline', null],
+    ['Da liễu & Thẩm mỹ', 'Phân tích da & Tư vấn Routine cá nhân', 30, 200000, 'Online/Offline', null],
+    ['Da liễu & Thẩm mỹ', 'Chăm sóc da body phục hồi', 60, 1000000, 'Offline', null],
+    ['Da liễu & Thẩm mỹ', 'Triệt lông công nghệ (Vùng mặt)', 30, 500000, 'Offline', null],
+    ['Da liễu & Thẩm mỹ', 'Khám tầm soát các khối u lành dưới da', 30, 450000, 'Offline', null],
+    // V. Sản Phụ khoa
+    ['Sản Phụ khoa', 'Khám phụ khoa định kỳ (Soi CTC)', 30, 300000, 'Offline', 'FEMALE'],
+    ['Sản Phụ khoa', 'Khám thai định kỳ (Không siêu âm)', 30, 360000, 'Offline', 'FEMALE'],
+    ['Sản Phụ khoa', 'Soi cổ tử cung tầm soát ung thư', 30, 400000, 'Offline', 'FEMALE'],
+    ['Sản Phụ khoa', 'Tư vấn kế hoạch hóa gia đình', 30, 300000, 'Online/Offline', 'FEMALE'],
+    ['Sản Phụ khoa', 'Tư vấn sức khỏe tiền mãn kinh', 60, 600000, 'Online/Offline', 'FEMALE'],
+    ['Sản Phụ khoa', 'Làm thuốc phụ khoa tại chỗ', 30, 150000, 'Offline', 'FEMALE'],
+    ['Sản Phụ khoa', 'Gói xét nghiệm tầm soát ung thư CTC', 30, 900000, 'Offline', 'FEMALE'],
+    ['Sản Phụ khoa', 'Khám và tư vấn bệnh lý tuyến vú', 30, 400000, 'Offline', 'FEMALE'],
+    // VI. Nhãn khoa
+    ['Nhãn khoa', 'Khám mắt & Đo thị lực máy KTS', 30, 250000, 'Offline', null],
+    ['Nhãn khoa', 'Thử kính & Cấp đơn kính chuẩn', 30, 150000, 'Offline', null],
+    ['Nhãn khoa', 'Tầm soát khô mắt chuyên sâu', 60, 500000, 'Offline', null],
+    ['Nhãn khoa', 'Tư vấn kiểm soát cận thị trẻ em', 30, 300000, 'Online/Offline', null],
+    ['Nhãn khoa', 'Chích chắp lẹo (Tiểu phẫu)', 30, 350000, 'Offline', null],
+    ['Nhãn khoa', 'Theo dõi nhãn áp tầm soát Glocom', 30, 350000, 'Offline', null],
+    ['Nhãn khoa', 'Khám tầm soát đục thủy tinh thể', 30, 400000, 'Offline', null],
+    // VII. Răng Hàm Mặt
+    ['Răng Hàm Mặt', 'Khám răng & Tư vấn thẩm mỹ', 30, 0, 'Offline', null],
+    ['Răng Hàm Mặt', 'Lấy cao răng & Đánh bóng máy rung', 30, 300000, 'Offline', null],
+    ['Răng Hàm Mặt', 'Hàn/Trám răng thẩm mỹ (Xoang nhỏ)', 30, 350000, 'Offline', null],
+    ['Răng Hàm Mặt', 'Nhổ răng khôn (Mọc thẳng)', 60, 1000000, 'Offline', null],
+    ['Răng Hàm Mặt', 'Tẩy trắng răng Laser tại phòng khám', 60, 2500000, 'Offline', null],
+    ['Răng Hàm Mặt', 'Khám tư vấn niềng răng Invisalign', 60, 300000, 'Offline', null],
+    ['Răng Hàm Mặt', 'Tư vấn cấy ghép Implant chuyên sâu', 30, 400000, 'Online/Offline', null],
+    ['Răng Hàm Mặt', 'Trám răng sữa cho trẻ em', 30, 200000, 'Offline', null],
+    ['Răng Hàm Mặt', 'Cắt lợi trùm răng khôn', 30, 500000, 'Offline', null],
+    ['Răng Hàm Mặt', 'Chữa tủy răng cửa (Nội nha)', 60, 1500000, 'Offline', null],
+    // VIII. Tiêu hóa & Nội soi
+    ['Tiêu hóa & Nội soi', 'Khám chuyên khoa Tiêu hóa', 30, 350000, 'Online/Offline', null],
+    ['Tiêu hóa & Nội soi', 'Nội soi dạ dày gây mê (Không đau)', 60, 2500000, 'Offline', null],
+    ['Tiêu hóa & Nội soi', 'Nội soi đại tràng gây mê (Không đau)', 90, 3200000, 'Offline', null],
+    ['Tiêu hóa & Nội soi', 'Nội soi dạ dày - đại tràng (Combo)', 120, 5500000, 'Offline', null],
+    ['Tiêu hóa & Nội soi', 'Test vi khuẩn HP qua hơi thở (C13/C14)', 30, 600000, 'Offline', null],
+    ['Tiêu hóa & Nội soi', 'Cắt Polyp dạ dày/đại tràng (Thủ thuật)', 60, 1500000, 'Offline', null],
+    ['Tiêu hóa & Nội soi', 'Siêu âm ổ bụng tổng quát màu 4D', 30, 300000, 'Offline', null],
+    // IX. Vật lý trị liệu & PHCN
+    ['Vật lý trị liệu & PHCN', 'Khám & Tầm soát cột sống 4D', 30, 500000, 'Offline', null],
+    ['Vật lý trị liệu & PHCN', 'Nắn chỉnh cột sống Chiropractic', 60, 1200000, 'Offline', null],
+    ['Vật lý trị liệu & PHCN', 'Trị liệu bằng tay & Massage y khoa', 60, 450000, 'Offline', null],
+    ['Vật lý trị liệu & PHCN', 'Châm cứu/Điện châm phục hồi', 30, 250000, 'Offline', null],
+    ['Vật lý trị liệu & PHCN', 'Trị liệu sóng xung kích/Siêu âm', 30, 350000, 'Offline', null],
+    ['Vật lý trị liệu & PHCN', 'Kéo giãn cột sống máy tự động', 30, 200000, 'Offline', null],
+    ['Vật lý trị liệu & PHCN', 'Điện xung giảm đau chuyên sâu', 30, 250000, 'Offline', null],
+    ['Vật lý trị liệu & PHCN', 'Tập phục hồi chức năng sau chấn thương', 60, 500000, 'Offline', null],
+    // X. Tâm lý & Dinh dưỡng
+    ['Tâm lý & Dinh dưỡng', 'Tham vấn tâm lý cá nhân (Stress/Lo âu)', 60, 800000, 'Online/Offline', null],
+    ['Tâm lý & Dinh dưỡng', 'Tham vấn tâm lý trẻ em & Vị thành niên', 60, 900000, 'Online/Offline', null],
+    ['Tâm lý & Dinh dưỡng', 'Tư vấn tâm lý cặp đôi/gia đình', 90, 1200000, 'Online/Offline', null],
+    ['Tâm lý & Dinh dưỡng', 'Thực hiện trắc nghiệm tâm lý Beck/MMSE', 30, 200000, 'Offline', null],
+    ['Tâm lý & Dinh dưỡng', 'Tư vấn rối loạn giấc ngủ chuyên sâu', 30, 500000, 'Online/Offline', null],
+    ['Tâm lý & Dinh dưỡng', 'Khám & Tư vấn dinh dưỡng cho trẻ', 60, 500000, 'Online/Offline', null],
+    ['Tâm lý & Dinh dưỡng', 'Tư vấn thực đơn cho người béo phì', 60, 600000, 'Online/Offline', null],
+    ['Tâm lý & Dinh dưỡng', 'Xây dựng chế độ ăn bệnh lý', 60, 800000, 'Online/Offline', null],
+    // XI. Gói khám sức khỏe tổng quát
+    ['Gói khám sức khỏe tổng quát', 'Gói khám sức khỏe Tổng quát Tiêu chuẩn', 120, 2500000, 'Offline', null],
+    ['Gói khám sức khỏe tổng quát', 'Gói tầm soát Ung thư Nữ (Vú, CTC)', 150, 5500000, 'Offline', 'FEMALE'],
+    ['Gói khám sức khỏe tổng quát', 'Gói tầm soát Ung thư Nam (Gan, TLT)', 120, 4800000, 'Offline', 'MALE'],
+    ['Gói khám sức khỏe tổng quát', 'Gói kiểm tra sức khỏe Tiền hôn nhân', 180, 6000000, 'Offline', null],
+    ['Gói khám sức khỏe tổng quát', 'Gói tầm soát Đột quỵ & Tim mạch', 150, 8500000, 'Offline', null],
+    ['Gói khám sức khỏe tổng quát', 'Gói khám sức khỏe Nhi khoa định kỳ', 90, 1800000, 'Offline', null],
+    // XII. Chẩn đoán & Ngoại khoa
+    ['Chẩn đoán & Ngoại khoa', 'Chụp cộng hưởng từ MRI (1 vùng)', 60, 2500000, 'Offline', null],
+    ['Chẩn đoán & Ngoại khoa', 'Chụp CT Scanner tầm soát phổi/ngực', 30, 1500000, 'Offline', null],
+    ['Chẩn đoán & Ngoại khoa', 'Siêu âm tim màu 4D chuyên sâu', 30, 700000, 'Offline', null],
+    ['Chẩn đoán & Ngoại khoa', 'Xử lý vết thương hở (Khâu da)', 60, 800000, 'Offline', null],
+    ['Chẩn đoán & Ngoại khoa', 'Chích áp xe/Lấy u bã đậu nhỏ', 60, 1200000, 'Offline', null],
+  ] as const;
 
-  for (let i = 0; i < 99; i++) {
-    const sIdx = Math.floor(i / 8.5) % specs.length;
-    const term = actionTerms[i % actionTerms.length];
+  // Map specialty names from data.txt to our specialtiesData
+  const specNameMap: Record<string, string> = {
+    'Nội & Nam khoa': 'Nội & Nam khoa',
+    'Nhi khoa': 'Nhi khoa',
+    'Tai Mũi Họng': 'Tai Mũi Họng',
+    'Da liễu & Thẩm mỹ': 'Da liễu & Thẩm mỹ',
+    'Sản Phụ khoa': 'Sản Phụ khoa',
+    'Nhãn khoa': 'Nhãn khoa',
+    'Răng Hàm Mặt': 'Răng Hàm Mặt',
+    'Tiêu hóa & Nội soi': 'Tiêu hóa & Nội soi',
+    'Vật lý trị liệu & PHCN': 'Vật lý trị liệu & PHCN',
+    'Tâm lý & Dinh dưỡng': 'Tâm lý & Dinh dưỡng',
+    'Gói khám sức khỏe tổng quát': 'Gói khám sức khỏe tổng quát',
+    'Chẩn đoán & Ngoại khoa': 'Chẩn đoán & Ngoại khoa',
+  };
+
+  const svcsData: any[] = [];
+  for (const [specName, name, duration, price, type, targetGender] of servicesFromData) {
+    const spec = specs.find((s) => s.name === specNameMap[specName]);
+    if (!spec) {
+      console.warn(`Specialty not found: ${specName}`);
+      continue;
+    }
     svcsData.push({
-      name: `${term} ${specialtiesData[sIdx]}`,
-      price: 200000 + (i % 10) * 100000,
-      duration: [30, 45, 60, 90][i % 4],
-      specialtyId: specs[sIdx].id,
-      isAvailableOnline: i % 3 !== 0,
-      isAvailableOffline: true,
-      targetGender:
-        i % 15 === 0 ? Gender.MALE : i % 15 === 1 ? Gender.FEMALE : null,
+      name,
+      price,
+      duration,
+      specialtyId: spec.id,
+      isAvailableOnline: type === 'Online/Offline' || type === 'Online',
+      isAvailableOffline: type === 'Online/Offline' || type === 'Offline',
+      targetGender: targetGender ? Gender[targetGender as keyof typeof Gender] : null,
     });
   }
   await prisma.service.createMany({ data: svcsData });
+  console.log(`✅ Created ${svcsData.length} services from data.txt`);
   const svcs = await prisma.service.findMany();
   const servicePriceMap = new Map<number, number>();
   svcs.forEach((s) => servicePriceMap.set(s.id, s.price));
@@ -126,13 +281,15 @@ async function main() {
       status: 'ACTIVE',
     });
   }
-  // - Patients (5000)
+  // - Patients (5000) with random createdAt from 01/01/2025 to now
+  const patientStartDate = new Date('2025-01-01T00:00:00');
   for (let i = 1; i <= 5000; i++) {
     allUsersData.push({
       email: `user${i}@sepolia.vn`,
       password: pass,
       role: 'PATIENT',
       status: 'ACTIVE',
+      createdAt: faker.date.between({ from: patientStartDate, to: TODAY }),
     });
   }
   // - Admin (1)
@@ -178,15 +335,17 @@ async function main() {
     },
   });
 
-  // 4b. Receptionist Profiles
+  // 4b. Receptionist Profiles (with avatar)
+  const clinicDistrictNames = ['Hoàn Kiếm', 'Cầu Giấy', 'Đống Đa', 'Ba Đình', 'Hà Đông'];
   for (let i = 0; i < 5; i++) {
     await prisma.receptionistProfile.create({
       data: {
         userId: dbReceptionistUsers[i].id,
-        firstName: clinicNames[i],
+        firstName: clinicDistrictNames[i],
         lastName: 'Sepolia',
         clinicId: clinics[i].id,
         gender: i % 2 === 0 ? Gender.FEMALE : Gender.MALE,
+        avatar: faker.image.avatar(),
       },
     });
   }

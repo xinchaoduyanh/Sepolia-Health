@@ -2,6 +2,7 @@
 
 import { doctorServicesApi } from '@/lib/api/doctor-services'
 import { receptionistApi, type TimeSlot } from '@/lib/api/receptionist'
+import { formatServiceNameWithConditions } from '@/lib/utils/serviceFormatter'
 import type {
     CreateAppointmentForPatientRequest,
     CreatePatientAccountRequest,
@@ -857,7 +858,7 @@ export default function ScheduleAppointmentPage() {
                                                 .filter(s => s.isAvailableOffline)
                                                 .map(service => (
                                                     <option key={service.id} value={service.id}>
-                                                        {service.name}
+                                                        {formatServiceNameWithConditions(service)}
                                                     </option>
                                                 ))}
                                         </select>
