@@ -79,7 +79,7 @@ export const receptionistApi = {
 
     // Get doctor availability (time slots)
     getDoctorAvailability: async (doctorServiceId: number, date: string): Promise<DoctorAvailability> => {
-        return await apiClient.get<DoctorAvailability>('/receptionist/appointment/doctor-availability', {
+        return await apiClient.get<DoctorAvailability>('/patient/appointment/booking/doctor-availability', {
             params: { doctorServiceId, date },
         })
     },

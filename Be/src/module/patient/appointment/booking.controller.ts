@@ -73,6 +73,7 @@ export class BookingController {
     return this.appointmentService.getAvailableDates(query);
   }
 
+  @Roles(Role.RECEPTIONIST)
   @Get('doctor-availability')
   @ApiOperation({
     summary: 'Kiểm tra lịch bận của bác sĩ trong một ngày cụ thể',
