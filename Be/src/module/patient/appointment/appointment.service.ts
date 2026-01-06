@@ -1094,6 +1094,54 @@ export class AppointmentService {
       }
     }
 
+    // 4. Clinical Validation (Gender, Age, Service Type)
+    const patientProfile = await this.prisma.patientProfile.findUnique({
+      where: { id: patientProfileId },
+    });
+
+    if (!patientProfile) {
+      throw new NotFoundException(
+        MESSAGES.APPOINTMENT.PATIENT_PROFILE_NOT_FOUND,
+      );
+    }
+
+    const service = doctorService.service as any;
+
+    // Validate Service Type (Online/Offline)
+    if (type === AppointmentType.ONLINE && !service.isAvailableOnline) {
+      throw new BadRequestException(MESSAGES.APPOINTMENT.SERVICE_TYPE_MISMATCH);
+    }
+    if (type === AppointmentType.OFFLINE && !service.isAvailableOffline) {
+      throw new BadRequestException(MESSAGES.APPOINTMENT.SERVICE_TYPE_MISMATCH);
+    }
+
+    // Validate Gender
+    if (
+      service.targetGender &&
+      patientProfile.gender &&
+      service.targetGender !== patientProfile.gender
+    ) {
+      throw new BadRequestException(MESSAGES.APPOINTMENT.GENDER_MISMATCH);
+    }
+
+    // Validate Age (Current Year - Birth Year)
+    if (patientProfile.dateOfBirth) {
+      const birthYear = new Date(patientProfile.dateOfBirth).getFullYear();
+      const currentYear = new Date().getFullYear();
+      const age = currentYear - birthYear;
+
+      if (service.minAge !== null && age < service.minAge) {
+        throw new BadRequestException(
+          `${MESSAGES.APPOINTMENT.AGE_MISMATCH} (Yêu cầu ít nhất ${service.minAge} tuổi)`,
+        );
+      }
+      if (service.maxAge !== null && age > service.maxAge) {
+        throw new BadRequestException(
+          `${MESSAGES.APPOINTMENT.AGE_MISMATCH} (Yêu cầu tối đa ${service.maxAge} tuổi)`,
+        );
+      }
+    }
+
     await this.checkConflict(
       startTime,
       endTime,

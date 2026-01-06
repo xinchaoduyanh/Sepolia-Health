@@ -1,35 +1,58 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  Pressable,
-  ScrollView,
-  TextInput,
-  StatusBar,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
+import { ServiceSkeleton } from '@/components/SkeletonLoader';
 import { useAppointment } from '@/contexts/AppointmentContext';
 import { useServices } from '@/lib/api/appointments';
 import { Service } from '@/types/doctor';
-import { ServiceSkeleton } from '@/components/SkeletonLoader';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
+import { useState } from 'react';
+import { Pressable, ScrollView, StatusBar, Text, TextInput, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function OnlineServiceSelectionScreen() {
   const [selectedService, setSelectedService] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const { setSelectedService: setContextService } = useAppointment();
+  const {
+    setSelectedService: setContextService,
+    gender: patientGender,
+    dateOfBirth: patientDOB,
+  } = useAppointment();
 
   const { data: servicesData, isLoading, error } = useServices();
 
   const services = servicesData?.data || [];
 
-  const filteredServices = services.filter(
-    (service: Service) =>
+  const filteredServices = services.filter((service: Service) => {
+    // 1. Filter by Search Query
+    const matchesSearch =
       service.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (service.description && service.description.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+      (service.description &&
+        service.description.toLowerCase().includes(searchQuery.toLowerCase()));
+
+    if (!matchesSearch) return false;
+
+    // 2. Filter by Online Availability
+    if (service.isAvailableOnline === false) return false;
+
+    // 3. Filter by Gender if selected
+    if (patientGender && service.targetGender && service.targetGender !== patientGender) {
+      return false;
+    }
+
+    // 4. Filter by Age if selected
+    if (patientDOB) {
+      const currentYear = new Date().getFullYear();
+      const birthYear = new Date(patientDOB).getFullYear();
+      const age = currentYear - birthYear;
+
+      if (service.minAge !== null && service.minAge !== undefined && age < service.minAge)
+        return false;
+      if (service.maxAge !== null && service.maxAge !== undefined && age > service.maxAge)
+        return false;
+    }
+
+    return true;
+  });
 
   const handleServiceSelect = (serviceId: number) => {
     setSelectedService(serviceId);
@@ -79,9 +102,7 @@ export default function OnlineServiceSelectionScreen() {
           <Text className="mt-4 text-center text-base font-semibold text-slate-900">
             Không thể tải danh sách dịch vụ
           </Text>
-          <Pressable
-            onPress={handleBack}
-            className="mt-4 rounded-lg bg-emerald-500 px-6 py-3">
+          <Pressable onPress={handleBack} className="mt-4 rounded-lg bg-emerald-500 px-6 py-3">
             <Text className="font-semibold text-white">Quay lại</Text>
           </Pressable>
         </View>
@@ -182,7 +203,9 @@ export default function OnlineServiceSelectionScreen() {
             {filteredServices.length === 0 && !isLoading && (
               <View className="items-center py-12">
                 <Ionicons name="search-outline" size={48} color="#9CA3AF" />
-                <Text className="mt-4 text-base text-slate-500">Không tìm thấy dịch vụ phù hợp</Text>
+                <Text className="mt-4 text-base text-slate-500">
+                  Không tìm thấy dịch vụ phù hợp
+                </Text>
               </View>
             )}
           </>

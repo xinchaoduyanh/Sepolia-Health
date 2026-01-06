@@ -1,26 +1,22 @@
-import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/common/prisma/prisma.service';
-import { RedisService } from '@/common/modules/redis/redis.service';
-import { Role, AppointmentStatus, PaymentStatus } from '@prisma/client';
+import { Injectable } from '@nestjs/common';
+import { AppointmentStatus, PaymentStatus, Role } from '@prisma/client';
 import {
-  UserStatisticsResponseDto,
+  AppointmentsChartResponseDto,
   AppointmentStatisticsResponseDto,
+  ClinicStatisticsResponseDto,
   DashboardStatisticsResponseDto,
-  RevenueStatisticsResponseDto,
+  MonthComparisonDto,
   MonthlyAppointmentsResponseDto,
   OverviewStatisticsResponseDto,
-  MonthComparisonDto,
-  ClinicStatisticsResponseDto,
   RevenueChartResponseDto,
-  AppointmentsChartResponseDto,
+  RevenueStatisticsResponseDto,
+  UserStatisticsResponseDto,
 } from './admin-statistics.dto';
 
 @Injectable()
 export class AdminStatisticsService {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly redis: RedisService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async getUserStatistics(
     startDate?: string,
@@ -988,52 +984,25 @@ export class AdminStatisticsService {
     let startDate: Date;
     let endDate: Date;
 
-    // Calculate date range based on period
+    // Calculate date range based on period (relative to today)
     if (period === '1month') {
-      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-      endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      // Last 30 days
+      startDate = new Date(now);
+      startDate.setDate(now.getDate() - 29); // Include today, so go back 29 days
+      endDate = new Date(now);
     } else if (period === '3months') {
-      startDate = new Date(now.getFullYear(), now.getMonth() - 2, 1);
-      endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      // Last 90 days
+      startDate = new Date(now);
+      startDate.setDate(now.getDate() - 89);
+      endDate = new Date(now);
     } else {
-      // year
-      startDate = new Date(now.getFullYear(), 0, 1);
-      endDate = new Date(now.getFullYear(), 11, 31);
+      // Last 12 months (365 days)
+      startDate = new Date(now);
+      startDate.setDate(now.getDate() - 364);
+      endDate = new Date(now);
     }
     startDate.setHours(0, 0, 0, 0);
     endDate.setHours(23, 59, 59, 999);
-
-    // Generate cache key based on period
-    let cacheKey: string;
-
-    if (period === '1month') {
-      const year = startDate.getFullYear();
-      const month = startDate.getMonth() + 1;
-      cacheKey = `revenue_chart_${period}_${year}_${month}`;
-    } else if (period === '3months') {
-      // Use end date for 3months period to ensure consistency
-      const endYear = endDate.getFullYear();
-      const endMonth = endDate.getMonth() + 1;
-      cacheKey = `revenue_chart_${period}_${endYear}_${endMonth}`;
-    } else {
-      // year period
-      const year = startDate.getFullYear();
-      cacheKey = `revenue_chart_${period}_${year}_1`;
-    }
-
-    // Check cache first
-    try {
-      const cached =
-        await this.redis.getJson<RevenueChartResponseDto>(cacheKey);
-      if (cached.exists && cached.value) {
-        console.log(`Cache hit for ${cacheKey}`);
-        return cached.value;
-      }
-      console.log(`Cache miss for ${cacheKey}, querying database...`);
-    } catch (error) {
-      // Log error but continue with database query
-      console.error('Redis cache error:', error);
-    }
 
     // Get all active clinics
     const clinics = await this.prisma.clinic.findMany({
@@ -1071,36 +1040,7 @@ export class AdminStatisticsService {
       );
     }
 
-    // Cache the result
-    try {
-      // Determine TTL based on whether it's current month/period
-      const isCurrentPeriod = this.isCurrentPeriod(
-        period,
-        startDate,
-        endDate,
-        now,
-      );
-      const ttl = isCurrentPeriod ? 3600 : undefined; // 1 hour for current period, permanent for historical data
-
-      await this.redis.setJson(cacheKey, result, ttl ? { ex: ttl } : undefined);
-    } catch (error) {
-      // Log error but don't fail the request
-      console.error('Redis cache set error:', error);
-    }
-
     return result;
-  }
-
-  /**
-   * Check if the given period is current (contains today)
-   */
-  private isCurrentPeriod(
-    period: '1month' | '3months' | 'year',
-    startDate: Date,
-    endDate: Date,
-    now: Date,
-  ): boolean {
-    return now >= startDate && now <= endDate;
   }
 
   /**
@@ -1302,6 +1242,10 @@ export class AdminStatisticsService {
       }> = [];
 
       const currentDate = new Date(startDate);
+      // Ensure we start at the beginning of the first month to be consistent
+      currentDate.setDate(1);
+      currentDate.setHours(0, 0, 0, 0);
+
       while (currentDate <= endDate) {
         const monthStart = new Date(
           currentDate.getFullYear(),
@@ -1316,10 +1260,6 @@ export class AdminStatisticsService {
         );
         monthEnd.setHours(23, 59, 59, 999);
 
-        if (monthEnd > endDate) {
-          monthEnd.setTime(endDate.getTime());
-        }
-
         monthRanges.push({
           monthStart: new Date(monthStart),
           monthEnd: new Date(monthEnd),
@@ -1327,7 +1267,6 @@ export class AdminStatisticsService {
         });
 
         currentDate.setMonth(currentDate.getMonth() + 1);
-        currentDate.setDate(1);
       }
 
       // Initialize data map with all months and clinics
@@ -1389,38 +1328,6 @@ export class AdminStatisticsService {
     } catch (error) {
       console.error('Error in getRevenueChartByYearOptimized:', error);
       throw error;
-    }
-  }
-
-  /**
-   * Clear revenue chart cache for current periods
-   * Call this when appointments are completed to invalidate cache
-   */
-  async clearRevenueChartCache(): Promise<void> {
-    try {
-      const now = new Date();
-      const currentYear = now.getFullYear();
-      const currentMonth = now.getMonth() + 1;
-
-      // Clear current month cache (1month period)
-      await this.redis.del(
-        `revenue_chart_1month_${currentYear}_${currentMonth}`,
-      );
-
-      // Clear 3months cache (current month as end month)
-      await this.redis.del(
-        `revenue_chart_3months_${currentYear}_${currentMonth}`,
-      );
-
-      // Clear year cache
-      await this.redis.del(`revenue_chart_year_${currentYear}_1`);
-
-      // Also clear previous month's 3months cache if needed
-      const prevMonth = currentMonth === 1 ? 12 : currentMonth - 1;
-      const prevYear = currentMonth === 1 ? currentYear - 1 : currentYear;
-      await this.redis.del(`revenue_chart_3months_${prevYear}_${prevMonth}`);
-    } catch (error) {
-      console.error('Error clearing revenue chart cache:', error);
     }
   }
 

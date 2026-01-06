@@ -6,24 +6,63 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StatusBar, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+  Pressable,
+  ScrollView,
+  StatusBar,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
 export default function ServiceSelectionScreen() {
   const [selectedService, setSelectedService] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const { setSelectedService: setContextService, selectedFacility } = useAppointment();
+  const {
+    setSelectedService: setContextService,
+    selectedFacility,
+    gender: patientGender,
+    dateOfBirth: patientDOB,
+  } = useAppointment();
 
   const { data: servicesData, isLoading, error } = useServices();
 
   const services = servicesData?.data || [];
 
-  const filteredServices = services.filter(
-    (service: Service) =>
+  const filteredServices = services.filter((service: Service) => {
+    // 1. Filter by Search Query
+    const matchesSearch =
       service.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (service.description && service.description.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+      (service.description &&
+        service.description.toLowerCase().includes(searchQuery.toLowerCase()));
+
+    if (!matchesSearch) return false;
+
+    // 2. Filter by Offline Availability (as this is Facility flow)
+    if (service.isAvailableOffline === false) return false;
+
+    // 3. Filter by Gender if selected
+    if (patientGender && service.targetGender && service.targetGender !== patientGender) {
+      return false;
+    }
+
+    // 4. Filter by Age if selected
+    if (patientDOB) {
+      const currentYear = new Date().getFullYear();
+      const birthYear = new Date(patientDOB).getFullYear();
+      const age = currentYear - birthYear;
+
+      if (service.minAge !== null && service.minAge !== undefined && age < service.minAge)
+        return false;
+      if (service.maxAge !== null && service.maxAge !== undefined && age > service.maxAge)
+        return false;
+    }
+
+    return true;
+  });
 
   const handleServiceSelect = (serviceId: number) => {
     setSelectedService(serviceId);

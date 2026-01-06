@@ -13,7 +13,7 @@ import { Button } from '@workspace/ui/components/Button'
 import { Skeleton } from '@workspace/ui/components/Skeleton'
 import { ArrowLeft, Calendar, Clock, Plus, Search, User } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 type Step = 'search' | 'patient-info' | 'appointment' | 'confirmation'
 
@@ -86,6 +86,7 @@ export default function ScheduleAppointmentPage() {
     const [validationErrors, setValidationErrors] = useState<ValidationError>({})
     const [searchEmailError, setSearchEmailError] = useState<string | ''>('')
     const [hasSearched, setHasSearched] = useState(false)
+    const [clinicalError, setClinicalError] = useState<string | null>(null)
 
     // API hooks
     const { data: clinics = [] } = useQuery({
@@ -415,7 +416,49 @@ export default function ScheduleAppointmentPage() {
         setCreatedAppointment(null)
         setTemporaryPassword('')
         setValidationErrors({})
+        setClinicalError(null)
     }
+
+    // Clinical Validation Effect
+    useEffect(() => {
+        if (!selectedProfile || !appointmentInfo.serviceId) {
+            setClinicalError(null)
+            return
+        }
+
+        const service = services.find(s => s.id === appointmentInfo.serviceId)
+        if (!service) return
+
+        // Validate Gender
+        if (service.targetGender && selectedProfile.gender && service.targetGender !== selectedProfile.gender) {
+            setClinicalError(
+                `Dịch vụ này chỉ dành cho bệnh nhân giới tính ${service.targetGender === 'MALE' ? 'Nam' : 'Nữ'}`,
+            )
+            return
+        }
+
+        // Validate Age
+        if (selectedProfile.dateOfBirth) {
+            const birthYear = new Date(selectedProfile.dateOfBirth).getFullYear()
+            const currentYear = new Date().getFullYear()
+            const age = currentYear - birthYear
+
+            if (service.minAge !== null && service.minAge !== undefined && age < service.minAge) {
+                setClinicalError(
+                    `Dịch vụ này yêu cầu bệnh nhân ít nhất ${service.minAge} tuổi (Bệnh nhân hiện tại ${age} tuổi)`,
+                )
+                return
+            }
+            if (service.maxAge !== null && service.maxAge !== undefined && age > service.maxAge) {
+                setClinicalError(
+                    `Dịch vụ này yêu cầu bệnh nhân tối đa ${service.maxAge} tuổi (Bệnh nhân hiện tại ${age} tuổi)`,
+                )
+                return
+            }
+        }
+
+        setClinicalError(null)
+    }, [selectedProfile, appointmentInfo.serviceId, services])
 
     return (
         <div className="min-h-screen bg-background">
@@ -810,11 +853,13 @@ export default function ScheduleAppointmentPage() {
                                             className={inputClassName}
                                         >
                                             <option value={0}>Chọn dịch vụ</option>
-                                            {services.map(service => (
-                                                <option key={service.id} value={service.id}>
-                                                    {service.name}
-                                                </option>
-                                            ))}
+                                            {services
+                                                .filter(s => s.isAvailableOffline)
+                                                .map(service => (
+                                                    <option key={service.id} value={service.id}>
+                                                        {service.name}
+                                                    </option>
+                                                ))}
                                         </select>
                                     </div>
 
@@ -906,13 +951,21 @@ export default function ScheduleAppointmentPage() {
                                     />
                                 </div>
 
+                                {clinicalError && (
+                                    <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+                                        <p className="text-sm text-red-700 dark:text-red-300 flex items-center gap-2">
+                                            <span className="font-bold">Cảnh báo:</span> {clinicalError}
+                                        </p>
+                                    </div>
+                                )}
+
                                 <div className="flex gap-2">
                                     <Button onClick={() => setCurrentStep('patient-info')} variant="outline">
                                         Quay lại
                                     </Button>
                                     <Button
                                         onClick={handleCreateAppointment}
-                                        isDisabled={createAppointmentMutation.isPending}
+                                        isDisabled={createAppointmentMutation.isPending || !!clinicalError}
                                         className="flex items-center gap-2"
                                     >
                                         <Calendar className="h-4 w-4" />

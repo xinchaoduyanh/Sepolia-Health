@@ -62,6 +62,9 @@ export const MESSAGES = {
     DOCTOR_NOT_AVAILABLE_ON_DATE: 'Bác sĩ không làm việc vào ngày này',
     TIME_SLOT_ALREADY_BOOKED: 'Thời gian đã được đặt lịch',
     NOT_FOUND: 'Không tìm thấy lịch hẹn',
+    GENDER_MISMATCH: 'Giới tính của bệnh nhân không phù hợp với dịch vụ này',
+    AGE_MISMATCH: 'Độ tuổi của bệnh nhân không phù hợp với dịch vụ này',
+    SERVICE_TYPE_MISMATCH: 'Dịch vụ này không hỗ trợ hình thức khám đã chọn',
   },
 
   // Medicine messages

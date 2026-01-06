@@ -375,6 +375,14 @@ model Service {
   description   String?
   specialtyId   Int
   specialty     Specialty       @relation("ServiceSpecialty", fields: [specialtyId], references: [id])
+  
+  // Điều kiện dịch vụ
+  targetGender      Gender?    // Giới tính mục tiêu (MALE, FEMALE, null = Tất cả)
+  minAge            Int?       // Tuổi tối thiểu
+  maxAge            Int?       // Tuổi tối đa
+  isAvailableOnline Boolean    @default(true)
+  isAvailableOffline Boolean   @default(true)
+
   createdAt     DateTime        @default(now())
   updatedAt     DateTime?
   appointments  Appointment[]

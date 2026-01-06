@@ -16,11 +16,11 @@ import { useEffect, useState } from 'react';
 import {
   Image,
   Modal,
+  Pressable,
   ScrollView,
   StatusBar,
   Text,
   TextInput,
-  Pressable,
   View,
 } from 'react-native';
 
@@ -174,6 +174,47 @@ export default function OnlineAppointmentScreen() {
     if (!firstName || !lastName || !dateOfBirth || !phoneNumber || !gender) {
       alert('Vui lòng điền đầy đủ thông tin khách hàng');
       return;
+    }
+
+    // Clinical Validation
+    if (selectedService) {
+      // 1. Availability check
+      if (selectedService.isAvailableOnline === false) {
+        alert('Dịch vụ này không hỗ trợ khám trực tuyến');
+        return;
+      }
+
+      // 2. Gender check
+      if (selectedService.targetGender && gender && selectedService.targetGender !== gender) {
+        alert(
+          `Dịch vụ này chỉ dành cho bệnh nhân giới tính ${selectedService.targetGender === 'MALE' ? 'Nam' : 'Nữ'}`
+        );
+        return;
+      }
+
+      // 3. Age check
+      if (dateOfBirth) {
+        const birthYear = dateOfBirth.getFullYear();
+        const currentYear = new Date().getFullYear();
+        const age = currentYear - birthYear;
+
+        if (
+          selectedService.minAge !== null &&
+          selectedService.minAge !== undefined &&
+          age < selectedService.minAge
+        ) {
+          alert(`Dịch vụ này yêu cầu bệnh nhân ít nhất ${selectedService.minAge} tuổi`);
+          return;
+        }
+        if (
+          selectedService.maxAge !== null &&
+          selectedService.maxAge !== undefined &&
+          age > selectedService.maxAge
+        ) {
+          alert(`Dịch vụ này yêu cầu bệnh nhân tối đa ${selectedService.maxAge} tuổi`);
+          return;
+        }
+      }
     }
 
     if (selectedCustomer === 'add') {

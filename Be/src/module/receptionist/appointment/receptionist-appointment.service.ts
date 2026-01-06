@@ -579,13 +579,18 @@ export class ReceptionistAppointmentService {
    * Get services
    */
   async getServices() {
-    const services = await this.prisma.service.findMany({
+    const services = await (this.prisma.service.findMany as any)({
       select: {
         id: true,
         name: true,
         price: true,
         duration: true,
         description: true,
+        targetGender: true,
+        minAge: true,
+        maxAge: true,
+        isAvailableOnline: true,
+        isAvailableOffline: true,
       },
       orderBy: { name: 'asc' },
     });
@@ -848,8 +853,7 @@ export class ReceptionistAppointmentService {
       throw new NotFoundException('Không tìm thấy hồ sơ bệnh nhân');
     }
 
-    // Get doctor service info
-    const doctorService = await this.prisma.doctorService.findUnique({
+    const doctorService: any = await this.prisma.doctorService.findUnique({
       where: { id: doctorServiceId },
       include: {
         doctor: {
@@ -866,6 +870,11 @@ export class ReceptionistAppointmentService {
             name: true,
             price: true,
             duration: true,
+            targetGender: true,
+            minAge: true,
+            maxAge: true,
+            isAvailableOnline: true,
+            isAvailableOffline: true,
           },
         },
       },
@@ -873,6 +882,35 @@ export class ReceptionistAppointmentService {
 
     if (!doctorService) {
       throw new NotFoundException('Không tìm thấy dịch vụ bác sĩ');
+    }
+
+    const service = doctorService.service;
+
+    // Validate Gender
+    if (
+      service.targetGender &&
+      patientProfile.gender &&
+      service.targetGender !== patientProfile.gender
+    ) {
+      throw new BadRequestException(ERROR_MESSAGES.APPOINTMENT.GENDER_MISMATCH);
+    }
+
+    // Validate Age
+    if (patientProfile.dateOfBirth) {
+      const birthYear = new Date(patientProfile.dateOfBirth).getFullYear();
+      const currentYear = new Date().getFullYear();
+      const age = currentYear - birthYear;
+
+      if (service.minAge !== null && age < service.minAge) {
+        throw new BadRequestException(
+          `${ERROR_MESSAGES.APPOINTMENT.AGE_MISMATCH} (Yêu cầu ít nhất ${service.minAge} tuổi)`,
+        );
+      }
+      if (service.maxAge !== null && age > service.maxAge) {
+        throw new BadRequestException(
+          `${ERROR_MESSAGES.APPOINTMENT.AGE_MISMATCH} (Yêu cầu tối đa ${service.maxAge} tuổi)`,
+        );
+      }
     }
 
     // Check for time conflicts

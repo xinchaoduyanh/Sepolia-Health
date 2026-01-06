@@ -12,6 +12,11 @@ export interface Service {
   description?: string;
   price: number;
   duration: number;
+  targetGender?: 'MALE' | 'FEMALE';
+  minAge?: number;
+  maxAge?: number;
+  isAvailableOnline: boolean;
+  isAvailableOffline: boolean;
   specialty?: Specialty;
   createdAt: string;
   updatedAt: string;

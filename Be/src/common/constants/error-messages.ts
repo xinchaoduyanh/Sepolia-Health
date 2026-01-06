@@ -42,5 +42,8 @@ export const ERROR_MESSAGES = {
     TIME_CONFLICT: 'Thời gian hẹn bị trùng hoặc không hợp lệ',
     NOT_PAID: 'Lịch hẹn chưa được thanh toán',
     NOT_YET_REACHED: 'Lịch hẹn chưa đến',
+    GENDER_MISMATCH: 'Giới tính không phù hợp với yêu cầu của dịch vụ',
+    AGE_MISMATCH: 'Độ tuổi không phù hợp với yêu cầu của dịch vụ',
+    SERVICE_TYPE_MISMATCH: 'Dịch vụ này không hỗ trợ hình thức khám đã chọn',
   },
 };

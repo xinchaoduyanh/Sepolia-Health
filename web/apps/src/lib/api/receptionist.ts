@@ -1,11 +1,11 @@
 import { apiClient } from '@/shared/lib/api-client'
 import type {
-    FindPatientRequest,
-    FindPatientResponse,
-    CreatePatientAccountRequest,
-    CreatePatientAccountResponse,
     CreateAppointmentForPatientRequest,
     CreateAppointmentForPatientResponse,
+    CreatePatientAccountRequest,
+    CreatePatientAccountResponse,
+    FindPatientRequest,
+    FindPatientResponse,
 } from '@/types/receptionist'
 
 export interface Clinic {
@@ -23,6 +23,11 @@ export interface Service {
     price: number
     duration: number
     description?: string
+    targetGender?: 'MALE' | 'FEMALE'
+    minAge?: number
+    maxAge?: number
+    isAvailableOnline: boolean
+    isAvailableOffline: boolean
 }
 
 export interface TimeSlot {

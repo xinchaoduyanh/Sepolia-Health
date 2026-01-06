@@ -1,0 +1,177 @@
+Nội & Nam khoa					
+1	Nội tổng quát	Khám nội đa khoa tổng quát	30p	300.000	Online/Offline	
+
+Tất cả
+2	Nội tổng quát	Tư vấn quản lý huyết áp/tiểu đường	30p	400.000	Online/Offline	
+
+Người lớn
+3	Nội tổng quát	Tầm soát nguy cơ tim mạch sớm	30p	450.000	Offline	
+
+>18 tuổi 
+4	Nội tổng quát	Khám tư vấn sức khỏe người cao tuổi	60p	600.000	Offline	
+
+>50 tuổi 
+5	Nội tổng quát	Kiểm tra sức khỏe hậu Covid (Tư vấn)	30p	450.000	Online/Offline	
+
+Tất cả
+6	Nam khoa	Khám Nam khoa cơ bản	30p	500.000	Offline	Nam giới
+7	Nam khoa	Tư vấn rối loạn chức năng sinh lý	30p	700.000	Online/Offline	Nam giới
+8	Nam khoa	Gói tầm soát bệnh xã hội (STIs)	30p	1.000.000	Offline	Người lớn
+II	Nhi khoa					
+9	Nhi khoa	Khám Nhi nội tổng hợp	30p	300.000	Online/Offline	
+
+Trẻ em <15t
+10	Nhi khoa	Khám sơ sinh & Tư vấn chăm sóc bé	60p	500.000	Offline	Trẻ <12 tháng
+11	Nhi khoa	Tư vấn vaccine & Lập kế hoạch tiêm	30p	200.000	Online/Offline	
+
+Trẻ em
+12	Nhi khoa	Khám dậy thì sớm ở trẻ	30p	450.000	Offline	
+
+Trẻ 6-12 tuổi
+13	Nhi khoa	Khám đánh giá ngôn ngữ/vận động	60p	600.000	Offline	
+
+Trẻ em
+14	Nhi khoa	Tư vấn xử lý sốt và co giật (Khẩn cấp)	30p	300.000	Online	Phụ huynh
+15	Nhi khoa	Khám nội soi Tai Mũi Họng nhi	30p	300.000	Offline	Trẻ em
+III	Tai Mũi Họng					
+16	Tai Mũi Họng	Khám & Nội soi TMH ống cứng	30p	300.000	Offline	Tất cả
+17	Tai Mũi Họng	Nội soi TMH ống mềm (Không đau)	30p	500.000	Offline	Tất cả
+18	Tai Mũi Họng	Lấy dáy tai nội soi chuyên sâu	30p	150.000	Offline	
+
+Tất cả
+19	Tai Mũi Họng	Khí dung mũi họng trị viêm	30p	150.000	Offline	
+
+Tất cả
+20	Tai Mũi Họng	Lấy dị vật tai/mũi/họng đơn giản	30p	350.000	Offline	
+
+Tất cả
+21	Tai Mũi Họng	Hút xoang dưới áp lực	30p	200.000	Offline	Tất cả
+22	Tai Mũi Họng	Đo thính lực đơn âm định lượng	30p	250.000	Offline	Tất cả
+IV	Da liễu & Thẩm mỹ					
+23	Da liễu	Khám da liễu bệnh lý	30p	300.000	Online/Offline	
+
+Tất cả
+24	Da liễu	Lấy nhân mụn y khoa chuyên sâu	60p	400.000	Offline	Tất cả
+25	Da liễu	Điều trị mụn công nghệ cao IPL	30p	800.000	Offline	Tất cả
+26	Da liễu	Chăm sóc da mụn phục hồi (Điện di)	60p	600.000	Offline	Tất cả
+27	Da liễu	Peel da hóa học trị mụn/thâm	60p	1.200.000	Offline	Tất cả
+28	Da liễu	Laser Fractional CO2 trị sẹo rỗ	60p	2.500.000	Offline	Người lớn
+29	Da liễu	Laser trị nám/tàn nhang (Picosure)	30p	2.000.000	Offline	Người lớn
+30	Da liễu	Mesotherapy căng bóng (Skinboosters)	60p	3.500.000	Offline	Người lớn
+31	Da liễu	Mesotherapy trị mụn/kiểm soát nhờn	60p	2.500.000	Offline	Tất cả
+32	Da liễu	Tiêm Meso kích thích mọc tóc	60p	2.500.000	Offline	Tất cả
+33	Da liễu	Tẩy nốt ruồi/Mụn thịt bằng Laser	30p	200.000	Offline	Tất cả
+34	Da liễu	Nâng cơ trẻ hóa Hifu toàn mặt	60p	4.000.000	Offline	>25 tuổi
+35	Da liễu	Trẻ hóa da công nghệ Tempsure Pro	60p	5.000.000	Offline	
+
+Người lớn
+36	Da liễu	Điện di tinh chất Vitamin C sáng da	30p	500.000	Offline	Tất cả
+37	Da liễu	Phân tích da & Tư vấn Routine cá nhân	30p	200.000	Online/Offline	Tất cả
+38	Da liễu	Chăm sóc da body phục hồi	60p	1.000.000	Offline	Tất cả
+39	Da liễu	Triệt lông công nghệ (Vùng mặt)	30p	500.000	Offline	Tất cả
+40	Da liễu	Khám tầm soát các khối u lành dưới da	30p	450.000	Offline	Tất cả
+V	Sản Phụ khoa					
+41	Sản phụ khoa	Khám phụ khoa định kỳ (Soi CTC)	30p	300.000	Offline	
+
+Nữ giới
+42	Sản phụ khoa	Khám thai định kỳ (Không siêu âm)	30p	360.000	Offline	Phụ nữ mang thai
+43	Sản phụ khoa	Soi cổ tử cung tầm soát ung thư	30p	400.000	Offline	Nữ giới
+44	Sản phụ khoa	Tư vấn kế hoạch hóa gia đình	30p	300.000	Online/Offline	Nữ giới
+45	Sản phụ khoa	Tư vấn sức khỏe tiền mãn kinh	60p	600.000	Online/Offline	Nữ giới >40t
+46	Sản phụ khoa	Làm thuốc phụ khoa tại chỗ	30p	150.000	Offline	Nữ giới
+47	Sản phụ khoa	Gói xét nghiệm tầm soát ung thư CTC	30p	900.000	Offline	Nữ giới
+48	Sản phụ khoa	Khám và tư vấn bệnh lý tuyến vú	30p	400.000	Offline	Nữ giới
+VI	Nhãn khoa					
+49	Nhãn khoa	Khám mắt & Đo thị lực máy KTS	30p	250.000	Offline	
+
+Tất cả
+50	Nhãn khoa	Thử kính & Cấp đơn kính chuẩn	30p	150.000	Offline	Tất cả
+51	Nhãn khoa	Tầm soát khô mắt chuyên sâu	60p	500.000	Offline	
+
+Tất cả
+52	Nhãn khoa	Tư vấn kiểm soát cận thị trẻ em	30p	300.000	Online/Offline	Trẻ em
+53	Nhãn khoa	Chích chắp lẹo (Tiểu phẫu)	30p	350.000	Offline	Tất cả
+54	Nhãn khoa	Theo dõi nhãn áp tầm soát Glocom	30p	350.000	Offline	Người lớn
+55	Nhãn khoa	Khám tầm soát đục thủy tinh thể	30p	400.000	Offline	Người già
+VII	Răng Hàm Mặt					
+56	Răng Hàm Mặt	Khám răng & Tư vấn thẩm mỹ	30p	Miễn phí	Offline	
+
+Tất cả
+57	Răng Hàm Mặt	Lấy cao răng & Đánh bóng máy rung	30p	300.000	Offline	Tất cả
+58	Răng Hàm Mặt	Hàn/Trám răng thẩm mỹ (Xoang nhỏ)	30p	350.000	Offline	Tất cả
+59	Răng Hàm Mặt	Nhổ răng khôn (Mọc thẳng)	60p	1.000.000	Offline	
+
+Người lớn
+60	Răng Hàm Mặt	Tẩy trắng răng Laser tại phòng khám	60p	2.500.000	Offline	Người lớn
+61	Răng Hàm Mặt	Khám tư vấn niềng răng Invisalign	60p	300.000	Offline	
+
+Tất cả
+62	Răng Hàm Mặt	Tư vấn cấy ghép Implant chuyên sâu	30p	400.000	Online/Offline	Người lớn
+63	Răng Hàm Mặt	Trám răng sữa cho trẻ em	30p	200.000	Offline	Trẻ em
+64	Răng Hàm Mặt	Cắt lợi trùm răng khôn	30p	500.000	Offline	Người lớn
+65	Răng Hàm Mặt	Chữa tủy răng cửa (Nội nha)	60p	1.500.000	Offline	Tất cả
+VIII	Tiêu hóa & Nội soi					
+66	Tiêu hóa	Khám chuyên khoa Tiêu hóa	30p	350.000	Online/Offline	Tất cả
+67	Tiêu hóa	Nội soi dạ dày gây mê (Không đau)	60p	2.500.000	Offline	
+
+Người lớn
+68	Tiêu hóa	Nội soi đại tràng gây mê (Không đau)	90p	3.200.000	Offline	
+
+Người lớn
+69	Tiêu hóa	Nội soi dạ dày - đại tràng (Combo)	120p	5.500.000	Offline	Người lớn
+70	Tiêu hóa	Test vi khuẩn HP qua hơi thở (C13/C14)	30p	600.000	Offline	
+
+Tất cả
+71	Tiêu hóa	Cắt Polyp dạ dày/đại tràng (Thủ thuật)	60p	1.500.000	Offline	Chỉ định BS
+72	Tiêu hóa	Siêu âm ổ bụng tổng quát màu 4D	30p	300.000	Offline	Tất cả
+IX	Vật lý trị liệu & PHCN					
+73	PHCN	Khám & Tầm soát cột sống 4D	30p	500.000	Offline	Tất cả
+74	PHCN	Nắn chỉnh cột sống Chiropractic	60p	1.200.000	Offline	
+
+Người lớn
+75	PHCN	Trị liệu bằng tay & Massage y khoa	60p	450.000	Offline	Tất cả
+76	PHCN	Châm cứu/Điện châm phục hồi	30p	250.000	Offline	Tất cả
+77	PHCN	Trị liệu sóng xung kích/Siêu âm	30p	350.000	Offline	Tất cả
+78	PHCN	Kéo giãn cột sống máy tự động	30p	200.000	Offline	Tất cả
+79	PHCN	Điện xung giảm đau chuyên sâu	30p	250.000	Offline	Tất cả
+80	PHCN	Tập phục hồi chức năng sau chấn thương	60p	500.000	Offline	Tất cả
+X	Tâm lý & Dinh dưỡng					
+81	Tâm lý	Tham vấn tâm lý cá nhân (Stress/Lo âu)	60p	800.000	Online/Offline	
+
+Tất cả
+82	Tâm lý	Tham vấn tâm lý trẻ em & Vị thành niên	60p	900.000	Online/Offline	<18 tuổi
+83	Tâm lý	Tư vấn tâm lý cặp đôi/gia đình	90p	1.200.000	Online/Offline	Người lớn
+84	Tâm lý	Thực hiện trắc nghiệm tâm lý Beck/MMSE	30p	200.000	Offline	
+
+Tất cả
+85	Tâm lý	Tư vấn rối loạn giấc ngủ chuyên sâu	30p	500.000	Online/Offline	Người lớn
+86	Dinh dưỡng	Khám & Tư vấn dinh dưỡng cho trẻ	60p	500.000	Online/Offline	
+
+Trẻ em
+87	Dinh dưỡng	Tư vấn thực đơn cho người béo phì	60p	600.000	Online/Offline	Người lớn
+88	Dinh dưỡng	Xây dựng chế độ ăn bệnh lý	60p	800.000	Online/Offline	Tất cả
+XI	Gói khám sức khỏe tổng quát					
+89	Gói khám	Gói khám sức khỏe Tổng quát Tiêu chuẩn	120p	2.500.000	Offline	
+
+Người lớn
+90	Gói khám	Gói tầm soát Ung thư Nữ (Vú, CTC)	150p	5.500.000	Offline	
+
+Nữ giới
+91	Gói khám	Gói tầm soát Ung thư Nam (Gan, TLT)	120p	4.800.000	Offline	
+
+Nam giới
+92	Gói khám	Gói kiểm tra sức khỏe Tiền hôn nhân	180p	6.000.000	Offline	
+
+Cặp đôi
+93	Gói khám	Gói tầm soát Đột quỵ & Tim mạch	150p	8.500.000	Offline	Người lớn
+94	Gói khám	Gói khám sức khỏe Nhi khoa định kỳ	90p	1.800.000	Offline	Trẻ em
+XII	Chẩn đoán & Ngoại khoa					
+95	Chẩn đoán	Chụp cộng hưởng từ MRI (1 vùng)	60p	2.500.000	Offline	
+
+Tất cả
+96	Chẩn đoán	Chụp CT Scanner tầm soát phổi/ngực	30p	1.500.000	Offline	Người lớn
+97	Chẩn đoán	Siêu âm tim màu 4D chuyên sâu	30p	700.000	Offline	
+
+Tất cả
+98	Ngoại khoa	Xử lý vết thương hở (Khâu da)	60p	800.000	Offline	Tất cả
+99	Ngoại khoa	Chích áp xe/Lấy u bã đậu nhỏ	60p	1.200.000	Offline	 tất cả
