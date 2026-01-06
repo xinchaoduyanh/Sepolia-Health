@@ -1396,13 +1396,29 @@ export class AppointmentService {
       },
     });
 
+    const now = new Date();
+    const isToday = DateUtil.isSameDay(date, now);
+    let startTime = workingHours.startTime;
+    if (isToday) {
+      const vnTime = new Date(
+        now.toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }),
+      );
+      const minues = vnTime.getHours() * 60 + vnTime.getMinutes();
+
+      if (minues >= 750) {
+        startTime = '17:00';
+      } else if (minues >= 450) {
+        startTime = '12:00';
+      }
+    }
+
     // Generate available time slots
     const availableTimeSlots = this.generateAvailableTimeSlots(
-      workingHours.startTime,
+      startTime,
       workingHours.endTime,
       doctorService.service.duration,
       bookedAppointments,
-      DateUtil.isSameDay(date, new Date()),
+      isToday,
     );
 
     return {
@@ -1534,7 +1550,6 @@ export class AppointmentService {
     const end = TimeUtil.timeToMinutes(endTime);
     const duration = serviceDuration;
 
-    // Generate time slots every 30 minutes, but each slot has the full service duration
     for (let time = start; time + duration <= end; time += 30) {
       const slotStartTime = TimeUtil.minutesToTime(time);
       if (isToday && time <= TimeUtil.dateToMinutes(new Date())) {

@@ -350,31 +350,84 @@ export default function AppointmentDetailScreen() {
           {/* Zoom Meeting Link for Online Appointments */}
           {appointment.type === 'ONLINE' && appointment.joinUrl && (
             <View style={{ marginBottom: 8 }}>
-              <Text style={{ fontSize: 14, color: '#6B7280' }}>Link tham gia cuộc họp</Text>
-              <TouchableOpacity
-                onPress={() => Linking.openURL(appointment.joinUrl!)}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  backgroundColor: '#ECFDF5',
-                  borderRadius: 8,
-                  padding: 12,
-                  marginTop: 4,
-                }}>
-                <Ionicons name="videocam" size={20} color="#10B981" style={{ marginRight: 8 }} />
-                <Text
-                  style={{
-                    fontSize: 14,
-                    fontWeight: '600',
-                    color: '#10B981',
-                    flex: 1,
-                  }}
-                  numberOfLines={1}
-                  ellipsizeMode="middle">
-                  {appointment.joinUrl}
-                </Text>
-                <Ionicons name="open-outline" size={16} color="#10B981" />
-              </TouchableOpacity>
+              <Text style={{ fontSize: 14, color: '#6B7280', marginBottom: 8 }}>
+                Liên kết cuộc họp
+              </Text>
+              {(() => {
+                const now = new Date();
+                const appointmentTime = new Date(appointment.startTime);
+                const minutesBefore = Math.floor(
+                  (appointmentTime.getTime() - now.getTime()) / 60000
+                );
+                const isStartingSoon = minutesBefore <= 15 && minutesBefore >= -30; // 15 min before to 30 min after
+
+                return (
+                  <>
+                    {!isStartingSoon && (
+                      <View
+                        style={{
+                          backgroundColor: '#FEF3C7',
+                          borderRadius: 8,
+                          padding: 12,
+                          marginBottom: 8,
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                        }}>
+                        <Ionicons
+                          name="information-circle"
+                          size={20}
+                          color="#F59E0B"
+                          style={{ marginRight: 8 }}
+                        />
+                        <Text
+                          style={{
+                            fontSize: 12,
+                            color: '#92400E',
+                            fontWeight: '500',
+                            flex: 1,
+                          }}>
+                          Link cuộc họp sẽ khả dụng 15 phút trước giờ hẹn
+                        </Text>
+                      </View>
+                    )}
+                    <TouchableOpacity
+                      onPress={() => {
+                        if (isStartingSoon) {
+                          Linking.openURL(appointment.joinUrl!);
+                        } else {
+                          Alert.alert(
+                            'Chưa khả dụng',
+                            'Vui lòng vào cuộc họp 15 phút trước giờ hẹn quy định.'
+                          );
+                        }
+                      }}
+                      disabled={!isStartingSoon}
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: isStartingSoon ? '#10B981' : '#D1D5DB',
+                        borderRadius: 8,
+                        padding: 12,
+                      }}>
+                      <Ionicons
+                        name="videocam"
+                        size={20}
+                        color="white"
+                        style={{ marginRight: 8 }}
+                      />
+                      <Text
+                        style={{
+                          fontSize: 14,
+                          fontWeight: '600',
+                          color: 'white',
+                        }}>
+                        {isStartingSoon ? 'Vào cuộc họp' : 'Vào cuộc họp'}
+                      </Text>
+                    </TouchableOpacity>
+                  </>
+                );
+              })()}
             </View>
           )}
           <View style={{ marginBottom: 8 }}>

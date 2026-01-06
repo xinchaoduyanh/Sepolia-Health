@@ -3,10 +3,25 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@workspace/ui/components/Button'
-import { ArrowLeft, Plus, Trash2, AlertCircle } from 'lucide-react'
+import {
+    ArrowLeft,
+    Plus,
+    Trash2,
+    AlertCircle,
+    User,
+    Mail,
+    Lock,
+    Phone,
+    Calendar,
+    Users,
+    MapPin,
+    Heart,
+} from 'lucide-react'
 import { useCreatePatient } from '@/shared/hooks'
 import type { CreatePatientRequest } from '@/shared/lib/api-services/patients.service'
 import { AvatarUpload } from './AvatarUpload'
+import { FormSelect } from '@workspace/ui/components/FormSelect'
+import { FormDatePicker } from '@workspace/ui/components/FormDatePicker'
 
 interface PatientProfileForm {
     id?: string
@@ -64,7 +79,6 @@ export function PatientCreateForm() {
 
     const handleAccountChange = (field: 'email' | 'password' | 'phone', value: string) => {
         setAccountInfo(prev => ({ ...prev, [field]: value }))
-        // Clear field error when user types
         if (fieldErrors[field]) {
             setFieldErrors(prev => ({ ...prev, [field]: undefined }))
         }
@@ -90,12 +104,10 @@ export function PatientCreateForm() {
     }
 
     const removeProfile = (profileId: string) => {
-        // Không cho xóa profile đầu tiên (SELF)
         if (profileId === '1') return
         setProfiles(prev => prev.filter(profile => profile.id !== profileId))
     }
 
-    // Check if profile is the first one (SELF)
     const isFirstProfile = (profileId: string) => profileId === '1'
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -103,10 +115,8 @@ export function PatientCreateForm() {
 
         if (!canSubmit) return
 
-        // Clear previous errors
         setFieldErrors({})
 
-        // Prepare data
         const validProfiles = getValidProfiles()
 
         const submitData: CreatePatientRequest = {
@@ -119,15 +129,12 @@ export function PatientCreateForm() {
         try {
             const response = await createPatient.mutateAsync(submitData)
 
-            // Redirect to patient detail page with the new patient ID
             if (response?.id) {
-                router.push(`/customer-management/${response.id}`)
+                router.push(`/admin/customer-management/${response.id}`)
             }
         } catch (error: any) {
-            // Parse error message from backend
             const errorMessage = error?.response?.data?.message || error?.message || ''
 
-            // Map error messages to specific fields
             if (errorMessage.includes('Email đã được sử dụng') || errorMessage.toLowerCase().includes('email')) {
                 setFieldErrors(prev => ({ ...prev, email: errorMessage }))
             } else if (
@@ -136,7 +143,6 @@ export function PatientCreateForm() {
             ) {
                 setFieldErrors(prev => ({ ...prev, phone: errorMessage }))
             }
-            // Toast notification is handled by the hook
         }
     }
 
@@ -158,342 +164,389 @@ export function PatientCreateForm() {
     ]
 
     const inputClassName =
-        'w-full px-3 py-2 bg-background text-foreground border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-transparent transition-colors'
+        'w-full px-4 py-2.5 bg-background text-foreground border-2 border-border rounded-xl focus:ring-2 focus:ring-primary/30 focus:border-primary hover:border-primary/50 transition-all duration-200 outline-none shadow-sm'
+
+    const labelClassName = 'flex items-center gap-2 text-sm font-medium text-foreground mb-2'
 
     return (
-        <div className="space-y-6">
-            {/* Header */}
-            <div className="flex items-center space-x-4">
-                <Button variant="ghost" size="sm" onClick={() => router.back()}>
-                    <ArrowLeft className="h-4 w-4 mr-2" />
-                    Quay lại
-                </Button>
-                <div>
-                    <h1 className="text-3xl font-bold text-foreground">Tạo tài khoản bệnh nhân mới</h1>
-                    <p className="text-sm text-muted-foreground mt-1">Thêm bệnh nhân mới vào hệ thống</p>
-                </div>
-            </div>
-
-            {/* Warning Alert */}
-            {!hasSelfProfile && (
-                <div className="bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 flex items-start space-x-3">
-                    <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-0.5 flex-shrink-0" />
+        <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30">
+            <div className="w-full px-6 py-8">
+                {/* Header */}
+                <div className="flex items-center gap-4 mb-8">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => router.back()}
+                        className="rounded-full hover:bg-muted/50"
+                    >
+                        <ArrowLeft className="h-4 w-4" />
+                    </Button>
                     <div>
-                        <h4 className="font-medium text-yellow-800 dark:text-yellow-300">Lưu ý quan trọng</h4>
-                        <p className="text-sm text-yellow-700 dark:text-yellow-400 mt-1">
-                            Bạn phải có ít nhất một hồ sơ với mối quan hệ là <strong>&quot;Bản thân&quot;</strong> để có
-                            thể tạo tài khoản.
-                        </p>
-                    </div>
-                </div>
-            )}
-
-            <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Account Information Section */}
-                <div className="bg-card rounded-lg shadow-sm border border-border p-6">
-                    <div className="mb-4">
-                        <h3 className="text-lg font-semibold text-foreground">Thông tin tài khoản</h3>
+                        <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-pink-500 to-rose-500 bg-clip-text text-transparent">
+                            Tạo tài khoản bệnh nhân mới
+                        </h1>
                         <p className="text-sm text-muted-foreground mt-1">
-                            Thông tin đăng nhập của bệnh nhân (người quản lý tài khoản)
+                            Điền đầy đủ thông tin để thêm bệnh nhân vào hệ thống
                         </p>
-                    </div>
-                    <div className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <label htmlFor="email" className="block text-sm font-medium text-foreground">
-                                    Email đăng nhập *
-                                </label>
-                                <input
-                                    id="email"
-                                    type="email"
-                                    value={accountInfo.email}
-                                    onChange={e => handleAccountChange('email', e.target.value)}
-                                    placeholder="example@email.com"
-                                    className={`${inputClassName} ${fieldErrors.email ? 'border-red-500 focus:ring-red-500' : ''}`}
-                                    required
-                                />
-                                {fieldErrors.email && (
-                                    <div className="flex items-start gap-2 text-sm text-red-600 dark:text-red-400 mt-1">
-                                        <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                                        <span>{fieldErrors.email}</span>
-                                    </div>
-                                )}
-                            </div>
-                            <div className="space-y-2">
-                                <label htmlFor="password" className="block text-sm font-medium text-foreground">
-                                    Mật khẩu *
-                                </label>
-                                <input
-                                    id="password"
-                                    type="password"
-                                    value={accountInfo.password}
-                                    onChange={e => handleAccountChange('password', e.target.value)}
-                                    placeholder="Tối thiểu 6 ký tự"
-                                    className={`${inputClassName} ${fieldErrors.password ? 'border-red-500 focus:ring-red-500' : ''}`}
-                                    required
-                                    minLength={6}
-                                />
-                                {fieldErrors.password && (
-                                    <div className="flex items-start gap-2 text-sm text-red-600 dark:text-red-400 mt-1">
-                                        <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                                        <span>{fieldErrors.password}</span>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <label htmlFor="phone" className="block text-sm font-medium text-foreground">
-                                    Số điện thoại đăng nhập *
-                                </label>
-                                <input
-                                    id="phone"
-                                    type="tel"
-                                    value={accountInfo.phone}
-                                    onChange={e => handleAccountChange('phone', e.target.value)}
-                                    placeholder="0123456789"
-                                    className={`${inputClassName} ${fieldErrors.phone ? 'border-red-500 focus:ring-red-500' : ''}`}
-                                    required
-                                />
-                                {fieldErrors.phone && (
-                                    <div className="flex items-start gap-2 text-sm text-red-600 dark:text-red-400 mt-1">
-                                        <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                                        <span>{fieldErrors.phone}</span>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
                     </div>
                 </div>
 
-                {/* Patient Profiles Section */}
-                <div className="bg-card rounded-lg shadow-sm border border-border p-6">
-                    <div className="mb-4">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <h3 className="text-lg font-semibold text-foreground">Hồ sơ bệnh nhân</h3>
-                                <p className="text-sm text-muted-foreground mt-1">
-                                    Ít nhất một hồ sơ với mối quan hệ &quot;Bản thân&quot; (bắt buộc)
-                                </p>
+                {/* Warning Alert */}
+                {!hasSelfProfile && (
+                    <div className="mb-6 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950/30 dark:to-yellow-950/30 border-2 border-amber-200 dark:border-amber-800 rounded-2xl p-5 flex items-start gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+                            <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                        </div>
+                        <div>
+                            <h4 className="font-semibold text-amber-800 dark:text-amber-300">Lưu ý quan trọng</h4>
+                            <p className="text-sm text-amber-700 dark:text-amber-400 mt-1">
+                                Bạn phải có ít nhất một hồ sơ với mối quan hệ là <strong>"Bản thân"</strong> để có thể
+                                tạo tài khoản.
+                            </p>
+                        </div>
+                    </div>
+                )}
+
+                {/* Progress indicator */}
+                <div className="flex items-center justify-center gap-2 mb-8">
+                    <div
+                        className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${isAccountValid ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-muted text-muted-foreground'}`}
+                    >
+                        <div
+                            className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${isAccountValid ? 'bg-green-500 text-white' : 'bg-muted-foreground/30 text-muted-foreground'}`}
+                        >
+                            1
+                        </div>
+                        Tài khoản
+                    </div>
+                    <div className="w-8 h-0.5 bg-border" />
+                    <div
+                        className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${hasValidProfile && hasSelfProfile ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-muted text-muted-foreground'}`}
+                    >
+                        <div
+                            className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${hasValidProfile && hasSelfProfile ? 'bg-green-500 text-white' : 'bg-muted-foreground/30 text-muted-foreground'}`}
+                        >
+                            2
+                        </div>
+                        Hồ sơ bệnh nhân
+                    </div>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    {/* Account Information Section */}
+                    <div className="bg-card rounded-2xl shadow-sm border border-border/50 overflow-hidden">
+                        <div className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 dark:from-blue-500/5 dark:to-cyan-500/5 px-6 py-4 border-b border-border/50">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
+                                    <Lock className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-semibold text-foreground">Thông tin tài khoản</h3>
+                                    <p className="text-sm text-muted-foreground">
+                                        Thông tin đăng nhập của bệnh nhân (người quản lý tài khoản)
+                                    </p>
+                                </div>
                             </div>
-                            <Button type="button" variant="outline" size="sm" onClick={addProfile}>
-                                <Plus className="h-4 w-4 mr-2" />
-                                Thêm hồ sơ
-                            </Button>
+                        </div>
+                        <div className="p-6 space-y-5">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div>
+                                    <label className={labelClassName}>
+                                        <Mail className="h-4 w-4 text-muted-foreground" />
+                                        Email đăng nhập <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="email"
+                                        value={accountInfo.email}
+                                        onChange={e => handleAccountChange('email', e.target.value)}
+                                        placeholder="patient@example.com"
+                                        className={`${inputClassName} ${fieldErrors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''}`}
+                                        required
+                                    />
+                                    {fieldErrors.email && (
+                                        <div className="flex items-start gap-2 text-sm text-red-600 dark:text-red-400 mt-2">
+                                            <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                                            <span>{fieldErrors.email}</span>
+                                        </div>
+                                    )}
+                                </div>
+                                <div>
+                                    <label className={labelClassName}>
+                                        <Lock className="h-4 w-4 text-muted-foreground" />
+                                        Mật khẩu <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="password"
+                                        value={accountInfo.password}
+                                        onChange={e => handleAccountChange('password', e.target.value)}
+                                        placeholder="Tối thiểu 6 ký tự"
+                                        className={`${inputClassName} ${fieldErrors.password ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''}`}
+                                        required
+                                        minLength={6}
+                                    />
+                                    {fieldErrors.password && (
+                                        <div className="flex items-start gap-2 text-sm text-red-600 dark:text-red-400 mt-2">
+                                            <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                                            <span>{fieldErrors.password}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div>
+                                    <label className={labelClassName}>
+                                        <Phone className="h-4 w-4 text-muted-foreground" />
+                                        Số điện thoại đăng nhập <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="tel"
+                                        value={accountInfo.phone}
+                                        onChange={e => handleAccountChange('phone', e.target.value)}
+                                        placeholder="0123456789"
+                                        className={`${inputClassName} ${fieldErrors.phone ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''}`}
+                                        required
+                                    />
+                                    {fieldErrors.phone && (
+                                        <div className="flex items-start gap-2 text-sm text-red-600 dark:text-red-400 mt-2">
+                                            <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                                            <span>{fieldErrors.phone}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <div className="space-y-4">
-                        {profiles.map((profile, index) => {
-                            const isSelfProfile = profile.relationship === 'SELF'
-                            const isFirst = isFirstProfile(profile.id!)
-                            return (
-                                <div
-                                    key={`${profile.id}-${index}`}
-                                    className={`border rounded-lg p-5 space-y-4 ${
-                                        isSelfProfile
-                                            ? 'border-blue-500 dark:border-blue-400 bg-blue-50 dark:bg-blue-950/20'
-                                            : 'border-border bg-card'
-                                    }`}
-                                >
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center space-x-2">
-                                            <h4 className="font-medium text-foreground">
-                                                Hồ sơ {index + 1}
-                                                {isSelfProfile && (
-                                                    <span className="ml-2 text-xs bg-blue-600 dark:bg-blue-500 text-white px-2 py-1 rounded-full">
-                                                        Bản thân (Bắt buộc)
-                                                    </span>
-                                                )}
-                                            </h4>
-                                        </div>
-                                        {profiles.length > 1 && !isFirst && (
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => removeProfile(profile.id!)}
-                                                className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
-                                            >
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                        )}
+                    {/* Patient Profiles Section */}
+                    <div className="bg-card rounded-2xl shadow-sm border border-border/50 overflow-hidden">
+                        <div className="bg-gradient-to-r from-pink-500/10 to-rose-500/10 dark:from-pink-500/5 dark:to-rose-500/5 px-6 py-4 border-b border-border/50">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl bg-pink-500/20 flex items-center justify-center">
+                                        <Users className="h-5 w-5 text-pink-600 dark:text-pink-400" />
                                     </div>
-
-                                    {/* Avatar with Name Fields */}
-                                    <div className="flex items-start gap-4">
-                                        {/* Avatar Circle */}
-                                        <div>
-                                            <AvatarUpload
-                                                value={profile.avatar}
-                                                onChange={url => handleProfileChange(profile.id!, 'avatar', url)}
-                                            />
+                                    <div>
+                                        <h3 className="text-lg font-semibold text-foreground">Hồ sơ bệnh nhân</h3>
+                                        <p className="text-sm text-muted-foreground">
+                                            Ít nhất một hồ sơ với mối quan hệ "Bản thân" (bắt buộc)
+                                        </p>
+                                    </div>
+                                </div>
+                                <Button type="button" variant="outline" size="sm" onClick={addProfile} className="rounded-xl">
+                                    <Plus className="h-4 w-4 mr-2" />
+                                    Thêm hồ sơ
+                                </Button>
+                            </div>
+                        </div>
+                        <div className="p-6 space-y-6">
+                            {profiles.map((profile, index) => {
+                                const isSelfProfile = profile.relationship === 'SELF'
+                                const isFirst = isFirstProfile(profile.id!)
+                                return (
+                                    <div
+                                        key={`${profile.id}-${index}`}
+                                        className={`rounded-2xl p-6 space-y-5 transition-all ${
+                                            isSelfProfile
+                                                ? 'bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950/30 dark:to-cyan-950/30 border-2 border-blue-300 dark:border-blue-700'
+                                                : 'bg-muted/30 border border-border/50'
+                                        }`}
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <div
+                                                    className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold ${
+                                                        isSelfProfile
+                                                            ? 'bg-blue-500 text-white'
+                                                            : 'bg-muted-foreground/20 text-muted-foreground'
+                                                    }`}
+                                                >
+                                                    {index + 1}
+                                                </div>
+                                                <h4 className="font-semibold text-foreground">
+                                                    Hồ sơ {index + 1}
+                                                    {isSelfProfile && (
+                                                        <span className="ml-2 text-xs bg-blue-600 text-white px-2 py-1 rounded-full">
+                                                            Bản thân (Bắt buộc)
+                                                        </span>
+                                                    )}
+                                                </h4>
+                                            </div>
+                                            {profiles.length > 1 && !isFirst && (
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => removeProfile(profile.id!)}
+                                                    className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950 rounded-xl"
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            )}
                                         </div>
 
-                                        {/* Họ bệnh nhân and Giới tính */}
-                                        <div className="flex-1 grid grid-cols-2 gap-4">
-                                            <div className="space-y-2">
-                                                <label
-                                                    htmlFor={`lastName-${profile.id}`}
-                                                    className="block text-sm font-medium text-foreground"
-                                                >
-                                                    Họ bệnh nhân *
+                                        {/* Avatar with Name Fields */}
+                                        <div className="flex flex-col md:flex-row items-start gap-6">
+                                            <div className="flex flex-col items-center">
+                                                <AvatarUpload
+                                                    value={profile.avatar}
+                                                    onChange={url => handleProfileChange(profile.id!, 'avatar', url)}
+                                                />
+                                                <span className="text-xs text-muted-foreground mt-2">Ảnh đại diện</span>
+                                            </div>
+
+                                            <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-5">
+                                                <div>
+                                                    <label className={labelClassName}>
+                                                        <User className="h-4 w-4 text-muted-foreground" />
+                                                        Họ bệnh nhân <span className="text-red-500">*</span>
+                                                    </label>
+                                                    <input
+                                                        value={profile.lastName}
+                                                        onChange={e =>
+                                                            handleProfileChange(profile.id!, 'lastName', e.target.value)
+                                                        }
+                                                        placeholder="Nguyễn"
+                                                        className={inputClassName}
+                                                        required
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className={labelClassName}>
+                                                        <User className="h-4 w-4 text-muted-foreground" />
+                                                        Tên bệnh nhân <span className="text-red-500">*</span>
+                                                    </label>
+                                                    <input
+                                                        value={profile.firstName}
+                                                        onChange={e =>
+                                                            handleProfileChange(profile.id!, 'firstName', e.target.value)
+                                                        }
+                                                        placeholder="Văn A"
+                                                        className={inputClassName}
+                                                        required
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
+                                            <div>
+                                                <label className={labelClassName}>
+                                                    <User className="h-4 w-4 text-muted-foreground" />
+                                                    Giới tính <span className="text-red-500">*</span>
+                                                </label>
+                                                <FormSelect
+                                                    value={profile.gender}
+                                                    onChange={(value) =>
+                                                        handleProfileChange(profile.id!, 'gender', value)
+                                                    }
+                                                    options={genderOptions}
+                                                    placeholder="Chọn giới tính"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className={labelClassName}>
+                                                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                                                    Ngày sinh <span className="text-red-500">*</span>
+                                                </label>
+                                                <FormDatePicker
+                                                    value={profile.dateOfBirth}
+                                                    onChange={(value) =>
+                                                        handleProfileChange(profile.id!, 'dateOfBirth', value)
+                                                    }
+                                                    maxValue={new Date().toISOString().split('T')[0]}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className={labelClassName}>
+                                                    <Phone className="h-4 w-4 text-muted-foreground" />
+                                                    Số điện thoại <span className="text-red-500">*</span>
                                                 </label>
                                                 <input
-                                                    id={`lastName-${profile.id}`}
-                                                    value={profile.lastName}
+                                                    type="tel"
+                                                    value={profile.phone}
                                                     onChange={e =>
-                                                        handleProfileChange(profile.id!, 'lastName', e.target.value)
+                                                        handleProfileChange(profile.id!, 'phone', e.target.value)
                                                     }
-                                                    placeholder="Nguyễn"
+                                                    placeholder="0123456789"
                                                     className={inputClassName}
                                                     required
                                                 />
                                             </div>
-                                            <div className="space-y-2">
-                                                <label
-                                                    htmlFor={`gender-${profile.id}`}
-                                                    className="block text-sm font-medium text-foreground"
-                                                >
-                                                    Giới tính *
+                                            <div>
+                                                <label className={labelClassName}>
+                                                    <Heart className="h-4 w-4 text-muted-foreground" />
+                                                    Mối quan hệ <span className="text-red-500">*</span>
                                                 </label>
-                                                <select
-                                                    value={profile.gender}
-                                                    onChange={e =>
-                                                        handleProfileChange(profile.id!, 'gender', e.target.value)
+                                                <FormSelect
+                                                    value={profile.relationship}
+                                                    onChange={(value) =>
+                                                        handleProfileChange(profile.id!, 'relationship', value)
                                                     }
-                                                    className={inputClassName}
-                                                >
-                                                    {genderOptions.map(option => (
-                                                        <option key={option.value} value={option.value}>
-                                                            {option.label}
-                                                        </option>
-                                                    ))}
-                                                </select>
+                                                    options={relationshipOptions
+                                                        .filter(option => isFirst || option.value !== 'SELF')
+                                                    }
+                                                    disabled={isFirst}
+                                                    placeholder="Chọn mối quan hệ"
+                                                />
+                                                {isFirst && (
+                                                    <p className="text-xs text-muted-foreground mt-1">
+                                                        Không thể thay đổi
+                                                    </p>
+                                                )}
                                             </div>
                                         </div>
-                                    </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <label
-                                                htmlFor={`firstName-${profile.id}`}
-                                                className="block text-sm font-medium text-foreground"
-                                            >
-                                                Tên bệnh nhân *
+                                        <div>
+                                            <label className={labelClassName}>
+                                                <MapPin className="h-4 w-4 text-muted-foreground" />
+                                                Địa chỉ
                                             </label>
-                                            <input
-                                                id={`firstName-${profile.id}`}
-                                                value={profile.firstName}
-                                                onChange={e =>
-                                                    handleProfileChange(profile.id!, 'firstName', e.target.value)
-                                                }
-                                                placeholder="Văn A"
+                                            <textarea
+                                                value={profile.address || ''}
+                                                onChange={e => handleProfileChange(profile.id!, 'address', e.target.value)}
+                                                placeholder="Nhập địa chỉ"
+                                                rows={2}
                                                 className={inputClassName}
-                                                required
                                             />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label
-                                                htmlFor={`dateOfBirth-${profile.id}`}
-                                                className="block text-sm font-medium text-foreground"
-                                            >
-                                                Ngày sinh *
-                                            </label>
-                                            <input
-                                                id={`dateOfBirth-${profile.id}`}
-                                                type="date"
-                                                value={profile.dateOfBirth}
-                                                onChange={e =>
-                                                    handleProfileChange(profile.id!, 'dateOfBirth', e.target.value)
-                                                }
-                                                max={new Date().toISOString().split('T')[0]}
-                                                className={inputClassName}
-                                                required
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label
-                                                htmlFor={`profilePhone-${profile.id}`}
-                                                className="block text-sm font-medium text-foreground"
-                                            >
-                                                Số điện thoại liên lạc *
-                                            </label>
-                                            <input
-                                                id={`profilePhone-${profile.id}`}
-                                                type="tel"
-                                                value={profile.phone}
-                                                onChange={e =>
-                                                    handleProfileChange(profile.id!, 'phone', e.target.value)
-                                                }
-                                                placeholder="0123456789"
-                                                className={inputClassName}
-                                                required
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label
-                                                htmlFor={`relationship-${profile.id}`}
-                                                className="block text-sm font-medium text-foreground"
-                                            >
-                                                Mối quan hệ *
-                                            </label>
-                                            <select
-                                                value={profile.relationship}
-                                                onChange={e =>
-                                                    handleProfileChange(profile.id!, 'relationship', e.target.value)
-                                                }
-                                                disabled={isFirst}
-                                                className={`${inputClassName} ${isFirst ? 'opacity-60 cursor-not-allowed' : ''}`}
-                                            >
-                                                {relationshipOptions
-                                                    .filter(option => isFirst || option.value !== 'SELF')
-                                                    .map(option => (
-                                                        <option key={option.value} value={option.value}>
-                                                            {option.label}
-                                                        </option>
-                                                    ))}
-                                            </select>
-                                            {isFirst && (
-                                                <p className="text-xs text-muted-foreground">
-                                                    Mối quan hệ &quot;Bản thân&quot; là bắt buộc và không thể thay đổi
-                                                </p>
-                                            )}
                                         </div>
                                     </div>
-
-                                    <div className="space-y-2">
-                                        <label
-                                            htmlFor={`address-${profile.id}`}
-                                            className="block text-sm font-medium text-foreground"
-                                        >
-                                            Địa chỉ (Tùy chọn)
-                                        </label>
-                                        <textarea
-                                            id={`address-${profile.id}`}
-                                            value={profile.address || ''}
-                                            onChange={e => handleProfileChange(profile.id!, 'address', e.target.value)}
-                                            placeholder="Nhập địa chỉ"
-                                            rows={2}
-                                            className={inputClassName}
-                                        />
-                                    </div>
-                                </div>
-                            )
-                        })}
+                                )
+                            })}
+                        </div>
                     </div>
-                </div>
 
-                {/* Submit Button */}
-                <div className="flex justify-end space-x-4 bg-card rounded-lg shadow-sm border border-border p-6">
-                    <Button type="button" variant="outline" onClick={() => router.back()}>
-                        Hủy
-                    </Button>
-                    <Button type="submit" isDisabled={!canSubmit || createPatient.isPending}>
-                        {createPatient.isPending ? 'Đang tạo...' : 'Tạo tài khoản bệnh nhân'}
-                    </Button>
-                </div>
-            </form>
+                    {/* Submit Button */}
+                    <div className="flex items-center justify-between gap-4 bg-card rounded-2xl shadow-sm border border-border/50 p-6">
+                        <div className="text-sm text-muted-foreground">
+                            {!canSubmit && (
+                                <span className="flex items-center gap-2">
+                                    <AlertCircle className="h-4 w-4 text-amber-500" />
+                                    Vui lòng điền đầy đủ các trường bắt buộc
+                                </span>
+                            )}
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <Button type="button" variant="outline" onClick={() => router.back()} className="rounded-xl">
+                                Hủy
+                            </Button>
+                            <Button
+                                type="submit"
+                                isDisabled={!canSubmit || createPatient.isPending}
+                                className="rounded-xl px-6 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600"
+                            >
+                                {createPatient.isPending ? (
+                                    <>
+                                        <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin mr-2" />
+                                        Đang tạo...
+                                    </>
+                                ) : (
+                                    'Tạo tài khoản bệnh nhân'
+                                )}
+                            </Button>
+                        </div>
+                    </div>
+                </form>
+            </div>
         </div>
     )
 }

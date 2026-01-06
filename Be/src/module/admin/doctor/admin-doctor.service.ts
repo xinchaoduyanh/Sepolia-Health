@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Role, UserStatus } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
 import {
   CreateDoctorDto,
   CreateDoctorResponseDto,
@@ -33,6 +34,17 @@ export class AdminDoctorService {
 
     if (existingUser) {
       throw new ConflictException('Email đã được sử dụng');
+    }
+
+    // Check if phone already exists
+    if (doctorData.phone) {
+      const existingPhone = await this.prisma.user.findUnique({
+        where: { phone: doctorData.phone },
+      });
+
+      if (existingPhone) {
+        throw new ConflictException('Số điện thoại đã được sử dụng');
+      }
     }
 
     // Validate clinic
@@ -68,22 +80,31 @@ export class AdminDoctorService {
 
     // Create user and doctor profile + relations
     const result = await this.prisma.$transaction(async (tx) => {
+      // Hash password
+      const hashedPassword = await bcrypt.hash(password, 10);
+
       // Create user
       const user = await tx.user.create({
         data: {
           email,
-          password: password, // Store password as plain text
+          password: hashedPassword,
+          phone: doctorData.phone,
           role: Role.DOCTOR,
           status: UserStatus.ACTIVE,
         },
       });
 
+      // Split fullName: First part as lastName (Họ), rest as firstName (Tên + Tên đệm)
+      const nameParts = doctorData.fullName.trim().split(' ');
+      const lastName = nameParts[0] || '';
+      const firstName = nameParts.slice(1).join(' ') || '';
+
       // Create doctor profile
       const doctorProfile = await tx.doctorProfile.create({
         data: {
           userId: user.id,
-          firstName: doctorData.fullName.split(' ')[0] || '',
-          lastName: doctorData.fullName.split(' ').slice(1).join(' ') || '',
+          firstName: firstName,
+          lastName: lastName,
           experience: doctorData.experienceYears?.toString() || '',
           contactInfo: doctorData.phone,
           clinicId: doctorData.clinicId,
@@ -429,17 +450,39 @@ export class AdminDoctorService {
     // Prepare update data based on the DTO
     const updateData: any = {};
     if (updateDoctorDto.fullName) {
-      const nameParts = updateDoctorDto.fullName.split(' ');
-      updateData.firstName = nameParts[0];
-      updateData.lastName = nameParts.slice(1).join(' ');
+      const nameParts = updateDoctorDto.fullName.trim().split(' ');
+      updateData.lastName = nameParts[0] || '';
+      updateData.firstName = nameParts.slice(1).join(' ') || '';
     }
     if (updateDoctorDto.experienceYears !== undefined)
       updateData.experience = updateDoctorDto.experienceYears.toString();
-    if (updateDoctorDto.phone) updateData.contactInfo = updateDoctorDto.phone;
+    
+    // Check if phone already exists when updating
+    if (updateDoctorDto.phone) {
+      const existingPhone = await this.prisma.user.findFirst({
+        where: {
+          phone: updateDoctorDto.phone,
+          NOT: { id: doctor.userId },
+        },
+      });
+
+      if (existingPhone) {
+        throw new ConflictException('Số điện thoại đã được sử dụng bởi người dùng khác');
+      }
+      updateData.contactInfo = updateDoctorDto.phone;
+    }
 
     const updatedDoctor = await this.prisma.$transaction(async (tx) => {
+      // Update User phone if provided
+      if (updateDoctorDto.phone) {
+        await tx.user.update({
+          where: { id: doctor.userId },
+          data: { phone: updateDoctorDto.phone },
+        });
+      }
+
       // Update doctor profile
-      const doctor = await tx.doctorProfile.update({
+      const updatedProfile = await tx.doctorProfile.update({
         where: { id },
         data: updateData,
         include: {
@@ -468,7 +511,7 @@ export class AdminDoctorService {
         }
       }
 
-      return doctor;
+      return updatedProfile;
     });
 
     // Get updated services and specialties

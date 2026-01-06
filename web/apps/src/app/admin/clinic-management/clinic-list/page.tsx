@@ -5,11 +5,11 @@ import { DataTable } from '@workspace/ui/components/DataTable'
 import { BsSearchField } from '@workspace/ui/components/Searchfield'
 import { Pagination } from '@workspace/ui/components/Pagination'
 import { Button } from '@workspace/ui/components/Button'
-import { Eye, Plus, Trash2 } from 'lucide-react'
-import { useClinics, useDeleteClinic } from '@/shared/hooks'
+import { confirm } from '@workspace/ui/components/ConfirmDialog'
+import { Eye, Plus, Trash2, Lock, LockOpen } from 'lucide-react'
+import { useClinics, useDeleteClinic, useUpdateClinic } from '@/shared/hooks'
 import { Skeleton } from '@workspace/ui/components/Skeleton'
 import { Badge } from '@workspace/ui/components/Badge'
-
 // Skeleton table component for loading state
 const SkeletonTable = ({ columns }: { columns: any[] }) => {
     return (
@@ -74,12 +74,51 @@ const SkeletonTable = ({ columns }: { columns: any[] }) => {
 // Action cell component
 function ActionCell({ clinic }: { clinic: any }) {
     const deleteClinic = useDeleteClinic()
+    const updateClinic = useUpdateClinic()
 
     const handleDelete = () => {
-        if (confirm('Bạn có chắc chắn muốn xóa phòng khám này?')) {
-            deleteClinic.mutate(clinic.id)
-        }
+        confirm({
+            title: 'Xóa phòng khám',
+            description: `Bạn có chắc chắn muốn xóa phòng khám "${clinic.name}"? Hành động này không thể hoàn tác.`,
+            variant: 'destructive',
+            action: {
+                label: 'Xóa',
+                onClick: () => deleteClinic.mutate(clinic.id),
+            },
+            cancel: {
+                label: 'Hủy',
+                onClick: () => {},
+            },
+        })
     }
+
+    const handleToggleActive = () => {
+        const newStatus = !clinic.isActive
+        const isActivating = newStatus
+
+        confirm({
+            title: isActivating ? 'Kích hoạt phòng khám' : 'Tạm ngừng phòng khám',
+            description: isActivating
+                ? `Bạn có chắc chắn muốn kích hoạt phòng khám "${clinic.name}"?`
+                : `Bạn có chắc chắn muốn tạm ngừng hoạt động phòng khám "${clinic.name}"?`,
+            variant: isActivating ? 'default' : 'destructive',
+            action: {
+                label: isActivating ? 'Kích hoạt' : 'Tạm ngừng',
+                onClick: () =>
+                    updateClinic.mutate({
+                        id: clinic.id,
+                        data: { isActive: newStatus },
+                    }),
+            },
+            cancel: {
+                label: 'Hủy',
+                onClick: () => {},
+            },
+        })
+    }
+
+    const isUpdating = updateClinic.isPending
+
 
     return (
         <div className="flex items-center justify-center space-x-1">
@@ -94,7 +133,26 @@ function ActionCell({ clinic }: { clinic: any }) {
             <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                className={`h-8 w-8 p-0 ${
+                    clinic.isActive
+                        ? 'text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950'
+                        : 'text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-950'
+                }`}
+                onClick={handleToggleActive}
+                isDisabled={isUpdating}
+            >
+                {isUpdating ? (
+                    <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                ) : clinic.isActive ? (
+                    <LockOpen className="h-4 w-4" />
+                ) : (
+                    <Lock className="h-4 w-4" />
+                )}
+            </Button>
+            <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
                 onClick={handleDelete}
             >
                 <Trash2 className="h-4 w-4" />
@@ -102,6 +160,8 @@ function ActionCell({ clinic }: { clinic: any }) {
         </div>
     )
 }
+
+
 
 const columns: any[] = [
     {
