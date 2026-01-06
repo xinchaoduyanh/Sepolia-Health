@@ -1,5 +1,5 @@
-import type { Channel as StreamChannel } from 'stream-chat';
 import { ChatbotAPI } from '@/lib/api/chatbot';
+import type { Channel as StreamChannel } from 'stream-chat';
 
 export interface ChatUserInfo {
   name: string;
@@ -25,7 +25,12 @@ export async function getChatUserInfo(
   const isBotMessage = userId === botUserId;
   const isMyMessage = currentUserId ? userId === currentUserId : false;
 
-  console.log('getChatUserInfo:', { userId, isBotMessage, isMyMessage, hasMessageUser: !!messageUser });
+  console.log('getChatUserInfo:', {
+    userId,
+    isBotMessage,
+    isMyMessage,
+    hasMessageUser: !!messageUser,
+  });
 
   // 1. First try to get from message.user (most immediate)
   if (messageUser?.name) {
@@ -52,7 +57,7 @@ export async function getChatUserInfo(
   if (channel && !isBotMessage) {
     try {
       const members = await channel.queryMembers({});
-      const member = members.members.find(m => m.user_id === userId && m.user?.name);
+      const member = members.members.find((m) => m.user_id === userId && m.user?.name);
       if (member?.user?.name) {
         console.log('Using fresh channel query data:', member.user.name);
         return {
@@ -68,7 +73,7 @@ export async function getChatUserInfo(
   // 4. Bot message specific handling
   if (isBotMessage && channel) {
     const botMember = channel.state?.members?.[botUserId];
-    if (botMember?.user?.name) {
+    if (botMember?.user?.image) {
       console.log('Using bot member data:', botMember.user.name);
       return {
         name: botMember.user.name,
@@ -82,7 +87,8 @@ export async function getChatUserInfo(
     console.log('Using AI bot fallback');
     return {
       name: 'Trợ lý Y tế Thông minh',
-      image: undefined,
+      image:
+        'https://do-an-tot-nghiep-ptit.s3.ap-southeast-1.amazonaws.com/patient-avatars/612-727-1763463617117.jpg',
     };
   }
 
@@ -149,7 +155,8 @@ export function getChatUserInfoSync(
   if (isBotMessage) {
     return {
       name: 'Trợ lý Y tế Thông minh',
-      image: undefined,
+      image:
+        'https://do-an-tot-nghiep-ptit.s3.ap-southeast-1.amazonaws.com/patient-avatars/612-727-1763463617117.jpg',
     };
   }
 
@@ -181,7 +188,7 @@ export function getUserInitials(name: string): string {
 
   return name
     .split(' ')
-    .map(word => word.charAt(0))
+    .map((word) => word.charAt(0))
     .join('')
     .toUpperCase()
     .slice(0, 2);

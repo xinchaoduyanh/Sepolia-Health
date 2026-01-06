@@ -1,15 +1,16 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { View, ActivityIndicator, Text, TouchableOpacity, Alert, Image } from 'react-native';
-import { useLocalSearchParams, Stack, useRouter, useNavigation } from 'expo-router';
-import { Channel, MessageList } from 'stream-chat-expo';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useChatContext } from '@/contexts/ChatContext';
-import { Ionicons } from '@expo/vector-icons';
-import { CustomMessage } from '@/components/CustomMessage';
 import { CustomDateSeparator } from '@/components/CustomDateSeparator';
+import { CustomMessage } from '@/components/CustomMessage';
 import { CustomMessageInput } from '@/components/CustomMessageInput';
-import Constants from 'expo-constants';
+import { useChatContext } from '@/contexts/ChatContext';
 import { ChatbotAPI } from '@/lib/api/chatbot';
+import { getChatUserInfo } from '@/lib/utils/chat-user-data';
+import { Ionicons } from '@expo/vector-icons';
+import Constants from 'expo-constants';
+import { Stack, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, Image, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Channel, MessageList } from 'stream-chat-expo';
 
 // Lazy import useVideoContext
 const isExpoGo = Constants.appOwnership === 'expo';
@@ -170,60 +171,35 @@ export default function ChannelScreen() {
               channel.data?.consultation_type === 'ai_assistant';
             setIsAIChannel(channelIsAI);
 
-            // Get other user's avatar and name
+            // Get other user's avatar and name using robust utility
             try {
               const botUserId = ChatbotAPI.getAIBotUserId();
-              const members = await channel.queryMembers({});
-              console.log(
-                'Channel members:',
-                members.members.map((m) => ({
-                  user_id: m.user_id,
-                  name: m.user?.name,
-                  image: m.user?.image,
-                }))
+
+              // Find other user ID (not current user)
+              const members = channel.state?.members ? Object.values(channel.state.members) : [];
+              const otherMember = members.find((m) => m.user_id !== currentUserIdRef.current);
+              const targetUserId = otherMember?.user_id || (channelIsAI ? botUserId : '');
+
+              console.log('Fetching other user info for header:', { targetUserId, channelIsAI });
+
+              // Try to find a message from this user to get fresh data
+              const lastOtherMessage = channel.state.messages.findLast(
+                (m) => m.user?.id === targetUserId && m.user?.name
               );
-              // Use StreamChat user ID from ref
-              const currentUserId = currentUserIdRef.current;
-              console.log('Current user ID (StreamChat):', currentUserId);
-              console.log('Bot user ID:', botUserId);
 
-              if (members.members && members.members.length > 0) {
-                // For AI channels, find bot user
-                if (channelIsAI) {
-                  const botMember = members.members.find((m) => m.user_id === botUserId);
-                  console.log(
-                    'AI Bot member found:',
-                    botMember?.user?.name,
-                    'image:',
-                    botMember?.user?.image
-                  );
+              const userInfo = await getChatUserInfo(targetUserId, lastOtherMessage?.user, {
+                channel,
+                currentUserId: currentUserIdRef.current,
+              });
 
-                  if (botMember?.user?.image) {
-                    setOtherUserAvatar(botMember.user.image as string);
-                  }
-                  if (botMember?.user?.name) {
-                    setOtherUserName(botMember.user.name as string);
-                  }
-                } else {
-                  // For regular channels, find other member using StreamChat user ID
-                  const otherMember = members.members.find((m) => m.user_id !== currentUserId);
-                  console.log(
-                    'Other member found:',
-                    otherMember?.user?.name,
-                    'image:',
-                    otherMember?.user?.image
-                  );
+              console.log('Header user info retrieved:', userInfo);
 
-                  if (otherMember?.user?.image) {
-                    setOtherUserAvatar(otherMember.user.image as string);
-                  }
-                  if (otherMember?.user?.name) {
-                    setOtherUserName(otherMember.user.name as string);
-                  }
-                }
+              if (isMounted) {
+                setOtherUserAvatar(userInfo.image || null);
+                setOtherUserName(userInfo.name);
               }
             } catch (err: any) {
-              console.error('Failed to get channel members:', err);
+              console.error('Failed to get channel members info for header:', err);
             }
 
             if (isMounted) {
@@ -265,60 +241,38 @@ export default function ChannelScreen() {
               channel.data?.consultation_type === 'ai_assistant';
             setIsAIChannel(channelIsAI);
 
-            // Get other user's avatar and name
+            // Get other user's avatar and name using robust utility
             try {
               const botUserId = ChatbotAPI.getAIBotUserId();
-              const members = await channel.queryMembers({});
-              console.log(
-                'Fallback - Channel members:',
-                members.members.map((m) => ({
-                  user_id: m.user_id,
-                  name: m.user?.name,
-                  image: m.user?.image,
-                }))
+
+              // Find other user ID (not current user)
+              const members = channel.state?.members ? Object.values(channel.state.members) : [];
+              const otherMember = members.find((m) => m.user_id !== currentUserIdRef.current);
+              const targetUserId = otherMember?.user_id || (channelIsAI ? botUserId : '');
+
+              console.log('Fallback - Fetching other user info for header:', {
+                targetUserId,
+                channelIsAI,
+              });
+
+              // Try to find a message from this user to get fresh data
+              const lastOtherMessage = channel.state.messages.findLast(
+                (m) => m.user?.id === targetUserId && m.user?.name
               );
-              // Use StreamChat user ID from ref
-              const currentUserId = currentUserIdRef.current;
-              console.log('Fallback - Current user ID (StreamChat):', currentUserId);
-              console.log('Fallback - Bot user ID:', botUserId);
 
-              if (members.members && members.members.length > 0) {
-                // For AI channels, find bot user
-                if (channelIsAI) {
-                  const botMember = members.members.find((m) => m.user_id === botUserId);
-                  console.log(
-                    'Fallback - AI Bot member found:',
-                    botMember?.user?.name,
-                    'image:',
-                    botMember?.user?.image
-                  );
+              const userInfo = await getChatUserInfo(targetUserId, lastOtherMessage?.user, {
+                channel,
+                currentUserId: currentUserIdRef.current,
+              });
 
-                  if (botMember?.user?.image) {
-                    setOtherUserAvatar(botMember.user.image as string);
-                  }
-                  if (botMember?.user?.name) {
-                    setOtherUserName(botMember.user.name as string);
-                  }
-                } else {
-                  // For regular channels, find other member using StreamChat user ID
-                  const otherMember = members.members.find((m) => m.user_id !== currentUserId);
-                  console.log(
-                    'Fallback - Other member found:',
-                    otherMember?.user?.name,
-                    'image:',
-                    otherMember?.user?.image
-                  );
+              console.log('Fallback - Header user info retrieved:', userInfo);
 
-                  if (otherMember?.user?.image) {
-                    setOtherUserAvatar(otherMember.user.image as string);
-                  }
-                  if (otherMember?.user?.name) {
-                    setOtherUserName(otherMember.user.name as string);
-                  }
-                }
+              if (isMounted) {
+                setOtherUserAvatar(userInfo.image || null);
+                setOtherUserName(userInfo.name);
               }
             } catch (err: any) {
-              console.error('Failed to get channel members:', err);
+              console.error('Fallback - Failed to get channel members info for header:', err);
             }
 
             if (isMounted) {
@@ -499,14 +453,8 @@ export default function ChannelScreen() {
             fontWeight: 'bold',
           },
           headerLeft: () => (
-            <TouchableOpacity
-              onPress={() => router.back()}
-              style={{ marginLeft: 16 }}>
-              <Ionicons 
-                name="arrow-back" 
-                size={24} 
-                color="white" 
-              />
+            <TouchableOpacity onPress={() => router.back()} style={{ marginLeft: 16 }}>
+              <Ionicons name="arrow-back" size={24} color="white" />
             </TouchableOpacity>
           ),
           headerTitle: () => (

@@ -1,15 +1,16 @@
 'use client'
 
-import { useState, useMemo, useEffect, useCallback } from 'react'
-import { DataTable } from '@workspace/ui/components/DataTable'
-import { BsSearchField } from '@workspace/ui/components/Searchfield'
-import { Pagination } from '@workspace/ui/components/Pagination'
+import { useClinics, useDeleteClinic, useUpdateClinic } from '@/shared/hooks'
+import { Badge } from '@workspace/ui/components/Badge'
 import { Button } from '@workspace/ui/components/Button'
 import { confirm } from '@workspace/ui/components/ConfirmDialog'
-import { Eye, Plus, Trash2, Lock, LockOpen } from 'lucide-react'
-import { useClinics, useDeleteClinic, useUpdateClinic } from '@/shared/hooks'
+import { DataTable } from '@workspace/ui/components/DataTable'
+import { Pagination } from '@workspace/ui/components/Pagination'
+import { BsSearchField } from '@workspace/ui/components/Searchfield'
 import { Skeleton } from '@workspace/ui/components/Skeleton'
-import { Badge } from '@workspace/ui/components/Badge'
+import { Eye, Lock, LockOpen, Plus, Trash2 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 // Skeleton table component for loading state
 const SkeletonTable = ({ columns }: { columns: any[] }) => {
     return (
@@ -76,6 +77,8 @@ function ActionCell({ clinic }: { clinic: any }) {
     const deleteClinic = useDeleteClinic()
     const updateClinic = useUpdateClinic()
 
+    const router = useRouter()
+
     const handleDelete = () => {
         confirm({
             title: 'Xóa phòng khám',
@@ -119,14 +122,13 @@ function ActionCell({ clinic }: { clinic: any }) {
 
     const isUpdating = updateClinic.isPending
 
-
     return (
         <div className="flex items-center justify-center space-x-1">
             <Button
                 variant="ghost"
                 size="sm"
                 className="h-8 w-8 p-0"
-                onClick={() => (window.location.href = `/admin/clinic-management/${clinic.id}`)}
+                onClick={() => router.push(`/admin/clinic-management/${clinic.id}`)}
             >
                 <Eye className="h-4 w-4" />
             </Button>
@@ -160,8 +162,6 @@ function ActionCell({ clinic }: { clinic: any }) {
         </div>
     )
 }
-
-
 
 const columns: any[] = [
     {
@@ -257,6 +257,7 @@ const columns: any[] = [
 ]
 
 export default function ClinicListPage() {
+    const router = useRouter()
     const [searchTerm, setSearchTerm] = useState('')
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState<string>('')
     const [currentPage, setCurrentPage] = useState(1)
@@ -311,7 +312,7 @@ export default function ClinicListPage() {
                 </div>
                 <Button
                     className="flex items-center space-x-2"
-                    onClick={() => (window.location.href = '/admin/clinic-management/create')}
+                    onClick={() => router.push('/admin/clinic-management/create')}
                 >
                     <Plus className="h-4 w-4" />
                     <span>Thêm phòng khám mới</span>

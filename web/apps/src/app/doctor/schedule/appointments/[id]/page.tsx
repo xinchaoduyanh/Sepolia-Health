@@ -398,9 +398,6 @@ export default function AppointmentDetailPage() {
                                         onClick={() =>
                                             router.push(`/doctor/patient/${appointment.patient?.id}/history`)
                                         }
-                                        onClick={() =>
-                                            router.push(`/doctor/patient/${appointment.patient?.id}/history`)
-                                        }
                                         className="flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-primary hover:bg-primary/90 text-white rounded-lg transition-all duration-200 hover:scale-105 shadow-md hover:shadow-lg"
                                     >
                                         <History className="h-4 w-4" />
@@ -805,10 +802,6 @@ export default function AppointmentDetailPage() {
                                                         uploadFileMutation.isPending ||
                                                         (appointment.result?.files?.length || 0) >= 10
                                                     }
-                                                    disabled={
-                                                        uploadFileMutation.isPending ||
-                                                        (appointment.result?.files?.length || 0) >= 10
-                                                    }
                                                 />
                                                 <label
                                                     htmlFor="file-upload"
@@ -825,11 +818,6 @@ export default function AppointmentDetailPage() {
                                             <button
                                                 type="button"
                                                 onClick={handleFileUpload}
-                                                disabled={
-                                                    !selectedFile ||
-                                                    uploadFileMutation.isPending ||
-                                                    (appointment.result?.files?.length || 0) >= 10
-                                                }
                                                 disabled={
                                                     !selectedFile ||
                                                     uploadFileMutation.isPending ||
@@ -866,7 +854,6 @@ export default function AppointmentDetailPage() {
                                         <div className="space-y-2">
                                             <p className="text-xs font-medium text-muted-foreground">Danh sách file:</p>
                                             <div className="space-y-2">
-                                                {appointment.result.files.map(file => (
                                                 {appointment.result.files.map(file => (
                                                     <div
                                                         key={file.id}

@@ -1,9 +1,9 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, Image } from 'react-native';
+import { useAuth } from '@/lib/hooks/useAuth';
 import { Ionicons } from '@expo/vector-icons';
 import { format, isToday, isYesterday } from 'date-fns';
 import { vi } from 'date-fns/locale';
-import { useAuth } from '@/lib/hooks/useAuth';
+import React from 'react';
+import { Image, Text, TouchableOpacity, View } from 'react-native';
 import type { Channel } from 'stream-chat';
 
 interface CustomChannelPreviewProps {
@@ -79,10 +79,19 @@ const getAIBotInfo = async (channel: Channel): Promise<{ name: string; avatar: s
       }
     }
 
-    return null;
+    // Final fallback
+    return {
+      name: 'Trợ lý Y tế Thông minh',
+      avatar:
+        'https://do-an-tot-nghiep-ptit.s3.ap-southeast-1.amazonaws.com/patient-avatars/612-727-1763463617117.jpg',
+    };
   } catch (error) {
     console.error('Error getting AI bot info:', error);
-    return null;
+    return {
+      name: 'Trợ lý Y tế Thông minh',
+      avatar:
+        'https://do-an-tot-nghiep-ptit.s3.ap-southeast-1.amazonaws.com/patient-avatars/612-727-1763463617117.jpg',
+    };
   }
 };
 

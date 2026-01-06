@@ -48,7 +48,10 @@ export function useCreateClinic() {
         mutationFn: (data: CreateClinicRequest) => clinicsService.createClinic(data),
         onSuccess: _response => {
             queryClient.invalidateQueries({
-                queryKey: queryKeys.admin.clinics.lists(),
+                queryKey: queryKeys.admin.clinics.all(),
+            })
+            queryClient.invalidateQueries({
+                queryKey: queryKeys.admin.statistics.all(),
             })
 
             toast.success({
@@ -75,11 +78,17 @@ export function useUpdateClinic() {
     return useMutation({
         mutationFn: ({ id, data }: { id: number; data: UpdateClinicRequest }) => clinicsService.updateClinic(id, data),
         onSuccess: (_response, { id }) => {
+            // Invalidate all clinic-related queries to ensure the list is updated
             queryClient.invalidateQueries({
-                queryKey: queryKeys.admin.clinics.lists(),
+                queryKey: queryKeys.admin.clinics.all(),
             })
+            // Specifically invalidate detail for good measure
             queryClient.invalidateQueries({
                 queryKey: queryKeys.admin.clinics.detail(id.toString()),
+            })
+            // Invalidate statistics as they might be affected
+            queryClient.invalidateQueries({
+                queryKey: queryKeys.admin.statistics.all(),
             })
 
             toast.success({
@@ -107,7 +116,10 @@ export function useDeleteClinic() {
         mutationFn: (id: number) => clinicsService.deleteClinic(id),
         onSuccess: () => {
             queryClient.invalidateQueries({
-                queryKey: queryKeys.admin.clinics.lists(),
+                queryKey: queryKeys.admin.clinics.all(),
+            })
+            queryClient.invalidateQueries({
+                queryKey: queryKeys.admin.statistics.all(),
             })
 
             toast.success({
