@@ -1,14 +1,17 @@
-import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/common/prisma/prisma.service';
-import { addDays, format, parse, isBefore, isValid } from 'date-fns';
+import { Injectable } from '@nestjs/common';
+import { addDays, format, isBefore, isValid, parse } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import Fuse from 'fuse.js';
+
+const APP_TIMEZONE_OFFSET = 7; // GMT+7
 
 interface DoctorScheduleParams {
   doctorId?: number;
   doctorName?: string;
-  date?: string; // YYYY-MM-DD hoặc text tiếng Việt (ví dụ: "Thứ 4 tuần này", "ngày mai")
+  date?: string; // YYYY-MM-DD
   serviceId?: number;
+  serviceName?: string; // Tên dịch vụ để tính duration
 }
 
 @Injectable()
@@ -36,45 +39,43 @@ export class DoctorScheduleTool {
         };
       }
 
-      // 3. XỬ LÝ NGÀY: Bây giờ tin tưởng AI gửi xuống YYYY-MM-DD
-      let targetDate = new Date();
+      // 3. XỬ LÝ NGÀY & TIMEZONE (UTC+7)
+      let targetDate: Date;
+      const now = new Date();
+      // Chuyển sang giờ VN để xác định "hôm nay"
+      const vnNow = new Date(now.getTime() + APP_TIMEZONE_OFFSET * 3600000);
+      const vnToday = new Date(vnNow);
+      vnToday.setUTCHours(0, 0, 0, 0);
 
       if (params.date) {
-        // AI hứa gửi YYYY-MM-DD, mình parse thẳng luôn
         const parsedDate = parse(params.date, 'yyyy-MM-dd', new Date());
-
-        if (isValid(parsedDate)) {
-          targetDate = parsedDate;
-        } else {
-          // Phòng hờ AI vẫn ngoan cố gửi text, lúc này mới báo lỗi trả về bắt nó làm lại
+        if (!isValid(parsedDate)) {
           return {
-            error: 'Định dạng ngày không hợp lệ.',
-            suggestion:
-              'AI vui lòng tính toán ngày cụ thể ra định dạng YYYY-MM-DD (ví dụ 2025-11-19) rồi gọi lại tool.',
+            error: 'Định dạng ngày không hợp lệ. Vui lòng sử dụng YYYY-MM-DD.',
           };
         }
+
+        // Kiểm tra ngày trong quá khứ (so sánh start of day)
+        const checkDate = new Date(parsedDate);
+        checkDate.setHours(0, 0, 0, 0);
+
+        const compareToday = new Date(now);
+        compareToday.setHours(0, 0, 0, 0);
+
+        if (isBefore(checkDate, compareToday)) {
+          return {
+            message:
+              'Xin lỗi, mình không thể hỗ trợ đặt lịch trong quá khứ được ạ. Bạn vui lòng chọn một ngày từ hôm nay trở đi nhé!',
+            isPast: true,
+          };
+        }
+        targetDate = parsedDate;
+      } else {
+        targetDate = new Date(vnToday);
       }
 
-      // 4. Check if date is in the past
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      if (isBefore(targetDate, today)) {
-        return {
-          error: 'Ngày đã qua',
-          suggestion: 'Vui lòng chọn ngày trong tương lai',
-        };
-      }
-
-      // 5. Get doctor availability for that day
+      // 4. Kiểm tra lịch làm việc của bác sĩ
       const dayOfWeek = targetDate.getDay();
-
-      // Validate dayOfWeek (0-6)
-      if (isNaN(dayOfWeek) || dayOfWeek < 0 || dayOfWeek > 6) {
-        return {
-          error: 'Lỗi xác định thứ trong tuần',
-          suggestion: 'Vui lòng thử lại với ngày cụ thể',
-        };
-      }
       const availability = await this.prisma.doctorAvailability.findUnique({
         where: {
           doctorId_dayOfWeek: {
@@ -85,7 +86,7 @@ export class DoctorScheduleTool {
       });
 
       if (!availability) {
-        // Check next 7 days
+        // Tìm ngày gần nhất có lịch
         const nextAvailable = await this.findNextAvailableDay(doctor.id);
         return {
           doctor: this.formatDoctorInfo(doctor),
@@ -100,7 +101,7 @@ export class DoctorScheduleTool {
         };
       }
 
-      // 6. Check for overrides
+      // 5. Kiểm tra Overrides (Nghỉ đột xuất)
       const override = await this.prisma.availabilityOverride.findUnique({
         where: {
           doctorId_date: {
@@ -110,7 +111,6 @@ export class DoctorScheduleTool {
         },
       });
 
-      // If override says not working
       if (override && !override.startTime && !override.endTime) {
         const nextAvailable = await this.findNextAvailableDay(doctor.id);
         return {
@@ -123,15 +123,20 @@ export class DoctorScheduleTool {
         };
       }
 
-      // 7. Get working hours (use override if exists)
-      const startTime = override?.startTime || availability.startTime;
-      const endTime = override?.endTime || availability.endTime;
+      // 6. Lấy khung giờ làm việc
+      const workingStartTime = override?.startTime || availability.startTime;
+      const workingEndTime = override?.endTime || availability.endTime;
 
-      // 8. Get booked appointments
+      // 7. Lấy danh sách lịch đã đặt
       const startOfDay = new Date(targetDate);
-      startOfDay.setHours(0, 0, 0, 0);
-      const endOfDay = new Date(targetDate);
-      endOfDay.setHours(23, 59, 59, 999);
+      const startUtcHours = startOfDay.getUTCHours();
+      const localHours = (startUtcHours + APP_TIMEZONE_OFFSET) % 24;
+      startOfDay.setUTCHours(startUtcHours - localHours, 0, 0, 0);
+
+      const endOfDay = new Date(startOfDay);
+      const endUtcHours = endOfDay.getUTCHours();
+      const endLocalHours = (endUtcHours + APP_TIMEZONE_OFFSET) % 24;
+      endOfDay.setUTCHours(endUtcHours + (23 - endLocalHours), 59, 59, 999);
 
       const appointments = await this.prisma.appointment.findMany({
         where: {
@@ -141,25 +146,49 @@ export class DoctorScheduleTool {
             lte: endOfDay.toISOString(),
           },
           status: {
-            not: 'CANCELLED',
+            in: ['UPCOMING', 'ON_GOING'],
           },
-        },
-        include: {
-          service: true,
         },
       });
 
-      // 9. Generate time slots
-      const slots = this.generateTimeSlots(startTime, endTime);
+      // 8. Xác định thời lượng dịch vụ (duration)
+      let serviceDuration = 30;
+      if (params.serviceName || params.serviceId) {
+        const service = await this.prisma.service.findFirst({
+          where: {
+            OR: [
+              { id: params.serviceId },
+              { name: { contains: params.serviceName, mode: 'insensitive' } },
+            ],
+          },
+        });
+        if (service) serviceDuration = service.duration;
+      }
 
-      // 10. Mark booked slots
-      const bookedTimes = appointments.map((apt) =>
-        format(new Date(apt.startTime), 'HH:mm'),
-      );
+      // 9. Tính toán Slot trống bằng Minute-Overlap Logic (Mirror AppointmentService)
+      const availableSlots: string[] = [];
+      const startMin = this.timeToMinutes(workingStartTime);
+      const endMin = this.timeToMinutes(workingEndTime);
 
-      const availableSlots = slots.filter(
-        (slot) => !bookedTimes.includes(slot),
-      );
+      const vnNowMinutes = vnNow.getUTCHours() * 60 + vnNow.getUTCMinutes();
+      const isToday = this.isSameDayVN(targetDate, now);
+
+      for (let time = startMin; time + serviceDuration <= endMin; time += 30) {
+        // Loại bỏ khung giờ đã qua nếu là hôm nay
+        if (isToday && time <= vnNowMinutes) continue;
+
+        // Kiểm tra chồng chéo với từng lịch hẹn
+        const hasOverlap = appointments.some((apt) => {
+          const aptStart = this.dateToMinutesVN(new Date(apt.startTime));
+          const aptEnd = this.dateToMinutesVN(new Date(apt.endTime));
+          // Logic: time < aptEnd && time + duration > aptStart
+          return time < aptEnd && time + serviceDuration > aptStart;
+        });
+
+        if (!hasOverlap) {
+          availableSlots.push(this.minutesToTime(time));
+        }
+      }
 
       // 11. Get doctor services
       const doctorServices = await this.prisma.doctorService.findMany({
@@ -174,30 +203,28 @@ export class DoctorScheduleTool {
         date: format(targetDate, 'dd/MM/yyyy', { locale: vi }),
         dayOfWeek: format(targetDate, 'EEEE', { locale: vi }),
         workingHours: {
-          start: startTime,
-          end: endTime,
+          start: workingStartTime,
+          end: workingEndTime,
         },
         slots: {
-          total: slots.length,
-          booked: bookedTimes.length,
           available: availableSlots.length,
         },
         availableSlots: this.categorizeSlots(availableSlots),
-        bookedSlots: bookedTimes,
         services: doctorServices.map((ds) => ({
           id: ds.service.id,
           name: ds.service.name,
           price: ds.service.price,
           duration: ds.service.duration,
         })),
-        message:
-          availableSlots.length > 0
-            ? `Đã tìm thấy ${availableSlots.length} khung giờ trống vào ${format(targetDate, 'EEEE, dd/MM/yyyy', { locale: vi })}.`
-            : 'Rất tiếc, đã kín lịch ngày này.',
+        message: this.generateConversationalMessage(
+          doctor,
+          targetDate,
+          availableSlots,
+        ),
         bookingInstructions:
           availableSlots.length > 0
-            ? 'Có thể đặt lịch các khung giờ trên. Vui lòng liên hệ để đặt lịch.'
-            : 'Không còn slot trống, vui lòng chọn ngày khác',
+            ? 'Bạn thấy khung giờ nào phù hợp với mình không? Để mình chốt lịch giúp bạn nhé.'
+            : 'Hiện tại bác sĩ đã kín lịch vào ngày này, bạn có muốn mình tìm ngày khác hoặc bác sĩ khác không?',
       };
     } catch (error) {
       console.error('Doctor schedule tool error:', error);
@@ -209,10 +236,24 @@ export class DoctorScheduleTool {
   }
 
   private async findDoctor(params: DoctorScheduleParams) {
-    // Ưu tiên doctorId (chính xác 100%)
+    let drId = NaN;
+    let drName = params.doctorName;
+
+    // Phân tích doctorId: nếu là string (ví dụ "BS Thái Đức"), chuyển sang drName
     if (params.doctorId) {
+      const parsedId = Number(params.doctorId);
+      if (!isNaN(parsedId)) {
+        drId = parsedId;
+      } else if (typeof params.doctorId === 'string' && !drName) {
+        // AI bị nhầm: đưa tên vào field ID
+        drName = params.doctorId;
+      }
+    }
+
+    // 1. Ưu tiên doctorId (chính xác 100%)
+    if (!isNaN(drId)) {
       return this.prisma.doctorProfile.findUnique({
-        where: { id: Number(params.doctorId) },
+        where: { id: drId },
         include: {
           user: true,
           clinic: true,
@@ -220,9 +261,9 @@ export class DoctorScheduleTool {
       });
     }
 
-    // Nếu chỉ có doctorName, dùng Fuse.js để fuzzy search (tương tự search-doctors)
-    if (params.doctorName) {
-      const searchName = params.doctorName.trim();
+    // 2. Nếu không có ID hợp lệ, dùng drName (đã được sửa lỗi nếu AI nhầm)
+    if (drName) {
+      const searchName = drName.trim();
 
       // Lấy tất cả bác sĩ
       const allDoctors = await this.prisma.doctorProfile.findMany({
@@ -239,18 +280,26 @@ export class DoctorScheduleTool {
         return null;
       }
 
+      // Tạo danh sách bác sĩ với fullName để search chính xác hơn
+      const searchData = allDoctors.map((d) => ({
+        ...d,
+        fullName: `${d.lastName} ${d.firstName}`.toLowerCase(),
+        fullNameReverse: `${d.firstName} ${d.lastName}`.toLowerCase(),
+      }));
+
       // Dùng Fuse.js để fuzzy search (giống search-doctors)
       const fuseOptions = {
         keys: [
-          { name: 'firstName', weight: 0.5 },
-          { name: 'lastName', weight: 0.5 },
+          { name: 'fullName', weight: 0.7 },
+          { name: 'fullNameReverse', weight: 0.3 },
+          { name: 'firstName', weight: 0.2 },
         ],
         includeScore: true,
-        threshold: 0.4, // Độ "lỏng" (0 = chính xác, 1 = bất cứ đâu)
+        threshold: 0.35, // Chặt chẽ hơn một chút
         minMatchCharLength: 2,
       };
 
-      const fuse = new Fuse(allDoctors, fuseOptions);
+      const fuse = new Fuse(searchData, fuseOptions);
       const searchResults = fuse.search(searchName);
 
       if (searchResults.length === 0) {
@@ -294,40 +343,109 @@ export class DoctorScheduleTool {
   private formatDoctorInfo(doctor: any) {
     return {
       id: doctor.id,
-      name: `BS. ${doctor.firstName} ${doctor.lastName}`,
-      experience: doctor.experience,
+      name: `BS. ${doctor.lastName} ${doctor.firstName}`,
+      experience: doctor.experience || 'nhiều năm kinh nghiệm',
       clinic: doctor.clinic ? doctor.clinic.name : null,
       email: doctor.user.email,
     };
   }
 
-  private generateTimeSlots(
-    startTime: string,
-    endTime: string,
-    intervalMinutes = 30,
-  ): string[] {
-    const slots: string[] = [];
-    const [startHour, startMinute] = startTime.split(':').map(Number);
-    const [endHour, endMinute] = endTime.split(':').map(Number);
+  private generateConversationalMessage(
+    doctor: any,
+    date: Date,
+    availableSlots: string[],
+  ): string {
+    const doctorName = `BS. ${doctor.lastName} ${doctor.firstName}`;
+    const dateStr = format(date, 'EEEE, dd/MM/yyyy', { locale: vi });
 
-    let currentHour = startHour;
-    let currentMinute = startMinute;
+    if (availableSlots.length === 0) {
+      return `Rất tiếc, mình kiểm tra thì thấy ${doctorName} đã kín lịch vào ${dateStr} rồi bạn ạ.`;
+    }
 
-    while (
-      currentHour < endHour ||
-      (currentHour === endHour && currentMinute < endMinute)
-    ) {
-      const timeSlot = `${String(currentHour).padStart(2, '0')}:${String(currentMinute).padStart(2, '0')}`;
-      slots.push(timeSlot);
+    const { morning, afternoon, evening } =
+      this.categorizeSlots(availableSlots);
+    let msg = `Mình đã tìm thấy lịch của ${doctorName} vào ${dateStr} rồi đây:\n\n`;
 
-      currentMinute += intervalMinutes;
-      if (currentMinute >= 60) {
-        currentHour += Math.floor(currentMinute / 60);
-        currentMinute = currentMinute % 60;
+    if (morning && morning.length > 0) {
+      msg += `☀️ Buổi sáng: ${this.mergeSlotsIntoRanges(morning)}. (Khung giờ này thường vắng, bạn sẽ không phải chờ lâu đâu).\n`;
+    }
+    if (afternoon && afternoon.length > 0) {
+      msg += `🌤️ Buổi chiều: ${this.mergeSlotsIntoRanges(afternoon)}. (Phù hợp nếu bạn muốn thong thả thời gian sau giờ làm).\n`;
+    }
+    if (evening && evening.length > 0) {
+      msg += `🌙 Buổi tối: ${this.mergeSlotsIntoRanges(evening)}.\n`;
+    }
+
+    msg += `\nBạn thấy khung giờ nào phù hợp với mình không? Để mình hỗ trợ bạn đặt lịch luôn nhé!`;
+
+    return msg;
+  }
+
+  private mergeSlotsIntoRanges(slots: string[]): string {
+    if (slots.length === 0) return '';
+    if (slots.length === 1) return slots[0];
+
+    // Sắp xếp slot theo thời gian
+    const sortedSlots = [...slots].sort((a, b) => {
+      const minA = this.timeToMinutes(a);
+      const minB = this.timeToMinutes(b);
+      return minA - minB;
+    });
+
+    const ranges: string[] = [];
+    let startMin = this.timeToMinutes(sortedSlots[0]);
+    let lastMin = startMin;
+    const interval = 30;
+
+    for (let i = 1; i < sortedSlots.length; i++) {
+      const currentMin = this.timeToMinutes(sortedSlots[i]);
+      if (currentMin === lastMin + interval) {
+        // Tiếp tục range
+        lastMin = currentMin;
+      } else {
+        // Kết thúc range cũ, bắt đầu range mới
+        const rangeEnd = lastMin + interval;
+        ranges.push(
+          `${this.minutesToTime(startMin)} - ${this.minutesToTime(rangeEnd)}`,
+        );
+        startMin = currentMin;
+        lastMin = currentMin;
       }
     }
 
-    return slots;
+    // Push range cuối cùng
+    const finalEnd = lastMin + interval;
+    ranges.push(
+      `${this.minutesToTime(startMin)} - ${this.minutesToTime(finalEnd)}`,
+    );
+
+    return ranges.join(', ');
+  }
+
+  private timeToMinutes(time: string): number {
+    const [hours, minutes] = time.split(':').map(Number);
+    return hours * 60 + minutes;
+  }
+
+  private minutesToTime(minutes: number): string {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+  }
+
+  private dateToMinutesVN(date: Date): number {
+    const vnTime = new Date(date.getTime() + APP_TIMEZONE_OFFSET * 3600000);
+    return vnTime.getUTCHours() * 60 + vnTime.getUTCMinutes();
+  }
+
+  private isSameDayVN(d1: Date, d2: Date): boolean {
+    const t1 = new Date(d1.getTime() + APP_TIMEZONE_OFFSET * 3600000);
+    const t2 = new Date(d2.getTime() + APP_TIMEZONE_OFFSET * 3600000);
+    return (
+      t1.getUTCFullYear() === t2.getUTCFullYear() &&
+      t1.getUTCMonth() === t2.getUTCMonth() &&
+      t1.getUTCDate() === t2.getUTCDate()
+    );
   }
 
   private categorizeSlots(slots: string[]) {

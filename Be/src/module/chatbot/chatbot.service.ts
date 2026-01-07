@@ -1,14 +1,16 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { ConfigType } from '@nestjs/config';
-import { StreamChat } from 'stream-chat';
-import axios from 'axios';
 import { appConfig } from '@/common/config';
 import { PrismaService } from '@/common/prisma/prisma.service';
+import { Inject, Injectable } from '@nestjs/common';
+import { ConfigType } from '@nestjs/config';
+import axios from 'axios';
+import { addDays, format } from 'date-fns';
+import { vi } from 'date-fns/locale';
+import { StreamChat } from 'stream-chat';
 import { DoctorScheduleTool } from './tools/doctor-schedule.tool';
-import { SearchDoctorsTool } from './tools/search-doctors.tool';
-import { SearchClinicsTool } from './tools/search-clinics.tool';
-import { SearchServicesTool } from './tools/search-services.tool';
 import { FindAvailableDoctorsTool } from './tools/find-available-doctors.tool';
+import { SearchClinicsTool } from './tools/search-clinics.tool';
+import { SearchDoctorsTool } from './tools/search-doctors.tool';
+import { SearchServicesTool } from './tools/search-services.tool';
 
 interface AgentMessage {
   role: 'user' | 'assistant' | 'system' | 'tool';
@@ -755,16 +757,60 @@ export class ChatbotService {
         timeZone: 'Asia/Ho_Chi_Minh', // Đảm bảo đúng múi giờ
       }).format(now);
 
+      // Tạo "Calendar Strip" cho 14 ngày tới (tuần này và tuần sau) để AI không phải tính toán
+      const getCalendarStrip = (date: Date) => {
+        const result: string[] = [];
+        for (let i = -2; i < 12; i++) {
+          const d = addDays(date, i);
+          const dayName = format(d, 'EEEE', { locale: vi });
+          const dateStr = format(d, 'dd/MM/yyyy');
+          const isToday = i === 0;
+          result.push(`${dayName} (${dateStr}${isToday ? ' - Hôm nay' : ''})`);
+        }
+        return result.join(', ');
+      };
+
+      const calendarStrip = getCalendarStrip(now);
+
+      this.log('callAgent', 'debug', 'Dynamic Context prepared', {
+        today: formattedDate,
+        calendarStrip,
+      });
+
       const dynamicContext: AgentMessage = {
         role: 'system',
-        content: `Hôm nay: ${formattedDate}. Trả lời ngắn gọn, súc tích.`,
+        content: `Bạn là Trợ lý Y tế ảo của Hệ thống Đặt lịch Phòng khám (năm hiện tại là 2026).
+Nhiệm vụ: Hỗ trợ người dùng tìm kiếm phòng khám, dịch vụ và đặt lịch hẹn với bác sĩ.
+
+QUY TẮC QUAN TRỌNG VỀ THỜI GIAN:
+1. LUÔN dựa vào "Calendar Strip" dưới đây để xác định thứ/ngày. 
+2. Calendar Strip (14 ngày tới): ${calendarStrip}
+3. Thời điểm hiện tại: ${formattedDate}
+4. AI TUYỆT ĐỐI KHÔNG TỰ TÍNH TOÁN NGÀY. Nếu người dùng nói "thứ 5 tuần sau", hãy nhìn vào Calendar Strip để lấy đúng ngày YYYY-MM-DD.
+   GHI CHÚ MAPPING THỨ TRONG TUẦN (Tiếng Việt -> Thứ):
+   - Thứ 2 = Monday
+   - Thứ 3 = Tuesday
+   - Thứ 4 = Wednesday
+   - Thứ 5 = Thursday
+   - Thứ 6 = Friday
+   - Thứ 7 = Saturday
+   - Chủ nhật = Sunday
+5. ƯU TIÊN TOOL: Nếu người dùng nhắc ĐÍCH DANH tên bác sĩ (Ví dụ: BS. Thái Đức), bạn BẮT BUỘC phải gọi tool check_doctor_schedule. Chỉ dùng find_available_doctors khi người dùng tìm kiếm chung chung theo dịch vụ hoặc phòng khám mà không chỉ định rõ bác sĩ nào.
+6. THAM SỐ TOOL: Trong tool check_doctor_schedule, 'doctorId' BẮT BUỘC phải là số nguyên (Integer). Nếu bạn chỉ biết tên bác sĩ, hãy truyền vào 'doctorName' (String) và để trống 'doctorId'. TUYỆT ĐỐI không đưa tên vào ô doctorId.
+7. PHẢI gọi tool để lấy dữ liệu thực tế. KHÔNG ĐƯỢC tự bịa ra giờ trống.
+8. ĐỊNH DẠNG TRẢ LỜI: Khi trả về lịch rảnh của bác sĩ, bạn BẮT BUỘC phải sử dụng đúng nội dung và định dạng từ trường 'message' của kết quả tool (Ví dụ: "08:00 - 11:30"). Tuyệt đối KHÔNG liệt kê rời rạc từng khung giờ 30 phút.
+
+PHONG CÁCH HÀNH XỬ:
+- Ngôn ngữ: Tiếng Việt, lịch sự, thân thiện, chuyên nghiệp.
+- Khi tìm thấy bác sĩ/lịch trống, hãy gợi ý nhiệt tình và hỏi xem người dùng có muốn đặt lịch luôn không.
+- Nếu người dùng yêu cầu đặt lịch trong quá khứ, hãy từ chối khéo léo và hướng dẫn chọn ngày từ hôm nay trở đi.`,
       };
 
       // 2. TẠO REQUEST BODY (thêm dynamicContext vào ĐẦU mảng)
       const requestBody = {
         messages: [dynamicContext, ...messages],
-        temperature: 0.7, // Tăng temperature để response nhanh hơn
-        max_tokens: 1000, // Đủ tokens để hoàn thành JSON tool_calls (tối thiểu 800-1000)
+        temperature: 0.1, // Giảm temperature để AI bớt "sáng tạo" và nhanh hơn
+        max_tokens: 1000,
       };
 
       const response = await axios.post(this.agentApiUrl, requestBody, {
@@ -772,7 +818,7 @@ export class ChatbotService {
           Authorization: `Bearer ${this.agentAccessKey}`,
           'Content-Type': 'application/json',
         },
-        timeout: 30000, // Giảm timeout xuống 30s để response nhanh hơn
+        timeout: 60000, // Tăng lên 60s để tránh timeout khi AI suy nghĩ sâu
       });
 
       const message = response.data.choices?.[0]?.message;

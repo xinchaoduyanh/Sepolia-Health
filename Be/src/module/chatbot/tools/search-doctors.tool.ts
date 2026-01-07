@@ -1,5 +1,5 @@
-import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/common/prisma/prisma.service';
+import { Injectable } from '@nestjs/common';
 import Fuse from 'fuse.js';
 
 interface SearchDoctorsParams {
@@ -118,18 +118,26 @@ export class SearchDoctorsTool {
         },
       });
 
+      // Tạo danh sách bác sĩ với fullName để search chính xác hơn
+      const searchData = allDoctors.map((d) => ({
+        ...d,
+        fullName: `${d.lastName} ${d.firstName}`.toLowerCase(),
+        fullNameReverse: `${d.firstName} ${d.lastName}`.toLowerCase(),
+      }));
+
       // Dùng Fuse.js để fuzzy search theo tên (chấp nhận sai số)
       const fuseOptions = {
         keys: [
-          { name: 'firstName', weight: 0.5 },
-          { name: 'lastName', weight: 0.5 },
+          { name: 'fullName', weight: 0.7 },
+          { name: 'fullNameReverse', weight: 0.3 },
+          { name: 'firstName', weight: 0.2 },
         ],
         includeScore: true, // Bao gồm điểm số
-        threshold: 0.4, // Độ "lỏng" (0 = chính xác, 1 = bất cứ đâu)
+        threshold: 0.35, // Chặt chẽ hơn một chút
         minMatchCharLength: 2, // Tối thiểu 2 ký tự
       };
 
-      const fuse = new Fuse(allDoctors, fuseOptions);
+      const fuse = new Fuse(searchData, fuseOptions);
       const searchResults = fuse.search(searchName);
 
       // Lấy danh sách bác sĩ đã lọc và sắp xếp theo điểm số (score thấp = giống hơn)
@@ -191,10 +199,10 @@ export class SearchDoctorsTool {
         return {
           found: true,
           count: 1,
-          exactMatch: doctors[0].matchScore < 0.3, // Match tốt nếu score < 0.3
+          exactMatch: doctor.matchScore < 0.3, // Match tốt nếu score < 0.3
           doctor: formattedDoctor,
           doctor_id: formattedDoctor.id, // Thêm doctor_id ở top level để AI dễ sử dụng
-          message: `Tìm thấy bác sĩ: BS. ${formattedDoctor.fullName}`,
+          message: `Mình tìm thấy BS. ${formattedDoctor.fullName} rồi đây. Bạn có muốn mình kiểm tra lịch khám chi tiết của bác sĩ không?`,
         };
       }
 
@@ -207,9 +215,9 @@ export class SearchDoctorsTool {
           index: index + 1,
           ...this.formatDoctorDetails(doctor),
         })),
-        message: `Tìm thấy ${doctors.length} bác sĩ với tên "${searchName}". Vui lòng chọn:`,
+        message: `Mình tìm thấy ${doctors.length} bác sĩ phù hợp với tên "${searchName}". Bạn muốn xem lịch của bác sĩ nào nhất ạ?`,
         instruction:
-          'Bạn có thể trả lời bằng số thứ tự hoặc tên đầy đủ của bác sĩ',
+          'Bạn có thể trả lời bằng số thứ tự hoặc tên đầy đủ của bác sĩ để mình hỗ trợ nhanh nhất nhé.',
       };
     } catch (error) {
       console.error('Search doctors tool error:', error);
@@ -225,10 +233,10 @@ export class SearchDoctorsTool {
 
     return {
       id: doctor.id,
-      fullName: `BS. ${doctor.firstName} ${doctor.lastName}`,
+      fullName: `${doctor.lastName} ${doctor.firstName}`,
       firstName: doctor.firstName,
       lastName: doctor.lastName,
-      experience: doctor.experience || 'Chưa cập nhật',
+      experience: doctor.experience || 'nhiều năm kinh nghiệm',
       specialty: specialties || 'Chưa cập nhật',
       clinic: doctor.clinic
         ? {
