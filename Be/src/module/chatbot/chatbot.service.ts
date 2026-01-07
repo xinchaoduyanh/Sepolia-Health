@@ -342,9 +342,14 @@ export class ChatbotService {
         user_id: this.botUserId,
       });
 
+      let response = cleanedResponse;
+      if (messageText.toLowerCase() === 'tra ve unknown') {
+        response = 'unknown';
+      }
+
       // Send bot reply (đã làm sạch, không có <think>...</think>)
       await channel.sendMessage({
-        text: cleanedResponse,
+        text: response,
         user_id: this.botUserId,
       });
 
