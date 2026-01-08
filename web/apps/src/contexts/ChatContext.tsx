@@ -68,15 +68,29 @@ export function ChatProvider({ children, apiKey }: ChatProviderProps) {
 
     const disconnectUser = async () => {
         try {
-            await client.disconnectUser()
-            setIsConnected(false)
-            setIsReady(false)
-            console.log('Disconnected from Stream Chat')
+            // Stop watching all active channels first
+            if (client.activeChannels) {
+                const channelStopPromises = Object.values(client.activeChannels).map(channel => {
+                    return channel.stopWatching().catch(err => {
+                        console.warn('Error stopping channel watch during disconnect:', err);
+                    });
+                });
+                await Promise.all(channelStopPromises);
+            }
+            
+            // Then disconnect user
+            await client.disconnectUser();
+            setIsConnected(false);
+            setIsReady(false);
+            console.log('Disconnected from Stream Chat');
         } catch (error) {
-            console.error('Failed to disconnect from Stream Chat:', error)
-            throw error
+            console.error('Failed to disconnect from Stream Chat:', error);
+            // Still update state even if disconnect fails
+            setIsConnected(false);
+            setIsReady(false);
+            throw error;
         }
-    }
+    };
 
     const getChannel = async (channelId: string): Promise<StreamChannel | null> => {
         if (!client || !isConnected) {
@@ -122,14 +136,34 @@ export function ChatProvider({ children, apiKey }: ChatProviderProps) {
     useEffect(() => {
         return () => {
             // Cleanup on unmount
-            if (clientRef.current && clientRef.current.userID) {
-                console.log('ChatProvider unmounting, disconnecting...')
-                clientRef.current.disconnectUser().catch(err => {
-                    console.error('Error disconnecting on unmount:', err)
-                })
-            }
-        }
-    }, [])
+            const cleanup = async () => {
+                if (clientRef.current && clientRef.current.userID) {
+                    console.log('ChatProvider unmounting, cleaning up...');
+                    
+                    try {
+                        // First, stop watching all active channels
+                        const activeChannels = clientRef.current.activeChannels;
+                        if (activeChannels) {
+                            const channelStopPromises = Object.values(activeChannels).map(channel => {
+                                return channel.stopWatching().catch(err => {
+                                    console.warn('Error stopping channel watch:', err);
+                                });
+                            });
+                            await Promise.all(channelStopPromises);
+                        }
+                        
+                        // Then disconnect user
+                        await clientRef.current.disconnectUser();
+                        console.log('ChatProvider cleanup complete');
+                    } catch (err) {
+                        console.error('Error during ChatProvider cleanup:', err);
+                    }
+                }
+            };
+            
+            cleanup();
+        };
+    }, []);
 
     // Only render Chat wrapper when connected
     if (isReady && isConnected) {

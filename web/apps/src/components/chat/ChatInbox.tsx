@@ -68,8 +68,10 @@ export function ChatInbox({ onSelectChannel, selectedChannelId }: ChatInboxProps
                     const name = await getChannelName(channel)
                     names.set(channel.id || '', name)
 
+
                     // Get avatar from last message sender (not from name)
-                    const lastMessage = channel.state?.messages?.[channel.state.messages.length - 1]
+                    const messages = channel.state?.messages;
+                    const lastMessage = messages && messages.length > 0 ? messages[messages.length - 1] : null;
                     let avatarUrl: string | null = null
 
                     if (lastMessage?.user?.image && lastMessage.user.id !== String(user.id)) {
@@ -79,7 +81,7 @@ export function ChatInbox({ onSelectChannel, selectedChannelId }: ChatInboxProps
                         // Fallback: Try to get user info from channel members
                         try {
                             const userInfo = await getWebChatUserInfo(channel, String(user.id), undefined, undefined)
-                            avatarUrl = userInfo.image
+                            avatarUrl = userInfo.image || null
                             if (avatarUrl) {
                                 console.log('⚡ Avatar from channel member data:', userInfo.name, avatarUrl)
                             }
@@ -125,7 +127,18 @@ export function ChatInbox({ onSelectChannel, selectedChannelId }: ChatInboxProps
         }
 
         const handleChannelEvent = (event: any) => {
-            console.log('📨 Channel event:', event.type, event.channel?.id)
+            console.log('📨 Channel event:', event.type, 'Channel ID:', event.channel?.id);
+            
+            // ✅ Log channel state for debugging
+            if (event.channel) {
+                console.log('📊 Event channel state:', {
+                    id: event.channel.id,
+                    hasState: !!event.channel.state,
+                    hasMessages: !!event.channel.state?.messages,
+                    messageCount: event.channel.state?.messages?.length || 0,
+                    lastMessageAt: event.channel.state?.last_message_at,
+                });
+            }
 
             // Only update the specific channel that changed, not refetch all channels
             // Stream SDK already handles updating channel state automatically
@@ -138,41 +151,77 @@ export function ChatInbox({ onSelectChannel, selectedChannelId }: ChatInboxProps
             ) {
                 const updatedChannel = event.channel
                 if (updatedChannel) {
+                    console.log('🔄 Updating channel in list:', updatedChannel.id);
+                    
+                    // ✅ If channel has no state, watch it to populate data
+                    if (!updatedChannel.state && event.type === 'notification.added_to_channel') {
+                        console.log('👁️ Channel has no state, watching to populate...');
+                        
+                        // Get the actual channel instance from client
+                        const channelInstance = client.channel('messaging', updatedChannel.id);
+                        
+                        channelInstance.watch().then(() => {
+                            console.log('✅ Channel watched and state populated:', updatedChannel.id);
+                            // Force re-render by updating channels with the watched instance
+                            setChannels(prevChannels => {
+                                const channelIndex = prevChannels.findIndex(ch => ch.id === updatedChannel.id);
+                                if (channelIndex >= 0) {
+                                    const updated = [...prevChannels];
+                                    updated[channelIndex] = channelInstance;
+                                    return updated;
+                                } else {
+                                    return [channelInstance, ...prevChannels];
+                                }
+                            });
+                        }).catch((err: Error) => {
+                            console.error('❌ Failed to watch channel:', err);
+                        });
+                        
+                        // Don't add the channel without state to the list yet
+                        return;
+                    }
+                    
                     // Update channels list
                     setChannels(prevChannels => {
                         const channelIndex = prevChannels.findIndex(ch => ch.id === updatedChannel.id)
                         if (channelIndex >= 0) {
                             // Update existing channel and move to top
+                            console.log('✏️ Updating existing channel at index:', channelIndex);
                             const updated = [...prevChannels]
                             updated.splice(channelIndex, 1)
                             return [updatedChannel, ...updated]
                         } else {
                             // New channel, add to top
+                            console.log('➕ Adding new channel to list');
                             return [updatedChannel, ...prevChannels]
                         }
                     })
 
                     // Update avatar when new message arrives
-                    if (event.type === 'message.new') {
-                        const lastMessage = updatedChannel.state?.messages?.[updatedChannel.state.messages.length - 1]
-                        if (lastMessage?.user?.image && lastMessage.user.id !== String(user.id)) {
-                            setChannelAvatars(prevAvatars => {
-                                const updated = new Map(prevAvatars)
-                                updated.set(updatedChannel.id || '', lastMessage.user.image)
-                                return updated
-                            })
-                            console.log('✅ Real-time avatar update for message:', lastMessage.user.name)
-                        }
+                    if (event.type === 'message.new' && user) {
+                        // ✅ Add null safety checks for state and messages
+                        const messages = updatedChannel.state?.messages;
+                        if (messages && messages.length > 0) {
+                            const lastMessage = messages[messages.length - 1];
+                            if (lastMessage?.user?.image && lastMessage.user.id !== String(user.id)) {
+                                setChannelAvatars(prevAvatars => {
+                                    const updated = new Map(prevAvatars);
+                                    updated.set(updatedChannel.id || '', lastMessage.user.image);
+                                    return updated;
+                                });
+                                console.log('✅ Real-time avatar update for message:', lastMessage.user.name);
+                            }
 
-                        // Update channel name if needed
-                        const newChannelName = lastMessage?.user?.name
-                        if (newChannelName && lastMessage.user.id !== String(user.id)) {
-                            setChannelNames(prevNames => {
-                                const updated = new Map(prevNames)
-                                updated.set(updatedChannel.id || '', newChannelName)
-                                return updated
-                            })
-                            console.log('✅ Real-time name update for message:', newChannelName)
+                            // Update channel name if needed
+                            const newChannelName = lastMessage?.user?.name;
+                            if (newChannelName && lastMessage.user.id !== String(user.id)) {
+                                setChannelNames(prevNames => {
+                                    const updated = new Map(prevNames);
+                                    updated.set(updatedChannel.id || '', newChannelName);
+                                    return updated;
+                                });
+                                console.log('✅ Real-time name update for message:', newChannelName);
+                            }
                         }
                     }
                 }
@@ -254,7 +303,8 @@ export function ChatInbox({ onSelectChannel, selectedChannelId }: ChatInboxProps
     }
 
     const getLastMessage = (channel: Channel) => {
-        const messages = channel.state.messages
+        // ✅ Add null safety check for state and messages
+        const messages = channel.state?.messages;
         if (messages && messages.length > 0) {
             const lastMessage = messages[messages.length - 1]
             let messageText = 'Đã gửi tệp đính kèm'
@@ -287,7 +337,7 @@ export function ChatInbox({ onSelectChannel, selectedChannelId }: ChatInboxProps
     }
 
     const getUnreadCount = (channel: Channel) => {
-        return channel.state.unreadCount || 0
+        return channel.state?.unreadCount || 0
     }
 
     const filteredChannels = searchQuery
@@ -372,11 +422,25 @@ export function ChatInbox({ onSelectChannel, selectedChannelId }: ChatInboxProps
                         </div>
                     ) : (
                         filteredChannels.map(channel => {
+                            // ✅ Add null safety and debug logging
+                            if (!channel.state) {
+                                console.warn('⚠️ Channel has no state:', channel.id, channel);
+                            }
+                            
                             const channelName = channelNames.get(channel.id || '') || 'Đang tải...'
                             const channelAvatar = channelAvatars.get(channel.id || '')
                             const lastMessage = getLastMessage(channel)
                             const unreadCount = getUnreadCount(channel)
-                            const lastMessageAt = channel.state.last_message_at
+                            const lastMessageAt = channel.state?.last_message_at
+                            
+                            console.log('📋 Rendering channel:', {
+                                id: channel.id,
+                                name: channelName,
+                                hasState: !!channel.state,
+                                hasMessages: !!channel.state?.messages,
+                                messageCount: channel.state?.messages?.length || 0,
+                                lastMessageAt,
+                            });
 
                             return (
                                 <div
@@ -427,7 +491,7 @@ export function ChatInbox({ onSelectChannel, selectedChannelId }: ChatInboxProps
                                         </div>
 
                                         {/* Members count */}
-                                        {channel.state.members && Object.keys(channel.state.members).length > 0 && (
+                                        {channel.state?.members && Object.keys(channel.state.members).length > 0 && (
                                             <div className="text-xs text-muted-foreground mt-1">
                                                 {Object.keys(channel.state.members).length} thành viên
                                             </div>
