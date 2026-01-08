@@ -9,17 +9,17 @@ echo "🚀 Sepolia-Health Secure Deployment"
 echo "====================================="
 
 # Check if running with SSH
-if [ -z "$SSH_CONNECTION" ]; then
-    echo "❌ This script must be run via SSH connection"
-    echo "   For security reasons, local execution is disabled"
-    exit 1
-fi
+# if [ -z "$SSH_CONNECTION" ]; then
+#     echo "❌ This script must be run via SSH connection"
+#     echo "   For security reasons, local execution is disabled"
+#     exit 1
+# fi
 
-# Check if user has proper permissions
-if [ "$EUID" -eq 0 ]; then
-    echo "❌ Don't run this script as root"
-    exit 1
-fi
+# # Check if user has proper permissions
+# if [ "$EUID" -eq 0 ]; then
+#     echo "❌ Don't run this script as root"
+#     exit 1
+# fi
 
 # Don't create logs directory - using /dev/null
 
