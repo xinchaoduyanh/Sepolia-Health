@@ -65,6 +65,7 @@ class ApiClient {
         const isAuthEndpoint =
           originalRequest.url?.includes('/auth/login') ||
           originalRequest.url?.includes('/auth/register') ||
+          originalRequest.url?.includes('/auth/logout') ||
           originalRequest.url?.includes('/auth/refresh-token');
 
         // ALWAYS check if user is already marked as deactive BEFORE attempting refresh

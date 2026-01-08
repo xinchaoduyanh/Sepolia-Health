@@ -116,25 +116,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = useCallback(async () => {
     try {
+      // ✅ STEP 0: Immediately stop all queries and set hasToken to false
+      // This prevents profile query and other queries from triggering during logout
       setHasToken(false);
       setCachedUser(null);
       setIsLoadingAuth(false);
-      queryClient.cancelQueries({ queryKey: authKeys.profile() });
-
+      queryClient.cancelQueries();
+      
+      // ✅ STEP 1: Call logout API (while we still have RT in AsyncStorage)
+      // This ensures the server can properly invalidate the refresh token
+      await logoutMutation.mutateAsync();
+      
+      // ✅ STEP 2: Clear local auth data AFTER successful API call
       await clearAuth();
-
-      logoutMutation.mutateAsync().catch((err) => {
-        console.log('Background logout mutation failed:', err);
-      });
 
       return true;
     } catch (error) {
+      // Even if logout API fails, still clear local data
+      console.log('Logout API failed, clearing local data anyway:', error);
+      
+      // Ensure state is cleared even if API fails
       setHasToken(false);
       setCachedUser(null);
       setIsLoadingAuth(false);
-      queryClient.cancelQueries({ queryKey: authKeys.profile() });
       await clearAuth();
-      throw error;
+      
+      // Don't throw error - logout should always succeed locally
+      return true;
     }
   }, [logoutMutation, queryClient, clearAuth]);
 

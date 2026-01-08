@@ -18,7 +18,7 @@ export default function AccountScreen() {
     (profile: PatientProfile) => profile.relationship === 'SELF'
   );
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     Alert.alert('Đăng xuất', 'Bạn có chắc chắn muốn đăng xuất?', [
       {
         text: 'Hủy',
@@ -27,7 +27,18 @@ export default function AccountScreen() {
       {
         text: 'Đăng xuất',
         style: 'destructive',
-        onPress: logout,
+        onPress: async () => {
+          try {
+            await logout();
+          } catch (error) {
+            console.error('Logout error:', error);
+            // Error is logged but we still proceed with navigation
+          } finally {
+            // ✅ ALWAYS navigate to login, regardless of API success/failure
+            // This ensures user is never stuck on account screen
+            router.replace('/(auth)/login');
+          }
+        },
       },
     ]);
   };

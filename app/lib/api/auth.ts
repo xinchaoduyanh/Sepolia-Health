@@ -57,10 +57,21 @@ export const authApi = {
     // Get refresh token from storage
     const refreshToken = await AsyncStorage.getItem('refresh_token');
 
-    const response = await apiClient.post(API_ENDPOINTS.AUTH.LOGOUT, {
-      refreshToken: refreshToken || '',
-    });
-    return response.data;
+    // If no refresh token exists, skip API call (already logged out on server)
+    if (!refreshToken) {
+      return { success: true, message: 'Already logged out' };
+    }
+
+    try {
+      const response = await apiClient.post(API_ENDPOINTS.AUTH.LOGOUT, {
+        refreshToken,
+      });
+      return response.data;
+    } catch (error) {
+      // Log error but don't throw - local logout should still succeed
+      console.log('Logout API error (will still clear local data):', error);
+      throw error; // Let the caller handle it
+    }
   },
 
   getProfile: async () => {
