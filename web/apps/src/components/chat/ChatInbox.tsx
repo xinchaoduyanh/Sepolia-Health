@@ -1,19 +1,19 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useChat } from '@/contexts/ChatContext'
+import { getChatChannelNameFromLastMessage, getUserInitials, getWebChatUserInfo } from '@/lib/chat-user-data'
+import { useAuth } from '@/shared/hooks/useAuth'
 import { Avatar, AvatarFallback, AvatarImage } from '@workspace/ui/components/Avatar'
 import { Badge } from '@workspace/ui/components/Badge'
 import { Button } from '@workspace/ui/components/Button'
 import { Input } from '@workspace/ui/components/Textfield'
+import { cn } from '@workspace/ui/lib/utils'
 import { formatDistanceToNow } from 'date-fns'
 import { vi } from 'date-fns/locale'
-import { MessageCircle, Clock, Search, RefreshCw, UserPlus } from 'lucide-react'
-import { cn } from '@workspace/ui/lib/utils'
-import { useChat } from '@/contexts/ChatContext'
-import { useAuth } from '@/shared/hooks/useAuth'
+import { Clock, MessageCircle, RefreshCw, Search, UserPlus } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
 import type { Channel } from 'stream-chat'
 import { UserSearchModal } from './UserSearchModal'
-import { getWebChatUserInfo, getChatChannelNameFromLastMessage, getUserInitials } from '@/lib/chat-user-data'
 
 interface ChatInboxProps {
     onSelectChannel: (channelId: string) => void
@@ -129,7 +129,13 @@ export function ChatInbox({ onSelectChannel, selectedChannelId }: ChatInboxProps
 
             // Only update the specific channel that changed, not refetch all channels
             // Stream SDK already handles updating channel state automatically
-            if (event.type === 'message.new' || event.type === 'message.updated' || event.type === 'message.deleted') {
+            if (
+                event.type === 'message.new' ||
+                event.type === 'message.updated' ||
+                event.type === 'message.deleted' ||
+                event.type === 'notification.message_new' ||
+                event.type === 'notification.added_to_channel'
+            ) {
                 const updatedChannel = event.channel
                 if (updatedChannel) {
                     // Update channels list
@@ -208,8 +214,10 @@ export function ChatInbox({ onSelectChannel, selectedChannelId }: ChatInboxProps
             }
 
             // Only update if names actually changed
-            if (names.size !== channelNames.size ||
-                Array.from(names.entries()).some(([key, value]) => channelNames.get(key) !== value)) {
+            if (
+                names.size !== channelNames.size ||
+                Array.from(names.entries()).some(([key, value]) => channelNames.get(key) !== value)
+            ) {
                 setChannelNames(names)
             }
         }

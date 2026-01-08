@@ -1,6 +1,6 @@
 import { apiClient } from '@/lib/api-client';
-import { StreamChat, Channel } from 'stream-chat';
-import { ChatChannel, Clinic, ChatChannelResponse } from '@/types/chat';
+import { ChatChannel, ChatChannelResponse, Clinic } from '@/types/chat';
+import { Channel, StreamChat } from 'stream-chat';
 
 export class ChatAPI {
   static async getChannels(): Promise<ChatChannel[]> {
@@ -31,6 +31,10 @@ export class ChatService {
     this.client = client;
   }
 
+  static reset() {
+    this.client = null;
+  }
+
   static async fetchUserChannels(): Promise<Channel[]> {
     if (!this.client) {
       throw new Error('Chat client not initialized');
@@ -49,7 +53,8 @@ export class ChatService {
       }
     );
 
-    return userChannels;
+    // ✅ Lọc bỏ các channel thông báo (prefix notifications_)
+    return userChannels.filter((channel) => !channel.id?.startsWith('notifications_'));
   }
 
   static isClientReady(): boolean {

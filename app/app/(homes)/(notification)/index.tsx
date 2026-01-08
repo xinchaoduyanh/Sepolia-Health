@@ -7,6 +7,7 @@ import { router } from 'expo-router';
 import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
+  Pressable,
   RefreshControl,
   ScrollView,
   StatusBar,
@@ -120,7 +121,7 @@ export default function NotificationScreen() {
           paddingHorizontal: 24,
         }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
-          <TouchableOpacity
+          <Pressable
             onPress={() => router.back()}
             style={{
               height: 40,
@@ -130,9 +131,10 @@ export default function NotificationScreen() {
               justifyContent: 'center',
               backgroundColor: 'rgba(255,255,255,0.2)',
               marginRight: 16,
+              opacity: 0.9,
             }}>
             <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
-          </TouchableOpacity>
+          </Pressable>
           <View style={{ flex: 1 }}>
             <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#FFFFFF' }}>Thông báo</Text>
             {unreadCount > 0 && (
@@ -151,7 +153,7 @@ export default function NotificationScreen() {
             borderRadius: 12,
             padding: 4,
           }}>
-          <TouchableOpacity
+          <Pressable
             onPress={() => setFilter('all')}
             style={{
               flex: 1,
@@ -168,8 +170,8 @@ export default function NotificationScreen() {
               }}>
               Tất cả ({notifications.length})
             </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
+          </Pressable>
+          <Pressable
             onPress={() => setFilter('unread')}
             style={{
               flex: 1,
@@ -186,7 +188,7 @@ export default function NotificationScreen() {
               }}>
               Chưa đọc ({unreadCount})
             </Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </LinearGradient>
 
@@ -239,7 +241,7 @@ export default function NotificationScreen() {
             const isUnread = notification.status === 'UNREAD';
 
             return (
-              <TouchableOpacity
+              <Pressable
                 key={notification.id}
                 onPress={() => handleNotificationPress(notification)}
                 style={{
@@ -339,7 +341,7 @@ export default function NotificationScreen() {
                     </View>
                   </View>
                 </View>
-              </TouchableOpacity>
+              </Pressable>
             );
           })}
         </ScrollView>

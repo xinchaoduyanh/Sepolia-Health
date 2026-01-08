@@ -26,6 +26,7 @@ import {
   useWindowDimensions,
   View,
   ViewStyle,
+  Pressable,
 } from 'react-native';
 
 interface SkeletonProps {
@@ -206,7 +207,7 @@ export default function HomeScreen() {
           />
 
           {/* Notification button - positioned within gradient */}
-          <TouchableOpacity
+          <Pressable
             onPress={() => router.push('/(homes)/(notification)')}
             style={{
               position: 'absolute',
@@ -248,7 +249,7 @@ export default function HomeScreen() {
                 </Text>
               </View>
             )}
-          </TouchableOpacity>
+          </Pressable>
 
           {/* Avatar + Info - positioned within gradient */}
           <View

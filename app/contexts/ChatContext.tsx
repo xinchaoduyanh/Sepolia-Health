@@ -1,10 +1,10 @@
-import { createContext, useContext, useEffect, useState, ReactNode, useRef } from 'react';
-import { Channel, StreamChat } from 'stream-chat';
-import { useAuth } from '@/lib/hooks/useAuth';
 import { ChatAPI, ChatService } from '@/lib/api/chat';
 import { ChatbotAPI } from '@/lib/api/chatbot';
-import { Chat, OverlayProvider } from 'stream-chat-expo';
+import { useAuth } from '@/lib/hooks/useAuth';
 import { getUserProfile } from '@/lib/utils';
+import { createContext, ReactNode, useContext, useEffect, useRef, useState } from 'react';
+import { Channel, StreamChat } from 'stream-chat';
+import { Chat, OverlayProvider } from 'stream-chat-expo';
 
 interface ChatContextType {
   chatClient?: StreamChat;
@@ -211,11 +211,14 @@ const ChatProvider = ({ children }: { children: ReactNode }) => {
 
         // Get all channels for the current user with proper members filter
         const channels = await chatClient.queryChannels({
-          members: { $in: [user.id.toString()] }
+          members: { $in: [user.id.toString()] },
         });
 
-        // Sum up unread counts from all channels
+        // Sum up unread counts from all channels, excluding notification channels
         const total = channels.reduce((sum, channel) => {
+          if (channel.id?.startsWith('notifications_')) {
+            return sum;
+          }
           const unreadCount = channel.state?.unreadCount ?? 0;
           return sum + unreadCount;
         }, 0);
@@ -255,20 +258,30 @@ const ChatProvider = ({ children }: { children: ReactNode }) => {
     let isMounted = true;
 
     const initChat = async () => {
-      // If no user or no API key, disconnect and clear
+      // ✅ IMMEDIATELY clear state if no user to prevent showing old data
       if (!user || !process.env.EXPO_PUBLIC_STREAM_API_KEY) {
-        if (chatClient) {
-          console.log('No user or API key, disconnecting...');
+        console.log('No user or API key, resetting chat state immediately...');
+
+        // Use a temp ref to the old client to disconnect it in background
+        const oldClient = chatClientRef.current;
+
+        // Reset state synchronously
+        if (isMounted) {
+          setChatClient(undefined);
+          setIsChatReady(false);
+          setTotalUnreadCount(0);
+          ChatService.setClient(null);
+          currentUserIdRef.current = undefined;
+          chatClientRef.current = undefined;
+        }
+
+        // Handle async disconnection in background
+        if (oldClient) {
           try {
-            await chatClient.disconnectUser();
+            await oldClient.disconnectUser();
+            console.log('Old chat client disconnected in background');
           } catch (err) {
-            console.error('Error disconnecting:', err);
-          }
-          if (isMounted) {
-            setChatClient(undefined);
-            setIsChatReady(false);
-            ChatService.setClient(null);
-            currentUserIdRef.current = undefined;
+            console.error('Error disconnecting old client in background:', err);
           }
         }
         return;
@@ -278,29 +291,43 @@ const ChatProvider = ({ children }: { children: ReactNode }) => {
       const userIdChanged = currentUserIdRef.current !== user.id;
       const currentUserIdString = user.id.toString();
 
-      // If chatClient exists and user changed, disconnect first and wait
-      if (chatClient && userIdChanged) {
-        console.log('User changed, disconnecting old user...', {
+      // If user changed, clear old state immediately before connecting new user
+      if (userIdChanged) {
+        console.log('User changed, resetting state for new user connection...', {
           oldUserId: currentUserIdRef.current,
           newUserId: user.id,
         });
-        try {
-          await chatClient.disconnectUser();
-          console.log('Old user disconnected successfully');
-        } catch (err) {
-          console.error('Error disconnecting old user:', err);
-        }
+
+        const oldClient = chatClientRef.current;
 
         if (isMounted) {
           setChatClient(undefined);
           setIsChatReady(false);
+          setTotalUnreadCount(0);
           ChatService.setClient(null);
+        }
+
+        if (oldClient) {
+          try {
+            await oldClient.disconnectUser();
+          } catch (err) {
+            console.error('Error disconnecting old user:', err);
+          }
         }
       }
 
       // Skip if already connected with the same user
-      if (chatClient && !userIdChanged && chatClient.userID === currentUserIdString) {
+      if (
+        chatClientRef.current &&
+        !userIdChanged &&
+        chatClientRef.current.userID === currentUserIdString
+      ) {
         console.log('Already connected with same user, skipping...');
+        // Sync the state if needed
+        if (isMounted && !isChatReady) {
+          setChatClient(chatClientRef.current);
+          setIsChatReady(true);
+        }
         return;
       }
 
