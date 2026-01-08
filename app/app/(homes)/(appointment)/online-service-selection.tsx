@@ -23,8 +23,6 @@ export default function OnlineServiceSelectionScreen() {
 
   const services = servicesData?.data || [];
 
-  console.log('All Services:', services.map(s => ({ id: s.id, name: s.name, isAvailableOnline: s.isAvailableOnline })));
-
   const filteredServices = services.filter((service: Service) => {
     // 1. Filter by Search Query
     const matchesSearch =
@@ -168,14 +166,17 @@ export default function OnlineServiceSelectionScreen() {
               <Pressable
                 key={service.id}
                 onPress={() => handleServiceSelect(service.id)}
-                className={`mb-4 rounded-xl border-2 p-4 ${selectedService === service.id ? 'border-emerald-500' : 'border-emerald-200'
-                  }`}
+                className={`mb-4 rounded-xl border-2 p-4 ${
+                  selectedService === service.id ? 'border-emerald-500' : 'border-emerald-200'
+                }`}
                 style={{
                   backgroundColor: selectedService === service.id ? '#D1FAE5' : '#ECFDF5',
                 }}>
                 <View className="flex-row items-start justify-between">
                   <View className="flex-1">
-                    <Text className="text-lg font-semibold text-slate-900">{formatServiceNameWithConditions(service)}</Text>
+                    <Text className="text-lg font-semibold text-slate-900">
+                      {formatServiceNameWithConditions(service)}
+                    </Text>
                     {service.description && (
                       <Text className="mt-1 text-sm text-slate-600" numberOfLines={2}>
                         {service.description}
