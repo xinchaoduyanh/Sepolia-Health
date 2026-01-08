@@ -11,6 +11,7 @@ interface QrData {
     id: number
     t: number
     signature: string
+    i: number
     expiresIn: number
 }
 
@@ -74,7 +75,7 @@ export default function LiveQRPage({ params }: { params: Promise<{ id: string }>
         )
     }
 
-    const qrValue = `sepolia-health://claim?id=${id}&sig=${qrData?.signature}&t=${qrData?.t}&i=${interval}`
+    const qrValue = `sepolia-health://claim?id=${id}&sig=${qrData?.signature}&t=${qrData?.t}&i=${qrData?.i || interval}`
     const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(qrValue)}`
 
     return (

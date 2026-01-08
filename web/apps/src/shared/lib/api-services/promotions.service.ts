@@ -105,7 +105,7 @@ export class PromotionsService {
      * Get dynamic QR data
      * GET /admin/promotions/{id}/qr-data
      */
-    async getQrData(id: number, interval: number = 30): Promise<{ id: number; t: number; signature: string; expiresIn: number }> {
+    async getQrData(id: number, interval: number = 30): Promise<{ id: number; t: number; signature: string; i: number; expiresIn: number }> {
         return apiClient.get(`/admin/promotions/${id}/qr-data`, { params: { interval } })
     }
 }

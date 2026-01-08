@@ -55,9 +55,8 @@ export default function ResultFileList({ files }: ResultFileListProps) {
         </Text>
         <View style={{ gap: 8 }}>
           {files.map((file) => (
-            <TouchableOpacity
+            <View
               key={file.id}
-              onPress={() => handleFilePress(file)}
               style={{
                 flexDirection: 'row',
                 alignItems: 'center',
@@ -105,29 +104,25 @@ export default function ResultFileList({ files }: ResultFileListProps) {
 
               {/* Action Buttons */}
               <View style={{ flexDirection: 'row', gap: 8 }}>
-                {/* Share Button */}
-                <TouchableOpacity
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    handleShare(file);
-                  }}
-                  style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: 8,
-                    backgroundColor: '#E0F2FE',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}>
-                  <Ionicons name="share-outline" size={18} color="#0284C7" />
-                </TouchableOpacity>
+                {/* Preview Button - Only show for images and PDFs */}
+                {(isImageFile(file.fileType) || isPDFFile(file.fileType)) && (
+                  <TouchableOpacity
+                    onPress={() => handleFilePress(file)}
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: 8,
+                      backgroundColor: '#E0F2FE',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}>
+                    <Ionicons name="eye-outline" size={18} color="#0284C7" />
+                  </TouchableOpacity>
+                )}
 
                 {/* Download Button */}
                 <TouchableOpacity
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    handleDownload(file);
-                  }}
+                  onPress={() => handleDownload(file)}
                   disabled={downloadingFileId === file.id}
                   style={{
                     width: 36,
@@ -144,7 +139,7 @@ export default function ResultFileList({ files }: ResultFileListProps) {
                   )}
                 </TouchableOpacity>
               </View>
-            </TouchableOpacity>
+            </View>
           ))}
         </View>
       </View>

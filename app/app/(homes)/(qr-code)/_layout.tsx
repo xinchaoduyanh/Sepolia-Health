@@ -21,6 +21,8 @@ export default function QRScannerScreen() {
   
   // Use ref to track if we're showing result to prevent double-firing
   const isShowingResult = useRef(false);
+  // Track processed QR codes to prevent duplicate processing
+  const processedQRs = useRef<Set<string>>(new Set());
 
   // Reset scanned state when screen is focused (so camera works every time)
   // But only reset if not currently showing a result modal
@@ -34,6 +36,8 @@ export default function QRScannerScreen() {
         setShowResultModal(false);
         setResultType(null);
         setResultMessage('');
+        // Clear processed QRs when returning to scanner
+        processedQRs.current.clear();
       }
     }, [])
   );
@@ -103,12 +107,13 @@ export default function QRScannerScreen() {
 
   const handleBarCodeScanned = async ({ data }: { data: string }) => {
     // Prevent double scanning
-    if (scanned || claimMutation.isPending) return;
+    if (scanned || claimMutation.isPending) {
+      console.log('Already scanned or processing, ignoring');
+      return;
+    }
     
-    setScanned(true);
-
     try {
-      // Expected format: sepolia-health://claim?id=123&sig=abc&t=456
+      // Expected format: sepolia-health://claim?id=123&sig=abc&t=456&i=15
       if (data.startsWith('sepolia-health://claim')) {
         const url = data.replace('sepolia-health://claim?', '');
         const params = new URLSearchParams(url);
@@ -119,9 +124,21 @@ export default function QRScannerScreen() {
         const i = params.get('i');
 
         if (!id || !sig || !t || !i) {
+          setScanned(true);
           showResult('error', 'Dữ liệu mã QR không đúng định dạng');
           return;
         }
+
+        // Check if this QR has already been processed
+        const qrKey = `${id}-${sig}-${t}-${i}`;
+        if (processedQRs.current.has(qrKey)) {
+          console.log('QR already processed, ignoring duplicate scan');
+          return;
+        }
+
+        // Mark as scanned and add to processed set
+        setScanned(true);
+        processedQRs.current.add(qrKey);
 
         // Gọi API nhận voucher
         const result = await claimMutation.mutateAsync({
@@ -137,6 +154,7 @@ export default function QRScannerScreen() {
           showResult('info', result.message || 'Bạn đã có voucher này rồi.');
         }
       } else {
+        setScanned(true);
         showResult('error', 'Mã QR không hợp lệ hoặc không thuộc hệ thống Sepolia Health');
       }
     } catch (error: any) {

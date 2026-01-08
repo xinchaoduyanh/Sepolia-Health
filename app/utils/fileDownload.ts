@@ -3,11 +3,10 @@ import * as Sharing from 'expo-sharing';
 import { Alert } from 'react-native';
 
 /**
- * Download file to device and optionally share it
+ * Download file to device and save it
  */
 export async function downloadFile(url: string, fileName: string, fileType: string): Promise<void> {
   try {
-    // Show loading indicator (you can customize this)
     console.log('Downloading file...', fileName);
 
     // Download file to cache directory
@@ -18,13 +17,12 @@ export async function downloadFile(url: string, fileName: string, fileType: stri
       throw new Error('Failed to download file');
     }
 
-    // Check if sharing is available
+    // Use share dialog to let user save the file
     const isAvailable = await Sharing.isAvailableAsync();
     if (isAvailable) {
-      // Share the file (this allows user to save or open it)
       await Sharing.shareAsync(downloadResult.uri, {
         mimeType: fileType,
-        dialogTitle: 'Lưu hoặc mở file',
+        dialogTitle: 'Lưu file',
         UTI: fileType,
       });
     } else {
