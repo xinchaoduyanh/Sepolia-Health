@@ -36,7 +36,7 @@ export class AppointmentService {
     private readonly prisma: PrismaService,
     private readonly notificationService: NotificationService,
     private readonly meetingService: MeetingService,
-  ) {}
+  ) { }
 
   /**
    * Get all appointments with filters
@@ -445,9 +445,8 @@ export class AppointmentService {
               changes: Object.keys(changes).length > 0 ? changes : undefined,
               notes: body.notes,
               startTime: updatedAppointment.startTime,
-              doctorName: `${
-                updatedAppointment.doctor?.firstName || ''
-              } ${updatedAppointment.doctor?.lastName || ''}`.trim(),
+              doctorName: `${updatedAppointment.doctor?.firstName || ''
+                } ${updatedAppointment.doctor?.lastName || ''}`.trim(),
               serviceName: updatedAppointment.service?.name || '',
               clinicName: updatedAppointment.clinic?.name || '',
             },
@@ -523,9 +522,8 @@ export class AppointmentService {
           {
             appointmentId: appointment.id,
             startTime: appointment.startTime,
-            doctorName: `${
-              appointment.doctor?.firstName || ''
-            } ${appointment.doctor?.lastName || ''}`.trim(),
+            doctorName: `${appointment.doctor?.firstName || ''
+              } ${appointment.doctor?.lastName || ''}`.trim(),
             serviceName: appointment.service?.name || '',
             recipientId: patientUserId,
             reason: 'Bạn đã hủy lịch hẹn này',
@@ -965,6 +963,7 @@ export class AppointmentService {
             icon: true,
           },
         },
+        isAvailableOnline: true,
       },
       orderBy: {
         name: SortOrder.ASC,
@@ -1270,101 +1269,101 @@ export class AppointmentService {
       joinUrl: appointment.joinUrl,
       patient: appointment.patientProfile
         ? {
-            id: appointment.patientProfile.id,
-            firstName: appointment.patientProfile.firstName,
-            lastName: appointment.patientProfile.lastName,
-            phone: appointment.patientProfile.phone,
-            email: appointment.patientProfile.email || null,
-            dateOfBirth: appointment.patientProfile.dateOfBirth
-              ? appointment.patientProfile.dateOfBirth
-                  .toISOString()
-                  .split('T')[0]
-              : null,
-            gender: appointment.patientProfile.gender || null,
-            relationship: appointment.patientProfile.relationship || null,
-          }
+          id: appointment.patientProfile.id,
+          firstName: appointment.patientProfile.firstName,
+          lastName: appointment.patientProfile.lastName,
+          phone: appointment.patientProfile.phone,
+          email: appointment.patientProfile.email || null,
+          dateOfBirth: appointment.patientProfile.dateOfBirth
+            ? appointment.patientProfile.dateOfBirth
+              .toISOString()
+              .split('T')[0]
+            : null,
+          gender: appointment.patientProfile.gender || null,
+          relationship: appointment.patientProfile.relationship || null,
+        }
         : {
-            id: appointment.patientId,
-            firstName: '',
-            lastName: '',
-            phone: '',
-            email: null,
-            dateOfBirth: null,
-            gender: null,
-            relationship: null,
-          },
+          id: appointment.patientId,
+          firstName: '',
+          lastName: '',
+          phone: '',
+          email: null,
+          dateOfBirth: null,
+          gender: null,
+          relationship: null,
+        },
       doctor: appointment.doctor
         ? {
-            id: appointment.doctor.id,
-            firstName: appointment.doctor.firstName,
-            lastName: appointment.doctor.lastName,
-          }
+          id: appointment.doctor.id,
+          firstName: appointment.doctor.firstName,
+          lastName: appointment.doctor.lastName,
+        }
         : {
-            id: appointment.doctorId,
-            firstName: '',
-            lastName: '',
-          },
+          id: appointment.doctorId,
+          firstName: '',
+          lastName: '',
+        },
       service: appointment.service
         ? {
-            id: appointment.service.id,
-            name: appointment.service.name,
-            price: appointment.service.price,
-            duration: appointment.service.duration,
-            specialty: appointment.service.specialty
-              ? {
-                  id: appointment.service.specialty.id,
-                  name: appointment.service.specialty.name,
-                  description:
-                    appointment.service.specialty.description || undefined,
-                  icon: appointment.service.specialty.icon || undefined,
-                }
-              : undefined,
-          }
+          id: appointment.service.id,
+          name: appointment.service.name,
+          price: appointment.service.price,
+          duration: appointment.service.duration,
+          specialty: appointment.service.specialty
+            ? {
+              id: appointment.service.specialty.id,
+              name: appointment.service.specialty.name,
+              description:
+                appointment.service.specialty.description || undefined,
+              icon: appointment.service.specialty.icon || undefined,
+            }
+            : undefined,
+        }
         : {
-            id: appointment.serviceId,
-            name: '',
-            price: 0,
-            duration: 0,
-          },
+          id: appointment.serviceId,
+          name: '',
+          price: 0,
+          duration: 0,
+        },
       clinic: appointment.clinic
         ? {
-            id: appointment.clinic.id,
-            name: appointment.clinic.name,
-          }
+          id: appointment.clinic.id,
+          name: appointment.clinic.name,
+        }
         : {
-            id: appointment.clinicId,
-            name: '',
-          },
+          id: appointment.clinicId,
+          name: '',
+        },
       billing: appointment.billing
         ? {
-            id: appointment.billing.id,
-            amount: appointment.billing.amount,
-            status: appointment.billing.status,
-            paymentMethod: appointment.billing.paymentMethod,
-            notes: appointment.billing.notes,
-            createdAt: appointment.billing.createdAt,
-          }
+          id: appointment.billing.id,
+          amount: appointment.billing.amount,
+          status: appointment.billing.status,
+          paymentMethod: appointment.billing.paymentMethod,
+          notes: appointment.billing.notes,
+          createdAt: appointment.billing.createdAt,
+        }
         : undefined,
       feedback: appointment.feedback
         ? {
-            id: appointment.feedback.id,
-            rating: appointment.feedback.rating,
-            comment: appointment.feedback.comment,
-            createdAt: appointment.feedback.createdAt,
-          }
+          id: appointment.feedback.id,
+          rating: appointment.feedback.rating,
+          comment: appointment.feedback.comment,
+          createdAt: appointment.feedback.createdAt,
+        }
         : undefined,
       result: appointment.result
         ? {
-            id: appointment.result.id,
-            diagnosis: appointment.result.diagnosis,
-            notes: appointment.result.notes,
-            prescription: appointment.result.prescription,
-            recommendations: appointment.result.recommendations,
-            appointmentId: appointment.result.appointmentId,
-            createdAt: appointment.result.createdAt,
-            updatedAt: appointment.result.updatedAt,
-            files: appointment.result.files || [], // ✅ Include files array
-          }
+          id: appointment.result.id,
+          diagnosis: appointment.result.diagnosis,
+          notes: appointment.result.notes,
+          prescription: appointment.result.prescription,
+          recommendations: appointment.result.recommendations,
+          appointmentId: appointment.result.appointmentId,
+          createdAt: appointment.result.createdAt,
+          updatedAt: appointment.result.updatedAt,
+          files: appointment.result.files || [], // ✅ Include files array
+        }
         : undefined,
       doctorServiceId: appointment.doctorServiceId,
       createdAt: appointment.createdAt,
@@ -1457,7 +1456,7 @@ export class AppointmentService {
       const minues = vnTime.getHours() * 60 + vnTime.getMinutes();
 
       if (minues >= 750) {
-        startTime = '17:00';
+        startTime = '17:30';
       } else if (minues >= 450) {
         startTime = '12:00';
       }

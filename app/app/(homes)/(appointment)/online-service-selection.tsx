@@ -23,6 +23,8 @@ export default function OnlineServiceSelectionScreen() {
 
   const services = servicesData?.data || [];
 
+  console.log('All Services:', services.map(s => ({ id: s.id, name: s.name, isAvailableOnline: s.isAvailableOnline })));
+
   const filteredServices = services.filter((service: Service) => {
     // 1. Filter by Search Query
     const matchesSearch =
@@ -33,7 +35,7 @@ export default function OnlineServiceSelectionScreen() {
     if (!matchesSearch) return false;
 
     // 2. Filter by Online Availability
-    if (service.isAvailableOnline === false) return false;
+    if (!service.isAvailableOnline) return false;
 
     // 3. Filter by Gender if selected
     if (patientGender && service.targetGender && service.targetGender !== patientGender) {
@@ -166,9 +168,8 @@ export default function OnlineServiceSelectionScreen() {
               <Pressable
                 key={service.id}
                 onPress={() => handleServiceSelect(service.id)}
-                className={`mb-4 rounded-xl border-2 p-4 ${
-                  selectedService === service.id ? 'border-emerald-500' : 'border-emerald-200'
-                }`}
+                className={`mb-4 rounded-xl border-2 p-4 ${selectedService === service.id ? 'border-emerald-500' : 'border-emerald-200'
+                  }`}
                 style={{
                   backgroundColor: selectedService === service.id ? '#D1FAE5' : '#ECFDF5',
                 }}>

@@ -269,7 +269,7 @@ export default function OnlineAppointmentScreen() {
 
       {/* Header */}
       <LinearGradient
-        colors={['#10B981', '#06B6D4', '#0284C7']}
+        colors={['#0284C7', '#06B6D4', '#10B981']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={{ paddingTop: 60, paddingBottom: 24, paddingHorizontal: 24 }}>
@@ -317,9 +317,8 @@ export default function OnlineAppointmentScreen() {
                   <View className="items-center">
                     <Pressable
                       onPress={() => handleCustomerSelect('me', primaryProfile)}
-                      className={`h-16 w-16 items-center justify-center rounded-full border-2 ${
-                        selectedCustomer === 'me' ? 'border-emerald-500' : 'border-emerald-300'
-                      }`}>
+                      className={`h-16 w-16 items-center justify-center rounded-full border-2 ${selectedCustomer === 'me' ? 'border-emerald-500' : 'border-emerald-300'
+                        }`}>
                       {primaryProfile.avatar ? (
                         <Image
                           source={{ uri: primaryProfile.avatar }}
@@ -342,14 +341,12 @@ export default function OnlineAppointmentScreen() {
                     </Pressable>
                     <Pressable
                       onPress={() => handleCustomerSelect('me', primaryProfile)}
-                      className={`mt-2 rounded-full px-4 py-2 ${
-                        selectedCustomer === 'me' ? 'bg-emerald-500' : 'bg-emerald-50'
-                      }`}>
+                      className={`mt-2 rounded-full px-4 py-2 ${selectedCustomer === 'me' ? 'bg-emerald-500' : 'bg-emerald-50'
+                        }`}>
                       <View className="flex-row items-center">
                         <Text
-                          className={`font-medium ${
-                            selectedCustomer === 'me' ? 'text-white' : 'text-gray-600'
-                          }`}>
+                          className={`font-medium ${selectedCustomer === 'me' ? 'text-white' : 'text-gray-600'
+                            }`}>
                           Bản thân
                         </Text>
                         {selectedCustomer === 'me' && (
@@ -370,11 +367,10 @@ export default function OnlineAppointmentScreen() {
                   <View key={profile.id} className="items-center">
                     <Pressable
                       onPress={() => handleCustomerSelect(`profile-${profile.id}`, profile)}
-                      className={`h-16 w-16 items-center justify-center rounded-full border-2 ${
-                        selectedCustomer === `profile-${profile.id}`
+                      className={`h-16 w-16 items-center justify-center rounded-full border-2 ${selectedCustomer === `profile-${profile.id}`
                           ? 'border-emerald-500'
                           : 'border-emerald-300'
-                      }`}>
+                        }`}>
                       {profile.avatar ? (
                         <Image
                           source={{ uri: profile.avatar }}
@@ -393,18 +389,16 @@ export default function OnlineAppointmentScreen() {
                     </Pressable>
                     <Pressable
                       onPress={() => handleCustomerSelect(`profile-${profile.id}`, profile)}
-                      className={`mt-2 rounded-full px-4 py-2 ${
-                        selectedCustomer === `profile-${profile.id}`
+                      className={`mt-2 rounded-full px-4 py-2 ${selectedCustomer === `profile-${profile.id}`
                           ? 'bg-emerald-500'
                           : 'bg-emerald-50'
-                      }`}>
+                        }`}>
                       <View className="flex-row items-center">
                         <Text
-                          className={`font-medium ${
-                            selectedCustomer === `profile-${profile.id}`
+                          className={`font-medium ${selectedCustomer === `profile-${profile.id}`
                               ? 'text-white'
                               : 'text-gray-600'
-                          }`}>
+                            }`}>
                           {getRelationshipLabel(profile.relationship) || profile.firstName}
                         </Text>
                         {selectedCustomer === `profile-${profile.id}` && (
@@ -424,9 +418,8 @@ export default function OnlineAppointmentScreen() {
                 <View className="items-center">
                   <Pressable
                     onPress={() => handleCustomerSelect('add')}
-                    className={`h-16 w-16 items-center justify-center rounded-full border-2 ${
-                      selectedCustomer === 'add' ? 'border-emerald-500' : 'border-emerald-300'
-                    }`}>
+                    className={`h-16 w-16 items-center justify-center rounded-full border-2 ${selectedCustomer === 'add' ? 'border-emerald-500' : 'border-emerald-300'
+                      }`}>
                     <Ionicons
                       name="person-add"
                       size={32}
@@ -435,14 +428,12 @@ export default function OnlineAppointmentScreen() {
                   </Pressable>
                   <Pressable
                     onPress={() => handleCustomerSelect('add')}
-                    className={`mt-2 rounded-full px-4 py-2 ${
-                      selectedCustomer === 'add' ? 'bg-emerald-500' : 'bg-emerald-50'
-                    }`}>
+                    className={`mt-2 rounded-full px-4 py-2 ${selectedCustomer === 'add' ? 'bg-emerald-500' : 'bg-emerald-50'
+                      }`}>
                     <View className="flex-row items-center">
                       <Text
-                        className={`font-medium ${
-                          selectedCustomer === 'add' ? 'text-white' : 'text-gray-600'
-                        }`}>
+                        className={`font-medium ${selectedCustomer === 'add' ? 'text-white' : 'text-gray-600'
+                          }`}>
                         Thêm mới
                       </Text>
                       {selectedCustomer === 'add' && (
@@ -613,17 +604,15 @@ export default function OnlineAppointmentScreen() {
               <Pressable
                 onPress={handleDoctorSelect}
                 disabled={!selectedService}
-                className={`flex-row items-center rounded-xl border px-5 py-4 ${
-                  selectedService ? 'border-[#A7F3D0]' : 'border-[#D1D5DB]'
-                }`}
+                className={`flex-row items-center rounded-xl border px-5 py-4 ${selectedService ? 'border-[#A7F3D0]' : 'border-[#D1D5DB]'
+                  }`}
                 style={{
                   backgroundColor: selectedService ? '#ECFDF5' : '#F9FAFB',
                 }}>
                 <Ionicons name="person" size={22} color={selectedService ? '#10B981' : '#9CA3AF'} />
                 <Text
-                  className={`ml-4 text-lg font-medium ${
-                    selectedService ? 'text-[#0F172A]' : 'text-[#9CA3AF]'
-                  }`}>
+                  className={`ml-4 text-lg font-medium ${selectedService ? 'text-[#0F172A]' : 'text-[#9CA3AF]'
+                    }`}>
                   {selectedDoctor ? selectedDoctor : '* Chọn bác sĩ'}
                 </Text>
                 <Ionicons
@@ -659,23 +648,20 @@ export default function OnlineAppointmentScreen() {
                   <Pressable
                     key={index}
                     onPress={() => handlePresetDateSelect(date)}
-                    className={`flex-1 rounded-xl px-4 py-4 ${
-                      selectedDate === date.fullDate ? 'bg-emerald-500' : 'bg-emerald-50'
-                    }`}
+                    className={`flex-1 rounded-xl px-4 py-4 ${selectedDate === date.fullDate ? 'bg-emerald-500' : 'bg-emerald-50'
+                      }`}
                     style={{
                       borderColor: selectedDate === date.fullDate ? '#10B981' : '#A7F3D0',
                       borderWidth: selectedDate === date.fullDate ? 2 : 1,
                     }}>
                     <Text
-                      className={`text-center text-base font-medium ${
-                        selectedDate === date.fullDate ? 'text-white' : 'text-gray-600'
-                      }`}>
+                      className={`text-center text-base font-medium ${selectedDate === date.fullDate ? 'text-white' : 'text-gray-600'
+                        }`}>
                       {date.dayName} {date.day}/{date.month}
                     </Text>
                     <Text
-                      className={`mt-1 text-center text-sm ${
-                        selectedDate === date.fullDate ? 'text-emerald-100' : 'text-gray-500'
-                      }`}>
+                      className={`mt-1 text-center text-sm ${selectedDate === date.fullDate ? 'text-emerald-100' : 'text-gray-500'
+                        }`}>
                       {index === 0 ? 'Hôm nay' : index === 1 ? 'Ngày mai' : 'Ngày kia'}
                     </Text>
                   </Pressable>
@@ -853,54 +839,50 @@ export default function OnlineAppointmentScreen() {
                           const selectedDate = new Date(date.year, date.month - 1, date.day);
                           handleCustomDateConfirm(selectedDate);
                         }}
-                        className={`w-20 rounded-xl border-2 px-2 py-3 ${
-                          selectedCustomDate &&
-                          selectedCustomDate.getDate() === date.day &&
-                          selectedCustomDate.getMonth() === date.month - 1 &&
-                          selectedCustomDate.getFullYear() === date.year
-                            ? 'border-emerald-500'
-                            : 'border-emerald-200'
-                        }`}
-                        style={{
-                          backgroundColor:
-                            selectedCustomDate &&
+                        className={`w-20 rounded-xl border-2 px-2 py-3 ${selectedCustomDate &&
                             selectedCustomDate.getDate() === date.day &&
                             selectedCustomDate.getMonth() === date.month - 1 &&
                             selectedCustomDate.getFullYear() === date.year
+                            ? 'border-emerald-500'
+                            : 'border-emerald-200'
+                          }`}
+                        style={{
+                          backgroundColor:
+                            selectedCustomDate &&
+                              selectedCustomDate.getDate() === date.day &&
+                              selectedCustomDate.getMonth() === date.month - 1 &&
+                              selectedCustomDate.getFullYear() === date.year
                               ? '#A7F3D0'
                               : '#F9FAFB',
                         }}>
                         <Text
-                          className={`text-center text-sm font-medium ${
-                            selectedCustomDate &&
-                            selectedCustomDate.getDate() === date.day &&
-                            selectedCustomDate.getMonth() === date.month - 1 &&
-                            selectedCustomDate.getFullYear() === date.year
+                          className={`text-center text-sm font-medium ${selectedCustomDate &&
+                              selectedCustomDate.getDate() === date.day &&
+                              selectedCustomDate.getMonth() === date.month - 1 &&
+                              selectedCustomDate.getFullYear() === date.year
                               ? 'text-emerald-700'
                               : 'text-gray-600'
-                          }`}>
+                            }`}>
                           {date.dayName}
                         </Text>
                         <Text
-                          className={`mt-1 text-center text-lg font-bold ${
-                            selectedCustomDate &&
-                            selectedCustomDate.getDate() === date.day &&
-                            selectedCustomDate.getMonth() === date.month - 1 &&
-                            selectedCustomDate.getFullYear() === date.year
+                          className={`mt-1 text-center text-lg font-bold ${selectedCustomDate &&
+                              selectedCustomDate.getDate() === date.day &&
+                              selectedCustomDate.getMonth() === date.month - 1 &&
+                              selectedCustomDate.getFullYear() === date.year
                               ? 'text-emerald-700'
                               : 'text-gray-900'
-                          }`}>
+                            }`}>
                           {date.day}
                         </Text>
                         <Text
-                          className={`text-center text-xs ${
-                            selectedCustomDate &&
-                            selectedCustomDate.getDate() === date.day &&
-                            selectedCustomDate.getMonth() === date.month - 1 &&
-                            selectedCustomDate.getFullYear() === date.year
+                          className={`text-center text-xs ${selectedCustomDate &&
+                              selectedCustomDate.getDate() === date.day &&
+                              selectedCustomDate.getMonth() === date.month - 1 &&
+                              selectedCustomDate.getFullYear() === date.year
                               ? 'text-emerald-700'
                               : 'text-gray-500'
-                          }`}>
+                            }`}>
                           Thg {date.month}
                         </Text>
                       </Pressable>

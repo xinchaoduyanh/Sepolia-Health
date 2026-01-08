@@ -11,7 +11,6 @@ import { TransactionStatus, PaymentStatus } from '@prisma/client';
 import { ERROR_MESSAGES } from '@/common/constants/error-messages';
 import { RedisService } from '@/common/modules/redis';
 import { NotificationService } from '@/module/notification/notification.service';
-import { NotificationType, NotificationPriority } from '@/module/notification/notification.types';
 import {
   CreateQrScanDto,
   QrScanResponseDto,
@@ -29,7 +28,7 @@ export class PaymentService {
     @Inject(appConfig.KEY)
     private readonly paymentConf: ConfigType<typeof appConfig>,
     private readonly notificationService: NotificationService,
-  ) {}
+  ) { }
 
   /**
    * Apply voucher to appointment billing
