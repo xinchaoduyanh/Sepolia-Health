@@ -214,7 +214,10 @@ export default function OnlineDoctorSelectionScreen() {
                     )}
                     {doctor.experience && (
                       <Text className="mt-1 text-sm text-slate-500">
-                        {new Date().getFullYear() - doctor.experience} năm kinh nghiệm
+                        {parseInt(doctor.experience) > 1900
+                          ? new Date().getFullYear() - parseInt(doctor.experience)
+                          : parseInt(doctor.experience)}{' '}
+                        năm kinh nghiệm
                       </Text>
                     )}
                     <View className="mt-2 flex-row items-center">{renderStars(doctor.rating)}</View>

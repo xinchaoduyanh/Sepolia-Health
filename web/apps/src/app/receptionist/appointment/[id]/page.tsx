@@ -398,7 +398,7 @@ export default function AppointmentDetailPage() {
                                         </p>
                                         <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
                                             {appointment.doctor?.experience
-                                                ? `${new Date().getFullYear() - parseInt(appointment.doctor.experience)} năm kinh nghiệm`
+                                                ? `${parseInt(appointment.doctor.experience) > 1900 ? new Date().getFullYear() - parseInt(appointment.doctor.experience) : parseInt(appointment.doctor.experience)} năm kinh nghiệm`
                                                 : 'N/A'}
                                         </p>
                                     </div>

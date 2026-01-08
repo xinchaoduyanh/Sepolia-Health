@@ -379,7 +379,10 @@ export default function DoctorSelectionScreen() {
 
                       {doctor.experience && (
                         <Text className="mb-2 text-sm text-slate-600">
-                          {new Date().getFullYear() - parseInt(doctor.experience)} năm kinh nghiệm
+                          {parseInt(doctor.experience) > 1900
+                            ? new Date().getFullYear() - parseInt(doctor.experience)
+                            : parseInt(doctor.experience)}{' '}
+                          năm kinh nghiệm
                         </Text>
                       )}
 

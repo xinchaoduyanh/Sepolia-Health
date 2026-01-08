@@ -300,7 +300,7 @@ export class ChatbotService {
         hasContent: !!agentResponse.content,
         contentLength: agentResponse.content?.length || 0,
         contentPreview: agentResponse.content?.substring(0, 100) || '',
-        hasToolCalls: !!agentResponse.toolCalls,
+        hasToolCalls: !!(agentResponse.toolCalls?.length),
         toolCallsCount: agentResponse.toolCalls?.length || 0,
       });
 
@@ -559,7 +559,7 @@ export class ChatbotService {
         hasContent: !!nextAgentResponse.content,
         contentLength: nextAgentResponse.content?.length || 0,
         contentPreview: nextAgentResponse.content?.substring(0, 100) || '',
-        hasToolCalls: !!nextAgentResponse.toolCalls,
+        hasToolCalls: !!(nextAgentResponse.toolCalls?.length),
         toolCallsCount: nextAgentResponse.toolCalls?.length || 0,
       },
     );
@@ -786,7 +786,7 @@ QUY TẮC QUAN TRỌNG VỀ THỜI GIAN:
 1. LUÔN dựa vào "Calendar Strip" dưới đây để xác định thứ/ngày. 
 2. Calendar Strip (14 ngày tới): ${calendarStrip}
 3. Thời điểm hiện tại: ${formattedDate}
-4. AI TUYỆT ĐỐI KHÔNG TỰ TÍNH TOÁN NGÀY. Nếu người dùng nói "thứ 5 tuần sau", hãy nhìn vào Calendar Strip để lấy đúng ngày YYYY-MM-DD.
+4. AI TUYỆT ĐỐI KHÔNG TỰ TÍNH TOÁN NGÀY. Nếu người dùng nói "thứ 3 tuần tới", hãy nhìn vào Calendar Strip để lấy đúng ngày YYYY-MM-DD.
    GHI CHÚ MAPPING THỨ TRONG TUẦN (Tiếng Việt -> Thứ):
    - Thứ 2 = Monday
    - Thứ 3 = Tuesday
@@ -795,15 +795,10 @@ QUY TẮC QUAN TRỌNG VỀ THỜI GIAN:
    - Thứ 6 = Friday
    - Thứ 7 = Saturday
    - Chủ nhật = Sunday
-5. ƯU TIÊN TOOL: Nếu người dùng nhắc ĐÍCH DANH tên bác sĩ (Ví dụ: BS. Thái Đức), bạn BẮT BUỘC phải gọi tool check_doctor_schedule. Chỉ dùng find_available_doctors khi người dùng tìm kiếm chung chung theo dịch vụ hoặc phòng khám mà không chỉ định rõ bác sĩ nào.
-6. THAM SỐ TOOL: Trong tool check_doctor_schedule, 'doctorId' BẮT BUỘC phải là số nguyên (Integer). Nếu bạn chỉ biết tên bác sĩ, hãy truyền vào 'doctorName' (String) và để trống 'doctorId'. TUYỆT ĐỐI không đưa tên vào ô doctorId.
-7. PHẢI gọi tool để lấy dữ liệu thực tế. KHÔNG ĐƯỢC tự bịa ra giờ trống.
-8. ĐỊNH DẠNG TRẢ LỜI: Khi trả về lịch rảnh của bác sĩ, bạn BẮT BUỘC phải sử dụng đúng nội dung và định dạng từ trường 'message' của kết quả tool (Ví dụ: "08:00 - 11:30"). Tuyệt đối KHÔNG liệt kê rời rạc từng khung giờ 30 phút.
-
-PHONG CÁCH HÀNH XỬ:
-- Ngôn ngữ: Tiếng Việt, lịch sự, thân thiện, chuyên nghiệp.
-- Khi tìm thấy bác sĩ/lịch trống, hãy gợi ý nhiệt tình và hỏi xem người dùng có muốn đặt lịch luôn không.
-- Nếu người dùng yêu cầu đặt lịch trong quá khứ, hãy từ chối khéo léo và hướng dẫn chọn ngày từ hôm nay trở đi.`,
+5. BẮT BUỘC DÙNG TOOL: Bạn KHÔNG ĐƯỢC tự bịa ra hay phỏng đoán lịch trống của bác sĩ. Nếu người dùng hỏi về lịch rảnh, bạn BẮT BUỘC phải gọi tool thích hợp.
+6. ƯU TIÊN TOOL: Nếu người dùng nhắc ĐÍCH DANH tên bác sĩ (Ví dụ: "BST Vương Hữu Canh", "Bác sĩ Canh"), bạn BẮT BUỘC phải gọi tool 'check_doctor_schedule'. TUYỆT ĐỐI KHÔNG dùng tool 'find_available_doctors' khi đã biết tên bác sĩ trừ khi được yêu cầu tìm nhiều bác sĩ khác.
+7. THAM SỐ TOOL: Trong 'check_doctor_schedule', 'doctorId' phải là số. Nếu chỉ biết tên, hãy truyền vào 'doctorName' và để trống 'doctorId'.
+8. ĐỊNH DẠNG TRẢ LỜI: Khi có kết quả từ tool, hãy dùng nội dung từ trường 'message' của tool để trả lời. TUYỆT ĐỐI KHÔNG tự sáng tạo giờ giấc khác.`,
       };
 
       // 2. TẠO REQUEST BODY (thêm dynamicContext vào ĐẦU mảng)
@@ -819,6 +814,12 @@ PHONG CÁCH HÀNH XỬ:
           'Content-Type': 'application/json',
         },
         timeout: 60000, // Tăng lên 60s để tránh timeout khi AI suy nghĩ sâu
+      });
+      
+      this.log('callAgent', 'debug', 'Raw Agent Response', {
+        status: response.status,
+        message: response.data.choices?.[0]?.message?.content?.substring(0, 100) || 'No content',
+        toolCalls: response.data.choices?.[0]?.message?.tool_calls?.length || 0,
       });
 
       const message = response.data.choices?.[0]?.message;
@@ -1157,7 +1158,7 @@ PHONG CÁCH HÀNH XỬ:
         hasContent: !!response.content,
         contentLength: response.content?.length || 0,
         contentPreview: response.content?.substring(0, 100) || '',
-        hasToolCalls: !!response.toolCalls,
+        hasToolCalls: !!(response.toolCalls?.length),
         toolCallsCount: response.toolCalls?.length || 0,
       },
     );

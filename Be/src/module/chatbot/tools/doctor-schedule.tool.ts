@@ -42,40 +42,43 @@ export class DoctorScheduleTool {
       // 3. XỬ LÝ NGÀY & TIMEZONE (UTC+7)
       let targetDate: Date;
       const now = new Date();
-      // Chuyển sang giờ VN để xác định "hôm nay"
-      const vnNow = new Date(now.getTime() + APP_TIMEZONE_OFFSET * 3600000);
-      const vnToday = new Date(vnNow);
-      vnToday.setUTCHours(0, 0, 0, 0);
-
+      const nowUtc = now.getTime();
+      const vnNow = new Date(nowUtc + APP_TIMEZONE_OFFSET * 3600000);
+      
+      // Calculate start of today in VN Time (UTC+7), represented as UTC timestamp
+      // Example: Now = 10:00 UTC. VN = 17:00. Start of VN Day = 00:00 VN.
+      // We want targetDate to be the UTC Date object representing 00:00:00 of the target VN day.
+      // This ensures Prisma queries against @db.Date column work correctly (expecting YYYY-MM-DD 00:00:00 UTC usually)
+      
       if (params.date) {
-        const parsedDate = parse(params.date, 'yyyy-MM-dd', new Date());
-        if (!isValid(parsedDate)) {
-          return {
-            error: 'Định dạng ngày không hợp lệ. Vui lòng sử dụng YYYY-MM-DD.',
-          };
+        // Parse "YYYY-MM-DD" literally
+        const [y, m, d] = params.date.split('-').map(Number);
+        if (!y || !m || !d) {
+             return { error: 'Định dạng ngày không hợp lệ. Vui lòng sử dụng YYYY-MM-DD.' };
         }
+        // Construct strictly UTC midnight
+        targetDate = new Date(Date.UTC(y, m - 1, d));
+        
+        // Validation: Past check
+        // Compare with "today" VN start
+        const todayVnYear = vnNow.getUTCFullYear();
+        const todayVnMonth = vnNow.getUTCMonth();
+        const todayVnDay = vnNow.getUTCDate();
+        const todayVnStart = new Date(Date.UTC(todayVnYear, todayVnMonth, todayVnDay));
 
-        // Kiểm tra ngày trong quá khứ (so sánh start of day)
-        const checkDate = new Date(parsedDate);
-        checkDate.setHours(0, 0, 0, 0);
-
-        const compareToday = new Date(now);
-        compareToday.setHours(0, 0, 0, 0);
-
-        if (isBefore(checkDate, compareToday)) {
+        if (targetDate < todayVnStart) {
           return {
-            message:
-              'Xin lỗi, mình không thể hỗ trợ đặt lịch trong quá khứ được ạ. Bạn vui lòng chọn một ngày từ hôm nay trở đi nhé!',
+            message: 'Xin lỗi, mình không thể hỗ trợ đặt lịch trong quá khứ được ạ. Bạn vui lòng chọn một ngày từ hôm nay trở đi nhé!',
             isPast: true,
           };
         }
-        targetDate = parsedDate;
       } else {
-        targetDate = new Date(vnToday);
+        // Default to today VN
+        targetDate = new Date(Date.UTC(vnNow.getUTCFullYear(), vnNow.getUTCMonth(), vnNow.getUTCDate()));
       }
 
       // 4. Kiểm tra lịch làm việc của bác sĩ
-      const dayOfWeek = targetDate.getDay();
+      const dayOfWeek = this.getVNDayOfWeek(targetDate);
       const availability = await this.prisma.doctorAvailability.findUnique({
         where: {
           doctorId_dayOfWeek: {
@@ -90,23 +93,24 @@ export class DoctorScheduleTool {
         const nextAvailable = await this.findNextAvailableDay(doctor.id);
         return {
           doctor: this.formatDoctorInfo(doctor),
-          date: format(targetDate, 'dd/MM/yyyy', { locale: vi }),
+          date: this.formatVNDate(targetDate, 'dd/MM/yyyy'),
           message: 'Bác sĩ không làm việc vào ngày này',
           nextAvailableDate: nextAvailable
-            ? format(nextAvailable, 'dd/MM/yyyy', { locale: vi })
+            ? this.formatVNDate(nextAvailable, 'dd/MM/yyyy')
             : null,
           suggestion: nextAvailable
-            ? `Bác sĩ có lịch làm việc vào ${format(nextAvailable, 'EEEE, dd/MM/yyyy', { locale: vi })}`
+            ? `Bác sĩ có lịch làm việc vào ${this.formatVNDate(nextAvailable, 'EEEE, dd/MM/yyyy')}`
             : 'Bác sĩ không có lịch làm việc trong 7 ngày tới',
         };
       }
 
       // 5. Kiểm tra Overrides (Nghỉ đột xuất)
+      // targetDate is strictly YYYY-MM-DD 00:00:00 UTC, which matches Prisma @db.Date expectations
       const override = await this.prisma.availabilityOverride.findUnique({
         where: {
           doctorId_date: {
             doctorId: doctor.id,
-            date: targetDate,
+            date: targetDate, 
           },
         },
       });
@@ -115,10 +119,10 @@ export class DoctorScheduleTool {
         const nextAvailable = await this.findNextAvailableDay(doctor.id);
         return {
           doctor: this.formatDoctorInfo(doctor),
-          date: format(targetDate, 'dd/MM/yyyy', { locale: vi }),
+          date: this.formatVNDate(targetDate, 'dd/MM/yyyy'),
           message: 'Bác sĩ nghỉ vào ngày này',
           nextAvailableDate: nextAvailable
-            ? format(nextAvailable, 'dd/MM/yyyy', { locale: vi })
+            ? this.formatVNDate(nextAvailable, 'dd/MM/yyyy')
             : null,
         };
       }
@@ -128,15 +132,12 @@ export class DoctorScheduleTool {
       const workingEndTime = override?.endTime || availability.endTime;
 
       // 7. Lấy danh sách lịch đã đặt
-      const startOfDay = new Date(targetDate);
-      const startUtcHours = startOfDay.getUTCHours();
-      const localHours = (startUtcHours + APP_TIMEZONE_OFFSET) % 24;
-      startOfDay.setUTCHours(startUtcHours - localHours, 0, 0, 0);
-
-      const endOfDay = new Date(startOfDay);
-      const endUtcHours = endOfDay.getUTCHours();
-      const endLocalHours = (endUtcHours + APP_TIMEZONE_OFFSET) % 24;
-      endOfDay.setUTCHours(endUtcHours + (23 - endLocalHours), 59, 59, 999);
+      // We need to query appointments that overlap with this VN Day.
+      // VN Day starts at targetDate - 7 hours (in absolute UTC time).
+      // Example: Jan 13 00:00 VN = Jan 12 17:00 UTC.
+      
+      const startOfDay = new Date(targetDate.getTime() - APP_TIMEZONE_OFFSET * 3600000);
+      const endOfDay = new Date(startOfDay.getTime() + 24 * 3600000 - 1); // End of VN day
 
       const appointments = await this.prisma.appointment.findMany({
         where: {
@@ -200,8 +201,8 @@ export class DoctorScheduleTool {
 
       return {
         doctor: this.formatDoctorInfo(doctor),
-        date: format(targetDate, 'dd/MM/yyyy', { locale: vi }),
-        dayOfWeek: format(targetDate, 'EEEE', { locale: vi }),
+        date: this.formatVNDate(targetDate, 'dd/MM/yyyy'),
+        dayOfWeek: this.formatVNDate(targetDate, 'EEEE'),
         workingHours: {
           start: workingStartTime,
           end: workingEndTime,
@@ -356,7 +357,7 @@ export class DoctorScheduleTool {
     availableSlots: string[],
   ): string {
     const doctorName = `BS. ${doctor.lastName} ${doctor.firstName}`;
-    const dateStr = format(date, 'EEEE, dd/MM/yyyy', { locale: vi });
+    const dateStr = this.formatVNDate(date, 'EEEE, dd/MM/yyyy');
 
     if (availableSlots.length === 0) {
       return `Rất tiếc, mình kiểm tra thì thấy ${doctorName} đã kín lịch vào ${dateStr} rồi bạn ạ.`;
@@ -472,12 +473,17 @@ export class DoctorScheduleTool {
   }
 
   private async findNextAvailableDay(doctorId: number): Promise<Date | null> {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const now = new Date();
+    const vnNow = new Date(now.getTime() + APP_TIMEZONE_OFFSET * 3600000);
+    // Align to UTC Midnight for VN Today
+    const todayUtc = new Date(Date.UTC(vnNow.getUTCFullYear(), vnNow.getUTCMonth(), vnNow.getUTCDate()));
 
     for (let i = 1; i <= 7; i++) {
-      const checkDate = addDays(today, i);
-      const dayOfWeek = checkDate.getDay();
+      // Add days to UTC date
+      const checkDate = new Date(todayUtc);
+      checkDate.setUTCDate(todayUtc.getUTCDate() + i);
+      
+      const dayOfWeek = checkDate.getUTCDay();
 
       // Check regular availability
       const availability = await this.prisma.doctorAvailability.findUnique({
@@ -511,5 +517,27 @@ export class DoctorScheduleTool {
     }
 
     return null;
+  }
+
+  private getVNDayOfWeek(date: Date): number {
+    // If the date is already UTC midnight (hacked or from our logic), use getUTCDay()
+    // If it's a real timestamp, adjust to VN and then use getUTCDay()
+    // Our targetDate is always UTC midnight.
+    return date.getUTCDay();
+  }
+
+  private formatVNDate(date: Date, pattern: string): string {
+    // Create a display date that format() will treat as "local" but whose numbers match the VN day
+    // Since our date is UTC midnight, we just need format to show that date.
+    // However, format() uses server local time. 
+    // To be safe, we reconstruct a local date with the same numbers as the UTC date.
+    const displayDate = new Date(
+      date.getUTCFullYear(),
+      date.getUTCMonth(),
+      date.getUTCDate(),
+      12, // Use Noon to avoid any DST/timezone edge cases at the very start/end of day
+      0, 0
+    );
+    return format(displayDate, pattern, { locale: vi });
   }
 }

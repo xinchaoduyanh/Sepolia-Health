@@ -191,9 +191,10 @@ const columns: any[] = [
         header: 'Kinh nghiệm',
         size: 120,
         cell: ({ getValue }: { getValue: () => any }) => {
-            const startYear = getValue() as number
+            const val = getValue() as number
             const currentYear = new Date().getFullYear()
-            const years = currentYear - startYear
+            // Fix: If value > 1900, it is Start Year. Otherwise it is Duration.
+            const years = val > 1900 ? currentYear - val : val
             return <span className="text-muted-foreground text-sm">{years} năm</span>
         },
     },

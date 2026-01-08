@@ -156,36 +156,33 @@ export class FindAvailableDoctorsTool {
       // 6. XỬ LÝ NGÀY & TIMEZONE (UTC+7)
       let targetDate: Date;
       const now = new Date();
-      // Chuyển sang giờ VN để xác định "hôm nay"
-      const vnNow = new Date(now.getTime() + APP_TIMEZONE_OFFSET * 3600000);
-      const vnToday = new Date(vnNow);
-      vnToday.setUTCHours(0, 0, 0, 0);
+      const nowUtc = now.getTime();
+      const vnNow = new Date(nowUtc + APP_TIMEZONE_OFFSET * 3600000);
+      
+      // Calculate start of today in VN Time (UTC+7), represented as UTC timestamp
+      // Example: Now = 10:00 UTC. VN = 17:00. Start of VN Day = 00:00 VN.
+      // We want targetDate to be the UTC Date object representing 00:00:00 of the target VN day.
+      
+      const vnToday = new Date(Date.UTC(vnNow.getUTCFullYear(), vnNow.getUTCMonth(), vnNow.getUTCDate()));
 
       if (params.date) {
-        const parsedDate = parse(params.date, 'yyyy-MM-dd', new Date());
-        if (!isValid(parsedDate)) {
-          return {
-            error: 'Định dạng ngày không hợp lệ. Vui lòng sử dụng YYYY-MM-DD.',
-          };
+        // Parse "YYYY-MM-DD" literally
+        const [y, m, d] = params.date.split('-').map(Number);
+        if (!y || !m || !d) {
+             return { error: 'Định dạng ngày không hợp lệ. Vui lòng sử dụng YYYY-MM-DD.' };
         }
-
-        // Kiểm tra ngày trong quá khứ
-        const checkDate = new Date(parsedDate);
-        checkDate.setHours(0, 0, 0, 0);
-
-        const compareToday = new Date(now);
-        compareToday.setHours(0, 0, 0, 0);
-
-        if (isBefore(checkDate, compareToday)) {
+        // Construct strictly UTC midnight
+        targetDate = new Date(Date.UTC(y, m - 1, d));
+        
+        // Validation: Past check
+        if (targetDate < vnToday) {
           return {
-            message:
-              'Xin lỗi, mình không thể hỗ trợ đặt lịch trong quá khứ được ạ. Bạn vui lòng chọn một ngày từ hôm nay trở đi nhé!',
+            message: 'Xin lỗi, mình không thể hỗ trợ đặt lịch trong quá khứ được ạ. Bạn vui lòng chọn một ngày từ hôm nay trở đi nhé!',
             isPast: true,
           };
         }
-        targetDate = parsedDate;
       } else {
-        targetDate = new Date(vnToday);
+        targetDate = vnToday;
       }
 
       // 7. Xác định thời lượng dịch vụ để tính slot
@@ -214,7 +211,7 @@ export class FindAvailableDoctorsTool {
         }
 
         // Kiểm tra availability cho ngày cụ thể
-        const dayOfWeek = targetDate.getDay();
+        const dayOfWeek = this.getVNDayOfWeek(targetDate);
 
         // Check regular availability
         const availability = await this.prisma.doctorAvailability.findUnique({
@@ -232,6 +229,7 @@ export class FindAvailableDoctorsTool {
         }
 
         // Check for override (nghỉ)
+        // targetDate is strictly UTC Midnight used for DB lookup
         const override = await this.prisma.availabilityOverride.findUnique({
           where: {
             doctorId_date: {
@@ -251,15 +249,9 @@ export class FindAvailableDoctorsTool {
         const endTime = override?.endTime || availability.endTime;
 
         // Get booked appointments
-        const startOfDay = new Date(targetDate);
-        const startUtcHours = startOfDay.getUTCHours();
-        const localHours = (startUtcHours + APP_TIMEZONE_OFFSET) % 24;
-        startOfDay.setUTCHours(startUtcHours - localHours, 0, 0, 0);
-
-        const endOfDay = new Date(startOfDay);
-        const endUtcHours = endOfDay.getUTCHours();
-        const endLocalHours = (endUtcHours + APP_TIMEZONE_OFFSET) % 24;
-        endOfDay.setUTCHours(endUtcHours + (23 - endLocalHours), 59, 59, 999);
+        // VN Day starts at targetDate - 7 hours (in absolute UTC time).
+        const startOfDay = new Date(targetDate.getTime() - APP_TIMEZONE_OFFSET * 3600000);
+        const endOfDay = new Date(startOfDay.getTime() + 24 * 3600000 - 1);
 
         const appointments = await this.prisma.appointment.findMany({
           where: {
@@ -327,14 +319,14 @@ export class FindAvailableDoctorsTool {
         if (bestSlots.length > 0) {
           availableDoctors.push({
             doctor: this.formatDoctorInfo(doctor),
-            date: format(targetDate, 'dd/MM/yyyy', { locale: vi }),
-            dayOfWeek: format(targetDate, 'EEEE', { locale: vi }),
+            date: this.formatVNDate(targetDate, 'dd/MM/yyyy'),
+            dayOfWeek: this.formatVNDate(targetDate, 'EEEE'),
             workingHours: {
               start: startTime,
               end: endTime,
             },
             bestSlots,
-            message: `Có ${bestSlots.length} khung giờ trống ${params.time ? `lúc ${params.time}` : ''} vào ${format(targetDate, 'EEEE, dd/MM/yyyy', { locale: vi })}`,
+            message: `Có ${bestSlots.length} khung giờ trống ${params.time ? `lúc ${params.time}` : ''} vào ${this.formatVNDate(targetDate, 'EEEE, dd/MM/yyyy')}`,
           });
         }
       }
@@ -343,7 +335,7 @@ export class FindAvailableDoctorsTool {
       if (availableDoctors.length === 0) {
         let message = 'Không tìm thấy bác sĩ nào available';
         if (params.date) {
-          const dateStr = format(targetDate!, 'dd/MM/yyyy', { locale: vi });
+          const dateStr = this.formatVNDate(targetDate!, 'dd/MM/yyyy');
           message = `Không tìm thấy bác sĩ nào có lịch trống vào ngày ${dateStr}`;
         }
         if (params.locationName && params.serviceName) {
@@ -364,7 +356,7 @@ export class FindAvailableDoctorsTool {
 
       let responseMessage = '';
       if (params.date) {
-        responseMessage = `Tìm thấy ${availableDoctors.length} bác sĩ có lịch trống vào ngày ${format(targetDate!, 'dd/MM/yyyy', { locale: vi })}`;
+        responseMessage = `Tìm thấy ${availableDoctors.length} bác sĩ có lịch trống vào ngày ${this.formatVNDate(targetDate!, 'dd/MM/yyyy')}`;
       } else {
         responseMessage = `Tìm thấy ${availableDoctors.length} bác sĩ phù hợp`;
       }
@@ -499,5 +491,18 @@ export class FindAvailableDoctorsTool {
       t1.getUTCMonth() === t2.getUTCMonth() &&
       t1.getUTCDate() === t2.getUTCDate()
     );
+  }
+  private getVNDayOfWeek(date: Date): number {
+    return date.getUTCDay();
+  }
+
+  private formatVNDate(date: Date, pattern: string): string {
+    const displayDate = new Date(
+      date.getUTCFullYear(),
+      date.getUTCMonth(),
+      date.getUTCDate(),
+      12, 0, 0
+    );
+    return format(displayDate, pattern, { locale: vi });
   }
 }

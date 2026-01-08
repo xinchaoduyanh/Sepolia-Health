@@ -63,7 +63,7 @@ export default function DoctorDetailPage() {
         completedAppointments: doctor.appointmentStats?.completed || 0,
         upcomingAppointments: doctor.appointmentStats?.upcoming || 0,
         rating: 4.5, // TODO: Add rating
-        experience: `${new Date().getFullYear() - (doctor.experienceYears || new Date().getFullYear())} năm`,
+        experience: `${(doctor.experienceYears || new Date().getFullYear()) > 1900 ? new Date().getFullYear() - (doctor.experienceYears || new Date().getFullYear()) : (doctor.experienceYears || 0)} năm`,
         education: 'Đại học Y khoa', // TODO: Add education field
         certifications: ['Chứng chỉ hành nghề'], // TODO: Add certifications
         languages: ['Tiếng Việt'], // TODO: Add languages
