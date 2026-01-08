@@ -25,6 +25,7 @@ export interface Doctor {
     description?: string
     address?: string
     clinic?: { id: number; name: string } | null
+    avatar?: string | null
     createdAt: string
 }
 
@@ -221,7 +222,7 @@ export class DoctorsService {
     async updateDoctorSchedule(
         doctorId: number,
         scheduleId: number,
-        data: UpdateDoctorScheduleRequest
+        data: UpdateDoctorScheduleRequest,
     ): Promise<{ message: string }> {
         return apiClient.patch<{ message: string }>(`/admin/doctors/${doctorId}/schedule/${scheduleId}`, data)
     }

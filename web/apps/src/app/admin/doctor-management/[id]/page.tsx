@@ -1,9 +1,9 @@
 'use client'
 
-import { useParams, useRouter } from 'next/navigation'
 import { DoctorDetail } from '@/components/DoctorDetail'
-import { useDoctor, useDoctorSchedule, useAdminAppointments } from '@/shared/hooks'
+import { useAdminAppointments, useDoctor, useDoctorSchedule } from '@/shared/hooks'
 import { Spinner } from '@workspace/ui/components/Spinner'
+import { useParams, useRouter } from 'next/navigation'
 
 export default function DoctorDetailPage() {
     const params = useParams()
@@ -51,7 +51,7 @@ export default function DoctorDetailPage() {
         site: doctor.clinic?.name || 'Chưa xác định',
         cm: 'CM1', // TODO: Add clinic manager info
         status: doctor.status.toLowerCase(),
-        avatar: null, // TODO: Add avatar support
+        avatar: doctor.avatar || null,
         doctorType: 'internal', // TODO: Add doctor type
         profileId: `DOC${doctor.id}`,
         uid: `UID${doctor.id}`,
@@ -68,28 +68,25 @@ export default function DoctorDetailPage() {
         certifications: ['Chứng chỉ hành nghề'], // TODO: Add certifications
         languages: ['Tiếng Việt'], // TODO: Add languages
         bio: doctor.description || 'Chưa có mô tả',
-        schedule: scheduleData?.schedules?.map(s => ({
-            day: ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'][s.dayOfWeek] || 'Thứ 2',
-            time: `${s.startTime} - ${s.endTime}`,
-            location: 'Phòng khám',
-            id: s.id
-        })) || [],
-        recentAppointments: appointmentsData?.appointments?.map(a => ({
-            id: a.id.toString(),
-            patient: a.patientName,
-            serviceName: a.service.name,
-            date: a.date,
-            time: a.startTime,
-            status: a.status.toLowerCase()
-        })) || [],
+        schedule:
+            scheduleData?.schedules?.map(s => ({
+                day: ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'][s.dayOfWeek] || 'Thứ 2',
+                time: `${s.startTime} - ${s.endTime}`,
+                location: 'Phòng khám',
+                id: s.id,
+            })) || [],
+        recentAppointments:
+            appointmentsData?.appointments?.map(a => ({
+                id: a.id.toString(),
+                patient: a.patientName,
+                serviceName: a.service.name,
+                date: a.date,
+                time: a.startTime,
+                status: a.status.toLowerCase(),
+            })) || [],
     }
 
     return (
-        <DoctorDetail 
-            doctorId={doctorId.toString()} 
-            onBack={handleBack} 
-            onEdit={handleEdit} 
-            data={doctorDetailData} 
-        />
+        <DoctorDetail doctorId={doctorId.toString()} onBack={handleBack} onEdit={handleEdit} data={doctorDetailData} />
     )
 }
