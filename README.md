@@ -696,6 +696,6 @@ Dự án này được phân phối dưới MIT License. Xem file `LICENSE` đ�
 
 ---
 ## Lời kết
-Đồ án tốt nghiệp của 1 nhóm nào đó tại PTIT khóa D21 thực hiện vào cuối năm 2025 tồn tại khá nhiều lỗ hổng về technical chưa hoàn chỉnh ví dụ như cách handle Streamchat token chưa ok lắm, tiếp theo là RAG build vs Streamchat cx đang khá bất ổn và chưa hoàn thiện btw 1 con 8.6 điểm đồ án là con số tạm ổn
+Đồ án tốt nghiệp của 1 nhóm nào đó tại PTIT khóa D21 thực hiện vào cuối năm 2025 tồn tại khá nhiều lỗ hổng về technical chưa hoàn chỉnh ví dụ như cách handle Streamchat token chưa ok lắm, tiếp theo là RAG build vs Streamchat cx đang khá bất ổn và chưa hoàn thiện btw 1 con 8.6 điểm đồ án là con số tạm ổn. 1 số dịch vụ có thể phát triển thêm nhg mà thôi điều đó cx k còn quan trọng nữa vì tất cả đã tốt nghiệp rùi < 3
 
 **Sepolia-Health** - Giải pháp quản lý phòng khám thông minh cho tương lai y tế số! 🏥✨
