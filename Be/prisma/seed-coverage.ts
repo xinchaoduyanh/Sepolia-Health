@@ -9,6 +9,7 @@ import {
   Relationship,
 } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+import { StreamChat } from 'stream-chat';
 
 const prisma = new PrismaClient();
 
@@ -281,9 +282,9 @@ async function main() {
       status: 'ACTIVE',
     });
   }
-  // - Patients (5000) with random createdAt from 01/01/2025 to now
+  // - Patients (1500) with random createdAt from 01/01/2025 to now
   const patientStartDate = new Date('2025-01-01T00:00:00');
-  for (let i = 1; i <= 5000; i++) {
+  for (let i = 1; i <= 1500; i++) {
     allUsersData.push({
       email: `user${i}@sepolia.vn`,
       password: pass,
@@ -420,10 +421,10 @@ async function main() {
     select: { id: true },
   });
 
-  // 7. APPOINTMENTS (500k to reach 2026)
+  // 7. APPOINTMENTS (reduced to fit ~300MB data limit)
   console.log('Generating Appointments until Jan 2026...');
   let total = 0;
-  const LIMIT = 400000;
+  const LIMIT = 50000;
   const BATCH = 10000;
   let cache: any[] = [];
   const date = new Date(SEED_RANGE.start);
@@ -732,6 +733,77 @@ async function main() {
     });
 
   console.log('✅ RESULTS AND FEEDBACKS SEEDED.');
+
+  // 13. Sync Users to Stream Chat
+  console.log('Syncing Users to Stream Chat...');
+  const apiKey = process.env.STREAM_CHAT_API_KEY;
+  const apiSecret = process.env.STREAM_CHAT_SECRET;
+
+  if (!apiKey || !apiSecret) {
+    console.warn(
+      '⚠️ STREAM_CHAT_API_KEY or STREAM_CHAT_SECRET is not set. Skipping Stream Chat synchronization.',
+    );
+  } else {
+    try {
+      const streamClient = StreamChat.getInstance(apiKey, apiSecret);
+
+      // Fetch all users with profiles
+      const dbUsersForChat = await prisma.user.findMany({
+        include: {
+          doctorProfile: true,
+          receptionistProfile: true,
+          adminProfile: true,
+          patientProfiles: {
+            where: { relationship: 'SELF' },
+            take: 1,
+          },
+        },
+      });
+
+      const chatUsers = dbUsersForChat.map((u) => {
+        let name = `User ${u.id}`;
+        let avatar: string | undefined = undefined;
+
+        if (u.doctorProfile) {
+          name = `${u.doctorProfile.lastName} ${u.doctorProfile.firstName}`;
+          avatar = u.doctorProfile.avatar || undefined;
+        } else if (u.receptionistProfile) {
+          name = `${u.receptionistProfile.lastName} ${u.receptionistProfile.firstName}`;
+          avatar = u.receptionistProfile.avatar || undefined;
+        } else if (u.adminProfile) {
+          name = `${u.adminProfile.lastName} ${u.adminProfile.firstName}`;
+          avatar = u.adminProfile.avatar || undefined;
+        } else if (u.patientProfiles.length > 0) {
+          const patientProfile = u.patientProfiles[0];
+          name = `${patientProfile.lastName} ${patientProfile.firstName}`;
+          avatar = patientProfile.avatar || undefined;
+        }
+
+        return {
+          id: u.id.toString(),
+          name,
+          role: u.role === 'ADMIN' ? 'admin' : 'user',
+          image: avatar,
+        };
+      });
+
+      // Stream Chat upsertUsers batch size limit is 100
+      const STREAM_BATCH_SIZE = 100;
+      for (let i = 0; i < chatUsers.length; i += STREAM_BATCH_SIZE) {
+        const batch = chatUsers.slice(i, i + STREAM_BATCH_SIZE);
+        await streamClient.upsertUsers(batch);
+        console.log(
+          `...Synced ${i + batch.length}/${chatUsers.length} users to Stream Chat`,
+        );
+      }
+      console.log('✅ Stream Chat users synchronization complete.');
+    } catch (error) {
+      console.error(
+        '❌ Failed to sync users to Stream Chat:',
+        error instanceof Error ? error.message : error,
+      );
+    }
+  }
 }
 
 main()
