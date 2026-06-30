@@ -64,10 +64,15 @@ export class AiBridgeService {
   async searchDoctors(q?: string, serviceId?: number, clinicId?: number) {
     const where: any = { deletedAt: null };
     if (q) {
-      where.OR = [
-        { firstName: { contains: q, mode: 'insensitive' } },
-        { lastName: { contains: q, mode: 'insensitive' } },
-      ];
+      const tokens = q.trim().split(/\s+/).filter(Boolean);
+      if (tokens.length > 0) {
+        where.AND = tokens.map((token) => ({
+          OR: [
+            { firstName: { contains: token, mode: 'insensitive' } },
+            { lastName: { contains: token, mode: 'insensitive' } },
+          ],
+        }));
+      }
     }
     if (clinicId) where.clinicId = clinicId;
     if (serviceId) where.services = { some: { serviceId } };

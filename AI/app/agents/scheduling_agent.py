@@ -22,7 +22,7 @@ from app.providers.base import AIProvider
 from app.rag.emergency import EmergencyDetector
 from app.rag.models import RetrievedChunk
 from app.rag.policy import KnowledgePolicy
-from app.session.models import AgentState, PendingConfirmation, SessionState
+from app.session.models import AgentState, OfferedItem, PendingConfirmation, SessionState
 from app.tools.registry import ToolRegistry
 
 _VN_TZ = timezone(timedelta(hours=7))
@@ -101,6 +101,67 @@ def _is_symptom_query(text: str) -> bool:
     return any(hint in lower for hint in _SYMPTOM_HINTS)
 
 
+def _doctor_label(item: dict) -> str:
+    """Tên bác sĩ theo thứ tự tiếng Việt: Họ + Tên (last_name + first_name)."""
+    full = f"{item.get('last_name') or ''} {item.get('first_name') or ''}".strip()
+    return f"BS. {full}" if full else "Bác sĩ"
+
+
+def _extract_offered(tool_name: str, result: dict | None) -> list[OfferedItem]:
+    """Map kết quả tool (DATA) -> danh sách OfferedItem (kèm ID thật) để lưu vào
+    session.last_offered. Chỉ map các shape đã biết; tool khác trả rỗng."""
+    if not isinstance(result, dict) or result.get("error_code"):
+        return []
+    items: list[OfferedItem] = []
+
+    if tool_name in ("search_doctors", "find_available_doctors"):
+        for d in result.get("doctors") or []:
+            doctor_id = d.get("id", d.get("doctor_id"))
+            if doctor_id is None:
+                continue
+            items.append(OfferedItem(
+                index=len(items) + 1, kind="doctor", id=doctor_id, label=_doctor_label(d),
+            ))
+    elif tool_name == "search_services":
+        for s in result.get("services") or []:
+            if s.get("id") is None:
+                continue
+            items.append(OfferedItem(
+                index=len(items) + 1, kind="service", id=s["id"],
+                label=s.get("name") or "Dịch vụ", price=s.get("price"),
+            ))
+    elif tool_name == "search_clinics":
+        for c in result.get("clinics") or []:
+            if c.get("id") is None:
+                continue
+            items.append(OfferedItem(
+                index=len(items) + 1, kind="clinic", id=c["id"], label=c.get("name") or "Cơ sở",
+            ))
+    elif tool_name == "get_doctor_availability":
+        date = result.get("date")
+        for slot in result.get("available_slots") or []:
+            items.append(OfferedItem(
+                index=len(items) + 1, kind="slot", id=slot, label=slot,
+                start_time=f"{date}T{slot}:00+07:00" if date else None,
+            ))
+    return items
+
+
+def _format_last_offered(offered: list[OfferedItem]) -> str:
+    """Render danh sách vừa trình vào system prompt. Có kèm ID nội bộ để model
+    gọi tool đúng đối tượng — NHƯNG model phải giấu ID khỏi câu trả lời user."""
+    if not offered:
+        return "Chưa có danh sách nào được trình ở lượt trước."
+    lines = [
+        "Danh sách vừa trình cho người dùng ở lượt trước (dùng id khi gọi tool, "
+        "TUYỆT ĐỐI KHÔNG đọc id cho user):"
+    ]
+    for o in offered:
+        extra = f", giá={o.price}" if o.price is not None else ""
+        lines.append(f"{o.index}. [{o.kind}] {o.label} — id={o.id}{extra}")
+    return "\n".join(lines)
+
+
 def _format_knowledge(chunks: list[RetrievedChunk]) -> str:
     if not chunks:
         return "Không có knowledge chunk liên quan trong turn này."
@@ -138,7 +199,13 @@ class SchedulingAgent:
         ensure_transition(session.agent_state, dst)
         session.agent_state = dst
 
-    async def handle_turn(self, session: SessionState, user_message: str, trace_id: str) -> MessageResponse:
+    async def handle_turn(
+        self,
+        session: SessionState,
+        user_message: str,
+        trace_id: str,
+        history: list[tuple[str | None, str | None]] | None = None,
+    ) -> MessageResponse:
         session.trace_ids.append(trace_id)
 
         # 1. Pre-filter: self-harm / emergency chặn trước LLM
@@ -182,11 +249,19 @@ class SchedulingAgent:
                 "TODAY_VN": f"{_VN_DAYS[now.weekday()]}, {now.strftime('%d/%m/%Y')}",
                 "CALENDAR_STRIP": _calendar_strip(now),
                 "KNOWLEDGE": _format_knowledge(knowledge_chunks),
+                "LAST_OFFERED": _format_last_offered(session.last_offered),
             }),
             self._prompts.render("persona-style", {}),
             self._prompts.render("scope", {}),
         ])
-        messages: list[dict] = [{"role": "system", "content": system}, {"role": "user", "content": user_message}]
+        # Conversation memory: [system] + N lượt gần nhất (cũ->mới) + câu hiện tại.
+        messages: list[dict] = [{"role": "system", "content": system}]
+        for past_user, past_ai in history or []:
+            if past_user:
+                messages.append({"role": "user", "content": past_user})
+            if past_ai:
+                messages.append({"role": "assistant", "content": past_ai})
+        messages.append({"role": "user", "content": user_message})
 
         # 5. Tool-calling loop
         summaries: list[ToolResultSummary] = []
@@ -206,6 +281,11 @@ class SchedulingAgent:
                 ))
                 if tc.name == "create_booking_draft" and not result.get("error_code"):
                     draft_result, draft_args = result, tc.arguments
+                # Lưu danh sách vừa trình (bác sĩ/dịch vụ/cơ sở/slot) để turn sau
+                # resolve "bác sĩ thứ 2" / "cái 19h" về ID THẬT, không để LLM bịa.
+                offered = _extract_offered(tc.name, result)
+                if offered:
+                    session.last_offered = offered
                 messages.append({"role": "assistant", "content": "", "tool_calls": [
                     {"id": tc.id, "type": "function",
                      "function": {"name": tc.name, "arguments": tc.arguments}}

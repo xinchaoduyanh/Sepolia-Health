@@ -177,3 +177,55 @@ async def test_slot_taken_on_confirm_rolls_back():
     resp = await agent.handle_turn(session, "vâng", "t1")
     assert session.agent_state == AgentState.SLOT
     assert "giờ khác" in resp.message
+
+
+async def test_history_injection_into_prompt_messages():
+    provider = FakeProvider([chat_text("Dạ em nghe.")])
+    agent = _agent(provider, FakeBridge())
+    session = _session()
+    
+    history = [
+        ("hello", "hello there"),
+        ("what services do you have?", "we have general checkup")
+    ]
+    
+    await agent.handle_turn(session, "that is cool", "t1", history=history)
+    
+    sent_messages = provider.calls[0]
+    
+    assert len(sent_messages) == 6
+    assert sent_messages[0]["role"] == "system"
+    assert sent_messages[1]["role"] == "user" and sent_messages[1]["content"] == "hello"
+    assert sent_messages[2]["role"] == "assistant" and sent_messages[2]["content"] == "hello there"
+    assert sent_messages[3]["role"] == "user" and sent_messages[3]["content"] == "what services do you have?"
+    assert sent_messages[4]["role"] == "assistant" and sent_messages[4]["content"] == "we have general checkup"
+    assert sent_messages[5]["role"] == "user" and sent_messages[5]["content"] == "that is cool"
+
+
+async def test_last_offered_population_from_search_doctors():
+    provider = FakeProvider([
+        chat_tools(("search_doctors", {"q": "Minh"})),
+        chat_text("Here are the doctors.")
+    ])
+    
+    fake_doctors = {
+        "doctors": [
+            {"id": 42, "first_name": "Minh", "last_name": "Nguyễn Văn", "specialty": "Nội khoa"},
+            {"id": 43, "first_name": "Minh", "last_name": "Trần Văn", "specialty": "Ngoại khoa"}
+        ]
+    }
+    
+    bridge = FakeBridge(search_doctors=fake_doctors)
+    agent = _agent(provider, bridge)
+    session = _session()
+    
+    await agent.handle_turn(session, "find doctor Minh", "t1")
+    
+    assert len(session.last_offered) == 2
+    assert session.last_offered[0].kind == "doctor"
+    assert session.last_offered[0].id == 42
+    assert session.last_offered[0].label == "BS. Nguyễn Văn Minh"
+    assert session.last_offered[1].kind == "doctor"
+    assert session.last_offered[1].id == 43
+    assert session.last_offered[1].label == "BS. Trần Văn Minh"
+

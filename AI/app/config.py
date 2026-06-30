@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     default_model_response: str = "qwen2.5:3b-instruct-q4_K_M"
     default_model_summarization: str = "qwen2.5:3b-instruct-q4_K_M"
     embedding_model: str = "bge-m3"
+    ai_history_max_turns: int = 6
+
 
     # Gemini (cloud) — nếu bật (api_key HOẶC use_vertex), chat/tool-calling dùng
     # Gemini thay Ollama (xem deps.get_provider + ModelRouter). Embedding/RAG vẫn local.
@@ -40,6 +42,10 @@ class Settings(BaseSettings):
     # Shared secret dùng 2 chiều: AI/ kiểm tra X-Internal-Token đến từ Be/,
     # và BeBridgeClient gửi kèm khi gọi ngược Be/.
     internal_shared_secret: str = "changeme"
+
+    # Conversation memory: số lượt (user+assistant) gần nhất nhồi lại vào prompt.
+    # Gemini context lớn nên 6 lượt thoải mái; tăng nếu cần nhớ xa hơn (đổi cost/latency).
+    ai_history_max_turns: int = 6
 
     prompts_dir: str = "./prompts"
     knowledge_dir: str = "./knowledge"

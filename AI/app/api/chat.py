@@ -88,9 +88,13 @@ async def _run_turn(
         emergency_detector=emergency_detector,
         knowledge_policy=knowledge_policy,
     )
+    # Conversation memory: nhồi N lượt gần nhất (đã lưu ở AiTurn) làm context.
+    # Lấy TRƯỚC record_turn của lượt này nên không bị trùng câu hiện tại.
+    history = await store.list_recent_turns(session_id, settings.ai_history_max_turns)
+
     trace_id = new_trace_id()
     started = time.perf_counter()
-    resp = await agent.handle_turn(state, message, trace_id)
+    resp = await agent.handle_turn(state, message, trace_id, history=history)
     latency_ms = int((time.perf_counter() - started) * 1000)
     await store.update(state)
     log_event("turn", session_id=session_id, trace_id=trace_id, state=state.agent_state.value)

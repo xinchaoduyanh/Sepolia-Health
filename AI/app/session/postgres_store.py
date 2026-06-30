@@ -199,3 +199,23 @@ class PostgresSessionStore(SessionStore):
             async with session.begin():
                 session.add(turn)
 
+
+    async def list_recent_turns(
+        self, session_id: str, limit: int
+    ) -> list[tuple[str | None, str | None]]:
+        if limit <= 0:
+            return []
+        async with self.session_factory() as session:
+            # Lấy N turn MỚI nhất (desc + limit) rồi đảo lại sang thứ tự thời gian
+            # tăng dần để nhồi history theo đúng trình tự hội thoại.
+            stmt = (
+                select(AiTurnDb)
+                .where(AiTurnDb.sessionId == session_id)
+                .order_by(AiTurnDb.createdAt.desc())
+                .limit(limit)
+            )
+            result = await session.execute(stmt)
+            rows = list(result.scalars().all())
+        rows.reverse()
+        return [(r.userMessage, r.aiMessage) for r in rows]
+

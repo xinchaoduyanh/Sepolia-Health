@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   TextInput,
+  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -16,6 +17,77 @@ import { router } from 'expo-router';
 import { useQuestions, usePopularTags } from '@/lib/api/qna';
 import { Question } from '@/types/qna';
 import { Avatar } from '@/components/Avatar';
+
+const QuestionItemSkeleton = () => {
+  const pulseAnim = useRef(new Animated.Value(0.3)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 0.7,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 0.3,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, [pulseAnim]);
+
+  return (
+    <Animated.View
+      style={{
+        opacity: pulseAnim,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 16,
+        padding: 16,
+        shadowColor: '#0284C7',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+        elevation: 2,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+      }}>
+      {/* Author Row */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+        <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#E5E7EB', marginRight: 12 }} />
+        <View style={{ flex: 1 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <View style={{ height: 14, width: '40%', backgroundColor: '#E5E7EB', borderRadius: 4 }} />
+            <View style={{ height: 14, width: '15%', backgroundColor: '#E5E7EB', borderRadius: 8 }} />
+          </View>
+          <View style={{ height: 10, width: '25%', backgroundColor: '#E5E7EB', borderRadius: 4, marginTop: 4 }} />
+        </View>
+      </View>
+
+      {/* Title */}
+      <View style={{ height: 18, width: '85%', backgroundColor: '#E5E7EB', borderRadius: 4, marginBottom: 8 }} />
+      <View style={{ height: 18, width: '50%', backgroundColor: '#E5E7EB', borderRadius: 4, marginBottom: 12 }} />
+
+      {/* Content Preview */}
+      <View style={{ height: 12, width: '95%', backgroundColor: '#E5E7EB', borderRadius: 4, marginBottom: 6 }} />
+      <View style={{ height: 12, width: '70%', backgroundColor: '#E5E7EB', borderRadius: 4, marginBottom: 12 }} />
+
+      {/* Tags */}
+      <View style={{ flexDirection: 'row', gap: 6, marginBottom: 12 }}>
+        <View style={{ height: 20, width: 60, borderRadius: 10, backgroundColor: '#E5E7EB' }} />
+        <View style={{ height: 20, width: 80, borderRadius: 10, backgroundColor: '#E5E7EB' }} />
+      </View>
+
+      {/* Footer Stats */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+        <View style={{ height: 12, width: 40, backgroundColor: '#E5E7EB', borderRadius: 4 }} />
+        <View style={{ height: 12, width: 40, backgroundColor: '#E5E7EB', borderRadius: 4 }} />
+        <View style={{ height: 12, width: 40, backgroundColor: '#E5E7EB', borderRadius: 4 }} />
+      </View>
+    </Animated.View>
+  );
+};
 
 export default function QnaListScreen() {
   const [page, setPage] = useState(1);
@@ -266,8 +338,10 @@ export default function QnaListScreen() {
 
           {/* Questions List */}
           {isLoading ? (
-            <View style={{ alignItems: 'center', paddingVertical: 40 }}>
-              <ActivityIndicator size="large" color="#0284C7" />
+            <View style={{ gap: 16 }}>
+              <QuestionItemSkeleton />
+              <QuestionItemSkeleton />
+              <QuestionItemSkeleton />
             </View>
           ) : questions.length === 0 ? (
             <View style={{ alignItems: 'center', paddingVertical: 40 }}>

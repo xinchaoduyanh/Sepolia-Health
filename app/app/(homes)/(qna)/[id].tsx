@@ -28,6 +28,112 @@ import { useAuth } from '@/lib/hooks/useAuth';
 import { formatDate } from '@/utils/datetime';
 import { Avatar } from '@/components/Avatar';
 
+const QuestionDetailSkeleton = () => {
+  const pulseAnim = useRef(new Animated.Value(0.3)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 0.7,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 0.3,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, [pulseAnim]);
+
+  return (
+    <Animated.View style={{ opacity: pulseAnim }}>
+      {/* Question Card Skeleton */}
+      <View
+        style={{
+          backgroundColor: '#FFFFFF',
+          borderRadius: 16,
+          padding: 20,
+          marginBottom: 16,
+          shadowColor: '#0284C7',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 8,
+          elevation: 3,
+          borderWidth: 1,
+          borderColor: '#E5E7EB',
+        }}>
+        {/* Author Info */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+          <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: '#E5E7EB', marginRight: 12 }} />
+          <View style={{ flex: 1 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <View style={{ height: 16, width: '40%', backgroundColor: '#E5E7EB', borderRadius: 4 }} />
+              <View style={{ height: 16, width: '15%', backgroundColor: '#E5E7EB', borderRadius: 8 }} />
+            </View>
+            <View style={{ height: 12, width: '25%', backgroundColor: '#E5E7EB', borderRadius: 4, marginTop: 4 }} />
+          </View>
+        </View>
+
+        {/* Title */}
+        <View style={{ height: 22, width: '90%', backgroundColor: '#E5E7EB', borderRadius: 4, marginBottom: 12 }} />
+        <View style={{ height: 22, width: '60%', backgroundColor: '#E5E7EB', borderRadius: 4, marginBottom: 16 }} />
+
+        {/* Content */}
+        <View style={{ height: 16, width: '98%', backgroundColor: '#E5E7EB', borderRadius: 4, marginBottom: 8 }} />
+        <View style={{ height: 16, width: '95%', backgroundColor: '#E5E7EB', borderRadius: 4, marginBottom: 8 }} />
+        <View style={{ height: 16, width: '70%', backgroundColor: '#E5E7EB', borderRadius: 4, marginBottom: 16 }} />
+
+        {/* Tags */}
+        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
+          <View style={{ height: 24, width: 70, borderRadius: 12, backgroundColor: '#E5E7EB' }} />
+          <View style={{ height: 24, width: 90, borderRadius: 12, backgroundColor: '#E5E7EB' }} />
+        </View>
+
+        {/* Stats */}
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <View style={{ flexDirection: 'row', gap: 16 }}>
+            <View style={{ height: 14, width: 40, backgroundColor: '#E5E7EB', borderRadius: 4 }} />
+            <View style={{ height: 14, width: 40, backgroundColor: '#E5E7EB', borderRadius: 4 }} />
+          </View>
+          <View style={{ height: 24, width: 80, borderRadius: 12, backgroundColor: '#E5E7EB' }} />
+        </View>
+      </View>
+
+      {/* Answers Section Header Skeleton */}
+      <View style={{ height: 18, width: '35%', backgroundColor: '#E5E7EB', borderRadius: 4, marginHorizontal: 4, marginBottom: 16 }} />
+
+      {/* Answer Item Skeleton */}
+      <View
+        style={{
+          backgroundColor: '#FFFFFF',
+          borderRadius: 16,
+          padding: 16,
+          marginBottom: 12,
+          shadowColor: '#0284C7',
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: 0.05,
+          shadowRadius: 4,
+          elevation: 2,
+          borderWidth: 1,
+          borderColor: '#E5E7EB',
+        }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+          <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#E5E7EB', marginRight: 12 }} />
+          <View style={{ flex: 1 }}>
+            <View style={{ height: 14, width: '35%', backgroundColor: '#E5E7EB', borderRadius: 4 }} />
+            <View style={{ height: 10, width: '20%', backgroundColor: '#E5E7EB', borderRadius: 4, marginTop: 4 }} />
+          </View>
+        </View>
+        <View style={{ height: 14, width: '95%', backgroundColor: '#E5E7EB', borderRadius: 4, marginBottom: 6 }} />
+        <View style={{ height: 14, width: '80%', backgroundColor: '#E5E7EB', borderRadius: 4 }} />
+      </View>
+    </Animated.View>
+  );
+};
+
 export default function QuestionDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const questionId = parseInt(id || '0');
@@ -207,14 +313,47 @@ export default function QuestionDetailScreen() {
 
   if (isLoading) {
     return (
-      <View
-        style={{
-          flex: 1,
-          justifyContent: 'center',
-          alignItems: 'center',
-          backgroundColor: '#E0F2FE',
-        }}>
-        <ActivityIndicator size="large" color="#0284C7" />
+      <View style={{ flex: 1, backgroundColor: '#E0F2FE' }}>
+        <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+        <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
+          {/* Header */}
+          <View style={{ height: 200, position: 'relative' }}>
+            <LinearGradient
+              colors={['#0284C7', '#06B6D4', '#10B981']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={{ flex: 1 }}
+            />
+            <View
+              style={{
+                position: 'absolute',
+                top: 60,
+                left: 0,
+                right: 0,
+                flexDirection: 'row',
+                alignItems: 'center',
+                paddingHorizontal: 16,
+              }}>
+              <TouchableOpacity onPress={() => router.back()} style={{ padding: 8 }}>
+                <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+              </TouchableOpacity>
+              <Text
+                style={{
+                  flex: 1,
+                  fontSize: 20,
+                  fontWeight: 'bold',
+                  color: '#FFFFFF',
+                  marginLeft: 8,
+                }}>
+                Chi tiết câu hỏi
+              </Text>
+            </View>
+          </View>
+
+          <View style={{ padding: 16, marginTop: -50 }}>
+            <QuestionDetailSkeleton />
+          </View>
+        </ScrollView>
       </View>
     );
   }
@@ -297,7 +436,7 @@ export default function QuestionDetailScreen() {
 
         <View style={{ padding: 16, marginTop: -50 }}>
           {/* Question Card */}
-          <View
+              <View
             style={{
               backgroundColor: '#FFFFFF',
               borderRadius: 16,
@@ -796,7 +935,7 @@ export default function QuestionDetailScreen() {
               </TouchableOpacity>
             </View>
             <ScrollView>
-              {question.editHistory?.map((history) => (
+              {question?.editHistory?.map((history) => (
                 <View
                   key={history.id}
                   style={{

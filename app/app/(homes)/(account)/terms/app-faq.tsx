@@ -1,5 +1,4 @@
-'use client';
-
+import React, { useEffect, useRef } from 'react';
 import { AppTermsType, useAppTermsByType } from '@/lib/api';
 import { prepareMarkdownContent } from '@/utils/html-to-markdown';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,9 +11,50 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Animated,
 } from 'react-native';
 import Markdown from 'react-native-markdown-display';
 import Svg, { Path } from 'react-native-svg';
+
+const MarkdownSkeleton = () => {
+  const pulseAnim = useRef(new Animated.Value(0.3)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 0.7,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 0.3,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, [pulseAnim]);
+
+  return (
+    <Animated.View style={{ opacity: pulseAnim, gap: 12 }}>
+      {/* Title block */}
+      <View style={{ height: 24, width: '60%', backgroundColor: '#E2E8F0', borderRadius: 4, marginBottom: 8 }} />
+      
+      {/* Paragraph 1 */}
+      <View style={{ height: 16, width: '90%', backgroundColor: '#E2E8F0', borderRadius: 4 }} />
+      <View style={{ height: 16, width: '95%', backgroundColor: '#E2E8F0', borderRadius: 4 }} />
+      <View style={{ height: 16, width: '80%', backgroundColor: '#E2E8F0', borderRadius: 4, marginBottom: 16 }} />
+
+      {/* Heading 2 */}
+      <View style={{ height: 20, width: '45%', backgroundColor: '#E2E8F0', borderRadius: 4, marginBottom: 8 }} />
+
+      {/* Paragraph 2 */}
+      <View style={{ height: 16, width: '92%', backgroundColor: '#E2E8F0', borderRadius: 4 }} />
+      <View style={{ height: 16, width: '70%', backgroundColor: '#E2E8F0', borderRadius: 4 }} />
+    </Animated.View>
+  );
+};
 
 // Markdown styles for terms pages
 const markdownStyles = {
@@ -113,21 +153,7 @@ const markdownStyles = {
 export default function AppFAQScreen() {
   const { data: terms, isLoading, error } = useAppTermsByType(AppTermsType.APP_FAQ);
 
-  if (isLoading) {
-    return (
-      <View
-        style={{
-          flex: 1,
-          justifyContent: 'center',
-          alignItems: 'center',
-          backgroundColor: '#E0F2FE',
-        }}>
-        <ActivityIndicator size="large" color="#0284C7" />
-      </View>
-    );
-  }
-
-  if (error || !terms) {
+  if (!isLoading && (error || !terms)) {
     return (
       <View
         style={{
@@ -144,8 +170,8 @@ export default function AppFAQScreen() {
     );
   }
 
-  const markdownContent = prepareMarkdownContent(terms.content);
-  const displayTitle = terms.title;
+  const markdownContent = terms ? prepareMarkdownContent(terms.content) : '';
+  const displayTitle = terms ? terms.title : '';
 
   return (
     <View style={{ flex: 1, backgroundColor: '#E0F2FE' }}>
@@ -218,7 +244,11 @@ export default function AppFAQScreen() {
             shadowRadius: 12,
             elevation: 5,
           }}>
-          <Markdown style={markdownStyles}>{markdownContent}</Markdown>
+          {isLoading ? (
+            <MarkdownSkeleton />
+          ) : (
+            <Markdown style={markdownStyles}>{markdownContent}</Markdown>
+          )}
         </View>
       </ScrollView>
     </View>

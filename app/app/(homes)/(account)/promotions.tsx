@@ -1,5 +1,6 @@
-'use client';
-
+import { vi } from 'date-fns/locale';
+import { router } from 'expo-router';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,16 +9,82 @@ import {
   StatusBar,
   ActivityIndicator,
   RefreshControl,
+  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path } from 'react-native-svg';
-import { useState } from 'react';
 import { useMyVouchers } from '@/lib/api/promotion';
 import { UserPromotion } from '@/types/promotion';
 import { format } from 'date-fns';
-import { vi } from 'date-fns/locale';
-import { router } from 'expo-router';
+
+const VoucherCardSkeleton = () => {
+  const pulseAnim = useRef(new Animated.Value(0.3)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 0.7,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 0.3,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, [pulseAnim]);
+
+  return (
+    <Animated.View
+      style={{
+        opacity: pulseAnim,
+        marginBottom: 16,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        overflow: 'hidden',
+        shadowColor: '#0284C7',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.04,
+        shadowRadius: 8,
+        elevation: 2,
+      }}>
+      {/* Skeleton Header */}
+      <View style={{ padding: 20, backgroundColor: '#F3F4F6', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <View style={{ flex: 1 }}>
+          <View style={{ height: 10, width: 80, backgroundColor: '#E5E7EB', borderRadius: 4, marginBottom: 6 }} />
+          <View style={{ height: 20, width: 150, backgroundColor: '#E5E7EB', borderRadius: 4, marginBottom: 8 }} />
+          <View style={{ height: 12, width: 120, backgroundColor: '#E5E7EB', borderRadius: 4 }} />
+        </View>
+        <View style={{ height: 48, width: 48, borderRadius: 24, backgroundColor: '#E5E7EB' }} />
+      </View>
+
+      {/* Skeleton Content */}
+      <View style={{ padding: 20 }}>
+        <View style={{ height: 16, width: '60%', backgroundColor: '#F1F5F9', borderRadius: 4, marginBottom: 12 }} />
+        <View style={{ height: 12, width: '90%', backgroundColor: '#F1F5F9', borderRadius: 4, marginBottom: 16 }} />
+
+        <View style={{ flexDirection: 'row', gap: 16, borderTopWidth: 1, borderColor: '#F1F5F9', paddingTop: 16, marginBottom: 16 }}>
+          <View style={{ flex: 1 }}>
+            <View style={{ height: 10, width: 50, backgroundColor: '#F1F5F9', borderRadius: 4, marginBottom: 4 }} />
+            <View style={{ height: 16, width: 80, backgroundColor: '#F1F5F9', borderRadius: 4 }} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <View style={{ height: 10, width: 50, backgroundColor: '#F1F5F9', borderRadius: 4, marginBottom: 4 }} />
+            <View style={{ height: 16, width: 80, backgroundColor: '#F1F5F9', borderRadius: 4 }} />
+          </View>
+        </View>
+
+        <View style={{ height: 40, backgroundColor: '#F1F5F9', borderRadius: 8 }} />
+      </View>
+    </Animated.View>
+  );
+};
 
 type TabType = 'available' | 'used';
 
@@ -307,11 +374,9 @@ export default function PromotionsScreen() {
         {/* Content */}
         <View style={{ paddingHorizontal: 24, marginTop: 0, marginBottom: 24 }}>
           {isLoading ? (
-            <View style={{ paddingVertical: 80 }}>
-              <ActivityIndicator size="large" color="#0284C7" />
-              <Text style={{ marginTop: 16, textAlign: 'center', color: '#64748B' }}>
-                Đang tải...
-              </Text>
+            <View>
+              <VoucherCardSkeleton />
+              <VoucherCardSkeleton />
             </View>
           ) : currentVouchers.length === 0 ? (
             <View style={{ alignItems: 'center', paddingVertical: 80 }}>

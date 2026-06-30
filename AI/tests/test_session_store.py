@@ -57,3 +57,34 @@ async def test_postgres_store_create():
     assert added_obj.userId == 42
     assert added_obj.channelId == "c_pg"
 
+
+async def test_list_recent_turns_in_memory():
+    store = InMemorySessionStore()
+    
+    # 0 turns initially
+    turns = await store.list_recent_turns("s1", limit=5)
+    assert turns == []
+    
+    # Record some turns
+    await store.record_turn(session_id="s1", trace_id="t1", user_message="hello", ai_message="hi")
+    await store.record_turn(session_id="s1", trace_id="t2", user_message="book a doctor", ai_message="which doctor?")
+    await store.record_turn(session_id="s1", trace_id="t3", user_message="Dr. Minh", ai_message="searching Dr. Minh")
+    
+    # Fetch all (limit=5)
+    turns = await store.list_recent_turns("s1", limit=5)
+    assert len(turns) == 3
+    assert turns == [
+        ("hello", "hi"),
+        ("book a doctor", "which doctor?"),
+        ("Dr. Minh", "searching Dr. Minh")
+    ]
+    
+    # Fetch limited (limit=2)
+    turns = await store.list_recent_turns("s1", limit=2)
+    assert len(turns) == 2
+    assert turns == [
+        ("book a doctor", "which doctor?"),
+        ("Dr. Minh", "searching Dr. Minh")
+    ]
+
+
