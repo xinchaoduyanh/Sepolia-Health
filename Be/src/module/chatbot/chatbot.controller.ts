@@ -6,15 +6,23 @@ import {
   Query,
   Inject,
   Request,
+  Req,
+  Headers,
+  Logger,
+  UnauthorizedException,
+  RawBodyRequest,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { ConfigType } from '@nestjs/config';
+import { Request as ExpressRequest } from 'express';
+import { Public } from '@/common/decorators';
 import { ChatbotService } from './chatbot.service';
 import {
   ProcessMessageDto,
   DoctorScheduleQueryDto,
   SearchDoctorsDto,
   StreamChatWebhookDto,
+  AiChannelActionDto,
 } from './dto/process-message.dto';
 import { DoctorScheduleTool } from './tools/doctor-schedule.tool';
 import { SearchDoctorsTool } from './tools/search-doctors.tool';
@@ -25,6 +33,8 @@ import { ApiBearerAuth } from '@nestjs/swagger';
 @ApiTags('Chatbot')
 @Controller('chatbot')
 export class ChatbotController {
+  private readonly logger = new Logger(ChatbotController.name);
+
   constructor(
     private readonly chatbotService: ChatbotService,
     private readonly doctorScheduleTool: DoctorScheduleTool,
@@ -38,11 +48,12 @@ export class ChatbotController {
    * Khi user gửi message trong channel với AI bot
    * Public endpoint vì Stream Chat sẽ gọi từ bên ngoài không có JWT token
    */
+  @Public()
   @Post('webhook/stream-chat')
   @ApiOperation({
     summary: 'Process message from Stream Chat webhook',
     description:
-      'Webhook endpoint để nhận events từ Stream Chat. Chỉ xử lý event type "message.new". Endpoint này là PUBLIC, không cần JWT token.',
+      'Webhook endpoint để nhận events từ Stream Chat. Chỉ xử lý event type "message.new". PUBLIC nhưng BẮT BUỘC verify chữ ký X-Signature.',
   })
   @ApiBody({
     type: StreamChatWebhookDto,
@@ -83,63 +94,50 @@ export class ChatbotController {
       },
     },
   })
-  handleStreamChatWebhook(@Body() payload: StreamChatWebhookDto) {
-    // Verify webhook signature (important!)
-    // Process only messages sent to AI bot
-
-    // Validate payload exists
-    if (!payload) {
-      console.warn('Webhook received with no payload');
-      return { status: 'ok', message: 'No payload received' };
+  handleStreamChatWebhook(
+    @Req() req: RawBodyRequest<ExpressRequest>,
+    @Headers('x-signature') signature: string,
+    @Body() payload: StreamChatWebhookDto,
+  ) {
+    // 1. BẮT BUỘC verify chữ ký trên raw bytes TRƯỚC mọi side-effect.
+    if (!this.chatbotService.verifyWebhookSignature(req.rawBody, signature)) {
+      throw new UnauthorizedException('Invalid Stream webhook signature');
     }
 
-    // Log payload for debugging (remove in production if sensitive)
-    console.log('Webhook payload received:', JSON.stringify(payload, null, 2));
-
-    // Only process message.new events
-    if (payload.type === 'message.new') {
-      const message = payload.message;
-      const channelId = payload.channel_id;
-
-      // Validate required fields
-      if (!message) {
-        console.warn('Webhook payload missing message field');
-        return { status: 'ok', message: 'No message in payload' };
-      }
-
-      if (!channelId) {
-        console.warn('Webhook payload missing channel_id field');
-        return { status: 'ok', message: 'No channel_id in payload' };
-      }
-
-      if (!message.user || !message.user.id) {
-        console.warn('Webhook payload missing user information');
-        return { status: 'ok', message: 'No user info in message' };
-      }
-
-      const userId = message.user.id;
-
-      // Ignore messages from AI bot itself
-      if (userId === this.config.aiBotUserId) {
-        console.log('Ignoring message from AI bot itself');
-        return { status: 'ignored' };
-      }
-
-      // Validate message text exists
-      if (!message.text || message.text.trim().length === 0) {
-        console.warn('Webhook received message with no text');
-        return { status: 'ok', message: 'Message has no text' };
-      }
-
-      // Process message asynchronously
-      this.chatbotService
-        .processMessageAndReply(channelId, message.text, userId)
-        .catch((err) => {
-          console.error('Error processing message:', err);
-        });
-    } else {
-      console.log(`Webhook received event type: ${payload.type}, ignoring`);
+    // 2. Chỉ xử lý message.new; event khác (reaction/typing/notification) bỏ qua.
+    if (!payload || payload.type !== 'message.new') {
+      return { status: 'ignored' };
     }
+
+    const message = payload.message;
+    // channel_id, hoặc parse từ cid "messaging:ai-consult-1".
+    const channelId = payload.channel_id ?? payload.cid?.split(':').pop();
+    const userId = message?.user?.id;
+
+    // 3. Validate runtime field bắt buộc cho message.new.
+    if (!channelId || !userId || !message?.text || message.text.trim().length === 0) {
+      return { status: 'ignored' };
+    }
+
+    // 4. Bỏ qua message do chính bot gửi (tránh vòng lặp).
+    if (userId === this.config.aiBotUserId) {
+      return { status: 'ignored' };
+    }
+
+    // 5. Ownership: chỉ AI channel của đúng user đó.
+    try {
+      this.chatbotService.assertCanUseAiChannel(channelId, userId);
+    } catch {
+      this.logger.warn('Webhook bỏ qua channel không phải AI/không thuộc user');
+      return { status: 'ignored' };
+    }
+
+    // 6. Xử lý bất đồng bộ. KHÔNG log full payload (chứa nội dung chat).
+    this.chatbotService
+      .processMessageAndReply(channelId, message.text, userId)
+      .catch((err) =>
+        this.logger.error(`Lỗi xử lý webhook message: ${err?.message}`),
+      );
 
     return { status: 'ok' };
   }
@@ -161,67 +159,41 @@ export class ChatbotController {
     description: 'Message processed successfully',
   })
   async processMessage(@Body() dto: ProcessMessageDto, @Request() req) {
-    const userId = req.user?.userId || dto.userId;
+    // User id LẤY TỪ JWT, KHÔNG tin dto.userId (ngăn giả mạo).
+    const userId = req.user?.userId;
 
-    console.log('📨 [Controller] Process message request:', {
-      hasChannelId: !!dto.channelId,
-      channelId: dto.channelId,
-      messageLength: dto.message?.length || 0,
-      userId,
-    });
-
-    // Nếu có channelId, gửi response vào channel và trả về response
+    // Nếu có channelId, gửi response vào channel.
     if (dto.channelId) {
-      const result = await this.chatbotService.processMessageAndReply(
+      // Ownership: chỉ cho phép AI channel của chính user (403 nếu khác).
+      this.chatbotService.assertCanUseAiChannel(dto.channelId, userId);
+      return await this.chatbotService.processMessageAndReply(
         dto.channelId,
         dto.message,
         userId?.toString(),
       );
-
-      console.log('📤 [Controller] Response (with channelId):', {
-        hasResponse: !!result.response,
-        responseLength: result.response?.length || 0,
-        responsePreview: result.response?.substring(0, 100) || '',
-        timestamp: result.timestamp,
-      });
-
-      // ResponseInterceptor sẽ tự động wrap thành { data: result, message: 'Success', statusCode: 200 }
-      return result;
     }
 
-    // Nếu không có channelId, chỉ trả về response
-    const result = await this.chatbotService.processMessage(
+    // Không có channelId: chỉ trả về response (test/debug).
+    return await this.chatbotService.processMessage(
       dto.message,
       userId?.toString(),
     );
-
-    console.log('📤 [Controller] Response (no channelId):', {
-      hasResponse: !!result.response,
-      responseLength: result.response?.length || 0,
-      responsePreview: result.response?.substring(0, 100) || '',
-      timestamp: result.timestamp,
-    });
-
-    // ResponseInterceptor sẽ tự động wrap thành { data: result, message: 'Success', statusCode: 200 }
-    return result;
   }
 
-  /**
-   * Test endpoint để kiểm tra Agent connection
-   */
   @ApiBearerAuth()
-  @Get('test')
-  @ApiOperation({ summary: 'Test DigitalOcean Agent connection' })
-  @ApiResponse({ status: 200, description: 'Test successful' })
-  async testAgent() {
-    const response = await this.chatbotService.processMessage(
-      'Xin chào, tôi cần test connection',
-    );
-    return {
-      success: true,
-      message: 'Agent connection successful',
-      response,
-    };
+  @Post('confirm')
+  @ApiOperation({ summary: 'Confirm pending AI booking draft' })
+  async confirmAiBooking(@Body() dto: AiChannelActionDto, @Request() req) {
+    const userId = req.user?.userId;
+    return await this.chatbotService.confirmAiBooking(dto.channelId, userId);
+  }
+
+  @ApiBearerAuth()
+  @Post('cancel')
+  @ApiOperation({ summary: 'Cancel pending AI booking draft' })
+  async cancelAiBooking(@Body() dto: AiChannelActionDto, @Request() req) {
+    const userId = req.user?.userId;
+    return await this.chatbotService.cancelAiBooking(dto.channelId, userId);
   }
 
   /**

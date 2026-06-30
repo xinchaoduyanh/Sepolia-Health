@@ -2,6 +2,7 @@
   "name": "Sepolia-Health",
   "private": true,
   "scripts": {
+    "start": "turbo run start",
     "dev": "turbo run dev",
     "build": "turbo run build",
     "pm2": "bash scripts/pm2.sh",

@@ -1,11 +1,15 @@
+import { AIWelcomeScreen } from '@/components/AIWelcomeScreen';
+import { ChatSkeleton } from '@/components/ChatSkeleton';
 import { CustomDateSeparator } from '@/components/CustomDateSeparator';
 import { CustomMessage } from '@/components/CustomMessage';
+import { CustomTypingIndicator } from '@/components/CustomTypingIndicator';
 import { CustomMessageInput } from '@/components/CustomMessageInput';
 import { useChatContext } from '@/contexts/ChatContext';
 import { ChatbotAPI } from '@/lib/api/chatbot';
 import { getChatUserInfo } from '@/lib/utils/chat-user-data';
 import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Image, Text, TouchableOpacity, View } from 'react-native';
@@ -54,6 +58,7 @@ export default function ChannelScreen() {
   const [otherUserAvatar, setOtherUserAvatar] = useState<string | null>(null);
   const [otherUserName, setOtherUserName] = useState<string | null>(null);
   const [isAIChannel, setIsAIChannel] = useState(false);
+  const [isAITyping, setIsAITyping] = useState(false);
 
   // Use ref to store current user ID from StreamChat
   const currentUserIdRef = useRef<string | undefined>(undefined);
@@ -112,6 +117,50 @@ export default function ChannelScreen() {
       console.log('Marked channel as read on unmount');
     };
   }, [channel]);
+
+  // Listen for typing events (for both AI and human users)
+  useEffect(() => {
+    if (!channel || !currentUserId) {
+      setIsAITyping(false);
+      return;
+    }
+
+    const botUserId = ChatbotAPI.getAIBotUserId();
+    
+    // Initialize: check if anyone other than current user is currently typing
+    const typingUsers = channel.state?.typing ? Object.keys(channel.state.typing) : [];
+    const isSomeoneElseTyping = typingUsers.some(uid => uid !== currentUserId);
+    setIsAITyping(isSomeoneElseTyping);
+
+    const handleTypingEvent = (event: any) => {
+      // For AI channel, we only listen to the AI bot typing
+      // For other channels, we listen to anyone who isn't the current user
+      const isTargetTyping = isAIChannel 
+        ? event.user?.id === botUserId 
+        : (event.user?.id !== currentUserId);
+
+      if (isTargetTyping) {
+        if (event.type === 'typing.start') {
+          setIsAITyping(true);
+        } else if (event.type === 'typing.stop') {
+          // Re-evaluate if anyone else is still typing
+          const activeTyping = channel.state?.typing ? Object.keys(channel.state.typing) : [];
+          const someoneTyping = isAIChannel
+            ? activeTyping.includes(botUserId)
+            : activeTyping.some(uid => uid !== currentUserId);
+          setIsAITyping(someoneTyping);
+        }
+      }
+    };
+
+    channel.on('typing.start', handleTypingEvent);
+    channel.on('typing.stop', handleTypingEvent);
+
+    return () => {
+      channel.off('typing.start', handleTypingEvent);
+      channel.off('typing.stop', handleTypingEvent);
+    };
+  }, [channel, currentUserId, isAIChannel]);
 
   const handleRetryChat = useCallback(async () => {
     try {
@@ -425,15 +474,9 @@ export default function ChannelScreen() {
   }
 
   if (loading) {
-    return (
-      <SafeAreaView className="flex-1 bg-gray-100">
-        <Stack.Screen options={{ title: 'Đang tải...' }} />
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#06b6d4" />
-          <Text className="mt-4 text-base text-gray-600">Đang tải cuộc trò chuyện...</Text>
-        </View>
-      </SafeAreaView>
-    );
+    // Suy ra loại chat từ cid (có 'ai-consult-') để skeleton trùng tông màu,
+    // tránh nháy màu khi load xong.
+    return <ChatSkeleton isAI={cid?.includes('ai-consult-') ?? false} />;
   }
 
   const handleAudioCall = () => {
@@ -506,7 +549,17 @@ export default function ChannelScreen() {
                   borderColor: '#FFFFFF',
                   position: 'relative',
                 }}>
-                {otherUserAvatar || channel.data?.image ? (
+                {isAIChannel ? (
+                  <Image
+                    source={ChatbotAPI.getAIBotAvatar()}
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: 16,
+                    }}
+                    resizeMode="cover"
+                  />
+                ) : otherUserAvatar || channel.data?.image ? (
                   <Image
                     source={{ uri: (otherUserAvatar || channel.data?.image) as string }}
                     style={{
@@ -516,8 +569,6 @@ export default function ChannelScreen() {
                     }}
                     resizeMode="cover"
                   />
-                ) : isAIChannel ? (
-                  <Ionicons name="sparkles" size={20} color="#A855F7" />
                 ) : (
                   <Ionicons name="person" size={20} color="#2563EB" />
                 )}
@@ -575,12 +626,14 @@ export default function ChannelScreen() {
         }}
       />
 
-      {/* AI Channel Notice Banner - Positioned absolutely to float right below header */}
+      {/* AI Channel Notice Banner - đặt NGOÀI <Channel> và absolute để nổi ngay
+          dưới header. KHÔNG chèn vào trong Channel vì sẽ phá layout cuộn của
+          MessageList (inverted FlatList) -> tin nhắn bị đẩy khỏi tầm nhìn. */}
       {isAIChannel && (
         <View
           style={{
             position: 'absolute',
-            top: insets.top - 48, // Safe area top + header height (44px is standard header height)
+            top: insets.top - 48,
             left: 0,
             right: 0,
             zIndex: 10,
@@ -622,24 +675,58 @@ export default function ChannelScreen() {
       )}
 
       <ReplyContext.Provider value={{ replyingTo, setReplyingTo }}>
-        <Channel channel={channel} MessageSimple={CustomMessage} DateHeader={CustomDateSeparator}>
-          {/* Message List Container */}
-          <View
-            className="flex-1"
-            style={{
-              backgroundColor: isAIChannel ? '#FAF5FF' : '#F8FAFC',
-              // paddingTop: isAIChannel ? 60 : 0, // Add padding when Banner is shown to avoid overlap
-            }}>
-            <MessageList
-              disableTypingIndicator={true}
-              additionalFlatListProps={{
-                contentContainerStyle: {
-                  paddingTop: 16,
-                  paddingBottom: 8,
-                },
-              }}
-            />
-          </View>
+        <Channel
+          channel={channel}
+          MessageSimple={CustomMessage}
+          DateHeader={CustomDateSeparator}
+          EmptyStateIndicator={isAIChannel && (!channel?.state?.messages || channel.state.messages.length === 0) ? AIWelcomeScreen : undefined}>
+          {/* Message List Container - modern AI gradient background */}
+          {isAIChannel ? (
+            <LinearGradient
+              colors={['#FAF5FF', '#F5F3FF', '#EEF2FF']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={{ flex: 1 }}>
+              <MessageList
+                disableTypingIndicator={true}
+                additionalFlatListProps={{
+                  contentContainerStyle: {
+                    paddingTop: 16,
+                    paddingBottom: 8,
+                  },
+                  style: { backgroundColor: 'transparent' },
+                }}
+              />
+              {isAITyping && (
+                <CustomTypingIndicator
+                  isAIThinking={isAITyping}
+                  isAI={true}
+                  avatar={otherUserAvatar}
+                  userName={otherUserName}
+                />
+              )}
+            </LinearGradient>
+          ) : (
+            <View className="flex-1" style={{ backgroundColor: '#F8FAFC' }}>
+              <MessageList
+                disableTypingIndicator={true}
+                additionalFlatListProps={{
+                  contentContainerStyle: {
+                    paddingTop: 16,
+                    paddingBottom: 8,
+                  },
+                }}
+              />
+              {isAITyping && (
+                <CustomTypingIndicator
+                  isAIThinking={isAITyping}
+                  isAI={false}
+                  avatar={otherUserAvatar}
+                  userName={otherUserName}
+                />
+              )}
+            </View>
+          )}
 
           {/* Custom Message Input */}
           <CustomMessageInput />

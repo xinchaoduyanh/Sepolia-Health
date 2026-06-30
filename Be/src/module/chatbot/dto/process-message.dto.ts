@@ -13,6 +13,12 @@ export const ProcessMessageSchema = z.object({
 
 export class ProcessMessageDto extends createZodDto(ProcessMessageSchema) {}
 
+export const AiChannelActionSchema = z.object({
+  channelId: z.string().min(1, 'Channel ID không được để trống'),
+});
+
+export class AiChannelActionDto extends createZodDto(AiChannelActionSchema) {}
+
 // Doctor Schedule Query Schema
 export const DoctorScheduleQuerySchema = z.object({
   doctorId: z.coerce.number().positive().optional(),
@@ -50,22 +56,30 @@ export const SearchDoctorsSchema = z.object({
 export class SearchDoctorsDto extends createZodDto(SearchDoctorsSchema) {}
 
 // Stream Chat Webhook Payload Schema
-export const StreamChatWebhookSchema = z.object({
-  type: z.string().describe('Event type, e.g., "message.new"'),
-  channel_id: z.string().describe('Channel ID where message was sent'),
-  message: z
-    .object({
-      id: z.string().describe('Message ID'),
-      text: z.string().describe('Message text content'),
-      user: z
-        .object({
-          id: z.string().describe('User ID who sent the message'),
-          name: z.string().optional().describe('User name'),
-        })
-        .describe('User information'),
-    })
-    .describe('Message object'),
-});
+// LENIENT: Stream gửi nhiều loại event (reaction.*, typing.*, notification.*...)
+// qua cùng webhook. Schema chặt sẽ khiến global ZodValidationPipe reject TRƯỚC
+// khi controller kịp bỏ qua event không phải message.new. Validate runtime nằm ở controller.
+export const StreamChatWebhookSchema = z
+  .object({
+    type: z.string().optional(),
+    channel_id: z.string().optional(),
+    cid: z.string().optional(),
+    message: z
+      .object({
+        id: z.string().optional(),
+        text: z.string().optional(),
+        user: z
+          .object({
+            id: z.string().optional(),
+            name: z.string().optional(),
+          })
+          .passthrough()
+          .optional(),
+      })
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
 
 export class StreamChatWebhookDto extends createZodDto(
   StreamChatWebhookSchema,

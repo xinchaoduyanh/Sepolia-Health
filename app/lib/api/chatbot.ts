@@ -30,11 +30,19 @@ export class ChatbotAPI {
   }
 
   /**
-   * Get AI bot user ID (từ config hoặc API)
-   * Note: Bot user ID thường là 'sepolia-health-ai-assistant' hoặc từ config
+   * Get AI bot user ID. PHẢI khớp với AI_BOT_USER_ID ở backend (.env).
+   * Mặc định backend dùng 'ai-assistant'; có thể override qua EXPO_PUBLIC_AI_BOT_USER_ID.
    */
   static getAIBotUserId(): string {
-    // Bot user ID từ backend config
-    return 'sepolia-health-ai-assistant';
+    return process.env.EXPO_PUBLIC_AI_BOT_USER_ID || 'ai-assistant';
+  }
+
+  /**
+   * Ảnh avatar bundled local cho AI bot. Dùng ảnh này thay vì URL remote lưu
+   * trong Stream (bucket S3 cũ đã bị xóa nên link chết).
+   */
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  static getAIBotAvatar(): number {
+    return require('@/assets/avatarbot.jpg');
   }
 }

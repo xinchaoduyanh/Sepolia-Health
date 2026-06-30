@@ -152,7 +152,9 @@ const myChatTheme = {
   // Message List
   messageList: {
     container: {
-      backgroundColor: '#F8FAFC',
+      // Trong suốt để wrapper bên ngoài quyết định nền (màu phẳng cho chat thường,
+      // gradient hiện đại cho chat AI). Xem app/(homes)/(chat)/[cid].tsx.
+      backgroundColor: 'transparent',
     },
     dateSeparator: {
       text: {

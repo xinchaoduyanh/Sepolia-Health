@@ -1,3 +1,4 @@
+import { ChatbotAPI } from '@/lib/api/chatbot';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { Ionicons } from '@expo/vector-icons';
 import { format, isToday, isYesterday } from 'date-fns';
@@ -51,8 +52,8 @@ const getReceptionistAvatar = async (channel: Channel): Promise<string | null> =
 
 const getAIBotInfo = async (channel: Channel): Promise<{ name: string; avatar: string } | null> => {
   try {
-    // Bot user ID
-    const botUserId = 'sepolia-health-ai-assistant';
+    // Bot user ID (khớp backend AI_BOT_USER_ID)
+    const botUserId = ChatbotAPI.getAIBotUserId();
 
     // First try to get from channel state members (faster)
     if (channel.state?.members?.[botUserId]?.user) {
@@ -212,9 +213,9 @@ export const CustomChannelPreview = ({
             shadowRadius: 4,
             elevation: 2,
           }}>
-          {isAI && aiBotInfo?.avatar ? (
+          {isAI ? (
             <Image
-              source={{ uri: aiBotInfo.avatar }}
+              source={ChatbotAPI.getAIBotAvatar()}
               style={{
                 width: 48,
                 height: 48,
@@ -222,8 +223,6 @@ export const CustomChannelPreview = ({
               }}
               resizeMode="cover"
             />
-          ) : isAI ? (
-            <Ionicons name="sparkles" size={26} color="#A855F7" />
           ) : receptionistAvatar ? (
             <Image
               source={{ uri: receptionistAvatar }}

@@ -1,0 +1,23 @@
+# Runtime skeleton (Phase 03 + 05) — chưa cần Ollama/model
+fastapi>=0.115
+uvicorn>=0.32
+pydantic>=2.9
+pydantic-settings>=2.6
+httpx>=0.27
+python-frontmatter>=1.1
+# Auth cho Vertex AI (mint Bearer token từ service account JSON). Chỉ cần khi
+# AI_GEMINI_USE_VERTEX=true; Ollama/AI Studio không dùng.
+google-auth>=2.30
+
+# Cần khi tích hợp model/DB (Phase 03 store thật, Phase 04 RAG) — bật sau:
+# ollama>=0.4
+# sqlalchemy>=2.0
+# asyncpg>=0.30
+sqlalchemy>=2.0
+asyncpg>=0.30
+# structlog>=24.4
+chromadb>=0.5.0
+
+# Dev/test
+pytest>=8.0
+pytest-asyncio>=0.23

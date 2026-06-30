@@ -2,3 +2,6 @@ packages:
   - "Be"
   - "web/apps"
   - "web/packages/*"
+  - "AI"
+  - "tunnel"
+

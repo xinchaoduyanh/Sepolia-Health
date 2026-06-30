@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, Pressable, Image } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, TouchableOpacity, Pressable, Image, Animated, Easing } from 'react-native';
 import { useMessageContext, useChannelContext, MessageSimple } from 'stream-chat-expo';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
@@ -7,6 +7,64 @@ import { format, isToday, isYesterday } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import Markdown from 'react-native-markdown-display';
 import { getChatUserInfoSync, type ChatUserInfo } from '@/lib/utils/chat-user-data';
+import { ChatbotAPI } from '@/lib/api/chatbot';
+
+// Avatar cho tin nhắn của người khác. AI dùng ảnh bot bundled local.
+const MessageAvatar = ({ isAI, userImage }: { isAI: boolean; userImage?: string }) => {
+  // AI bot: luôn dùng ảnh local (URL remote trong Stream đã chết).
+  if (isAI) {
+    return (
+      <Image
+        source={ChatbotAPI.getAIBotAvatar()}
+        style={{
+          width: 32,
+          height: 32,
+          borderRadius: 16,
+          marginRight: 8,
+          borderWidth: 2,
+          borderColor: '#FFFFFF',
+        }}
+        resizeMode="cover"
+      />
+    );
+  }
+
+  if (userImage) {
+    return (
+      <Image
+        source={{ uri: userImage }}
+        style={{
+          width: 32,
+          height: 32,
+          borderRadius: 16,
+          marginRight: 8,
+          borderWidth: 2,
+          borderColor: '#FFFFFF',
+        }}
+        resizeMode="cover"
+      />
+    );
+  }
+
+  return (
+    <View
+      style={{
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: '#E0F2FE',
+        marginRight: 8,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 2,
+        borderColor: '#FFFFFF',
+      }}>
+      <Ionicons name="person" size={20} color="#0284C7" />
+    </View>
+  );
+};
+
+
 
 // Format timestamp for better readability
 const formatMessageTime = (date: Date) => {
@@ -34,7 +92,7 @@ const getMarkdownStyles = (isMyMessage: boolean) => ({
     color: isMyMessage ? '#FFFFFF' : '#1F2937',
   },
   strong: {
-    fontWeight: '700',
+    fontWeight: '700' as const,
     color: isMyMessage ? '#FFFFFF' : '#1F2937',
   },
   bullet_list: {
@@ -48,7 +106,7 @@ const getMarkdownStyles = (isMyMessage: boolean) => ({
   list_item: {
     marginTop: 2,
     marginBottom: 2,
-    flexDirection: 'row',
+    flexDirection: 'row' as const,
     fontSize: 15,
     lineHeight: 20,
     color: isMyMessage ? '#FFFFFF' : '#1F2937',
@@ -69,7 +127,7 @@ const getMarkdownStyles = (isMyMessage: boolean) => ({
   },
   link: {
     color: isMyMessage ? '#BFDBFE' : '#2563EB',
-    textDecorationLine: 'underline',
+    textDecorationLine: 'underline' as const,
   },
 });
 
@@ -100,6 +158,9 @@ export const CustomMessage = () => {
   );
 
   const { name: userName, image: userImage } = userInfo;
+
+  // Tin nhắn từ Trợ lý AI -> dùng avatar gradient sparkles + bong bóng tông tím
+  const isAIMessage = !isMyMessage && message.user?.id === ChatbotAPI.getAIBotUserId();
 
   // Handle attachments
   if (message.attachments?.length) {
@@ -132,32 +193,7 @@ export const CustomMessage = () => {
         }}>
         {/* Avatar for other users (left side) */}
         {!isMyMessage && (
-          <View
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: 16,
-              backgroundColor: '#E0F2FE',
-              marginRight: 8,
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderWidth: 2,
-              borderColor: '#FFFFFF',
-            }}>
-            {userImage ? (
-              <Image
-                source={{ uri: userImage as string }}
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 16,
-                }}
-                resizeMode="cover"
-              />
-            ) : (
-              <Ionicons name="person" size={20} color="#0284C7" />
-            )}
-          </View>
+          <MessageAvatar isAI={isAIMessage} userImage={userImage as string | undefined} />
         )}
 
         {/* Message Content Container */}
@@ -172,7 +208,7 @@ export const CustomMessage = () => {
             <Text
               style={{
                 fontSize: 12,
-                color: '#64748B',
+                color: isAIMessage ? '#7C3AED' : '#64748B',
                 fontWeight: '600',
                 marginBottom: 4,
                 marginLeft: 8,
@@ -297,32 +333,7 @@ export const CustomMessage = () => {
       }}>
       {/* Avatar for other users (left side) */}
       {!isMyMessage && (
-        <View
-          style={{
-            width: 32,
-            height: 32,
-            borderRadius: 16,
-            backgroundColor: '#E0F2FE',
-            marginRight: 8,
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderWidth: 2,
-            borderColor: '#FFFFFF',
-          }}>
-          {userImage ? (
-            <Image
-              source={{ uri: userImage as string }}
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: 16,
-              }}
-              resizeMode="cover"
-            />
-          ) : (
-            <Ionicons name="person" size={20} color="#0284C7" />
-          )}
-        </View>
+        <MessageAvatar isAI={isAIMessage} userImage={userImage as string | undefined} />
       )}
 
       {/* Message Content Container */}
@@ -337,7 +348,7 @@ export const CustomMessage = () => {
           <Text
             style={{
               fontSize: 12,
-              color: '#64748B',
+              color: isAIMessage ? '#7C3AED' : '#64748B',
               fontWeight: '600',
               marginBottom: 4,
               marginLeft: 8,
@@ -349,19 +360,19 @@ export const CustomMessage = () => {
         {/* Message Bubble */}
         <View
           style={{
-            backgroundColor: isMyMessage ? '#2563EB' : '#FFFFFF',
+            backgroundColor: isMyMessage ? '#2563EB' : isAIMessage ? '#FFFFFF' : '#FFFFFF',
             borderRadius: 20,
             borderBottomLeftRadius: isMyMessage ? 20 : 4,
             borderBottomRightRadius: isMyMessage ? 4 : 20,
             paddingHorizontal: 16,
             paddingVertical: 10,
-            shadowColor: isMyMessage ? '#2563EB' : '#000',
+            shadowColor: isMyMessage ? '#2563EB' : isAIMessage ? '#A855F7' : '#000',
             shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: isMyMessage ? 0.2 : 0.05,
-            shadowRadius: isMyMessage ? 4 : 2,
-            elevation: isMyMessage ? 2 : 1,
+            shadowOpacity: isMyMessage ? 0.2 : isAIMessage ? 0.12 : 0.05,
+            shadowRadius: isMyMessage ? 4 : isAIMessage ? 6 : 2,
+            elevation: isMyMessage ? 2 : isAIMessage ? 2 : 1,
             borderWidth: isMyMessage ? 0 : 1,
-            borderColor: '#E2E8F0',
+            borderColor: isAIMessage ? '#E9D5FF' : '#E2E8F0',
           }}>
           <Markdown style={getMarkdownStyles(isMyMessage)}>{message.text}</Markdown>
         </View>

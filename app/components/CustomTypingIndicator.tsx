@@ -1,120 +1,183 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, Animated } from 'react-native';
-import { useAIThinking } from '@/contexts/AIThinkingContext';
+import { View, Text, Animated, Image } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { ChatbotAPI } from '@/lib/api/chatbot';
 
-export const CustomTypingIndicator = () => {
-  const { isAIThinking } = useAIThinking();
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    if (isAIThinking) {
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: true,
-      }).start();
-    } else {
-      Animated.timing(fadeAnim, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      }).start();
-    }
-  }, [isAIThinking, fadeAnim]);
-
+export const CustomTypingIndicator = ({
+  isAIThinking,
+  isAI,
+  avatar,
+  userName,
+}: {
+  isAIThinking: boolean;
+  isAI: boolean;
+  avatar?: string | null;
+  userName?: string | null;
+}) => {
   if (!isAIThinking) {
     return null;
   }
 
-  const displayMessage = 'Trợ lý Y tế Thông minh đang suy nghĩ câu trả lời...';
+  // Determine styles based on whether it is AI or human assistant
+  const displayName = isAI ? 'Trợ lý AI' : (userName || 'Trợ lý');
+  const dotColor = isAI ? '#8B5CF6' : '#2563EB'; // Purple for AI, Blue for human
+  const borderColor = isAI ? '#E9D5FF' : '#E2E8F0'; // Purple border for AI, grey for human
+  const shadowColor = isAI ? '#A855F7' : '#000000'; // Purple shadow for AI, black shadow for human
+  const nameColor = isAI ? '#7C3AED' : '#64748B'; // Purple text for AI, slate grey for human
+
+  // Render Avatar
+  const renderAvatar = () => {
+    if (isAI) {
+      return (
+        <Image
+          source={ChatbotAPI.getAIBotAvatar()}
+          style={{
+            width: 32,
+            height: 32,
+            borderRadius: 16,
+            marginRight: 8,
+            borderWidth: 2,
+            borderColor: '#FFFFFF',
+          }}
+          resizeMode="cover"
+        />
+      );
+    }
+
+    if (avatar) {
+      return (
+        <Image
+          source={{ uri: avatar }}
+          style={{
+            width: 32,
+            height: 32,
+            borderRadius: 16,
+            marginRight: 8,
+            borderWidth: 2,
+            borderColor: '#FFFFFF',
+          }}
+          resizeMode="cover"
+        />
+      );
+    }
+
+    // Default icon avatar for human
+    return (
+      <View
+        style={{
+          width: 32,
+          height: 32,
+          borderRadius: 16,
+          backgroundColor: '#E2E8F0',
+          marginRight: 8,
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderWidth: 2,
+          borderColor: '#FFFFFF',
+        }}>
+        <Ionicons name="person" size={16} color="#64748B" />
+      </View>
+    );
+  };
 
   return (
     <View
       style={{
         flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        marginTop: 8, // Tách với message bên trên
-        backgroundColor: '#F8FAFC',
+        justifyContent: 'flex-start',
+        paddingHorizontal: 12,
+        paddingVertical: 4,
+        alignItems: 'flex-end',
+        marginBottom: 8,
       }}>
-      <Animated.View
+      {/* Avatar */}
+      {renderAvatar()}
+
+      {/* Message Content Container */}
+      <View
         style={{
-          opacity: fadeAnim,
-          flexDirection: 'row',
-          alignItems: 'center',
+          maxWidth: '75%',
+          flexDirection: 'column',
+          alignItems: 'flex-start',
         }}>
+        {/* Username */}
+        <Text
+          style={{
+            fontSize: 12,
+            color: nameColor,
+            fontWeight: '600',
+            marginBottom: 4,
+            marginLeft: 8,
+          }}>
+          {displayName}
+        </Text>
+
+        {/* Message Bubble */}
         <View
           style={{
             backgroundColor: '#FFFFFF',
-            borderRadius: 24,
-            borderWidth: 1.5,
-            borderColor: '#DBEAFE',
-            paddingHorizontal: 20,
+            borderRadius: 20,
+            borderBottomLeftRadius: 4,
+            paddingHorizontal: 18,
             paddingVertical: 14,
-            flexDirection: 'row',
-            alignItems: 'center',
-            shadowColor: '#2563EB',
+            shadowColor: shadowColor,
             shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
+            shadowOpacity: isAI ? 0.08 : 0.05,
             shadowRadius: 4,
             elevation: 2,
+            borderWidth: 1,
+            borderColor: borderColor,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}>
-          {/* Animated dots - larger */}
-          <View style={{ flexDirection: 'row', marginRight: 12 }}>
-            <AnimatedDot delay={0} />
-            <AnimatedDot delay={150} />
-            <AnimatedDot delay={300} />
+          {/* Animated dots - modern waves */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', height: 8 }}>
+            <AnimatedDot delay={0} color={dotColor} />
+            <AnimatedDot delay={150} color={dotColor} />
+            <AnimatedDot delay={300} color={dotColor} />
           </View>
-          <Text
-            style={{
-              fontSize: 15,
-              color: '#2563EB',
-              fontWeight: '500',
-              fontStyle: 'italic',
-            }}>
-            {displayMessage}
-          </Text>
         </View>
-      </Animated.View>
+      </View>
     </View>
   );
 };
 
-const AnimatedDot = ({ delay }: { delay: number }) => {
-  const scaleAnim = useRef(new Animated.Value(1)).current;
+const AnimatedDot = ({ delay, color }: { delay: number; color: string }) => {
+  const travelAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     const animation = Animated.loop(
       Animated.sequence([
         Animated.delay(delay),
-        Animated.timing(scaleAnim, {
-          toValue: 1.5,
-          duration: 400,
+        Animated.timing(travelAnim, {
+          toValue: -5,
+          duration: 350,
           useNativeDriver: true,
         }),
-        Animated.timing(scaleAnim, {
-          toValue: 1,
-          duration: 400,
+        Animated.timing(travelAnim, {
+          toValue: 0,
+          duration: 350,
           useNativeDriver: true,
         }),
+        Animated.delay(350),
       ])
     );
 
     animation.start();
 
     return () => animation.stop();
-  }, [scaleAnim, delay]);
+  }, [travelAnim, delay]);
 
   return (
     <Animated.View
       style={{
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-        backgroundColor: '#2563EB',
-        marginHorizontal: 3,
-        transform: [{ scale: scaleAnim }],
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        backgroundColor: color,
+        marginHorizontal: 3.5,
+        transform: [{ translateY: travelAnim }],
       }}
     />
   );

@@ -1,0 +1,10 @@
+[project]
+name = "sepolia-ai"
+version = "0.1.0"
+description = "AI service tự host (Ollama) cho hệ thống đặt lịch Sepolia Health"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+asyncio_mode = "auto"

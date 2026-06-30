@@ -5,13 +5,13 @@ import {
   Gender,
   PaymentMethod,
   PaymentStatus,
-  PrismaClient,
   Relationship,
 } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { StreamChat } from 'stream-chat';
+import { createSeedPrismaClient } from './prisma-seed-client';
 
-const prisma = new PrismaClient();
+const prisma = createSeedPrismaClient();
 
 class HyperScheduler {
   private occupied = new Map<string, Array<{ s: number; e: number }>>();

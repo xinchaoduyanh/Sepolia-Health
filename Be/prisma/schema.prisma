@@ -104,6 +104,9 @@ model User {
   // Quan hệ với Promotion
   userPromotions UserPromotion[]
 
+  // AI scheduling sessions
+  aiSessions AiSession[]
+
   status    UserStatus @default(UNVERIFIED)
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
@@ -138,6 +141,7 @@ model DoctorProfile {
   specialties    DoctorSpecialty[]
   availabilities DoctorAvailability[]
   overrides      AvailabilityOverride[]
+  bookingDrafts  BookingDraft[]
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -215,6 +219,7 @@ model PatientProfile {
   manager       User           @relation(fields: [managerId], references: [id])
   appointments  Appointment[]
   prescriptions Prescription[]
+  bookingDrafts BookingDraft[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -278,6 +283,7 @@ model Appointment {
   billing   Billing?
   feedback  Feedback?
   result    AppointmentResult?
+  bookingDraft BookingDraft?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -387,6 +393,7 @@ model Service {
   updatedAt     DateTime?
   appointments  Appointment[]
   doctorService DoctorService[] @relation("Doctor")
+  bookingDrafts BookingDraft[]
 }
 
 model DoctorService {
@@ -820,4 +827,73 @@ model ArticleTag {
   @@unique([articleId, tagId])
   @@index([articleId])
   @@index([tagId])
+}
+
+// ----------------- AI PLATFORM MODELS (Ollama migration) -----------------
+
+enum BookingDraftStatus {
+  PENDING
+  CONFIRMED
+  EXPIRED
+  CANCELLED
+}
+
+/// Bản nháp đặt lịch do AI tạo; confirm 2 bước, idempotent.
+model BookingDraft {
+  id               String             @id @default(cuid())
+  patientProfileId Int
+  doctorId         Int
+  serviceId        Int
+  startTime        DateTime
+  endTime          DateTime
+  estimatedPrice   Int?
+  status           BookingDraftStatus @default(PENDING)
+  idempotencyKey   String             @unique
+  expiresAt        DateTime
+  confirmedAppointmentId Int?         @unique
+  createdAt        DateTime           @default(now())
+
+  patientProfile PatientProfile @relation(fields: [patientProfileId], references: [id])
+  doctor         DoctorProfile  @relation(fields: [doctorId], references: [id])
+  service        Service        @relation(fields: [serviceId], references: [id])
+  appointment    Appointment?   @relation(fields: [confirmedAppointmentId], references: [id])
+
+  @@index([status, expiresAt])
+}
+
+/// Phiên hội thoại AI (state machine snapshot). AI/ được phép ghi trực tiếp.
+model AiSession {
+  id         String    @id @default(cuid())
+  userId     Int
+  agentState String
+  channelId  String?
+  state      Json
+  version    Int       @default(0)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  closedAt   DateTime?
+
+  user  User     @relation(fields: [userId], references: [id])
+  turns AiTurn[]
+
+  @@index([userId, closedAt])
+}
+
+/// 1 lượt hội thoại (audit/observability).
+model AiTurn {
+  id               String   @id @default(cuid())
+  sessionId        String
+  traceId          String
+  userMessage      String?
+  aiMessage        String?
+  toolCalls        Json?
+  toolResults      Json?
+  model            String?
+  latencyMs        Int?
+  policyViolations Json?
+  createdAt        DateTime @default(now())
+
+  session AiSession @relation(fields: [sessionId], references: [id])
+
+  @@index([sessionId, createdAt])
 }

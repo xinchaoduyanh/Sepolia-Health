@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+data/chroma/
+.env
+# Service account key (Vertex AI) — KHÔNG commit
+secrets/
+*-sa-key.json

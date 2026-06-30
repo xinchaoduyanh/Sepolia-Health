@@ -15,6 +15,7 @@ import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD, APP_PIPE } from '@nestjs/core';
 import IORedis from 'ioredis';
 import { AdminModule } from './admin/admin.module';
+import { AiBridgeModule } from './ai-bridge/ai-bridge.module';
 import { AppTermsModule } from './app-terms/app-terms.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -53,6 +54,7 @@ import { ReceptionistModule } from './receptionist/receptionist.module';
     ChatbotModule,
     AppTermsModule,
     CronJobModule,
+    AiBridgeModule,
   ],
   controllers: [AppController],
   providers: [

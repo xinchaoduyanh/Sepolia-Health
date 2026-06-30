@@ -6,7 +6,8 @@ import { AppModule } from './module/app.module';
 import { HttpExceptionsFilter } from './common/exceptions';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  // rawBody: true để verify chữ ký webhook Stream Chat trên đúng bytes gốc.
+  const app = await NestFactory.create(AppModule, { rawBody: true });
   const logger = new Logger('Bootstrap');
 
   // Global prefix

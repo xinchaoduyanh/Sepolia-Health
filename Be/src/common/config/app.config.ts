@@ -33,8 +33,9 @@ export default registerAs('app', () => {
     zoomClientId: parsed.ZOOM_CLIENT_ID,
     zoomClientSecret: parsed.ZOOM_CLIENT_SECRET,
     //
-    digitalOceanAgentEndpoint: parsed.DIGITALOCEAN_AGENT_ENDPOINT,
-    digitalOceanAgentAccessKey: parsed.DIGITALOCEAN_AGENT_ACCESS_KEY,
     aiBotUserId: parsed.AI_BOT_USER_ID,
+    aiInternalToken: parsed.AI_INTERNAL_TOKEN,
+    aiBaseUrl: parsed.AI_BASE_URL,
+    chatbotUseAiPlatform: parsed.CHATBOT_USE_AI_PLATFORM,
   };
 });

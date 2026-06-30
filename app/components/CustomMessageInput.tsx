@@ -15,8 +15,6 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useChannelContext } from 'stream-chat-expo';
 import { useChatContext } from '@/contexts/ChatContext';
-import { ChatbotAPI } from '@/lib/api/chatbot';
-import { useAuth } from '@/lib/hooks/useAuth';
 
 interface CustomMessageInputProps {
   replyingTo?: any;
@@ -27,15 +25,17 @@ export const CustomMessageInput = ({ replyingTo, onCancelReply }: CustomMessageI
   // Get channel from Stream Chat context
   const { channel } = useChannelContext();
   const { isAIChannel } = useChatContext();
-  const { user } = useAuth();
   const [messageText, setMessageText] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [isProcessingAI, setIsProcessingAI] = useState(false);
   const inputHeight = useRef(new Animated.Value(40)).current;
 
   // Kiểm tra xem channel hiện tại có phải là AI channel không
   const isCurrentChannelAI = channel ? isAIChannel(channel) : false;
+
+  // Tông màu accent: tím cho AI (hiện đại), xanh dương cho chat thường
+  const accent = isCurrentChannelAI ? '#A855F7' : '#2563EB';
+  const accentSoft = isCurrentChannelAI ? '#F3E8FF' : '#EFF6FF';
 
   // Handle text change
   const handleTextChange = (text: string) => {
@@ -53,9 +53,6 @@ export const CustomMessageInput = ({ replyingTo, onCancelReply }: CustomMessageI
     try {
       // Nếu là AI channel, xử lý đặc biệt
       if (isCurrentChannelAI) {
-        setIsProcessingAI(true);
-
-        // 1. Gửi message của user vào channel để lưu lịch sử
         const userMessageData: any = {
           text: messageToSend,
         };
@@ -65,18 +62,9 @@ export const CustomMessageInput = ({ replyingTo, onCancelReply }: CustomMessageI
           userMessageData.show_in_channel = true;
         }
 
+        // AI trả lời do Stream webhook -> backend xử lý (không gọi direct API ở đây
+        // để tránh kích hoạt 2 lần gây xung đột session / trả lời trùng).
         await channel.sendMessage(userMessageData);
-
-        // 2. Gọi API chatbot để xử lý và tự động gửi response vào channel
-        try {
-          // Gọi API với channelId, backend sẽ tự động gửi response vào channel
-          await ChatbotAPI.processMessage(messageToSend, user?.id, channel.id);
-        } catch {
-          // Silently handle AI processing errors - message already sent
-          // Backend will handle the response
-        } finally {
-          setIsProcessingAI(false);
-        }
       } else {
         // Nếu không phải AI channel, xử lý bình thường
         const messageData: any = {
@@ -93,7 +81,6 @@ export const CustomMessageInput = ({ replyingTo, onCancelReply }: CustomMessageI
     } catch {
       // Only show alert for actual send failures, not AI processing
       Alert.alert('Lỗi', 'Không thể gửi tin nhắn. Vui lòng thử lại.');
-      setIsProcessingAI(false);
     }
   };
 
@@ -324,15 +311,15 @@ export const CustomMessageInput = ({ replyingTo, onCancelReply }: CustomMessageI
             justifyContent: 'center',
             marginRight: 8,
             borderRadius: 20,
-            backgroundColor: isUploading ? '#E2E8F0' : isFocused ? '#EFF6FF' : '#F1F5F9',
+            backgroundColor: isUploading ? '#E2E8F0' : isFocused ? accentSoft : '#F1F5F9',
           }}>
           {isUploading ? (
-            <ActivityIndicator size="small" color="#2563EB" />
+            <ActivityIndicator size="small" color={accent} />
           ) : (
             <Ionicons
               name="add-circle-outline"
               size={24}
-              color={isFocused ? '#2563EB' : '#64748B'}
+              color={isFocused ? accent : '#64748B'}
             />
           )}
         </TouchableOpacity>
@@ -346,12 +333,12 @@ export const CustomMessageInput = ({ replyingTo, onCancelReply }: CustomMessageI
             borderRadius: 20,
             backgroundColor: '#F8FAFC',
             borderWidth: isFocused ? 2 : 1,
-            borderColor: isFocused ? '#2563EB' : '#E2E8F0',
+            borderColor: isFocused ? accent : '#E2E8F0',
             paddingHorizontal: 16,
             paddingVertical: 10,
             marginRight: 8,
             justifyContent: 'center',
-            shadowColor: isFocused ? '#2563EB' : 'transparent',
+            shadowColor: isFocused ? accent : 'transparent',
             shadowOffset: { width: 0, height: 2 },
             shadowOpacity: 0.1,
             shadowRadius: 4,
@@ -387,26 +374,22 @@ export const CustomMessageInput = ({ replyingTo, onCancelReply }: CustomMessageI
         {/* Send button */}
         <TouchableOpacity
           onPress={sendMessage}
-          disabled={!messageText.trim() || isProcessingAI}
+          disabled={!messageText.trim()}
           style={{
             width: 40,
             height: 40,
             alignItems: 'center',
             justifyContent: 'center',
             borderRadius: 20,
-            backgroundColor: messageText.trim() && !isProcessingAI ? '#2563EB' : '#E2E8F0',
-            shadowColor: messageText.trim() && !isProcessingAI ? '#2563EB' : 'transparent',
+            backgroundColor: messageText.trim() ? accent : '#E2E8F0',
+            shadowColor: messageText.trim() ? accent : 'transparent',
             shadowOffset: { width: 0, height: 2 },
             shadowOpacity: 0.3,
             shadowRadius: 4,
-            elevation: messageText.trim() && !isProcessingAI ? 3 : 0,
-            transform: [{ scale: messageText.trim() && !isProcessingAI ? 1 : 0.95 }],
+            elevation: messageText.trim() ? 3 : 0,
+            transform: [{ scale: messageText.trim() ? 1 : 0.95 }],
           }}>
-          {isProcessingAI ? (
-            <ActivityIndicator size="small" color="#94A3B8" />
-          ) : (
-            <Ionicons name="send" size={20} color={messageText.trim() ? '#FFFFFF' : '#94A3B8'} />
-          )}
+          <Ionicons name="send" size={20} color={messageText.trim() ? '#FFFFFF' : '#94A3B8'} />
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
