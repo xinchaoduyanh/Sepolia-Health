@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Sequence
+from typing import Sequence, AsyncGenerator
 
 from pydantic import BaseModel
 
@@ -36,6 +36,19 @@ class AIProvider(ABC):
         temperature: float = 0.1,
         max_tokens: int = 1024,
     ) -> ChatResponse: ...
+
+    async def chat_stream(
+        self,
+        model: str,
+        messages: list[dict],
+        tools: list[dict] | None = None,
+        temperature: float = 0.1,
+        max_tokens: int = 1024,
+    ) -> AsyncGenerator[str, None]:
+        """Mặc định: provider không hỗ trợ streaming -> caller fallback sang chat().
+        Chỉ GeminiProvider override. `yield` (unreachable) giữ đây là async generator."""
+        raise NotImplementedError("Provider này không hỗ trợ streaming")
+        yield  # pragma: no cover
 
     @abstractmethod
     async def embed(self, model: str, texts: Sequence[str]) -> list[list[float]]: ...

@@ -49,6 +49,11 @@ export class AiBridgeController {
     return this.bridge.searchClinics(q, location);
   }
 
+  @Get('clinics/:id')
+  getClinicDetail(@Param('id', ParseIntPipe) id: number) {
+    return this.bridge.getClinicDetail(id);
+  }
+
   @Get('services')
   searchServices(@Query('q') q?: string, @Query('clinicId') clinicId?: string) {
     return this.bridge.searchServices(q, this.numOrUndef(clinicId));
@@ -61,6 +66,11 @@ export class AiBridgeController {
     @Query('clinicId') clinicId?: string,
   ) {
     return this.bridge.searchDoctors(q, this.numOrUndef(serviceId), this.numOrUndef(clinicId));
+  }
+
+  @Get('doctors/:id')
+  getDoctorDetail(@Param('id', ParseIntPipe) id: number) {
+    return this.bridge.getDoctorDetail(id);
   }
 
   @Get('doctors/available')
@@ -108,6 +118,28 @@ export class AiBridgeController {
     return this.bridge.getUpcomingAppointments(actingUserId);
   }
 
+  @Get('patients/:userId/summary')
+  summary(
+    @Param('userId', ParseIntPipe) userId: number,
+    @Headers('x-acting-user-id') acting?: string,
+  ) {
+    const actingUserId = this.actingUserId(acting);
+    if (userId !== actingUserId) throw new ForbiddenException('forbidden_cross_user');
+    return this.bridge.getPatientSummary(actingUserId);
+  }
+
+  @Get('patients/:userId/history')
+  history(
+    @Param('userId', ParseIntPipe) userId: number,
+    @Query('limit') limit?: string,
+    @Headers('x-acting-user-id') acting?: string,
+  ) {
+    const actingUserId = this.actingUserId(acting);
+    if (userId !== actingUserId) throw new ForbiddenException('forbidden_cross_user');
+    const limitNum = limit ? parseInt(limit, 10) : 5;
+    return this.bridge.getPatientHistory(actingUserId, isNaN(limitNum) ? 5 : limitNum);
+  }
+
   @Post('booking-drafts')
   createDraft(
     @Body() body: CreateBookingDraftDto,
@@ -123,5 +155,13 @@ export class AiBridgeController {
     @Headers('x-acting-user-id') acting?: string,
   ) {
     return this.bridge.confirmBooking(this.actingUserId(acting), id);
+  }
+
+  @Post('appointments/:id/cancel')
+  cancelAppointment(
+    @Param('id', ParseIntPipe) id: number,
+    @Headers('x-acting-user-id') acting?: string,
+  ) {
+    return this.bridge.cancelAppointment(this.actingUserId(acting), id);
   }
 }

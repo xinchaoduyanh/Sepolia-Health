@@ -97,7 +97,7 @@ def build_agent_for_user(
     return SchedulingAgent(
         provider,
         model,
-        ToolRegistry(scoped_bridge),
+        ToolRegistry(scoped_bridge, retriever=retriever),
         prompts,
         retriever=retriever,
         emergency_detector=emergency_detector,

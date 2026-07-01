@@ -85,7 +85,7 @@ const CuteLoadingScreen = ({ statusText = "Đang kết nối cuộc trò chuyệ
     Animated.timing(progressValue, {
       toValue: 1,
       duration: 450,
-      useNativeDriver: false,
+      useNativeDriver: true,
     }).start();
   }, [progressValue]);
 
@@ -114,9 +114,9 @@ const CuteLoadingScreen = ({ statusText = "Đang kết nối cuộc trò chuyệ
     outputRange: [0.3, 0.8],
   });
 
-  const progressWidth = progressValue.interpolate({
+  const progressTranslateX = progressValue.interpolate({
     inputRange: [0, 1],
-    outputRange: ['0%', '100%'],
+    outputRange: [-200, 0],
   });
 
   return (
@@ -224,9 +224,10 @@ const CuteLoadingScreen = ({ statusText = "Đang kết nối cuộc trò chuyệ
         }}>
           <Animated.View style={{
             height: '100%',
-            width: progressWidth,
+            width: '100%',
             backgroundColor: '#0284C7',
             borderRadius: 4,
+            transform: [{ translateX: progressTranslateX }],
           }} />
         </View>
       </LinearGradient>

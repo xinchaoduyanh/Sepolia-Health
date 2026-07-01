@@ -39,6 +39,7 @@ class OfferedItem(BaseModel):
 class BookingRequirement(BaseModel):
     specialty: str | None = None
     doctor_id: int | None = None
+    doctor_name: str | None = None  # tên bác sĩ đã chọn (để recap đúng, không lộn bác sĩ)
     doctor_name_query: str | None = None
     service_id: int | None = None
     service_name_query: str | None = None
@@ -81,6 +82,7 @@ class SessionState(BaseModel):
     pending_confirmation: PendingConfirmation | None = None
     last_offered: list[OfferedItem] = Field(default_factory=list)
     turn_summaries: list[TurnSummary] = Field(default_factory=list)
+    patient_summary: dict | None = None
     last_updated: datetime = Field(default_factory=_now)
     trace_ids: list[str] = Field(default_factory=list)
     version: int = 0  # optimistic locking

@@ -6,6 +6,7 @@ import * as Clipboard from 'expo-clipboard';
 import { format, isToday, isYesterday } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import Markdown from 'react-native-markdown-display';
+import { useQueryClient } from '@tanstack/react-query';
 import { getChatUserInfoSync, type ChatUserInfo } from '@/lib/utils/chat-user-data';
 import { ChatbotAPI } from '@/lib/api/chatbot';
 
@@ -92,8 +93,10 @@ const getMarkdownStyles = (isMyMessage: boolean) => ({
     color: isMyMessage ? '#FFFFFF' : '#1F2937',
   },
   strong: {
+    // Chữ đậm ở tin nhắn của người khác/AI tô màu teal cho nổi thông tin quan trọng
+    // (ngày giờ, giá...) kiểu Zalo. Tin của mình giữ trắng cho dễ đọc trên nền xanh.
     fontWeight: '700' as const,
-    color: isMyMessage ? '#FFFFFF' : '#1F2937',
+    color: isMyMessage ? '#FFFFFF' : '#0D9488',
   },
   bullet_list: {
     marginTop: 4,
@@ -131,6 +134,116 @@ const getMarkdownStyles = (isMyMessage: boolean) => ({
   },
 });
 
+// Thẻ "Tin nhắn xác nhận" kèm nút — user chỉ cần bấm, không phải chat lại.
+const ConfirmationCard = ({
+  text,
+  kind,
+  channelId,
+}: {
+  text: string;
+  kind?: string;
+  channelId?: string;
+}) => {
+  const queryClient = useQueryClient();
+  const [status, setStatus] = React.useState<'idle' | 'loading' | 'done' | 'error'>('idle');
+  const isCancel = kind === 'cancel_booking';
+  const accent = isCancel ? '#DC2626' : '#059669'; // đỏ huỷ / xanh lá xác nhận
+
+  const handlePress = async () => {
+    if (!channelId || status === 'loading' || status === 'done') return;
+    setStatus('loading');
+    try {
+      await ChatbotAPI.confirmBooking(channelId);
+      // Lịch vừa được tạo/huỷ ở BE -> làm mới danh sách để Home "lịch sắp tới" cập nhật.
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
+      setStatus('done');
+    } catch {
+      setStatus('error');
+    }
+  };
+
+  return (
+    <View
+      style={{
+        backgroundColor: '#FFFFFF',
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        overflow: 'hidden',
+        shadowColor: accent,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.12,
+        shadowRadius: 6,
+        elevation: 2,
+      }}>
+      {/* Header màu */}
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 6,
+          backgroundColor: accent,
+          paddingHorizontal: 12,
+          paddingVertical: 8,
+        }}>
+        <Ionicons name={isCancel ? 'close-circle' : 'calendar'} size={16} color="#FFFFFF" />
+        <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 13, letterSpacing: 0.5 }}>
+          {isCancel ? 'XÁC NHẬN HUỶ LỊCH' : 'XÁC NHẬN ĐẶT LỊCH'}
+        </Text>
+      </View>
+
+      {/* Nội dung */}
+      <View style={{ paddingHorizontal: 12, paddingTop: 10, paddingBottom: 12 }}>
+        <Markdown style={getMarkdownStyles(false)}>{text}</Markdown>
+
+        {status === 'done' ? (
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 6,
+              marginTop: 10,
+              paddingVertical: 10,
+              borderRadius: 10,
+              backgroundColor: '#ECFDF5',
+            }}>
+            <Ionicons name="checkmark-circle" size={18} color={accent} />
+            <Text style={{ color: accent, fontWeight: '700' }}>Đã xác nhận</Text>
+          </View>
+        ) : (
+          <TouchableOpacity
+            onPress={handlePress}
+            disabled={status === 'loading'}
+            activeOpacity={0.85}
+            style={{
+              marginTop: 10,
+              paddingVertical: 12,
+              borderRadius: 10,
+              backgroundColor: accent,
+              alignItems: 'center',
+              opacity: status === 'loading' ? 0.7 : 1,
+            }}>
+            <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 15 }}>
+              {status === 'loading'
+                ? 'Đang xử lý...'
+                : isCancel
+                  ? 'Xác nhận huỷ lịch'
+                  : 'Xác nhận đặt lịch'}
+            </Text>
+          </TouchableOpacity>
+        )}
+
+        {status === 'error' && (
+          <Text style={{ color: '#DC2626', marginTop: 8, fontSize: 13 }}>
+            Có lỗi khi xử lý, anh/chị thử lại giúp em nhé.
+          </Text>
+        )}
+      </View>
+    </View>
+  );
+};
+
 export const CustomMessage = () => {
   const { message, isMyMessage } = useMessageContext();
   const { channel } = useChannelContext();
@@ -161,6 +274,31 @@ export const CustomMessage = () => {
 
   // Tin nhắn từ Trợ lý AI -> dùng avatar gradient sparkles + bong bóng tông tím
   const isAIMessage = !isMyMessage && message.user?.id === ChatbotAPI.getAIBotUserId();
+
+  // Tin nhắn cần xác nhận (đặt/huỷ lịch) -> render THẺ có nút, user chỉ cần bấm.
+  // Stream có thể đặt custom field trong `.extra` HOẶC ở root -> đọc cả hai cho chắc.
+  const meta: any = (message as any).extra ?? (message as any);
+  if (isAIMessage && meta?.requiresConfirmation) {
+    return (
+      <Pressable
+        style={{
+          flexDirection: 'row',
+          justifyContent: 'flex-start',
+          paddingHorizontal: 12,
+          paddingVertical: 4,
+          alignItems: 'flex-end',
+        }}>
+        <MessageAvatar isAI userImage={undefined} />
+        <View style={{ maxWidth: '82%', flex: 1 }}>
+          <ConfirmationCard
+            text={message.text || ''}
+            kind={meta?.proposedAction?.kind}
+            channelId={channel?.id}
+          />
+        </View>
+      </Pressable>
+    );
+  }
 
   // Handle attachments
   if (message.attachments?.length) {

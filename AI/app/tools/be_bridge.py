@@ -36,12 +36,17 @@ class BridgeClient(Protocol):
     async def search_clinics(self, q: str, location: str | None = None) -> dict: ...
     async def search_services(self, q: str, clinic_id: int | None = None) -> dict: ...
     async def search_doctors(self, q: str | None, service_id: int | None, clinic_id: int | None) -> dict: ...
+    async def get_clinic_detail(self, clinic_id: int) -> dict: ...
+    async def get_doctor_detail(self, doctor_id: int) -> dict: ...
     async def get_doctor_availability(self, doctor_id: int, date: str, service_id: int | None) -> dict: ...
     async def find_available_doctors(self, date: str, service_id: int | None, time_preference: str | None, clinic_id: int | None = None) -> dict: ...
     async def resolve_patient_profile(self, user_id: int) -> dict: ...
     async def create_booking_draft(self, patient_profile_id: int, doctor_id: int, service_id: int, start_time: str, idempotency_key: str) -> dict: ...
     async def confirm_booking(self, draft_id: str, idempotency_key: str) -> dict: ...
     async def get_upcoming_appointments(self, user_id: int) -> dict: ...
+    async def get_patient_summary(self, user_id: int) -> dict: ...
+    async def get_patient_history(self, user_id: int) -> dict: ...
+    async def cancel_appointment(self, appointment_id: int) -> dict: ...
 
 
 # Be/ có global prefix "api" (main.ts setGlobalPrefix('api')) -> path đầy đủ /api/internal/bridge/...
@@ -105,14 +110,25 @@ class HttpBridgeClient:
     async def search_doctors(self, q, service_id, clinic_id):
         return await self._request("GET", "/api/internal/bridge/doctors", params={"q": q, "serviceId": service_id, "clinicId": clinic_id})
 
+    async def get_clinic_detail(self, clinic_id):
+        return await self._request("GET", f"/api/internal/bridge/clinics/{clinic_id}")
+
+    async def get_doctor_detail(self, doctor_id):
+        return await self._request("GET", f"/api/internal/bridge/doctors/{doctor_id}")
+
     async def get_doctor_availability(self, doctor_id, date, service_id):
         return await self._request("GET", f"/api/internal/bridge/doctors/{doctor_id}/availability", params={"date": date, "serviceId": service_id})
 
     async def find_available_doctors(self, date, service_id, time_preference, clinic_id=None):
         return await self._request("GET", "/api/internal/bridge/doctors/available", params={"date": date, "serviceId": service_id, "timePreference": time_preference, "clinicId": clinic_id})
 
+    def _uid(self, user_id):
+        """ID định danh user LUÔN lấy từ session (acting user) — KHÔNG tin giá trị
+        LLM truyền (LLM hay bịa id -> 403 forbidden_cross_user)."""
+        return self._acting_user_id if self._acting_user_id is not None else user_id
+
     async def resolve_patient_profile(self, user_id):
-        return await self._request("GET", f"/api/internal/bridge/patients/{user_id}")
+        return await self._request("GET", f"/api/internal/bridge/patients/{self._uid(user_id)}")
 
     async def create_booking_draft(self, patient_profile_id, doctor_id, service_id, start_time, idempotency_key):
         return await self._request("POST", "/api/internal/bridge/booking-drafts", json={
@@ -124,4 +140,13 @@ class HttpBridgeClient:
         return await self._request("POST", f"/api/internal/bridge/booking-drafts/{draft_id}/confirm", json={"idempotencyKey": idempotency_key})
 
     async def get_upcoming_appointments(self, user_id):
-        return await self._request("GET", f"/api/internal/bridge/patients/{user_id}/upcoming-appointments")
+        return await self._request("GET", f"/api/internal/bridge/patients/{self._uid(user_id)}/upcoming-appointments")
+
+    async def get_patient_summary(self, user_id):
+        return await self._request("GET", f"/api/internal/bridge/patients/{self._uid(user_id)}/summary")
+
+    async def get_patient_history(self, user_id):
+        return await self._request("GET", f"/api/internal/bridge/patients/{self._uid(user_id)}/history")
+
+    async def cancel_appointment(self, appointment_id):
+        return await self._request("POST", f"/api/internal/bridge/appointments/{appointment_id}/cancel")

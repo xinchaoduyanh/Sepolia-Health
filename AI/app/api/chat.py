@@ -4,11 +4,17 @@ Auth qua require_internal_token (gắn ở router cha trong main.py).
 """
 from __future__ import annotations
 
+import asyncio
+import json
 import logging
 import time
 import uuid
+import time
+import uuid
+from typing import Callable, Awaitable
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 
 from app.api.schemas import (
     CreateSessionRequest,
@@ -48,6 +54,14 @@ async def create_session(
     req: CreateSessionRequest,
     store: SessionStore = Depends(get_store),
 ) -> CreateSessionResponse:
+    if req.channel_id:
+        existing = await store.get_open_by_channel(req.channel_id)
+        # Defense-in-depth: chỉ reconnect nếu session thuộc đúng user. Channel đã là
+        # ai-consult-{userId} nhưng vẫn chốt để không nối nhầm session của user khác.
+        if existing and existing.user_id == req.user_id:
+            log_event("session_reconnected", session_id=existing.session_id, user_id=req.user_id)
+            return CreateSessionResponse(session_id=existing.session_id)
+
     session_id = "sess_" + uuid.uuid4().hex[:16]
     state = SessionState(session_id=session_id, user_id=req.user_id, channel_id=req.channel_id)
     await store.create(state)
@@ -74,6 +88,7 @@ async def _run_turn(
     retriever: KnowledgeRetriever | None,
     emergency_detector: EmergencyDetector | None,
     knowledge_policy: KnowledgePolicy | None,
+    stream_callback: Callable[[str], Awaitable[None]] | None = None,
 ) -> MessageResponse:
     state = await store.get(session_id)
     if state is None:
@@ -94,7 +109,7 @@ async def _run_turn(
 
     trace_id = new_trace_id()
     started = time.perf_counter()
-    resp = await agent.handle_turn(state, message, trace_id, history=history)
+    resp = await agent.handle_turn(state, message, trace_id, history=history, stream_callback=stream_callback)
     latency_ms = int((time.perf_counter() - started) * 1000)
     await store.update(state)
     log_event("turn", session_id=session_id, trace_id=trace_id, state=state.agent_state.value)
@@ -132,6 +147,47 @@ async def post_message(
     return await _run_turn(
         session_id, req.message, store, provider, bridge, prompts, settings, retriever, emergency_detector, knowledge_policy
     )
+
+
+@router.post("/sessions/{session_id}/messages/stream")
+async def stream_message(
+    session_id: str,
+    req: MessageRequest,
+    store: SessionStore = Depends(get_store),
+    provider: AIProvider = Depends(get_provider),
+    bridge: BridgeClient = Depends(get_bridge),
+    prompts: PromptRegistry = Depends(get_registry),
+    settings: Settings = Depends(get_settings),
+    retriever: KnowledgeRetriever = Depends(get_retriever),
+    emergency_detector: EmergencyDetector = Depends(get_emergency_detector),
+    knowledge_policy: KnowledgePolicy = Depends(get_knowledge_policy),
+):
+    queue = asyncio.Queue()
+
+    async def stream_callback(chunk: str):
+        await queue.put(chunk)
+
+    async def run_task():
+        try:
+            resp = await _run_turn(
+                session_id, req.message, store, provider, bridge, prompts, settings, retriever, emergency_detector, knowledge_policy, stream_callback=stream_callback
+            )
+            await queue.put({"final_response": resp.model_dump(mode="json")})
+        except Exception as e:
+            _LOG.exception("Error in stream task")
+            await queue.put(f"[ERROR] {str(e)}")
+        finally:
+            await queue.put(None)  # EOF
+
+    async def sse_generator():
+        task = asyncio.create_task(run_task())
+        while True:
+            chunk = await queue.get()
+            if chunk is None:
+                break
+            yield f"data: {json.dumps({'chunk': chunk}, ensure_ascii=False)}\n\n"
+            
+    return StreamingResponse(sse_generator(), media_type="text/event-stream")
 
 
 @router.post("/sessions/{session_id}/confirm", response_model=MessageResponse)

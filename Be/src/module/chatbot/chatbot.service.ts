@@ -76,19 +76,58 @@ export class ChatbotService {
       throw new ForbiddenException('Invalid AI user id');
     }
 
-    const aiResp = await this.aiPlatformClient.sendMessage(
+    // Pre-create message in stream
+    const msg = await channel.sendMessage({
+      text: '',
+      user_id: this.botUserId,
+    });
+    const messageId = msg.message.id;
+
+    let fullText = '';
+    let lastUpdate = Date.now();
+
+    const onChunk = async (chunk: string) => {
+      fullText += chunk;
+      // throttle updates
+      if (Date.now() - lastUpdate > 300) {
+        lastUpdate = Date.now();
+        try {
+          await this.streamClient.updateMessage({
+            id: messageId,
+            text: fullText,
+          });
+        } catch (e) {
+          // ignore partial update errors
+        }
+      }
+    };
+
+    const aiResp = await this.aiPlatformClient.streamMessageForChannel(
       numericUserId,
       channelId,
       messageText,
+      onChunk
     );
+    
     const sessionId = aiResp.session_state.session_id;
-    const cleanedResponse = await this.sendAiPlatformMessage(
-      channel,
-      sessionId,
-      aiResp,
-    );
+    const cleanedResponse = this.cleanResponse(aiResp.message);
 
-    this.log('processViaAiPlatform', 'info', 'AI Platform reply sent', {
+    // Final update with clean text and extra data
+    await this.streamClient.updateMessage({
+      id: messageId,
+      text: cleanedResponse,
+      user_id: this.botUserId,
+      extra: {
+        aiPlatform: true,
+        sessionId,
+        proposedAction: aiResp.proposed_action,
+        requiresConfirmation: aiResp.requires_confirmation,
+        traceId: aiResp.trace_id,
+        toolResultsSummary: aiResp.tool_results_summary,
+      },
+    } as any);
+
+    this.log('processViaAiPlatform', 'info', 'AI Platform reply sent via stream', {
       channelId,
       sessionId,
       traceId: aiResp.trace_id,

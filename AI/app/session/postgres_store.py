@@ -131,6 +131,29 @@ class PostgresSessionStore(SessionStore):
             
             return SessionState.model_validate(data)
 
+    async def get_open_by_channel(self, channel_id: str) -> SessionState | None:
+        async with self.session_factory() as session:
+            stmt = (
+                select(AiSessionDb)
+                .where(AiSessionDb.channelId == channel_id)
+                .where(AiSessionDb.closedAt.is_(None))
+                .order_by(AiSessionDb.createdAt.desc())
+                .limit(1)
+            )
+            result = await session.execute(stmt)
+            db_session = result.scalars().first()
+            if not db_session:
+                return None
+
+            data = db_session.state
+            data['session_id'] = db_session.id
+            data['user_id'] = db_session.userId
+            data['agent_state'] = db_session.agentState
+            data['channel_id'] = db_session.channelId
+            data['version'] = db_session.version
+
+            return SessionState.model_validate(data)
+
     async def update(self, state: SessionState) -> SessionState:
         async with self.session_factory() as session:
             async with session.begin():

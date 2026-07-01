@@ -16,7 +16,7 @@ from __future__ import annotations
 import asyncio
 import json
 import time
-from typing import Sequence
+from typing import Sequence, AsyncGenerator, Union
 
 import httpx
 
@@ -164,8 +164,9 @@ class GeminiProvider(AIProvider):
             self._api_key = api_key
             self._base = base_url.rstrip("/")
 
-    async def _resolve_request(self, model: str) -> tuple[str, dict]:
+    async def _resolve_request(self, model: str, is_stream: bool = False) -> tuple[str, dict]:
         """Trả (url, headers) theo chế độ."""
+        action = "streamGenerateContent?alt=sse" if is_stream else "generateContent"
         if self._vertex:
             host = (
                 "https://aiplatform.googleapis.com"
@@ -174,11 +175,11 @@ class GeminiProvider(AIProvider):
             )
             url = (
                 f"{host}/v1/projects/{self._project}/locations/{self._location}"
-                f"/publishers/google/models/{model}:generateContent"
+                f"/publishers/google/models/{model}:{action}"
             )
             token = await self._auth.token()
             return url, {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
-        url = f"{self._base}/v1beta/models/{model}:generateContent"
+        url = f"{self._base}/v1beta/models/{model}:{action}"
         return url, {"x-goog-api-key": self._api_key, "Content-Type": "application/json"}
 
     async def _send(self, url: str, headers: dict, payload: dict) -> httpx.Response:
@@ -222,7 +223,7 @@ class GeminiProvider(AIProvider):
         if gemini_tools:
             payload["tools"] = gemini_tools
 
-        url, headers = await self._resolve_request(model)
+        url, headers = await self._resolve_request(model, is_stream=False)
         t0 = time.perf_counter()
         data = await self._post_json(url, headers, payload)
         latency_ms = int((time.perf_counter() - t0) * 1000)
@@ -249,6 +250,61 @@ class GeminiProvider(AIProvider):
             completion_tokens=usage.get("candidatesTokenCount"),
             latency_ms=latency_ms,
         )
+
+    async def chat_stream(
+        self,
+        model: str,
+        messages: list[dict],
+        tools: list[dict] | None = None,
+        temperature: float = 0.1,
+        max_tokens: int = 1024,
+    ) -> AsyncGenerator[Union[str, ToolCall], None]:
+        system_text, contents = _to_contents(messages)
+        payload: dict = {
+            "contents": contents,
+            "generationConfig": {"temperature": temperature, "maxOutputTokens": max_tokens},
+        }
+        if system_text:
+            payload["systemInstruction"] = {"parts": [{"text": system_text}]}
+        gemini_tools = _to_tools(tools)
+        if gemini_tools:
+            payload["tools"] = gemini_tools
+
+        url, headers = await self._resolve_request(model, is_stream=True)
+        
+        client = self._client
+        if client is None:
+            client = httpx.AsyncClient(timeout=self._timeout)
+            
+        try:
+            async with client.stream("POST", url, headers=headers, json=payload) as response:
+                if response.status_code >= 400:
+                    await response.aread()
+                    raise ProviderError(f"Gemini {response.status_code}: {response.text}")
+                
+                tool_call_idx = 0
+                async for line in response.aiter_lines():
+                    if line.startswith("data: "):
+                        data_str = line[6:].strip()
+                        if not data_str:
+                            continue
+                        try:
+                            chunk = json.loads(data_str)
+                            candidates = chunk.get("candidates") or []
+                            if candidates:
+                                parts = (candidates[0].get("content") or {}).get("parts") or []
+                                for part in parts:
+                                    if part.get("text"):
+                                        yield part["text"]
+                                    fc = part.get("functionCall")
+                                    if fc:
+                                        yield ToolCall(id=f"call_{tool_call_idx}", name=fc.get("name", ""), arguments=fc.get("args") or {})
+                                        tool_call_idx += 1
+                        except json.JSONDecodeError:
+                            continue
+        finally:
+            if self._client is None:
+                await client.aclose()
 
     async def embed(self, model: str, texts: Sequence[str]) -> list[list[float]]:
         # Embedding/RAG cố tình giữ local trên Ollama (KnowledgeRetriever tự dựng

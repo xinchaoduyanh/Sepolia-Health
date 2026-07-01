@@ -50,3 +50,25 @@ def test_message_unknown_session_404():
         "/internal/ai/chat/sessions/nope/messages", json={"message": "hi"}, headers=AUTH
     )
     assert r.status_code == 404
+
+
+def test_session_reconnection_by_channel():
+    # Clear shared store to start fresh for this test
+    shared_store._data.clear()
+    
+    # 1. Create a session with a channel_id
+    r1 = client.post("/internal/ai/chat/sessions", json={"user_id": 8, "channel_id": "chan_abc"}, headers=AUTH)
+    assert r1.status_code == 200
+    sid1 = r1.json()["session_id"]
+    
+    # 2. Try to create again with same channel_id -> should return the same session id
+    r2 = client.post("/internal/ai/chat/sessions", json={"user_id": 8, "channel_id": "chan_abc"}, headers=AUTH)
+    assert r2.status_code == 200
+    sid2 = r2.json()["session_id"]
+    assert sid1 == sid2
+    
+    # 3. Create with different channel_id -> should return a new session id
+    r3 = client.post("/internal/ai/chat/sessions", json={"user_id": 8, "channel_id": "chan_xyz"}, headers=AUTH)
+    assert r3.status_code == 200
+    sid3 = r3.json()["session_id"]
+    assert sid1 != sid3

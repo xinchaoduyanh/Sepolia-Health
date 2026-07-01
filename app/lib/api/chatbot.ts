@@ -20,6 +20,23 @@ export class ChatbotAPI {
   }
 
   /**
+   * Xác nhận đặt lịch (bấm nút trong tin nhắn xác nhận). BE tự chạy confirm_booking
+   * (đã handle slot_taken/draft_expired) và gửi tin nhắn kết quả vào channel.
+   */
+  static async confirmBooking(channelId: string): Promise<{ response: string }> {
+    const response = await apiClient.post<{ response: string }>('/chatbot/confirm', { channelId });
+    return response.data;
+  }
+
+  /**
+   * Từ chối / huỷ bản nháp (hoặc xác nhận huỷ lịch).
+   */
+  static async cancelBooking(channelId: string): Promise<{ response: string }> {
+    const response = await apiClient.post<{ response: string }>('/chatbot/cancel', { channelId });
+    return response.data;
+  }
+
+  /**
    * Tạo channel với AI bot
    */
   static async createAIChannel(): Promise<CreateAIChannelResponse> {

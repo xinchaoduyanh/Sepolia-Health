@@ -308,68 +308,82 @@ const AddPatientProfileScreen = () => {
             </View>
           </View>
 
-          <View className="gap-5">
-            {/* First Name */}
-            <View>
-              <View
-                className={`flex-row items-center rounded-lg px-4 py-4 ${firstNameError ? 'border border-red-200 bg-red-50' : 'bg-gray-100'}`}>
-                <Ionicons
-                  name="person-outline"
-                  size={20}
-                  color={firstNameError ? '#EF4444' : '#06B6D4'}
-                />
-                <TextInput
-                  className="ml-3 flex-1 text-base text-slate-900"
-                  placeholder="Tên"
-                  placeholderTextColor="#06B6D4"
-                  value={formData.firstName}
-                  onChangeText={(text) => {
-                    setFormData((prev) => ({ ...prev, firstName: text }));
-                    if (firstNameError) setFirstNameError('');
-                  }}
-                />
+          <View>
+            <View className="mb-5 flex-row gap-4">
+              {/* Last Name */}
+              <View className="flex-1">
+                <Text className="mb-2 text-xs font-bold uppercase tracking-wider text-[#64748B]">
+                  Họ <Text className="text-red-500">*</Text>
+                </Text>
+                <View
+                  className="rounded-2xl px-5 py-4"
+                  style={{
+                    backgroundColor: lastNameError ? '#FEF2F2' : '#F8FAFC',
+                    borderWidth: lastNameError ? 1 : 0,
+                    borderColor: lastNameError ? '#FCA5A5' : 'transparent',
+                  }}>
+                  <TextInput
+                    className="text-base font-medium"
+                    style={{ color: '#0F172A' }}
+                    placeholder="Nguyễn Văn"
+                    placeholderTextColor="#94A3B8"
+                    value={formData.lastName}
+                    onChangeText={(text) => {
+                      setFormData((prev) => ({ ...prev, lastName: text }));
+                      if (lastNameError) setLastNameError('');
+                    }}
+                  />
+                </View>
+                {lastNameError && <Text className="mt-1 text-xs text-red-600">{lastNameError}</Text>}
               </View>
-              {firstNameError && (
-                <Text className="mt-1 text-xs text-red-600">{firstNameError}</Text>
-              )}
-            </View>
 
-            {/* Last Name */}
-            <View>
-              <View
-                className={`flex-row items-center rounded-lg px-4 py-4 ${lastNameError ? 'border border-red-200 bg-red-50' : 'bg-gray-100'}`}>
-                <Ionicons
-                  name="person-outline"
-                  size={20}
-                  color={lastNameError ? '#EF4444' : '#06B6D4'}
-                />
-                <TextInput
-                  className="ml-3 flex-1 text-base text-slate-900"
-                  placeholder="Họ"
-                  placeholderTextColor="#06B6D4"
-                  value={formData.lastName}
-                  onChangeText={(text) => {
-                    setFormData((prev) => ({ ...prev, lastName: text }));
-                    if (lastNameError) setLastNameError('');
-                  }}
-                />
+              {/* First Name */}
+              <View className="flex-1">
+                <Text className="mb-2 text-xs font-bold uppercase tracking-wider text-[#64748B]">
+                  Tên <Text className="text-red-500">*</Text>
+                </Text>
+                <View
+                  className="rounded-2xl px-5 py-4"
+                  style={{
+                    backgroundColor: firstNameError ? '#FEF2F2' : '#F8FAFC',
+                    borderWidth: firstNameError ? 1 : 0,
+                    borderColor: firstNameError ? '#FCA5A5' : 'transparent',
+                  }}>
+                  <TextInput
+                    className="text-base font-medium"
+                    style={{ color: '#0F172A' }}
+                    placeholder="A"
+                    placeholderTextColor="#94A3B8"
+                    value={formData.firstName}
+                    onChangeText={(text) => {
+                      setFormData((prev) => ({ ...prev, firstName: text }));
+                      if (firstNameError) setFirstNameError('');
+                    }}
+                  />
+                </View>
+                {firstNameError && (
+                  <Text className="mt-1 text-xs text-red-600">{firstNameError}</Text>
+                )}
               </View>
-              {lastNameError && <Text className="mt-1 text-xs text-red-600">{lastNameError}</Text>}
             </View>
 
             {/* Phone */}
-            <View>
+            <View className="mb-5">
+              <Text className="mb-2 text-xs font-bold uppercase tracking-wider text-[#64748B]">
+                Số điện thoại <Text className="text-red-500">*</Text>
+              </Text>
               <View
-                className={`flex-row items-center rounded-lg px-4 py-4 ${phoneError ? 'border border-red-200 bg-red-50' : 'bg-gray-100'}`}>
-                <Ionicons
-                  name="call-outline"
-                  size={20}
-                  color={phoneError ? '#EF4444' : '#06B6D4'}
-                />
+                className="rounded-2xl px-5 py-4"
+                style={{
+                  backgroundColor: phoneError ? '#FEF2F2' : '#F8FAFC',
+                  borderWidth: phoneError ? 1 : 0,
+                  borderColor: phoneError ? '#FCA5A5' : 'transparent',
+                }}>
                 <TextInput
-                  className="ml-3 flex-1 text-base text-slate-900"
-                  placeholder="Số điện thoại"
-                  placeholderTextColor="#06B6D4"
+                  className="text-base font-medium"
+                  style={{ color: '#0F172A' }}
+                  placeholder="09xx xxx xxx"
+                  placeholderTextColor="#94A3B8"
                   value={formData.phone}
                   onChangeText={(text) => {
                     setFormData((prev) => ({ ...prev, phone: text }));
@@ -383,7 +397,10 @@ const AddPatientProfileScreen = () => {
             </View>
 
             {/* Date of Birth */}
-            <View pointerEvents="auto">
+            <View className="mb-5" pointerEvents="auto">
+              <Text className="mb-2 text-xs font-bold uppercase tracking-wider text-[#64748B]">
+                Ngày sinh <Text className="text-red-500">*</Text>
+              </Text>
               <BirthDatePicker
                 selectedDate={dateOfBirth}
                 onDateSelect={setDateOfBirth}
@@ -393,41 +410,39 @@ const AddPatientProfileScreen = () => {
             </View>
 
             {/* Gender */}
-            <GenderSelector
-              selectedGender={gender}
-              onGenderSelect={(value) => {
-                setGender(value);
-                if (genderError) setGenderError('');
-              }}
-              error={genderError}
-            />
+            <View className="mb-5" pointerEvents="auto">
+              <Text className="mb-2 text-xs font-bold uppercase tracking-wider text-[#64748B]">
+                Giới tính <Text className="text-red-500">*</Text>
+              </Text>
+              <GenderSelector
+                selectedGender={gender}
+                onGenderSelect={(value) => {
+                  setGender(value);
+                  if (genderError) setGenderError('');
+                }}
+                error={genderError}
+              />
+            </View>
 
             {/* Relationship Selection */}
-            <View>
-              <Text className="mb-4 text-lg font-bold text-slate-900">
+            <View className="mb-8">
+              <Text className="mb-3 text-xs font-bold uppercase tracking-wider text-[#64748B]">
                 Đây là hồ sơ của <Text className="text-red-500">*</Text>
               </Text>
-              <View className="space-y-3">
-                <View className="flex-row space-x-3">
-                  {relationshipOptions.slice(0, 3).map((option) => (
+              <View className="flex-row flex-wrap gap-y-3 justify-between">
+                {relationshipOptions.map((option) => {
+                  const isSelected = formData.relationship === option.value;
+                  return (
                     <Pressable
                       key={option.value}
-                      className={`flex-1 rounded-lg border-2 px-4 py-3 ${
-                        formData.relationship === option.value
-                          ? 'border-emerald-500 bg-emerald-100'
-                          : relationshipError
-                            ? 'border-red-200 bg-red-50'
-                            : 'border-gray-200 bg-gray-50'
-                      }`}
+                      className="rounded-full py-2.5 border"
                       style={({ pressed }) => [
                         {
+                          width: '31%',
                           opacity: pressed ? 0.7 : 1,
-                          backgroundColor:
-                            formData.relationship === option.value
-                              ? '#D1FAE5'
-                              : relationshipError
-                                ? '#FEF2F2'
-                                : '#F9FAFB',
+                          backgroundColor: isSelected ? '#0284C7' : '#FFFFFF',
+                          borderColor: isSelected ? '#0284C7' : relationshipError ? '#FCA5A5' : '#E2E8F0',
+                          borderWidth: 1,
                         },
                       ]}
                       onPress={() => {
@@ -435,114 +450,17 @@ const AddPatientProfileScreen = () => {
                         if (relationshipError) setRelationshipError('');
                       }}>
                       <Text
-                        className={`text-center text-base font-semibold ${
-                          formData.relationship === option.value
-                            ? 'text-emerald-700'
-                            : relationshipError
-                              ? 'text-red-600'
-                              : 'text-gray-600'
+                        className={`text-center text-sm font-semibold ${
+                          isSelected ? 'text-white' : relationshipError ? 'text-red-500' : 'text-[#475569]'
                         }`}>
                         {option.label}
                       </Text>
-                      {formData.relationship === option.value && (
-                        <View className="absolute -right-1 -top-1 h-5 w-5 items-center justify-center rounded-full bg-emerald-500">
-                          <Ionicons name="checkmark" size={12} color="white" />
-                        </View>
-                      )}
                     </Pressable>
-                  ))}
-                </View>
-                <View className="flex-row space-x-3">
-                  {relationshipOptions.slice(3, 6).map((option) => (
-                    <Pressable
-                      key={option.value}
-                      className={`flex-1 rounded-lg border-2 px-4 py-3 ${
-                        formData.relationship === option.value
-                          ? 'border-emerald-500 bg-emerald-100'
-                          : relationshipError
-                            ? 'border-red-200 bg-red-50'
-                            : 'border-gray-200 bg-gray-50'
-                      }`}
-                      style={({ pressed }) => [
-                        {
-                          opacity: pressed ? 0.7 : 1,
-                          backgroundColor:
-                            formData.relationship === option.value
-                              ? '#D1FAE5'
-                              : relationshipError
-                                ? '#FEF2F2'
-                                : '#F9FAFB',
-                        },
-                      ]}
-                      onPress={() => {
-                        setFormData((prev) => ({ ...prev, relationship: option.value }));
-                        if (relationshipError) setRelationshipError('');
-                      }}>
-                      <Text
-                        className={`text-center text-base font-semibold ${
-                          formData.relationship === option.value
-                            ? 'text-emerald-700'
-                            : relationshipError
-                              ? 'text-red-600'
-                              : 'text-gray-600'
-                        }`}>
-                        {option.label}
-                      </Text>
-                      {formData.relationship === option.value && (
-                        <View className="absolute -right-1 -top-1 h-5 w-5 items-center justify-center rounded-full bg-emerald-500">
-                          <Ionicons name="checkmark" size={12} color="white" />
-                        </View>
-                      )}
-                    </Pressable>
-                  ))}
-                </View>
-                <View className="flex-row space-x-3">
-                  {relationshipOptions.slice(6).map((option) => (
-                    <Pressable
-                      key={option.value}
-                      className={`rounded-lg border-2 px-4 py-3 ${
-                        formData.relationship === option.value
-                          ? 'border-emerald-500 bg-emerald-100'
-                          : relationshipError
-                            ? 'border-red-200 bg-red-50'
-                            : 'border-gray-200 bg-gray-50'
-                      }`}
-                      style={({ pressed }) => [
-                        { width: '100%', opacity: pressed ? 0.7 : 1 },
-                        {
-                          backgroundColor:
-                            formData.relationship === option.value
-                              ? '#D1FAE5'
-                              : relationshipError
-                                ? '#FEF2F2'
-                                : '#F9FAFB',
-                        },
-                      ]}
-                      onPress={() => {
-                        setFormData((prev) => ({ ...prev, relationship: option.value }));
-                        if (relationshipError) setRelationshipError('');
-                      }}>
-                      <Text
-                        className={`text-center text-base font-semibold ${
-                          formData.relationship === option.value
-                            ? 'text-emerald-700'
-                            : relationshipError
-                              ? 'text-red-600'
-                              : 'text-gray-600'
-                        }`}>
-                        {option.label}
-                      </Text>
-                      {formData.relationship === option.value && (
-                        <View className="absolute -right-1 -top-1 h-5 w-5 items-center justify-center rounded-full bg-emerald-500">
-                          <Ionicons name="checkmark" size={12} color="white" />
-                        </View>
-                      )}
-                    </Pressable>
-                  ))}
-                </View>
+                  );
+                })}
               </View>
               {relationshipError && (
-                <Text className="mt-1 text-xs text-red-600">{relationshipError}</Text>
+                <Text className="mt-2 text-xs text-red-600">{relationshipError}</Text>
               )}
             </View>
           </View>

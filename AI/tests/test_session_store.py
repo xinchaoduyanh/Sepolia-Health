@@ -88,3 +88,65 @@ async def test_list_recent_turns_in_memory():
     ]
 
 
+async def test_get_open_by_channel_in_memory():
+    store = InMemorySessionStore()
+    
+    # 1. No open session for channel
+    assert await store.get_open_by_channel("ch_1") is None
+    
+    # 2. Create one active session
+    s1 = SessionState(session_id="s1", user_id=1, channel_id="ch_1")
+    await store.create(s1)
+    
+    got = await store.get_open_by_channel("ch_1")
+    assert got is not None
+    assert got.session_id == "s1"
+    
+    # 3. Create another one
+    s2 = SessionState(session_id="s2", user_id=1, channel_id="ch_1")
+    await store.create(s2)
+    
+    got = await store.get_open_by_channel("ch_1")
+    assert got is not None
+    assert got.session_id == "s2"
+    
+    # 4. Terminate s2 -> should fallback to s1
+    s2.agent_state = AgentState.BOOKED
+    await store.update(s2)
+    
+    got = await store.get_open_by_channel("ch_1")
+    assert got is not None
+    assert got.session_id == "s1"
+
+
+async def test_postgres_store_get_open_by_channel():
+    from unittest.mock import AsyncMock, MagicMock
+    from app.session.postgres_store import PostgresSessionStore, AiSessionDb
+    
+    store = PostgresSessionStore("postgresql+asyncpg://mock:mock@localhost/mock")
+    
+    mock_session = AsyncMock()
+    store.session_factory = MagicMock(return_value=mock_session)
+    mock_session.__aenter__.return_value = mock_session
+    
+    # Setup mock return value for execute
+    mock_db_session = MagicMock()
+    mock_db_session.id = "s_open"
+    mock_db_session.userId = 42
+    mock_db_session.agentState = "idle"
+    mock_db_session.channelId = "ch_open"
+    mock_db_session.state = {"user_id": 42}
+    mock_db_session.version = 2
+    
+    mock_result = MagicMock()
+    mock_result.scalars.return_value.first.return_value = mock_db_session
+    mock_session.execute.return_value = mock_result
+    
+    res = await store.get_open_by_channel("ch_open")
+    assert res is not None
+    assert res.session_id == "s_open"
+    assert res.channel_id == "ch_open"
+    assert res.version == 2
+
+
+

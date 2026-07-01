@@ -73,3 +73,20 @@ class FakeBridge:
 
     async def get_upcoming_appointments(self, user_id):
         return self._o.get("get_upcoming_appointments", {"appointments": []})
+
+    async def get_patient_summary(self, user_id):
+        return self._o.get("get_patient_summary", {
+            "patient_profile_id": 100,
+            "full_name": "Nguyen Van A",
+            "age": 30,
+            "gender": "MALE",
+            "default_clinic": "Sepolia Hoàn Kiếm",
+            "last_visit": None,
+        })
+
+    async def get_patient_history(self, user_id):
+        return self._o.get("get_patient_history", {"history": []})
+
+    async def cancel_appointment(self, appointment_id):
+        self.calls.append(("cancel_appointment", appointment_id))
+        return self._o.get("cancel_appointment", {"success": True})

@@ -31,10 +31,6 @@ export default function GenderSelector({
     <View
       onStartShouldSetResponderCapture={() => false}
       onMoveShouldSetResponderCapture={() => false}>
-      <View className="mb-4">
-        <Text className="text-lg font-bold text-slate-900">Giới tính *</Text>
-      </View>
-
       <View className="flex-row gap-4">
         {genderOptions.map((option) => {
           const isSelected = selectedGender === option.value;

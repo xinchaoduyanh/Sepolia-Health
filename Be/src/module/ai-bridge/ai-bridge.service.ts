@@ -39,7 +39,7 @@ export class AiBridgeService {
     if (ors.length) where.OR = ors;
     const clinics = await this.prisma.clinic.findMany({ where, take: 10 });
     return {
-      clinics: clinics.map((c) => ({ id: c.id, name: c.name, address: c.address })),
+      clinics: clinics.map((c) => ({ id: c.id, name: c.name, address: c.address, phone: c.phone, email: c.email, description: c.description })),
       total: clinics.length,
     };
   }
@@ -78,7 +78,7 @@ export class AiBridgeService {
     if (serviceId) where.services = { some: { serviceId } };
     const doctors = await this.prisma.doctorProfile.findMany({
       where,
-      include: { specialties: { include: { specialty: true } } },
+      include: { specialties: { include: { specialty: true } }, services: { include: { service: true } } },
       take: 10,
     });
     return {
@@ -86,9 +86,87 @@ export class AiBridgeService {
         id: d.id,
         first_name: d.firstName,
         last_name: d.lastName,
-        specialty: d.specialties[0]?.specialty?.name ?? null,
+        experience: d.experience,
+        specialties: d.specialties.map(s => s.specialty?.name).filter(Boolean),
+        services: d.services.map(s => ({ id: s.service.id, name: s.service.name, price: s.service.price })),
         clinic_id: d.clinicId ?? null,
       })),
+    };
+  }
+
+  // ---------- details ----------
+  async getClinicDetail(clinicId: number) {
+    const clinic = await this.prisma.clinic.findUnique({
+      where: { id: clinicId },
+    });
+    if (!clinic) return { error_code: 'clinic_not_found' };
+
+    // Service không gắn trực tiếp với Clinic. Lấy các service được cung cấp
+    // bởi bác sĩ đang làm việc tại clinic này (qua DoctorService -> DoctorProfile).
+    const services = await this.prisma.service.findMany({
+      where: {
+        doctorService: {
+          some: { doctor: { clinicId, deletedAt: null } },
+        },
+      },
+      include: { specialty: true }
+    });
+
+    const doctorCount = await this.prisma.doctorProfile.count({
+      where: { clinicId, deletedAt: null }
+    });
+
+    return {
+      id: clinic.id,
+      name: clinic.name,
+      address: clinic.address,
+      phone: clinic.phone,
+      email: clinic.email,
+      description: clinic.description,
+      doctor_count: doctorCount,
+      services: services.map(s => ({
+        id: s.id,
+        name: s.name,
+        price: s.price,
+        duration_min: s.duration,
+        specialty: s.specialty?.name ?? null
+      }))
+    };
+  }
+
+  async getDoctorDetail(doctorId: number) {
+    const doctor = await this.prisma.doctorProfile.findUnique({
+      where: { id: doctorId, deletedAt: null },
+      include: {
+        clinic: true,
+        specialties: { include: { specialty: true } },
+        services: { include: { service: true } }
+      }
+    });
+
+    if (!doctor) return { error_code: 'doctor_not_found' };
+
+    const feedbackAgg = await this.prisma.feedback.aggregate({
+      where: { appointment: { doctorId } },
+      _avg: { rating: true },
+      _count: { rating: true }
+    });
+
+    return {
+      id: doctor.id,
+      first_name: doctor.firstName,
+      last_name: doctor.lastName,
+      experience: doctor.experience,
+      clinic: doctor.clinic ? { id: doctor.clinic.id, name: doctor.clinic.name } : null,
+      specialties: doctor.specialties.map(s => s.specialty?.name).filter(Boolean),
+      services: doctor.services.map(s => ({
+        id: s.service.id,
+        name: s.service.name,
+        price: s.service.price,
+        duration_min: s.service.duration
+      })),
+      average_rating: feedbackAgg._avg.rating ?? 0,
+      review_count: feedbackAgg._count.rating
     };
   }
 
@@ -293,12 +371,26 @@ export class AiBridgeService {
     actingUserId: number,
     input: { patientProfileId: number; doctorId: number; serviceId: number; startTime: string; idempotencyKey: string },
   ) {
-    const profile = await this.prisma.patientProfile.findUnique({
-      where: { id: input.patientProfileId },
-    });
-    if (!profile || profile.managerId !== actingUserId) {
-      throw new ForbiddenException('forbidden_cross_user');
+    // Người khám = hồ sơ LLM đưa NẾU hợp lệ & thuộc user; nếu không (LLM bịa id/
+    // chưa gọi resolve_patient_profile) -> fallback HỒ SƠ CHÍNH (SELF). Tránh 403
+    // "forbidden_cross_user" làm hỏng cả luồng đặt lịch.
+    let profile = input.patientProfileId
+      ? await this.prisma.patientProfile.findFirst({
+          where: { id: input.patientProfileId, managerId: actingUserId },
+        })
+      : null;
+    if (!profile) {
+      profile =
+        (await this.prisma.patientProfile.findFirst({
+          where: { managerId: actingUserId, relationship: 'SELF' },
+        })) ??
+        (await this.prisma.patientProfile.findFirst({
+          where: { managerId: actingUserId },
+          orderBy: { createdAt: 'asc' },
+        }));
     }
+    if (!profile) return { error_code: 'profile_not_found' };
+    const patientProfileId = profile.id;
 
     const existing = await this.prisma.bookingDraft.findUnique({
       where: { idempotencyKey: input.idempotencyKey },
@@ -320,7 +412,7 @@ export class AiBridgeService {
 
     const draft = await this.prisma.bookingDraft.create({
       data: {
-        patientProfileId: input.patientProfileId,
+        patientProfileId,
         doctorId: input.doctorId,
         serviceId: input.serviceId,
         startTime: start,
@@ -388,5 +480,132 @@ export class AiBridgeService {
     });
 
     return { appointment_id: appt.id, status: 'booked' };
+  }
+
+  async getPatientSummary(actingUserId: number) {
+    let p = await this.prisma.patientProfile.findFirst({
+      where: { managerId: actingUserId, relationship: 'SELF' },
+    });
+    if (!p) {
+      p = await this.prisma.patientProfile.findFirst({
+        where: { managerId: actingUserId },
+        orderBy: { createdAt: 'asc' },
+      });
+    }
+    if (!p) return { error_code: 'profile_not_found' };
+
+    const lastAppt = await this.prisma.appointment.findFirst({
+      where: { patientProfileId: p.id, status: 'COMPLETED' },
+      include: { doctor: true, clinic: true, service: { include: { specialty: true } } },
+      orderBy: { startTime: 'desc' },
+    });
+
+    let defaultClinic: string | null = null;
+    if (lastAppt && lastAppt.clinic) {
+      defaultClinic = lastAppt.clinic.name;
+    } else {
+      const anyAppt = await this.prisma.appointment.findFirst({
+        where: { patientProfileId: p.id },
+        include: { clinic: true },
+        orderBy: { startTime: 'desc' },
+      });
+      if (anyAppt && anyAppt.clinic) {
+        defaultClinic = anyAppt.clinic.name;
+      }
+    }
+
+    const today = new Date();
+    let age = today.getFullYear() - p.dateOfBirth.getFullYear();
+    const m = today.getMonth() - p.dateOfBirth.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < p.dateOfBirth.getDate())) {
+      age--;
+    }
+
+    return {
+      patient_profile_id: p.id,
+      full_name: `${p.lastName} ${p.firstName}`.trim(),
+      age,
+      gender: p.gender,
+      default_clinic: defaultClinic,
+      last_visit: lastAppt
+        ? {
+            date: lastAppt.startTime.toISOString().slice(0, 10),
+            doctor_name: `BS. ${lastAppt.doctor.lastName} ${lastAppt.doctor.firstName}`.trim(),
+            specialty: lastAppt.service.specialty?.name ?? null,
+            clinic_name: lastAppt.clinic?.name ?? null,
+          }
+        : null,
+    };
+  }
+
+  async getPatientHistory(actingUserId: number, limit: number) {
+    let p = await this.prisma.patientProfile.findFirst({
+      where: { managerId: actingUserId, relationship: 'SELF' },
+    });
+    if (!p) {
+      p = await this.prisma.patientProfile.findFirst({
+        where: { managerId: actingUserId },
+        orderBy: { createdAt: 'asc' },
+      });
+    }
+    if (!p) return { error_code: 'profile_not_found' };
+
+    const appts = await this.prisma.appointment.findMany({
+      where: {
+        patientProfileId: p.id,
+        status: 'COMPLETED',
+      },
+      include: {
+        doctor: true,
+        clinic: true,
+        service: { include: { specialty: true } },
+        result: true,
+      },
+      orderBy: { startTime: 'desc' },
+      take: limit,
+    });
+
+    const history = appts.map((a) => ({
+      appointment_id: a.id,
+      date: a.startTime.toISOString().slice(0, 10),
+      doctor_name: `BS. ${a.doctor.lastName} ${a.doctor.firstName}`.trim(),
+      specialty: a.service.specialty?.name ?? null,
+      clinic_name: a.clinic?.name ?? null,
+      result: a.result
+        ? {
+            diagnosis: a.result.diagnosis,
+            notes: a.result.notes,
+            recommendations: a.result.recommendations,
+            prescription: a.result.prescription,
+          }
+        : null,
+    }));
+
+    return { history };
+  }
+
+  async cancelAppointment(actingUserId: number, appointmentId: number) {
+    const appt = await this.prisma.appointment.findUnique({
+      where: { id: appointmentId },
+      include: { patientProfile: true },
+    });
+    if (!appt) return { error_code: 'appointment_not_found' };
+    if (appt.patientProfile?.managerId !== actingUserId) {
+      throw new ForbiddenException('forbidden_cross_user');
+    }
+    if (appt.status === 'CANCELLED') {
+      return { success: true, message: 'already_cancelled' };
+    }
+    const fourHoursLater = new Date(Date.now() + 4 * 3600 * 1000);
+    if (appt.startTime.getTime() < fourHoursLater.getTime()) {
+      return { error_code: 'cannot_cancel_near_time' };
+    }
+
+    await this.prisma.appointment.update({
+      where: { id: appointmentId },
+      data: { status: 'CANCELLED' },
+    });
+
+    return { success: true };
   }
 }

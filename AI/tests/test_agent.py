@@ -13,6 +13,8 @@ from app.session.models import AgentState, PendingConfirmation, SessionState
 from app.tools.registry import ToolRegistry
 from tests.fakes import FakeBridge, FakeProvider, chat_text, chat_tools
 
+from unittest.mock import MagicMock
+
 PROMPTS = Path(__file__).resolve().parents[1] / "prompts"
 VN = timezone(timedelta(hours=7))
 
@@ -228,4 +230,142 @@ async def test_last_offered_population_from_search_doctors():
     assert session.last_offered[1].kind == "doctor"
     assert session.last_offered[1].id == 43
     assert session.last_offered[1].label == "BS. Trần Văn Minh"
+
+
+async def test_patient_context_injection():
+    # Setup provider to return a response
+    provider = FakeProvider([chat_text("Dạ, chào anh A.")])
+    
+    # Setup bridge with a specific patient summary
+    bridge = MagicMock()
+    # mock get_patient_summary to return mock data
+    async def get_summary(user_id):
+        return {
+            "patient_profile_id": 123,
+            "full_name": "Nguyễn Văn Anh",
+            "age": 28,
+            "gender": "MALE",
+            "default_clinic": "Sepolia Cầu Giấy",
+            "last_visit": {
+                "date": "2026-06-10",
+                "doctor_name": "BS. Vương Hữu Canh",
+                "specialty": "Da liễu",
+                "clinic_name": "Sepolia Hoàn Kiếm"
+            }
+        }
+    bridge.get_patient_summary = get_summary
+    
+    agent = _agent(provider, bridge)
+    session = _session()
+    
+    # Run turn
+    await agent.handle_turn(session, "chào em", "t1")
+    
+    # Verify patient_summary is cached
+    assert session.patient_summary is not None
+    assert session.patient_summary["full_name"] == "Nguyễn Văn Anh"
+    
+    # Verify prompt contains Nguyễn Văn Anh and age 28
+    sent_messages = provider.calls[0]
+    system_msg = next(m["content"] for m in sent_messages if m["role"] == "system")
+    assert "Nguyễn Văn Anh" in system_msg
+    assert "28" in system_msg
+    assert "Sepolia Cầu Giấy" in system_msg
+    assert "BS. Vương Hữu Canh" in system_msg
+
+
+async def test_get_patient_history_tool_execution():
+    # Setup provider to call get_patient_history tool, and then respond with text
+    provider = FakeProvider([
+        chat_tools(("get_patient_history", {"user_id": 7})),
+        chat_text("Lần trước bác sĩ dặn uống thuốc đầy đủ.")
+    ])
+    
+    fake_history = {
+        "history": [
+            {
+                "appointment_id": 99,
+                "date": "2026-06-10",
+                "doctor_name": "BS. Vương Hữu Canh",
+                "specialty": "Da liễu",
+                "clinic_name": "Sepolia Hoàn Kiếm",
+                "result": {
+                    "diagnosis": "Viêm da cơ địa",
+                    "notes": "Hạn chế đồ cay nóng",
+                    "recommendations": "Tái khám sau 2 tuần",
+                    "prescription": "Thuốc bôi ngoài da"
+                }
+            }
+        ]
+    }
+    
+    bridge = FakeBridge(get_patient_history=fake_history)
+    agent = _agent(provider, bridge)
+    session = _session()
+    
+    resp = await agent.handle_turn(session, "lần trước tôi khám kết quả thế nào?", "t1")
+    
+    # Verify the tool was called
+    assert len(resp.tool_results_summary) == 1
+    assert resp.tool_results_summary[0].name == "get_patient_history"
+    assert resp.tool_results_summary[0].ok is True
+
+
+async def test_cancel_appointment_flow():
+    # Turn 1: LLM calls request_cancel_booking -> agent transitions to AWAITING_CONFIRMATION
+    provider = FakeProvider([
+        chat_tools(("request_cancel_booking", {"appointment_id": 99})),
+        chat_text("Anh/chị xác nhận hủy lịch hẹn khám này nhé?"),
+    ])
+    bridge = FakeBridge()
+    agent = _agent(provider, bridge)
+    session = _session()
+
+    resp = await agent.handle_turn(session, "tôi muốn hủy lịch ngày mai", "t1")
+    assert session.agent_state == AgentState.AWAITING_CONFIRMATION
+    assert resp.requires_confirmation is True
+    assert resp.proposed_action.kind == "cancel_booking"
+    assert session.pending_confirmation.draft_id == "cancel_99"
+
+    # Turn 2: user "vâng" -> confirm cancel
+    resp2 = await agent.handle_turn(session, "vâng", "t2")
+    assert session.agent_state == AgentState.COLLECTING
+    # Verify the cancel_appointment tool was executed in bridge
+    assert ("cancel_appointment", 99) in bridge.calls
+    assert session.pending_confirmation is None
+    assert "hủy" in resp2.message.lower()
+
+
+async def test_booking_requirements_caching():
+    # Setup provider to call tools
+    provider = FakeProvider([
+        chat_tools(
+            ("resolve_date", {"weekday": "tue", "week_offset": 1}),
+            ("get_doctor_availability", {"doctor_id": 12, "date": "2026-06-23", "service_id": 5})
+        ),
+        chat_text("Bác sĩ có lịch trống vào 9:00.")
+    ])
+    bridge = FakeBridge()
+    agent = _agent(provider, bridge)
+    session = _session()
+
+    await agent.handle_turn(session, "Đặt lịch khám da liễu bác sĩ Canh thứ 3 tuần sau", "t1")
+
+    # Verify requirements are populated
+    assert session.booking_requirement.doctor_id == 12
+    assert session.booking_requirement.service_id == 5
+    assert session.booking_requirement.date == "2026-06-23"
+
+    # Turn 2: verify requirements are rendered in system prompt
+    provider.calls.clear()
+    provider._responses = [chat_text("Dạ anh/chị chọn giờ nào ạ?")]
+    await agent.handle_turn(session, "chọn 9h", "t2")
+    
+    sent_messages = provider.calls[0]
+    system_msg = next(m["content"] for m in sent_messages if m["role"] == "system")
+    assert "ID nội bộ: 12" in system_msg
+    assert "Dịch vụ ID: 5" in system_msg
+    assert "Ngày khám: 2026-06-23" in system_msg
+
+
 

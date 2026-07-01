@@ -22,6 +22,9 @@ class SessionStore(ABC):
     async def get(self, session_id: str) -> SessionState | None: ...
 
     @abstractmethod
+    async def get_open_by_channel(self, channel_id: str) -> SessionState | None: ...
+
+    @abstractmethod
     async def update(self, state: SessionState) -> SessionState:
         """Ghi nếu version khớp; tăng version. Lệch -> SessionConflictError."""
 
@@ -66,6 +69,17 @@ class InMemorySessionStore(SessionStore):
     async def get(self, session_id: str) -> SessionState | None:
         cur = self._data.get(session_id)
         return cur.model_copy(deep=True) if cur else None
+
+    async def get_open_by_channel(self, channel_id: str) -> SessionState | None:
+        from app.session.models import AgentState
+        matching = [
+            s for s in self._data.values()
+            if s.channel_id == channel_id and s.agent_state not in (AgentState.BOOKED, AgentState.FAILED)
+        ]
+        if not matching:
+            return None
+        matching.sort(key=lambda s: s.last_updated)
+        return matching[-1].model_copy(deep=True)
 
     async def update(self, state: SessionState) -> SessionState:
         cur = self._data.get(state.session_id)

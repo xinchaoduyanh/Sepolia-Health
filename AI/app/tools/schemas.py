@@ -18,6 +18,22 @@ class ResolveDateInput(BaseModel):
     period: str | None = Field(None, description="weekend|early_week|mid_week (cuối/đầu/giữa tuần)")
 
 
+class SearchKnowledgeInput(BaseModel):
+    query: str = Field(..., description="Câu hỏi hoặc từ khóa cần tra cứu kiến thức/quy trình/chính sách.")
+    types: list[str] = Field(
+        ...,
+        description="Các loại kiến thức cần tra cứu. Chỉ chọn trong số: 'disease', 'symptom', 'faq', 'policy'."
+    )
+
+
+class GetClinicDetailInput(BaseModel):
+    clinic_id: int = Field(..., description="ID của phòng khám/cơ sở y tế cần xem chi tiết.")
+
+
+class GetDoctorDetailInput(BaseModel):
+    doctor_id: int = Field(..., description="ID của bác sĩ cần xem chi tiết.")
+
+
 class SearchClinicsInput(BaseModel):
     q: str | None = Field(None, description="Từ khoá tên cơ sở. Để TRỐNG (None) để liệt kê TẤT CẢ cơ sở.")
     location: str | None = Field(None, description="Lọc theo địa chỉ/khu vực, vd 'Hoàn Kiếm', 'Cầu Giấy'.")
@@ -66,6 +82,14 @@ class ConfirmBookingInput(BaseModel):
 
 class GetUpcomingAppointmentsInput(BaseModel):
     user_id: int
+
+
+class GetPatientHistoryInput(BaseModel):
+    user_id: int
+
+
+class CancelAppointmentInput(BaseModel):
+    appointment_id: int
 
 
 # ---- helper: pydantic model -> OpenAI tool schema --------------------------

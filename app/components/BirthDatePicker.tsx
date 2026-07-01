@@ -108,29 +108,23 @@ export default function BirthDatePicker({
         onPress={() => !disabled && setIsVisible(true)}
         disabled={disabled}
         activeOpacity={0.7}
-        className={`flex-row items-center rounded-xl border px-5 py-4 ${
-          error
-            ? 'border-red-200 bg-red-50'
-            : disabled
-              ? 'border-gray-200 bg-gray-100'
-              : 'border-cyan-100 bg-teal-50'
-        }`}>
-        <Ionicons
-          name="calendar-outline"
-          size={22}
-          color={error ? '#EF4444' : disabled ? '#9CA3AF' : '#0284C7'}
-        />
-        <View className="ml-4 flex-1">
-          <Text className={`text-lg ${disabled ? 'text-gray-400' : 'text-slate-900'}`}>
+        className="flex-row items-center justify-between rounded-2xl px-5 py-4"
+        style={{
+          backgroundColor: error ? '#FEF2F2' : disabled ? '#F8FAFC' : '#F1F5F9',
+          borderWidth: error ? 1 : 0,
+          borderColor: error ? '#FCA5A5' : 'transparent',
+        }}>
+        <View className="flex-row items-center flex-1">
+          <Text className={`text-base font-medium flex-1 ${disabled ? 'text-[#94A3B8]' : 'text-[#0F172A]'}`}>
             {selectedDate ? formatDate(selectedDate) : placeholder}
           </Text>
           {selectedDate && (
-            <Text className={`text-sm ${disabled ? 'text-gray-400' : 'text-slate-500'}`}>
-              {getAge(selectedDate)} tuổi
+            <Text className={`text-sm ml-2 ${disabled ? 'text-gray-400' : 'text-slate-500'}`}>
+              ({getAge(selectedDate)} tuổi)
             </Text>
           )}
         </View>
-        {!disabled && <Ionicons name="chevron-down" size={22} color="#06B6D4" />}
+        {!disabled && <Ionicons name="calendar-outline" size={20} color="#94A3B8" />}
       </TouchableOpacity>
 
       <Modal visible={isVisible} transparent animationType="slide" onRequestClose={handleCancel}>

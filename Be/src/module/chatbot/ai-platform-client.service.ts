@@ -125,21 +125,109 @@ export class AiPlatformClient {
     }
   }
 
-  async sendMessage(
+    async sendMessage(
     userId: number,
     channelId: string | undefined,
     message: string,
   ): Promise<AiMessageResponse> {
-    return this.withFreshSession(userId, channelId, (sid) =>
+    const resp = await this.withFreshSession(userId, channelId, (sid) =>
       this.postMessage(sid, message),
     );
+    if (
+      resp.session_state?.agent_state === 'booked' ||
+      resp.session_state?.agent_state === 'handoff_or_failed'
+    ) {
+      this.invalidate(userId, channelId);
+    }
+    return resp;
+  }
+
+  async streamMessage(
+    sessionId: string,
+    message: string,
+    onChunk: (chunk: string) => void,
+  ): Promise<AiMessageResponse> {
+    const resp = await this.http.post(
+      `/internal/ai/chat/sessions/${sessionId}/messages/stream`,
+      { message },
+      { responseType: 'stream' },
+    );
+
+    return new Promise((resolve, reject) => {
+      let finalState: AiMessageResponse | null = null;
+      let buffer = '';
+
+      resp.data.on('data', (chunkBuffer: Buffer) => {
+        buffer += chunkBuffer.toString();
+        const lines = buffer.split('\n');
+        
+        // Keep the last incomplete line in buffer
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              if (data.chunk) {
+                if (typeof data.chunk === 'string') {
+                  onChunk(data.chunk);
+                } else if (data.chunk.final_response) {
+                  finalState = data.chunk.final_response;
+                }
+              }
+            } catch (e) {
+              this.logger.error('Failed to parse SSE line', e);
+            }
+          }
+        }
+      });
+
+      resp.data.on('end', () => {
+        if (finalState) resolve(finalState);
+        else reject(new Error('Stream ended without final response'));
+      });
+      
+      resp.data.on('error', (err: any) => reject(err));
+    });
+  }
+
+  async streamMessageForChannel(
+    userId: number,
+    channelId: string | undefined,
+    message: string,
+    onChunk: (chunk: string) => void,
+  ): Promise<AiMessageResponse> {
+    const resp = await this.withFreshSession(userId, channelId, (sid) =>
+      this.streamMessage(sid, message, onChunk),
+    );
+    if (
+      resp.session_state?.agent_state === 'booked' ||
+      resp.session_state?.agent_state === 'handoff_or_failed'
+    ) {
+      this.invalidate(userId, channelId);
+    }
+    return resp;
   }
 
   async confirmForChannel(userId: number, channelId?: string): Promise<AiMessageResponse> {
-    return this.withFreshSession(userId, channelId, (sid) => this.confirm(sid));
+    const resp = await this.withFreshSession(userId, channelId, (sid) => this.confirm(sid));
+    if (
+      resp.session_state?.agent_state === 'booked' ||
+      resp.session_state?.agent_state === 'handoff_or_failed'
+    ) {
+      this.invalidate(userId, channelId);
+    }
+    return resp;
   }
 
   async cancelForChannel(userId: number, channelId?: string): Promise<AiMessageResponse> {
-    return this.withFreshSession(userId, channelId, (sid) => this.cancel(sid));
+    const resp = await this.withFreshSession(userId, channelId, (sid) => this.cancel(sid));
+    if (
+      resp.session_state?.agent_state === 'booked' ||
+      resp.session_state?.agent_state === 'handoff_or_failed'
+    ) {
+      this.invalidate(userId, channelId);
+    }
+    return resp;
   }
 }

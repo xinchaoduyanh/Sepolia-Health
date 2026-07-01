@@ -354,17 +354,26 @@ export default function AppointmentScreen() {
               horizontal
               showsHorizontalScrollIndicator={false}
               nestedScrollEnabled={true}
-              className="mb-4">
-              <View className="flex-row space-x-4">
+              className="mb-1 py-1">
+              <View className="flex-row space-x-5 px-1">
                 {/* Primary Profile (Tôi) */}
                 {primaryProfile && (
                   <Pressable
                     onPress={() => handleCustomerSelect('me', primaryProfile)}
-                    className="items-center">
+                    className="items-center w-20">
                     <View
-                      className={`h-16 w-16 items-center justify-center rounded-full border-2 ${
-                        selectedCustomer === 'me' ? 'border-[#0284C7]' : 'border-[#06B6D4]'
-                      }`}>
+                      className={`h-16 w-16 items-center justify-center rounded-full border ${
+                        selectedCustomer === 'me'
+                          ? 'border-[#0284C7] bg-[#F0F9FF]'
+                          : 'border-[#E2E8F0] bg-white'
+                      }`}
+                      style={{
+                        shadowColor: selectedCustomer === 'me' ? '#0284C7' : '#000',
+                        shadowOffset: { width: 0, height: selectedCustomer === 'me' ? 2 : 1 },
+                        shadowOpacity: selectedCustomer === 'me' ? 0.15 : 0.05,
+                        shadowRadius: selectedCustomer === 'me' ? 4 : 2,
+                        elevation: selectedCustomer === 'me' ? 3 : 1,
+                      }}>
                       {primaryProfile.avatar ? (
                         <Image
                           source={{ uri: primaryProfile.avatar }}
@@ -372,38 +381,26 @@ export default function AppointmentScreen() {
                           resizeMode="cover"
                         />
                       ) : (
-                        <View
-                          className="h-full w-full items-center justify-center rounded-full"
-                          style={{
-                            backgroundColor: selectedCustomer === 'me' ? '#E0F2FE' : '#F0F9FF',
-                          }}>
+                        <View className="h-full w-full items-center justify-center rounded-full">
                           <Ionicons
                             name="person"
-                            size={32}
-                            color={selectedCustomer === 'me' ? '#0284C7' : '#06B6D4'}
+                            size={28}
+                            color={selectedCustomer === 'me' ? '#0284C7' : '#94A3B8'}
                           />
                         </View>
                       )}
                     </View>
                     <View
-                      className={`mt-2 rounded-full px-4 py-2 ${
-                        selectedCustomer === 'me' ? 'bg-[#0284C7]' : 'bg-[#E0F2FE]'
+                      className={`mt-3 rounded-full px-4 py-1.5 ${
+                        selectedCustomer === 'me' ? 'bg-[#0284C7]' : 'bg-transparent'
                       }`}>
                       <View className="flex-row items-center">
                         <Text
-                          className={`font-medium ${
-                            selectedCustomer === 'me' ? 'text-white' : 'text-[#475569]'
+                          className={`text-sm font-semibold ${
+                            selectedCustomer === 'me' ? 'text-white' : 'text-[#64748B]'
                           }`}>
                           Bản thân
                         </Text>
-                        {selectedCustomer === 'me' && (
-                          <Ionicons
-                            name="checkmark"
-                            size={16}
-                            color="white"
-                            style={{ marginLeft: 4 }}
-                          />
-                        )}
                       </View>
                     </View>
                   </Pressable>
@@ -414,13 +411,20 @@ export default function AppointmentScreen() {
                   <Pressable
                     key={profile.id}
                     onPress={() => handleCustomerSelect(`profile-${profile.id}`, profile)}
-                    className="items-center">
+                    className="items-center w-20">
                     <View
-                      className={`h-16 w-16 items-center justify-center rounded-full border-2 ${
+                      className={`h-16 w-16 items-center justify-center rounded-full border ${
                         selectedCustomer === `profile-${profile.id}`
-                          ? 'border-[#0284C7]'
-                          : 'border-[#06B6D4]'
-                      }`}>
+                          ? 'border-[#0284C7] bg-[#F0F9FF]'
+                          : 'border-[#E2E8F0] bg-white'
+                      }`}
+                      style={{
+                        shadowColor: selectedCustomer === `profile-${profile.id}` ? '#0284C7' : '#000',
+                        shadowOffset: { width: 0, height: selectedCustomer === `profile-${profile.id}` ? 2 : 1 },
+                        shadowOpacity: selectedCustomer === `profile-${profile.id}` ? 0.15 : 0.05,
+                        shadowRadius: selectedCustomer === `profile-${profile.id}` ? 4 : 2,
+                        elevation: selectedCustomer === `profile-${profile.id}` ? 3 : 1,
+                      }}>
                       {profile.avatar ? (
                         <Image
                           source={{ uri: profile.avatar }}
@@ -428,74 +432,66 @@ export default function AppointmentScreen() {
                           resizeMode="cover"
                         />
                       ) : (
-                        <View
-                          className="h-full w-full items-center justify-center rounded-full"
-                          style={{ backgroundColor: '#E0F2FE' }}>
-                          <Text className="text-lg font-bold text-sky-600">
+                        <View className="h-full w-full items-center justify-center rounded-full">
+                          <Text 
+                            className={`text-lg font-bold ${selectedCustomer === `profile-${profile.id}` ? 'text-[#0284C7]' : 'text-[#94A3B8]'}`}>
                             {profile.firstName.charAt(0).toUpperCase()}
                           </Text>
                         </View>
                       )}
                     </View>
                     <View
-                      className={`mt-2 rounded-full px-4 py-2 ${
+                      className={`mt-3 rounded-full px-4 py-1.5 ${
                         selectedCustomer === `profile-${profile.id}`
                           ? 'bg-[#0284C7]'
-                          : 'bg-[#E0F2FE]'
+                          : 'bg-transparent'
                       }`}>
                       <View className="flex-row items-center">
                         <Text
-                          className={`font-medium ${
+                          className={`text-sm font-semibold ${
                             selectedCustomer === `profile-${profile.id}`
                               ? 'text-white'
-                              : 'text-[#475569]'
+                              : 'text-[#64748B]'
                           }`}>
                           {getRelationshipLabel(profile.relationship) || profile.firstName}
                         </Text>
-                        {selectedCustomer === `profile-${profile.id}` && (
-                          <Ionicons
-                            name="checkmark"
-                            size={16}
-                            color="white"
-                            style={{ marginLeft: 4 }}
-                          />
-                        )}
                       </View>
                     </View>
                   </Pressable>
                 ))}
 
                 {/* Add New Profile */}
-                <Pressable onPress={() => handleCustomerSelect('add')} className="items-center">
+                <Pressable onPress={() => handleCustomerSelect('add')} className="items-center w-20">
                   <View
-                    className={`h-16 w-16 items-center justify-center rounded-full border-2 ${
-                      selectedCustomer === 'add' ? 'border-[#0284C7]' : 'border-[#06B6D4]'
-                    }`}>
+                    className={`h-16 w-16 items-center justify-center rounded-full border ${
+                      selectedCustomer === 'add'
+                        ? 'border-[#0284C7] bg-[#F0F9FF]'
+                        : 'border-[#E2E8F0] bg-white'
+                    }`}
+                    style={{
+                      shadowColor: selectedCustomer === 'add' ? '#0284C7' : '#000',
+                      shadowOffset: { width: 0, height: selectedCustomer === 'add' ? 2 : 1 },
+                      shadowOpacity: selectedCustomer === 'add' ? 0.15 : 0.05,
+                      shadowRadius: selectedCustomer === 'add' ? 4 : 2,
+                      elevation: selectedCustomer === 'add' ? 3 : 1,
+                    }}>
                     <Ionicons
                       name="person-add"
-                      size={32}
-                      color={selectedCustomer === 'add' ? '#0284C7' : '#06B6D4'}
+                      size={28}
+                      color={selectedCustomer === 'add' ? '#0284C7' : '#94A3B8'}
                     />
                   </View>
                   <View
-                    className={`mt-2 rounded-full px-4 py-2 ${
-                      selectedCustomer === 'add' ? 'bg-[#0284C7]' : 'bg-[#E0F2FE]'
+                    className={`mt-3 rounded-full px-4 py-1.5 ${
+                      selectedCustomer === 'add' ? 'bg-[#0284C7]' : 'bg-transparent'
                     }`}>
                     <View className="flex-row items-center">
                       <Text
-                        className={`font-medium ${
-                          selectedCustomer === 'add' ? 'text-white' : 'text-[#475569]'
+                        className={`text-sm font-semibold ${
+                          selectedCustomer === 'add' ? 'text-white' : 'text-[#64748B]'
                         }`}>
                         Thêm mới
                       </Text>
-                      {selectedCustomer === 'add' && (
-                        <Ionicons
-                          name="checkmark"
-                          size={16}
-                          color="white"
-                          style={{ marginLeft: 4 }}
-                        />
-                      )}
                     </View>
                   </View>
                 </Pressable>
@@ -509,87 +505,83 @@ export default function AppointmentScreen() {
               Thông tin người đặt lịch
             </Text>
 
-            <View className="gap-3">
-              <View>
-                <View
-                  className="flex-row items-center rounded-xl border px-5 py-4"
-                  style={{
-                    backgroundColor: selectedCustomer === 'add' ? '#F0FDFA' : '#FFFFFF',
-                    borderColor: selectedCustomer === 'add' ? '#E0F2FE' : '#E5E7EB',
-                  }}>
-                  <Ionicons
-                    name="create"
-                    size={22}
-                    color={selectedCustomer === 'add' ? '#0284C7' : '#6B7280'}
-                  />
-                  <TextInput
-                    className="ml-4 flex-1 text-lg"
+            <View>
+              <View className="mb-5 flex-row gap-4">
+                <View className="flex-1">
+                  <Text className="mb-2 text-xs font-bold uppercase tracking-wider text-[#64748B]">
+                    Họ <Text className="text-red-500">*</Text>
+                  </Text>
+                  <View
+                    className="rounded-2xl px-5 py-4"
                     style={{
-                      color: selectedCustomer === 'add' ? '#0F172A' : '#374151',
-                    }}
-                    placeholder="* Họ"
-                    placeholderTextColor={selectedCustomer === 'add' ? '#475569' : '#9CA3AF'}
-                    value={lastName}
-                    onChangeText={setLastName}
-                    editable={selectedCustomer === 'add'}
-                  />
+                      backgroundColor: selectedCustomer === 'add' ? '#F1F5F9' : '#F8FAFC',
+                    }}>
+                    <TextInput
+                      className="text-base font-medium"
+                      style={{
+                        color: selectedCustomer === 'add' ? '#0F172A' : '#94A3B8',
+                      }}
+                      placeholder="Nguyễn Văn"
+                      placeholderTextColor="#94A3B8"
+                      value={lastName}
+                      onChangeText={setLastName}
+                      editable={selectedCustomer === 'add'}
+                    />
+                  </View>
+                </View>
+
+                <View className="flex-1">
+                  <Text className="mb-2 text-xs font-bold uppercase tracking-wider text-[#64748B]">
+                    Tên <Text className="text-red-500">*</Text>
+                  </Text>
+                  <View
+                    className="rounded-2xl px-5 py-4"
+                    style={{
+                      backgroundColor: selectedCustomer === 'add' ? '#F1F5F9' : '#F8FAFC',
+                    }}>
+                    <TextInput
+                      className="text-base font-medium"
+                      style={{
+                        color: selectedCustomer === 'add' ? '#0F172A' : '#94A3B8',
+                      }}
+                      placeholder="A"
+                      placeholderTextColor="#94A3B8"
+                      value={firstName}
+                      onChangeText={setFirstName}
+                      editable={selectedCustomer === 'add'}
+                    />
+                  </View>
                 </View>
               </View>
 
-              <View>
-                <View
-                  className="flex-row items-center rounded-xl border px-5 py-4"
-                  style={{
-                    backgroundColor: selectedCustomer === 'add' ? '#F0FDFA' : '#FFFFFF',
-                    borderColor: selectedCustomer === 'add' ? '#E0F2FE' : '#E5E7EB',
-                  }}>
-                  <Ionicons
-                    name="create"
-                    size={22}
-                    color={selectedCustomer === 'add' ? '#0284C7' : '#6B7280'}
-                  />
-                  <TextInput
-                    className="ml-4 flex-1 text-lg"
-                    style={{
-                      color: selectedCustomer === 'add' ? '#0F172A' : '#374151',
-                    }}
-                    placeholder="* Tên"
-                    placeholderTextColor={selectedCustomer === 'add' ? '#475569' : '#9CA3AF'}
-                    value={firstName}
-                    onChangeText={setFirstName}
-                    editable={selectedCustomer === 'add'}
-                  />
-                </View>
-              </View>
-
-              <View>
+              <View className="mb-5">
+                <Text className="mb-2 text-xs font-bold uppercase tracking-wider text-[#64748B]">
+                  Ngày sinh <Text className="text-red-500">*</Text>
+                </Text>
                 <BirthDatePicker
                   selectedDate={dateOfBirth}
                   onDateSelect={setDateOfBirth}
-                  placeholder="* Ngày sinh"
+                  placeholder="Chọn ngày sinh"
                   disabled={selectedCustomer !== 'add'}
                 />
               </View>
 
-              <View>
+              <View className="mb-5">
+                <Text className="mb-2 text-xs font-bold uppercase tracking-wider text-[#64748B]">
+                  Số điện thoại <Text className="text-red-500">*</Text>
+                </Text>
                 <View
-                  className="flex-row items-center rounded-xl border px-5 py-4"
+                  className="rounded-2xl px-5 py-4"
                   style={{
-                    backgroundColor: selectedCustomer === 'add' ? '#F0FDFA' : '#FFFFFF',
-                    borderColor: selectedCustomer === 'add' ? '#E0F2FE' : '#E5E7EB',
+                    backgroundColor: selectedCustomer === 'add' ? '#F1F5F9' : '#F8FAFC',
                   }}>
-                  <Ionicons
-                    name="call"
-                    size={22}
-                    color={selectedCustomer === 'add' ? '#0284C7' : '#6B7280'}
-                  />
                   <TextInput
-                    className="ml-4 flex-1 text-lg"
+                    className="text-base font-medium"
                     style={{
-                      color: selectedCustomer === 'add' ? '#0F172A' : '#374151',
+                      color: selectedCustomer === 'add' ? '#0F172A' : '#94A3B8',
                     }}
-                    placeholder="* 0988659126"
-                    placeholderTextColor={selectedCustomer === 'add' ? '#475569' : '#9CA3AF'}
+                    placeholder="09xx xxx xxx"
+                    placeholderTextColor="#94A3B8"
                     value={phoneNumber}
                     onChangeText={setPhoneNumber}
                     keyboardType="phone-pad"
@@ -597,105 +589,88 @@ export default function AppointmentScreen() {
                   />
                 </View>
               </View>
-            </View>
 
-            {/* Gender Selection */}
-            <View className="mt-8" pointerEvents="auto">
-              <GenderSelector
-                selectedGender={gender}
-                onGenderSelect={setGender}
-                disabled={selectedCustomer !== 'add'}
-              />
-            </View>
-          </View>
-
-          {/* Thông tin đặt hẹn Section */}
+              {/* Gender Selection */}
+              <View className="mb-2" pointerEvents="auto">
+                <Text className="mb-2 text-xs font-bold uppercase tracking-wider text-[#64748B]">
+                  Giới tính <Text className="text-red-500">*</Text>
+                </Text>
+                <GenderSelector
+             {/* Thông tin đặt hẹn Section */}
           <View className="mb-8">
-            <View className="mb-4 flex-row items-center">
-              <View
-                className="mr-2.5 h-5 w-1 rounded-full"
-                style={{ backgroundColor: '#10B981' }}
-              />
-              <Text className="text-lg font-bold" style={{ color: '#0F172A' }}>
-                Thông tin đặt hẹn
-              </Text>
+            <Text className="mb-4 text-lg font-bold" style={{ color: '#0F172A' }}>
+              Thông tin đặt hẹn
+            </Text>
+
+            <View>
+              <View className="mb-4">
+                <Text className="mb-2 text-sm font-semibold" style={{ color: '#475569' }}>
+                  Cơ sở y tế <Text className="text-red-500">*</Text>
+                </Text>
+                <TouchableOpacity
+                  onPress={handleFacilitySelect}
+                  activeOpacity={0.7}
+                  className="flex-row items-center justify-between rounded-xl border px-4 py-3.5"
+                  style={{
+                    backgroundColor: selectedFacility ? '#FFFFFF' : '#F8FAFC',
+                    borderColor: selectedFacility ? '#0284C7' : '#F1F5F9',
+                  }}>
+                  <View className="flex-row items-center flex-1">
+                    <Text className={`text-base flex-1 ${selectedFacility ? 'text-[#0F172A]' : 'text-[#94A3B8]'}`}>
+                      {selectedFacility ? selectedFacility.name : 'Chọn cơ sở'}
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={20} color="#94A3B8" />
+                </TouchableOpacity>
+              </View>
+
+              <View className="mb-4">
+                <Text className="mb-2 text-sm font-semibold" style={{ color: '#475569' }}>
+                  Dịch vụ khám <Text className="text-red-500">*</Text>
+                </Text>
+                <TouchableOpacity
+                  onPress={handleServiceSelect}
+                  activeOpacity={0.7}
+                  disabled={!selectedFacility}
+                  className="flex-row items-center justify-between rounded-xl border px-4 py-3.5"
+                  style={{
+                    backgroundColor: selectedService ? '#FFFFFF' : '#F8FAFC',
+                    borderColor: selectedService ? '#0284C7' : '#F1F5F9',
+                    opacity: selectedFacility ? 1 : 0.5,
+                  }}>
+                  <View className="flex-row items-center flex-1">
+                    <Text className={`text-base flex-1 ${selectedService ? 'text-[#0F172A]' : 'text-[#94A3B8]'}`}>
+                      {selectedService ? selectedService.name : 'Chọn dịch vụ'}
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={20} color="#94A3B8" />
+                </TouchableOpacity>
+              </View>
+
+              <View className="mb-2">
+                <Text className="mb-2 text-sm font-semibold" style={{ color: '#475569' }}>
+                  Bác sĩ <Text className="text-red-500">*</Text>
+                </Text>
+                <TouchableOpacity
+                  onPress={handleDoctorSelect}
+                  activeOpacity={0.7}
+                  disabled={!selectedFacility || !selectedService}
+                  className="flex-row items-center justify-between rounded-xl border px-4 py-3.5"
+                  style={{
+                    backgroundColor: selectedDoctor ? '#FFFFFF' : '#F8FAFC',
+                    borderColor: selectedDoctor ? '#0284C7' : '#F1F5F9',
+                    opacity: (selectedFacility && selectedService) ? 1 : 0.5,
+                  }}>
+                  <View className="flex-row items-center flex-1">
+                    <Text className={`text-base flex-1 ${selectedDoctor ? 'text-[#0F172A]' : 'text-[#94A3B8]'}`}>
+                      {selectedDoctor ? selectedDoctor : 'Chọn bác sĩ'}
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={20} color="#94A3B8" />
+                </TouchableOpacity>
+              </View>
             </View>
-
-            <View className="space-y-6">
-              <TouchableOpacity
-                onPress={handleFacilitySelect}
-                activeOpacity={0.7}
-                delayPressIn={0}
-                className="flex-row items-center rounded-xl border px-5 py-4"
-                style={{ backgroundColor: '#F0FDFA', borderColor: '#E0F2FE' }}>
-                <Ionicons name="business" size={22} color="#0284C7" />
-                <Text className="ml-4 text-lg" style={{ color: '#0F172A' }}>
-                  {selectedFacility ? selectedFacility.name : '* Chọn cơ sở'}
-                </Text>
-                <Ionicons
-                  name="chevron-forward"
-                  size={22}
-                  color="#06B6D4"
-                  style={{ marginLeft: 'auto' }}
-                />
-              </TouchableOpacity>
-
-              {/* Chọn dịch vụ */}
-              <TouchableOpacity
-                onPress={handleServiceSelect}
-                activeOpacity={0.7}
-                delayPressIn={0}
-                disabled={!selectedFacility}
-                className={`flex-row items-center rounded-xl border px-5 py-4 ${
-                  selectedFacility ? 'border-[#E0F2FE]' : 'border-[#D1D5DB]'
-                }`}
-                style={{
-                  backgroundColor: selectedFacility ? '#F0FDFA' : '#F9FAFB',
-                }}>
-                <Ionicons
-                  name="medical"
-                  size={22}
-                  color={selectedFacility ? '#0284C7' : '#9CA3AF'}
-                />
-                <Text
-                  className={`ml-4 text-lg font-medium ${
-                    selectedFacility ? 'text-[#0F172A]' : 'text-[#9CA3AF]'
-                  }`}>
-                  {selectedService ? selectedService.name : '* Chọn dịch vụ'}
-                </Text>
-                <Ionicons
-                  name="chevron-forward"
-                  size={22}
-                  color={selectedFacility ? '#06B6D4' : '#9CA3AF'}
-                  style={{ marginLeft: 'auto' }}
-                />
-              </TouchableOpacity>
-
-              {/* Chọn bác sĩ */}
-              <TouchableOpacity
-                onPress={handleDoctorSelect}
-                activeOpacity={0.7}
-                delayPressIn={0}
-                disabled={!selectedFacility || !selectedService}
-                className={`flex-row items-center rounded-xl border px-5 py-4 ${
-                  selectedFacility && selectedService ? 'border-[#E0F2FE]' : 'border-[#D1D5DB]'
-                }`}
-                style={{
-                  backgroundColor: selectedFacility && selectedService ? '#F0FDFA' : '#F9FAFB',
-                }}>
-                <Ionicons
-                  name="person"
-                  size={22}
-                  color={selectedFacility && selectedService ? '#0284C7' : '#9CA3AF'}
-                />
-                <Text
-                  className={`ml-4 text-lg font-medium ${
-                    selectedFacility && selectedService ? 'text-[#0F172A]' : 'text-[#9CA3AF]'
-                  }`}>
-                  {selectedDoctor ? selectedDoctor : '* Chọn bác sĩ'}
-                </Text>
-                <Ionicons
-                  name="chevron-forward"
+          </View>ard"
                   size={22}
                   color={selectedFacility && selectedService ? '#06B6D4' : '#9CA3AF'}
                   style={{ marginLeft: 'auto' }}
@@ -706,21 +681,15 @@ export default function AppointmentScreen() {
 
           {/* Lịch hẹn Section */}
           <View className="mb-8">
-            <View className="mb-4 flex-row items-center">
-              <View
-                className="mr-2.5 h-5 w-1 rounded-full"
-                style={{ backgroundColor: '#06B6D4' }}
-              />
-              <Text className="text-lg font-bold" style={{ color: '#0F172A' }}>
-                Lịch hẹn
-              </Text>
-            </View>
-
-            <Text className="mb-4 text-lg font-semibold" style={{ color: '#0F172A' }}>
-              Ngày khám mong muốn*
+            <Text className="mb-4 text-lg font-bold" style={{ color: '#0F172A' }}>
+              Lịch hẹn
             </Text>
 
-            <View className="flex-row space-x-4">
+            <Text className="mb-3 text-sm font-semibold" style={{ color: '#475569' }}>
+              Ngày khám <Text className="text-red-500">*</Text>
+            </Text>
+
+            <View className="flex-row space-x-3">
               {generateFutureDates()
                 .slice(0, 3)
                 .map((date, index) => (
@@ -729,22 +698,15 @@ export default function AppointmentScreen() {
                     onPress={() => handlePresetDateSelect(date)}
                     activeOpacity={0.7}
                     delayPressIn={0}
-                    className={`flex-1 rounded-xl px-4 py-4 ${
-                      selectedDate === date.fullDate ? 'bg-[#0284C7]' : 'bg-[#F0FDFA]'
-                    }`}
+                    className="flex-1 items-center justify-center rounded-xl py-3 min-h-[72px]"
                     style={{
-                      borderColor: selectedDate === date.fullDate ? '#0284C7' : '#E0F2FE',
-                      borderWidth: selectedDate === date.fullDate ? 2 : 1,
+                      backgroundColor: selectedDate === date.fullDate ? '#0284C7' : '#FFFFFF',
+                      borderColor: selectedDate === date.fullDate ? '#0284C7' : '#E2E8F0',
+                      borderWidth: 1,
                     }}>
                     <Text
-                      className={`text-center text-base font-medium ${
-                        selectedDate === date.fullDate ? 'text-white' : 'text-[#475569]'
-                      }`}>
-                      {date.dayName} {date.day}/{date.month}
-                    </Text>
-                    <Text
-                      className={`mt-1 text-center text-sm ${
-                        selectedDate === date.fullDate ? 'text-blue-100' : 'text-[#475569]'
+                      className={`text-center text-sm font-medium ${
+                        selectedDate === date.fullDate ? 'text-white' : 'text-[#64748B]'
                       }`}>
                       {index === 0
                         ? 'Hôm nay'
@@ -754,6 +716,12 @@ export default function AppointmentScreen() {
                             ? 'Ngày kia'
                             : ''}
                     </Text>
+                    <Text
+                      className={`mt-1 text-center text-base font-bold ${
+                        selectedDate === date.fullDate ? 'text-white' : 'text-[#0F172A]'
+                      }`}>
+                      {date.day}/{date.month}
+                    </Text>
                   </TouchableOpacity>
                 ))}
 
@@ -761,26 +729,23 @@ export default function AppointmentScreen() {
                 onPress={handleCustomDatePress}
                 activeOpacity={0.7}
                 delayPressIn={0}
-                className="flex-1 items-center justify-center rounded-xl px-4 py-4"
+                className="flex-1 items-center justify-center rounded-xl py-3 min-h-[72px]"
                 style={{
-                  backgroundColor: selectedCustomDate ? '#0284C7' : '#F0FDFA',
-                  borderColor: selectedCustomDate ? '#0284C7' : '#E0F2FE',
-                  borderWidth: selectedCustomDate ? 2 : 1,
+                  backgroundColor: selectedCustomDate ? '#0284C7' : '#FFFFFF',
+                  borderColor: selectedCustomDate ? '#0284C7' : '#E2E8F0',
+                  borderWidth: 1,
                 }}>
                 {selectedCustomDate ? (
                   <View className="items-center">
-                    <Text className="text-xs font-medium text-white">
-                      {selectedCustomDate.toLocaleDateString('vi-VN', { weekday: 'short' })}
+                    <Text className="text-sm font-medium text-white">
+                      Khác
                     </Text>
-                    <Text className="text-lg font-bold text-white">
-                      {selectedCustomDate.getDate()}
-                    </Text>
-                    <Text className="text-xs font-medium text-white">
-                      {selectedCustomDate.toLocaleDateString('vi-VN', { month: 'short' })}
+                    <Text className="mt-1 text-base font-bold text-white">
+                      {selectedCustomDate.getDate()}/{selectedCustomDate.getMonth() + 1}
                     </Text>
                   </View>
                 ) : (
-                  <Ionicons name="add" size={24} color="#06B6D4" />
+                  <Ionicons name="calendar-outline" size={24} color="#64748B" />
                 )}
               </TouchableOpacity>
             </View>
@@ -790,9 +755,9 @@ export default function AppointmentScreen() {
               <View pointerEvents="auto">
                 {/* Time Slots - chỉ hiển thị khi đã chọn đủ thông tin và có ngày */}
                 {selectedFacility && selectedService && selectedDoctor && selectedDate && (
-                  <View className="mb-4">
-                    <Text className="mb-4 mt-4 text-lg font-semibold" style={{ color: '#0F172A' }}>
-                      Giờ khám mong muốn*
+                  <View className="mt-6 mb-4">
+                    <Text className="mb-3 text-sm font-semibold" style={{ color: '#475569' }}>
+                      Giờ khám <Text className="text-red-500">*</Text>
                     </Text>
 
                     {isDoctorNotAvailable ? (

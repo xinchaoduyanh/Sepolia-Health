@@ -1,0 +1,26 @@
+diff --git a/node_modules/@gorhom/bottom-sheet/lib/commonjs/hooks/useBottomSheetContentContainerStyle.js b/node_modules/@gorhom/bottom-sheet/lib/commonjs/hooks/useBottomSheetContentContainerStyle.js
+index 4c9661f..b376a77 100644
+--- a/node_modules/@gorhom/bottom-sheet/lib/commonjs/hooks/useBottomSheetContentContainerStyle.js
++++ b/node_modules/@gorhom/bottom-sheet/lib/commonjs/hooks/useBottomSheetContentContainerStyle.js
+@@ -20,7 +20,7 @@ function useBottomSheetContentContainerStyle(enableFooterMarginAdjustment, _styl
+   const flattenStyle = (0, _react.useMemo)(() => {
+     return !_style ? {} : Array.isArray(_style) ?
+     // @ts-ignore
+-    _reactNative.StyleSheet.compose(..._style) : _style;
++    _reactNative.StyleSheet.flatten(_style) : _style;
+   }, [_style]);
+   const style = (0, _react.useMemo)(() => {
+     if (!enableFooterMarginAdjustment) {
+diff --git a/node_modules/@gorhom/bottom-sheet/lib/module/hooks/useBottomSheetContentContainerStyle.js b/node_modules/@gorhom/bottom-sheet/lib/module/hooks/useBottomSheetContentContainerStyle.js
+index 75a594a..3536aa4 100644
+--- a/node_modules/@gorhom/bottom-sheet/lib/module/hooks/useBottomSheetContentContainerStyle.js
++++ b/node_modules/@gorhom/bottom-sheet/lib/module/hooks/useBottomSheetContentContainerStyle.js
+@@ -16,7 +16,7 @@ export function useBottomSheetContentContainerStyle(enableFooterMarginAdjustment
+   const flattenStyle = useMemo(() => {
+     return !_style ? {} : Array.isArray(_style) ?
+     // @ts-ignore
+-    StyleSheet.compose(..._style) : _style;
++    StyleSheet.flatten(_style) : _style;
+   }, [_style]);
+   const style = useMemo(() => {
+     if (!enableFooterMarginAdjustment) {

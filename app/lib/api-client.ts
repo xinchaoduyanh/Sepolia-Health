@@ -126,6 +126,9 @@ class ApiClient {
   }
 
   private async loadToken() {
+    if (typeof window === 'undefined') {
+      return;
+    }
     try {
       const token = await AsyncStorage.getItem('auth_token');
       if (token) {

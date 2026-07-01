@@ -7,11 +7,55 @@ import { X, Phone, Video, MoreVertical, Users } from 'lucide-react'
 import { useChat } from '@/contexts/ChatContext'
 import { useVideo } from '@/contexts/VideoContext'
 import { useAuth } from '@/shared/hooks/useAuth'
-import { Channel, MessageList, MessageInput, Window, Thread } from 'stream-chat-react'
+import { Channel, MessageList, MessageInput, Window, Thread, useTypingContext } from 'stream-chat-react'
 import type { Channel as StreamChannel, MessageResponse } from 'stream-chat'
 import { toast } from '@workspace/ui/components/Sonner'
 import { IncomingCallNotification } from '@/components/video/IncomingCallNotification'
 import { getWebChatUserInfo, getChatChannelNameFromLastMessage, getUserInitials } from '@/lib/chat-user-data'
+
+const CustomTypingIndicator = () => {
+    const { typing } = useTypingContext();
+    const { client } = useChat();
+
+    if (!typing || Object.keys(typing).length === 0) return null;
+
+    const typingUsers = Object.values(typing).filter(
+        ({ user }) => user?.id !== client?.userID
+    );
+
+    if (typingUsers.length === 0) return null;
+
+    return (
+        <div className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-gray-100 dark:bg-gray-800 w-fit ml-4 mt-2 shadow-sm border border-gray-200 dark:border-gray-700">
+            <style>{`
+                @keyframes chat-typing-wave {
+                    0%, 60%, 100% {
+                        transform: translateY(0);
+                        opacity: 0.5;
+                    }
+                    30% {
+                        transform: translateY(-4px);
+                        opacity: 1;
+                    }
+                }
+            `}</style>
+            <div className="flex gap-1 items-center h-3">
+                <div 
+                    className="w-1.5 h-1.5 bg-gray-500 dark:bg-gray-400 rounded-full" 
+                    style={{ animation: 'chat-typing-wave 1.2s infinite ease-in-out' }}
+                ></div>
+                <div 
+                    className="w-1.5 h-1.5 bg-gray-500 dark:bg-gray-400 rounded-full" 
+                    style={{ animation: 'chat-typing-wave 1.2s infinite ease-in-out 0.15s' }}
+                ></div>
+                <div 
+                    className="w-1.5 h-1.5 bg-gray-500 dark:bg-gray-400 rounded-full" 
+                    style={{ animation: 'chat-typing-wave 1.2s infinite ease-in-out 0.3s' }}
+                ></div>
+            </div>
+        </div>
+    );
+};
 
 interface ChatWindowProps {
     channelId: string
@@ -265,7 +309,7 @@ export function ChatWindow({ channelId, onClose }: ChatWindowProps) {
                 />
             )}
 
-            <Channel channel={channel}>
+            <Channel channel={channel} TypingIndicator={CustomTypingIndicator}>
                 <Window>
                     {/* Chat Header - Improved Layout */}
                     <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
