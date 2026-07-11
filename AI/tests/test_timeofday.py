@@ -23,6 +23,14 @@ def test_tam_9_10h():
     assert filter_slots(SLOTS, w) == ["09:30"]
 
 
+def test_bien_buoi_khop_luong_dat_lich():
+    # Khớp app đặt lịch: slot bắt đầu TRƯỚC 12:00 là sáng (11:30 vẫn sáng),
+    # chiều chạy tới 17:30 nên slot 17:00 không bị rớt.
+    boundary = ["11:30", "12:00", "17:00", "17:30"]
+    assert filter_slots(boundary, resolve_time_window(time_preference="morning")) == ["11:30"]
+    assert filter_slots(boundary, resolve_time_window(time_preference="afternoon")) == ["12:00", "17:00"]
+
+
 def test_som_nhat():
     assert pick_earliest(SLOTS) == "08:00"
 

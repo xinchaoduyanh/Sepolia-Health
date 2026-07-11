@@ -22,6 +22,7 @@ class ConfirmIntent(str, Enum):
 # Thứ tự kiểm tra: AMBIGUOUS -> REJECT -> CONFIRM (vì "cũng được" chứa "được",
 # "không đồng ý" chứa "đồng ý"; phủ định/mơ hồ phải thắng khẳng định).
 _AMBIGUOUS = ["cung duoc", "sao cung", "the nao cung", "gi cung", "deu duoc", "tuy"]
+_CONFIRM_STRONG = ["thoi duoc", "khong van de", "khong sao", "dat di", "chot di", "xac nhan"]
 _REJECT = ["thoi", "huy", "khong", "khoan", "de sau", "dung lai", "bo qua", "cancel", "stop", "khong can"]
 _CONFIRM = [
     "ok", "oke", "okay", "uk", "uki", "u", "um", "vang", "dung", "chot",
@@ -39,6 +40,8 @@ def classify_confirmation(text: str) -> ConfirmIntent:
 
     if has(_AMBIGUOUS):
         return ConfirmIntent.AMBIGUOUS
+    if has(_CONFIRM_STRONG):
+        return ConfirmIntent.CONFIRM
     if has(_REJECT):
         return ConfirmIntent.REJECT
     if has(_CONFIRM):

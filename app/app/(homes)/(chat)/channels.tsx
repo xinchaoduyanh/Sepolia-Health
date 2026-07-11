@@ -82,11 +82,13 @@ const CuteLoadingScreen = ({ statusText = "Đang kết nối cuộc trò chuyệ
 
   // Progress bar filling animation
   useEffect(() => {
-    Animated.timing(progressValue, {
-      toValue: 1,
-      duration: 450,
-      useNativeDriver: true,
-    }).start();
+    Animated.loop(
+      Animated.timing(progressValue, {
+        toValue: 1,
+        duration: 1200,
+        useNativeDriver: true,
+      })
+    ).start();
   }, [progressValue]);
 
   const translateY = bobValue.interpolate({
@@ -116,7 +118,7 @@ const CuteLoadingScreen = ({ statusText = "Đang kết nối cuộc trò chuyệ
 
   const progressTranslateX = progressValue.interpolate({
     inputRange: [0, 1],
-    outputRange: [-200, 0],
+    outputRange: [-100, 200],
   });
 
   return (
@@ -224,7 +226,7 @@ const CuteLoadingScreen = ({ statusText = "Đang kết nối cuộc trò chuyệ
         }}>
           <Animated.View style={{
             height: '100%',
-            width: '100%',
+            width: '40%',
             backgroundColor: '#0284C7',
             borderRadius: 4,
             transform: [{ translateX: progressTranslateX }],

@@ -1,6 +1,11 @@
 import { appConfig } from '@/common/config';
 import { PrismaService } from '@/common/prisma/prisma.service';
-import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Inject,
+  Injectable,
+  Logger,
+} from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import axios from 'axios';
 import { addDays, format } from 'date-fns';
@@ -31,6 +36,7 @@ interface ToolCall {
 
 @Injectable()
 export class ChatbotService {
+  private readonly logger = new Logger(ChatbotService.name);
   private streamClient: StreamChat;
   private readonly botUserId: string;
 
@@ -112,6 +118,16 @@ export class ChatbotService {
     const sessionId = aiResp.session_state.session_id;
     const cleanedResponse = this.cleanResponse(aiResp.message);
 
+    // Thẻ cũ hết vai trò khi: user xác nhận bằng chữ ("vâng" -> booked) hoặc có
+    // thẻ MỚI thay thế. Resolve TRƯỚC final update — message mới chưa có extra
+    // nên không tự resolve nhầm chính nó.
+    if (
+      aiResp.requires_confirmation ||
+      aiResp.session_state?.agent_state === 'booked'
+    ) {
+      await this.resolveConfirmationCards(channelId);
+    }
+
     // Final update with clean text and extra data
     await this.streamClient.updateMessage({
       id: messageId,
@@ -140,6 +156,40 @@ export class ChatbotService {
       sessionId,
       traceId: aiResp.trace_id,
     };
+  }
+
+  /**
+   * Đánh dấu các thẻ xác nhận đang mở trong channel là đã xử lý (extra.resolved).
+   * FE đọc cờ này để render trạng thái tĩnh thay vì nút bấm — state cục bộ của
+   * component mất khi rời/vào lại đoạn chat nên phải ghi lên chính message.
+   */
+  private async resolveConfirmationCards(channelId: string): Promise<void> {
+    try {
+      const channel = this.streamClient.channel('messaging', channelId);
+      const res = await channel.query({ messages: { limit: 30 } });
+      const pending = (res.messages || []).filter((m: any) => {
+        const extra = m.extra ?? m;
+        return (
+          m.user?.id === this.botUserId &&
+          extra?.requiresConfirmation &&
+          !extra?.resolved
+        );
+      });
+      for (const m of pending) {
+        const extra = ((m as any).extra as Record<string, unknown>) ?? {};
+        await this.streamClient.partialUpdateMessage(
+          m.id,
+          { set: { extra: { ...extra, resolved: true } } } as any,
+          this.botUserId,
+        );
+      }
+    } catch (e: any) {
+      // Không chặn luồng chính: thẻ chưa resolve thì FE vẫn còn TTL 10' + AI từ chối.
+      this.log('resolveConfirmationCards', 'warn', 'Failed to resolve cards', {
+        channelId,
+        error: e?.message,
+      });
+    }
   }
 
   private async sendAiPlatformMessage(
@@ -174,37 +224,22 @@ export class ChatbotService {
     message: string,
     data?: any,
   ): void {
-    const prefix = `[ChatbotService::${section}]`;
-    const logMessage = `${prefix} ${message}`;
+    const logMessage = data
+      ? `[${section}] ${message} ${JSON.stringify(data)}`
+      : `[${section}] ${message}`;
 
     switch (level) {
       case 'info':
-        if (data) {
-          console.log(`📘 ${logMessage}`, data);
-        } else {
-          console.log(`📘 ${logMessage}`);
-        }
+        this.logger.log(logMessage);
         break;
       case 'warn':
-        if (data) {
-          console.warn(`⚠️  ${logMessage}`, data);
-        } else {
-          console.warn(`⚠️  ${logMessage}`);
-        }
+        this.logger.warn(logMessage);
         break;
       case 'error':
-        if (data) {
-          console.error(`❌ ${logMessage}`, data);
-        } else {
-          console.error(`❌ ${logMessage}`);
-        }
+        this.logger.error(logMessage);
         break;
       case 'debug':
-        if (data) {
-          console.log(`🔍 ${logMessage}`, data);
-        } else {
-          console.log(`🔍 ${logMessage}`);
-        }
+        this.logger.debug(logMessage);
         break;
     }
   }
@@ -503,6 +538,8 @@ export class ChatbotService {
         numericUserId,
         channelId,
       );
+      // Nút đã được bấm -> thẻ cũ coi như tiêu thụ xong, bất kể kết quả.
+      await this.resolveConfirmationCards(channelId);
       const sessionId = aiResp.session_state.session_id;
       const cleanedResponse = await this.sendAiPlatformMessage(
         channel,
@@ -538,6 +575,7 @@ export class ChatbotService {
         numericUserId,
         channelId,
       );
+      await this.resolveConfirmationCards(channelId);
       const sessionId = aiResp.session_state.session_id;
       const cleanedResponse = await this.sendAiPlatformMessage(
         channel,

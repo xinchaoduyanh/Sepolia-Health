@@ -253,18 +253,21 @@ export class AiBridgeService {
   }
 
   // Biên giờ theo buổi — đồng bộ với AI/ app/nlu/timeofday.py (GMT+7, nửa mở [start,end)).
+  // Khớp luồng đặt lịch của app (appointment.service): slot bắt đầu TRƯỚC 12:00 là
+  // buổi sáng (slot 11:30-12:00 vẫn là sáng); chiều chạy tới 17:30 để không rớt
+  // slot 17:00-17:30 (bác sĩ làm đến 17:30).
   private timeWindow(pref?: string): { start: number; end: number } | null {
     switch (pref) {
       case 'morning':
-        return { start: 6 * 60, end: 11 * 60 + 30 };
+        return { start: 6 * 60, end: 12 * 60 };
       case 'noon':
-        return { start: 11 * 60 + 30, end: 13 * 60 };
+        return { start: 11 * 60, end: 13 * 60 + 30 };
       case 'afternoon':
-        return { start: 13 * 60, end: 17 * 60 };
+        return { start: 12 * 60, end: 17 * 60 + 30 };
       case 'evening':
         return { start: 17 * 60, end: 21 * 60 };
       case 'office':
-        return { start: 8 * 60, end: 17 * 60 };
+        return { start: 8 * 60, end: 17 * 60 + 30 };
       default:
         return null;
     }
@@ -298,7 +301,10 @@ export class AiBridgeService {
           last_name: d.lastName,
           clinic_id: d.clinicId ?? null,
           slot_count: slots.length,
-          sample_slots: slots.slice(0, 4),
+          // Trả đủ slot trong khung (buổi sáng ~7 slot) thay vì 4 slot mẫu —
+          // LLM đọc sample sẽ nói sai "chỉ trống 8h-9h30". Cap 12 phòng trường
+          // hợp không lọc buổi (cả ngày ~19 slot x 10 bác sĩ phình context).
+          sample_slots: slots.slice(0, 12),
         });
       }
     }
@@ -392,22 +398,69 @@ export class AiBridgeService {
     if (!profile) return { error_code: 'profile_not_found' };
     const patientProfileId = profile.id;
 
+    const svc = await this.prisma.service.findUnique({ where: { id: input.serviceId } });
+    if (!svc) return { error_code: 'service_not_found' };
+
+    const doctor = await this.prisma.doctorProfile.findUnique({
+      where: { id: input.doctorId, deletedAt: null },
+      include: { clinic: true },
+    });
+    if (!doctor) return { error_code: 'doctor_not_found' };
+
+    const start = new Date(input.startTime);
+    const end = new Date(start.getTime() + svc.duration * 60000);
+    // recap_data là nguồn hiển thị cho thẻ xác nhận: tên bác sĩ/dịch vụ/cơ sở
+    // lấy CHUẨN từ DB (user gõ "khám mắt" nhưng thẻ phải ghi "Khám mắt & đo thị lực").
+    const recapData = {
+      doctor_id: input.doctorId,
+      doctor_name: `${doctor.firstName} ${doctor.lastName}`,
+      service_id: input.serviceId,
+      service_name: svc.name,
+      start_time: start.toISOString(),
+      price: svc.price,
+      clinic_id: doctor.clinicId ?? null,
+      clinic_name: doctor.clinic?.name ?? null,
+    };
+
     const existing = await this.prisma.bookingDraft.findUnique({
       where: { idempotencyKey: input.idempotencyKey },
     });
     if (existing) {
+      // PENDING còn hạn -> tái sử dụng. Draft hết hạn/EXPIRED KHÔNG được trả lại
+      // nguyên trạng (confirm sẽ dính draft_expired mãi, session AI kẹt vòng lặp)
+      // -> hồi sinh với hạn mới. CONFIRMED thì trả lại để confirm idempotent.
+      const stillValid =
+        existing.status === 'CONFIRMED' ||
+        (existing.status === 'PENDING' && existing.expiresAt.getTime() > Date.now());
+      if (stillValid) {
+        return {
+          draft_id: existing.id,
+          expires_at: existing.expiresAt.toISOString(),
+          conflicts: [],
+          recap_data: recapData,
+        };
+      }
+      const conflicts = await this.findConflicts(input.doctorId, start, end);
+      const revived = await this.prisma.bookingDraft.update({
+        where: { id: existing.id },
+        data: {
+          patientProfileId,
+          serviceId: input.serviceId,
+          startTime: start,
+          endTime: end,
+          estimatedPrice: Math.round(svc.price),
+          expiresAt: new Date(Date.now() + 10 * 60000),
+          status: 'PENDING',
+        },
+      });
       return {
-        draft_id: existing.id,
-        expires_at: existing.expiresAt.toISOString(),
-        conflicts: [],
+        draft_id: revived.id,
+        expires_at: revived.expiresAt.toISOString(),
+        conflicts,
+        recap_data: recapData,
       };
     }
 
-    const svc = await this.prisma.service.findUnique({ where: { id: input.serviceId } });
-    if (!svc) return { error_code: 'service_not_found' };
-
-    const start = new Date(input.startTime);
-    const end = new Date(start.getTime() + svc.duration * 60000);
     const conflicts = await this.findConflicts(input.doctorId, start, end);
 
     const draft = await this.prisma.bookingDraft.create({
@@ -428,20 +481,14 @@ export class AiBridgeService {
       draft_id: draft.id,
       expires_at: draft.expiresAt.toISOString(),
       conflicts,
-      recap_data: {
-        doctor_id: input.doctorId,
-        service_id: input.serviceId,
-        service_name: svc.name,
-        start_time: start.toISOString(),
-        price: svc.price,
-      },
+      recap_data: recapData,
     };
   }
 
   async confirmBooking(actingUserId: number, draftId: string) {
     const draft = await this.prisma.bookingDraft.findUnique({
       where: { id: draftId },
-      include: { patientProfile: true },
+      include: { patientProfile: true, doctor: true },
     });
     if (!draft) return { error_code: 'draft_not_found' };
     if (draft.patientProfile.managerId !== actingUserId) {
@@ -472,6 +519,7 @@ export class AiBridgeService {
         patientProfileId: draft.patientProfileId,
         doctorId: draft.doctorId,
         serviceId: draft.serviceId,
+        clinicId: draft.doctor.clinicId,
       },
     });
     await this.prisma.bookingDraft.update({

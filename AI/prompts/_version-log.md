@@ -6,6 +6,7 @@ Mọi lần bump version phải thêm entry ở đây.
 - v1 (2026-06-10): khởi tạo. Thêm luật resolve_date + bất biến chống injection. Owner: dev-team.
 - v2 (2026-07-01): tích hợp hồ sơ cá nhân của người bệnh, luật gợi ý slot thay thế khi bận (Phase 4) và lọc trùng bác sĩ thông minh (Phase 5).
 - v3 (2026-07-01): bổ sung lưới an toàn booking requirements (Phase 7) và hướng dẫn cho luồng hủy lịch khám (Phase 6).
+- v4 (2026-07-02): dồn RAG về tool search_knowledge, xoá knowledge base tự động tiêm vào prompt.
 
 ## persona-style
 - v1 (2026-06-10): xưng em/anh chị, tone, format thời gian.

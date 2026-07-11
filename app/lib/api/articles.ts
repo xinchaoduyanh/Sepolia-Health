@@ -85,7 +85,7 @@ export const articlesApi = {
 
 // React Query hooks for articles
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { toast } from 'react-native-toast-message'
+import Toast from 'react-native-toast-message'
 
 export const useArticles = (params: ArticlesListParams = {}) => {
   return useQuery({
@@ -112,7 +112,7 @@ export const useIncrementViews = () => {
       queryClient.invalidateQueries({ queryKey: ['article', variables] })
     },
     onError: (error) => {
-      toast.error('Không thể cập nhật lượt xem')
+      Toast.show({ type: 'error', text1: 'Không thể cập nhật lượt xem' })
     },
   })
 }

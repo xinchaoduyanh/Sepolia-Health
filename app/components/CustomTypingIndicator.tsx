@@ -144,30 +144,30 @@ export const CustomTypingIndicator = ({
 };
 
 const AnimatedDot = ({ delay, color }: { delay: number; color: string }) => {
-  const travelAnim = useRef(new Animated.Value(0)).current;
+  const opacityAnim = useRef(new Animated.Value(0.3)).current;
 
   useEffect(() => {
     const animation = Animated.loop(
       Animated.sequence([
         Animated.delay(delay),
-        Animated.timing(travelAnim, {
-          toValue: -5,
-          duration: 350,
+        Animated.timing(opacityAnim, {
+          toValue: 1,
+          duration: 400,
           useNativeDriver: true,
         }),
-        Animated.timing(travelAnim, {
-          toValue: 0,
-          duration: 350,
+        Animated.timing(opacityAnim, {
+          toValue: 0.3,
+          duration: 400,
           useNativeDriver: true,
         }),
-        Animated.delay(350),
+        Animated.delay(200),
       ])
     );
 
     animation.start();
 
     return () => animation.stop();
-  }, [travelAnim, delay]);
+  }, [opacityAnim, delay]);
 
   return (
     <Animated.View
@@ -176,8 +176,8 @@ const AnimatedDot = ({ delay, color }: { delay: number; color: string }) => {
         height: 6,
         borderRadius: 3,
         backgroundColor: color,
-        marginHorizontal: 3.5,
-        transform: [{ translateY: travelAnim }],
+        marginHorizontal: 3,
+        opacity: opacityAnim,
       }}
     />
   );

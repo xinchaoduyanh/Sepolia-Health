@@ -34,18 +34,29 @@ class FakeRetriever:
     def __init__(self) -> None:
         self.calls: list[str] = []
 
-    async def retrieve(self, query, top_k=5, filter_types=None, allowed_only=True):
+    async def retrieve(self, query, top_k=5, filter_types=None, allowed_only=True, min_score: float = 0.45):
         self.calls.append(query)
-        return [
+        if query == "rỗng":
+            return []
+        chunks = [
             RetrievedChunk(
                 file_id="viem-hong-cap",
                 canonical_name="Viêm họng cấp",
                 type="disease",
-                text="Gợi ý khám Tai mũi họng khi đau họng kéo dài.",
+                text="Gợi ý khám Tai mũi họng khi đau họng kéo dài." + " padding" * 200,
                 metadata={"allowed_for_ai_mention": True},
                 similarity_score=0.92,
+            ),
+            RetrievedChunk(
+                file_id="rac",
+                canonical_name="Rác",
+                type="disease",
+                text="Chunk rác",
+                metadata={"allowed_for_ai_mention": True},
+                similarity_score=0.2,
             )
         ]
+        return [c for c in chunks if c.similarity_score >= min_score]
 
 
 def _session(**kw) -> SessionState:
@@ -89,6 +100,29 @@ async def test_ambiguous_confirmation_does_not_book():
     assert "xác nhận" in resp.message.lower()
 
 
+async def test_expired_confirmation_does_not_book():
+    # Yêu cầu xác nhận quá TTL (10') -> dù user đồng ý cũng KHÔNG thực thi,
+    # session về COLLECTING (nút cũ trong lịch sử chat phải vô hiệu).
+    from datetime import datetime, timedelta, timezone
+
+    bridge = FakeBridge()
+    agent = _agent(FakeProvider([]), bridge)
+    session = _session(
+        agent_state=AgentState.AWAITING_CONFIRMATION,
+        pending_confirmation=PendingConfirmation(
+            draft_id="draft_1",
+            idempotency_key="draft_1",
+            created_at=datetime.now(timezone.utc) - timedelta(minutes=11),
+        ),
+    )
+
+    resp = await agent.handle_turn(session, "vâng", "t1")
+    assert session.agent_state == AgentState.COLLECTING
+    assert session.pending_confirmation is None
+    assert not any(c[0] == "confirm_booking" for c in bridge.calls)
+    assert "quá hạn" in resp.message
+
+
 async def test_reject_confirmation_cancels():
     bridge = FakeBridge()
     agent = _agent(FakeProvider([]), bridge)
@@ -102,14 +136,42 @@ async def test_reject_confirmation_cancels():
     assert not any(c[0] == "confirm_booking" for c in bridge.calls)
 
 
+async def test_unkept_promise_gets_nudged_and_retried():
+    # Model trả "để em kiểm tra..." KHÔNG kèm tool call -> agent không chấp nhận,
+    # nudge và gọi lại; user chỉ thấy câu trả lời thật (lần 2).
+    provider = FakeProvider([
+        chat_text("Dạ vâng, để em kiểm tra lịch trống của các bác sĩ ạ."),
+        chat_text("Dạ sáng Thứ Sáu 17/07 có BS. An trống lúc 08:00 và 09:30, anh chọn giờ nào ạ?"),
+    ])
+    agent = _agent(provider, FakeBridge())
+    session = _session()
+
+    resp = await agent.handle_turn(session, "tìm bác sĩ mắt sáng thứ 6 ở Hà Đông", "t1")
+    assert "08:00" in resp.message          # câu trả lời thật, không phải lời hứa
+    assert "để em kiểm tra" not in resp.message.lower()
+    assert len(provider.calls) == 2          # đã bị ép chạy lại đúng 1 lần
+
+
+async def test_normal_reply_not_nudged():
+    # Câu trả lời bình thường (không hứa suông) -> không tốn thêm call nào.
+    provider = FakeProvider([chat_text("Dạ anh muốn khám chuyên khoa nào ạ?")])
+    agent = _agent(provider, FakeBridge())
+    session = _session()
+
+    resp = await agent.handle_turn(session, "tôi muốn đặt lịch", "t1")
+    assert resp.message == "Dạ anh muốn khám chuyên khoa nào ạ?"
+    assert len(provider.calls) == 1
+
+
 async def test_emergency_blocks_before_llm():
     provider = FakeProvider([])  # phải KHÔNG được gọi
     agent = _agent(provider, FakeBridge())
     session = _session()
 
     resp = await agent.handle_turn(session, "tôi bị khó thở và đau ngực dữ dội", "t1")
-    assert session.agent_state == AgentState.FAILED
+    assert session.agent_state == AgentState.COLLECTING
     assert "115" in resp.message
+    assert "chuyên khoa phù hợp" in resp.message
     assert provider.calls == []  # không vào LLM
 
 
@@ -126,29 +188,24 @@ async def test_rag_emergency_detector_blocks_high_fever():
 
     resp = await agent.handle_turn(session, "tôi sốt 40 độ", "t1")
 
-    assert session.agent_state == AgentState.FAILED
+    assert session.agent_state == AgentState.COLLECTING
     assert "115" in resp.message
+    assert "chuyên khoa phù hợp" in resp.message
     assert provider.calls == []
 
 
-async def test_symptom_query_adds_knowledge_to_prompt():
-    provider = FakeProvider([chat_text("Anh/chị nên đặt lịch khám Tai mũi họng ạ.")])
+async def test_search_knowledge_tool():
     retriever = FakeRetriever()
-    agent = SchedulingAgent(
-        provider,
-        "fake-model",
-        ToolRegistry(FakeBridge()),
-        _prompts(),
-        retriever=retriever,
-    )
-    session = _session()
-
-    await agent.handle_turn(session, "em bị đau họng và ho khan", "t1")
-
-    assert retriever.calls == ["em bị đau họng và ho khan"]
-    system_prompt = provider.calls[0][0]["content"]
-    assert "Viêm họng cấp" in system_prompt
-    assert "Tai mũi họng" in system_prompt
+    tools = ToolRegistry(FakeBridge(), retriever=retriever)
+    
+    res = await tools.execute("search_knowledge", {"query": "đau họng", "types": ["disease"]}, session_id="s1")
+    assert len(res["chunks"]) == 1
+    assert res["chunks"][0]["canonical_name"] == "Viêm họng cấp"
+    assert len(res["chunks"][0]["text"]) <= 1200
+    
+    res2 = await tools.execute("search_knowledge", {"query": "rỗng", "types": ["disease"]}, session_id="s1")
+    assert len(res2["chunks"]) == 0
+    assert "hỏi thêm" in res2["note"]
 
 
 async def test_blocked_disease_mention_in_output_is_refused():
@@ -179,6 +236,18 @@ async def test_slot_taken_on_confirm_rolls_back():
     resp = await agent.handle_turn(session, "vâng", "t1")
     assert session.agent_state == AgentState.SLOT
     assert "giờ khác" in resp.message
+    # Draft chết -> pending phải bị xoá, không thì session kẹt (SLOT + pending treo).
+    assert session.pending_confirmation is None
+
+
+def test_create_booking_draft_exposed_in_slot_state():
+    # Sau confirm fail session ở SLOT — model phải thấy create_booking_draft để
+    # tạo lại bản nháp, không thì kẹt vĩnh viễn ở slot_selection.
+    from app.tools.registry import ToolRegistry
+
+    registry = ToolRegistry(FakeBridge())
+    names = [t["function"]["name"] for t in registry.openai_schemas(AgentState.SLOT)]
+    assert "create_booking_draft" in names
 
 
 async def test_history_injection_into_prompt_messages():

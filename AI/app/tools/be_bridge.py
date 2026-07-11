@@ -82,6 +82,10 @@ class HttpBridgeClient:
         )
 
     async def _request(self, method: str, path: str, *, params: dict | None = None, json: dict | None = None) -> dict:
+        # httpx serialize None thành chuỗi rỗng ("serviceId=") — bỏ hẳn key để
+        # Be/ nhận undefined thay vì "" (đỡ rủi ro ParseIntPipe/validation 400).
+        if params:
+            params = {k: v for k, v in params.items() if v is not None}
         url = self._base + path
         last_err: Exception | None = None
         for _ in range(2):  # 1 retry cho 5xx / lỗi mạng

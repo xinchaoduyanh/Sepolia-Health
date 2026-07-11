@@ -50,6 +50,7 @@ class KnowledgeRetriever:
         top_k: int = 5,
         filter_types: list[KnowledgeType] | None = None,
         allowed_only: bool = True,
+        min_score: float = 0.45,
     ) -> list[RetrievedChunk]:
         collection = self._get_collection()
 
@@ -68,15 +69,17 @@ class KnowledgeRetriever:
 
         chunks: list[RetrievedChunk] = []
         for text, metadata, distance in zip(docs, metadatas, distances):
-            chunks.append(
-                RetrievedChunk(
-                    file_id=str(metadata.get("file_id") or ""),
-                    canonical_name=str(metadata.get("canonical_name") or ""),
-                    type=metadata.get("type"),
-                    text=text,
-                    metadata=metadata,
-                    similarity_score=max(0.0, 1.0 - float(distance)),
+            score = max(0.0, 1.0 - float(distance))
+            if score >= min_score:
+                chunks.append(
+                    RetrievedChunk(
+                        file_id=str(metadata.get("file_id") or ""),
+                        canonical_name=str(metadata.get("canonical_name") or ""),
+                        type=metadata.get("type"),
+                        text=text,
+                        metadata=metadata,
+                        similarity_score=score,
+                    )
                 )
-            )
 
         return self.policy.filter_chunks(chunks) if allowed_only else chunks

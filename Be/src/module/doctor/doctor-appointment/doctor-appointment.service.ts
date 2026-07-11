@@ -6,6 +6,7 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { AppointmentStatus } from '@prisma/client';
@@ -21,6 +22,8 @@ import { AppointmentResultFileDto } from './dto/appointment-result-file.dto';
 
 @Injectable()
 export class DoctorAppointmentService {
+  private readonly logger = new Logger(DoctorAppointmentService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly uploadService: UploadService,
@@ -314,7 +317,6 @@ export class DoctorAppointmentService {
         },
       },
     });
-    console.log(appointment);
     if (!appointment) {
       throw new NotFoundException(ERROR_MESSAGES.COMMON.RESOURCE_NOT_FOUND);
     }
@@ -501,7 +503,10 @@ export class DoctorAppointmentService {
         );
       }
     } catch (error) {
-      console.error('Failed to send appointment result notification:', error);
+      this.logger.error(
+        'Failed to send appointment result notification',
+        error?.stack,
+      );
       // Don't throw error to not block the result creation/update
     }
 

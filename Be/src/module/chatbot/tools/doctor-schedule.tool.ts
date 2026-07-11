@@ -1,5 +1,5 @@
 import { PrismaService } from '@/common/prisma/prisma.service';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { addDays, format, isBefore, isValid, parse } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import Fuse from 'fuse.js';
@@ -16,6 +16,8 @@ interface DoctorScheduleParams {
 
 @Injectable()
 export class DoctorScheduleTool {
+  private readonly logger = new Logger(DoctorScheduleTool.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   async execute(params: DoctorScheduleParams) {
@@ -228,7 +230,7 @@ export class DoctorScheduleTool {
             : 'Hiện tại bác sĩ đã kín lịch vào ngày này, bạn có muốn mình tìm ngày khác hoặc bác sĩ khác không?',
       };
     } catch (error) {
-      console.error('Doctor schedule tool error:', error);
+      this.logger.error('Doctor schedule tool error', error?.stack);
       return {
         error: 'Có lỗi xảy ra khi tra cứu lịch',
         details: error.message,
@@ -320,8 +322,8 @@ export class DoctorScheduleTool {
         // Nếu score khác biệt < 0.1, có thể có ambiguity
         if (scoreDiff < 0.1 && bestScore > 0.2) {
           // Trả về warning nhưng vẫn dùng kết quả tốt nhất
-          console.warn(
-            `⚠️ [DoctorSchedule] Multiple doctors found for "${searchName}". Using best match: ${bestMatch.item.firstName} ${bestMatch.item.lastName} (score: ${bestScore})`,
+          this.logger.warn(
+            `Multiple doctors found for "${searchName}". Using best match: ${bestMatch.item.firstName} ${bestMatch.item.lastName} (score: ${bestScore})`,
           );
         }
       }
@@ -332,8 +334,8 @@ export class DoctorScheduleTool {
       }
 
       // Nếu match không tốt lắm, vẫn trả về nhưng có warning
-      console.warn(
-        `⚠️ [DoctorSchedule] Low confidence match for "${searchName}" (score: ${bestScore}). Consider using doctorId from search_doctors tool.`,
+      this.logger.warn(
+        `Low confidence match for "${searchName}" (score: ${bestScore}). Consider using doctorId from search_doctors tool.`,
       );
       return bestMatch.item;
     }

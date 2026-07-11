@@ -29,41 +29,45 @@ from app.tools.registry import ToolRegistry
 
 _VN_TZ = timezone(timedelta(hours=7))
 _VN_DAYS = ["Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy", "Chủ Nhật"]
+# Khớp TTL draft ở Be/ai-bridge (10 phút). FE cũng dùng mốc này để làm mờ nút xác nhận.
+_CONFIRM_TTL = timedelta(minutes=10)
+
+
+def _confirmation_expired(pc: PendingConfirmation) -> bool:
+    created = pc.created_at
+    if created.tzinfo is None:  # session cũ lưu naive datetime
+        created = created.replace(tzinfo=timezone.utc)
+    return datetime.now(timezone.utc) - created > _CONFIRM_TTL
 _MAX_ITERS = 8  # đủ chỗ cho chuỗi tool (resolve_date→search→availability→...) + câu trả lời cuối
 _LOG = logging.getLogger(__name__)
-# Cổng kích hoạt RAG: nếu câu user chạm 1 hint -> truy hồi knowledge gợi ý chuyên
-# khoa. PHẢI bám theo knowledge/ (mỗi khi thêm bệnh/triệu chứng mới, bổ sung hint).
-# Tránh token quá ngắn dễ khớp nhầm văn xuôi (vd bare "ợ"/"tê").
-_SYMPTOM_HINTS = (
-    "triệu chứng", "trieu chung",
-    # hô hấp / toàn thân
-    "sốt", "sot", "ho", "đau", "dau", "khó thở", "kho tho",
-    "buồn nôn", "buon non", "chóng mặt", "chong mat", "mệt", "met",
-    # da liễu
-    "mụn", "mun", "ngứa", "ngua", "mẩn", "man do", "mề đay", "viêm da",
-    # tâm lý / giấc ngủ
-    "mất ngủ", "mat ngu", "lo âu", "lo au", "lo lắng", "lo lang",
-    "căng thẳng", "stress", "trầm cảm",
-    # tiêu hoá
-    "tiêu chảy", "tieu chay", "khó tiêu", "kho tieu", "ợ chua", "ợ hơi",
-    "ợ nóng", "đầy bụng", "trào ngược", "trao nguoc", "nghẹn",
-    # răng hàm mặt
-    "răng", "rang", "sâu răng",
-    # nhãn khoa
-    "mắt", "khô mắt", "đỏ mắt", "mỏi mắt",
-    # cơ xương khớp
-    "vai gáy", "vai gay", "đau lưng", "dau lung", "thoát vị", "thoat vi",
-    # sản phụ khoa
-    "khí hư", "khi hu", "âm đạo", "am dao",
-    # dinh dưỡng
-    "béo phì", "beo phi", "thừa cân", "thua can", "giảm cân", "tăng cân",
-)
-
 # Qwen (model gốc Trung) thỉnh thoảng code-switch sang tiếng Trung/Nhật/Hàn.
 # Dải CJK + hiragana/katakana/hangul + dấu câu full-width.
 _CJK = re.compile(
     r"[　-〿぀-ヿ㐀-䶿一-鿿가-힯＀-￯]"
 )
+
+# Model hay "hứa suông": trả text "để em kiểm tra..." mà KHÔNG gọi tool rồi kết thúc
+# lượt — user chỉ thấy lời hứa, và câu hứa lọt vào history dạy các lượt sau bắt chước.
+# Phát hiện kiểu này -> KHÔNG chấp nhận, nhét nudge và bắt chạy lại trong cùng lượt.
+_PROMISE_RE = re.compile(
+    r"(để em (kiểm tra|tìm|tra cứu|xem)"
+    r"|em (đang|sẽ) (kiểm tra|tìm|tra cứu|xem)"
+    r"|chờ em|đợi em"
+    r"|em kiểm tra (ngay|lại|thông tin))"
+)
+_NUDGE_MSG = (
+    "[GHI CHÚ HỆ THỐNG — user KHÔNG thấy tin nhắn này] Bạn vừa nói sẽ kiểm tra nhưng "
+    "KHÔNG gọi tool nào; user chỉ thấy một lời hứa suông. Hãy GỌI TOOL cần thiết NGAY "
+    "bây giờ để lấy dữ liệu thật rồi trả lời dựa trên kết quả. Nếu thiếu thông tin để "
+    "gọi tool thì hỏi user một câu cụ thể. KHÔNG trả lời 'để em kiểm tra' thêm lần nào nữa."
+)
+
+
+def _is_unkept_promise(text: str) -> bool:
+    # Chỉ bắt câu hứa "trần" (ngắn, không kèm dữ liệu); câu trả lời thật có danh
+    # sách bác sĩ/giờ sẽ dài hơn nhiều nên không dính.
+    t = text.lower()
+    return len(t) < 400 and _PROMISE_RE.search(t) is not None
 
 
 def _strip_cjk(text: str) -> str:
@@ -78,29 +82,27 @@ def _strip_cjk(text: str) -> str:
     return cleaned or "Dạ, anh/chị cho em hỏi rõ thêm để hỗ trợ ạ?"
 
 
-class Retriever(Protocol):
-    async def retrieve(self, query: str, top_k: int = 5, filter_types: list[str] | None = None,
-                       allowed_only: bool = True) -> list[RetrievedChunk]: ...
-
 
 def _today_vn() -> datetime:
     return datetime.now(_VN_TZ)
 
 
 def _calendar_strip(now: datetime, days: int = 10) -> str:
+    days = min(days, 14)  # Giới hạn không vượt quá 2 tuần
     monday = now.date() - timedelta(days=now.date().weekday())
     parts = []
     for i in range(-1, days):
         d = now.date() + timedelta(days=i)
-        week = "tuần này" if monday <= d < monday + timedelta(days=7) else "tuần sau"
+        if monday <= d < monday + timedelta(days=7):
+            week = "tuần này"
+        elif monday + timedelta(days=7) <= d < monday + timedelta(days=14):
+            week = "tuần sau"
+        else:
+            week = "tuần sau nữa"
         tag = " - Hôm nay" if i == 0 else ""
         parts.append(f"{_VN_DAYS[d.weekday()]} {d.strftime('%d/%m')} [{week}]{tag}")
     return ", ".join(parts)
 
-
-def _is_symptom_query(text: str) -> bool:
-    lower = text.lower()
-    return any(hint in lower for hint in _SYMPTOM_HINTS)
 
 
 def _doctor_label(item: dict) -> str:
@@ -186,6 +188,8 @@ def _build_draft_recap(payload: dict) -> str:
         lines.append(f"• Bác sĩ: {payload['doctor_name']}")
     if payload.get("service_name"):
         lines.append(f"• Dịch vụ: {payload['service_name']}")
+    if payload.get("clinic_name"):
+        lines.append(f"• Cơ sở: {payload['clinic_name']}")
     lines.append(f"• Thời gian: **{_format_booking_dt(payload.get('start_time'))}**")
     if payload.get("price") is not None:
         lines.append(f"• Chi phí dự kiến: {int(payload['price']):,}đ".replace(",", "."))
@@ -210,19 +214,6 @@ def _format_last_offered(offered: list[OfferedItem]) -> str:
     return "\n".join(lines)
 
 
-def _format_knowledge(chunks: list[RetrievedChunk]) -> str:
-    if not chunks:
-        return "Không có knowledge chunk liên quan trong turn này."
-    lines = [
-        "Chỉ dùng các chunk dưới đây để gợi ý chuyên khoa/đặt lịch. Không chẩn đoán, không kê đơn."
-    ]
-    for i, chunk in enumerate(chunks, start=1):
-        lines.append(
-            f"[{i}] {chunk.canonical_name} ({chunk.type}, score={chunk.similarity_score:.2f})\n"
-            f"{chunk.text[:1200]}"
-        )
-    return "\n\n".join(lines)
-
 
 class SchedulingAgent:
     def __init__(
@@ -231,7 +222,6 @@ class SchedulingAgent:
         model: str,
         tools: ToolRegistry,
         prompts: PromptRegistry,
-        retriever: Retriever | None = None,
         emergency_detector: EmergencyDetector | None = None,
         knowledge_policy: KnowledgePolicy | None = None,
     ) -> None:
@@ -239,7 +229,6 @@ class SchedulingAgent:
         self._model = model
         self._tools = tools
         self._prompts = prompts
-        self._retriever = retriever
         self._emergency_detector = emergency_detector
         self._knowledge_policy = knowledge_policy
 
@@ -256,18 +245,25 @@ class SchedulingAgent:
         stream_callback: Callable[[str], Awaitable[None]] | None = None,
     ) -> MessageResponse:
         session.trace_ids.append(trace_id)
+        session.trace_ids = session.trace_ids[-50:]
 
         # 1. Pre-filter: self-harm / emergency chặn trước LLM
         pf = pre_filter.check(user_message)
         if pf.blocked:
-            self._transition(session, AgentState.FAILED)
-            return self._resp(session, self._prompts.render(pf.refusal_key or "refusal-emergency", {}), trace_id)
+            if pf.reason == "self_harm":
+                self._transition(session, AgentState.FAILED)
+                return self._resp(session, self._prompts.render(pf.refusal_key or "refusal-emergency", {}), trace_id)
+            else:
+                self._transition(session, AgentState.COLLECTING)
+                warning_msg = self._prompts.render(pf.refusal_key or "refusal-emergency", {}) + " Nếu triệu chứng nhẹ hoặc kéo dài, em có thể hỗ trợ anh/chị đặt lịch khám chuyên khoa phù hợp ạ."
+                return self._resp(session, warning_msg, trace_id)
 
         if self._emergency_detector is not None:
             emergency = self._emergency_detector.detect(user_message)
             if emergency.emergency:
-                self._transition(session, AgentState.FAILED)
-                return self._resp(session, self._prompts.render("refusal-emergency", {}), trace_id)
+                self._transition(session, AgentState.COLLECTING)
+                warning_msg = self._prompts.render("refusal-emergency", {}) + " Nếu triệu chứng nhẹ hoặc kéo dài, em có thể hỗ trợ anh/chị đặt lịch khám chuyên khoa phù hợp ạ."
+                return self._resp(session, warning_msg, trace_id)
 
         # 2. Đang chờ xác nhận: chốt an toàn bằng confirm_intent
         if session.agent_state == AgentState.AWAITING_CONFIRMATION:
@@ -318,17 +314,6 @@ class SchedulingAgent:
 
         # 4. Dựng messages
         now = _today_vn()
-        knowledge_chunks: list[RetrievedChunk] = []
-        if self._retriever is not None and _is_symptom_query(user_message):
-            try:
-                knowledge_chunks = await self._retriever.retrieve(
-                    user_message,
-                    top_k=5,
-                    filter_types=["disease", "symptom"],
-                    allowed_only=True,
-                )
-            except RuntimeError as exc:
-                _LOG.warning("RAG unavailable for turn %s: %s", trace_id, exc)
         # Nhúng THẲNG nội dung policy vào system message — scheduling-copilot chỉ
         # "tham chiếu tên" persona-style/scope; nếu không append, model không hề
         # thấy quy tắc xưng hô/độ dài/format thời gian.
@@ -336,7 +321,6 @@ class SchedulingAgent:
             self._prompts.render("scheduling-copilot", {
                 "TODAY_VN": f"{_VN_DAYS[now.weekday()]}, {now.strftime('%d/%m/%Y')}",
                 "CALENDAR_STRIP": _calendar_strip(now),
-                "KNOWLEDGE": _format_knowledge(knowledge_chunks),
                 "LAST_OFFERED": _format_last_offered(session.last_offered),
                 "PATIENT_CONTEXT": patient_context,
                 "BOOKING_REQUIREMENT": booking_req_str,
@@ -366,13 +350,21 @@ class SchedulingAgent:
         # gán TÊN cho doctor_id (chống recap nhầm sang bác sĩ khác).
         doctor_name_map: dict = {}
 
+        nudges_left = 1  # tối đa 1 lần ép lại mỗi lượt, tránh vòng lặp đốt token
+
         for _ in range(_MAX_ITERS):
             if stream_callback is None:
                 response = await self._provider.chat(
                     self._model, messages, tools=self._tools.openai_schemas(session.agent_state)
                 )
                 if not response.tool_calls:
-                    final_text = (response.content if response else "") or ""
+                    text = (response.content if response else "") or ""
+                    if nudges_left and _is_unkept_promise(text):
+                        nudges_left -= 1
+                        messages.append({"role": "assistant", "content": text})
+                        messages.append({"role": "user", "content": _NUDGE_MSG})
+                        continue
+                    final_text = text
                     break
                 tool_calls = response.tool_calls
             else:
@@ -391,6 +383,13 @@ class SchedulingAgent:
                         iter_text += item
 
                 if not tool_calls:
+                    # Hứa suông ("để em kiểm tra...") -> chưa stream gì ra, lặng lẽ
+                    # nudge và chạy lại; user chỉ thấy câu trả lời thật cuối cùng.
+                    if nudges_left and _is_unkept_promise(iter_text):
+                        nudges_left -= 1
+                        messages.append({"role": "assistant", "content": iter_text})
+                        messages.append({"role": "user", "content": _NUDGE_MSG})
+                        continue
                     final_text = _strip_cjk(iter_text)
                     # Post-validate trước khi phát ra (chống lộ chẩn đoán/bệnh cấm).
                     violated = post_validator.check(final_text).violated
@@ -484,25 +483,31 @@ class SchedulingAgent:
             proposed = ProposedAction(kind="create_booking", payload={
                 "draft_id": draft_id,
                 **(draft_args or {}),
-                "doctor_name": session.booking_requirement.doctor_name,
+                "doctor_name": _recap.get("doctor_name") or session.booking_requirement.doctor_name,
                 "specialty": session.booking_requirement.specialty,
                 "service_name": _recap.get("service_name"),
+                "clinic_name": _recap.get("clinic_name"),
                 "start_time": _recap.get("start_time") or (draft_args or {}).get("start_time"),
                 "price": _recap.get("price"),
                 "patient_name": _patient.get("full_name"),
             })
-            # Draft đã tạo THẬT. Nếu model chỉ nói filler ("em đang tạo…") hoặc trả rỗng
-            # -> tự dựng recap để user LUÔN thấy thẻ xác nhận, không "biến mất".
-            if not final_text or len(final_text.strip()) < 20 or "đang tạo" in final_text.lower():
-                final_text = _build_draft_recap(proposed.payload)
-                if stream_callback is not None:
-                    await stream_callback(final_text)
+            # Thẻ xác nhận LUÔN dùng recap dựng từ dữ liệu draft thật (tên bác sĩ/
+            # dịch vụ chuẩn DB + cơ sở + giá) — không tin text model tự viết: model
+            # hay gọi tắt tên dịch vụ ("Khám mắt" thay vì "Khám mắt & đo thị lực")
+            # và quên thông tin cơ sở.
+            _model_text = final_text
+            final_text = _build_draft_recap(proposed.payload)
+            if stream_callback is not None and (not _model_text or len(_model_text.strip()) < 20):
+                await stream_callback(final_text)
         elif cancel_result:
             appt_id = cancel_result.get("appointment_id")
-            session.pending_confirmation = PendingConfirmation(draft_id=f"cancel_{appt_id}", idempotency_key=f"cancel_{appt_id}")
-            self._transition(session, AgentState.AWAITING_CONFIRMATION)
-            requires_confirmation = True
-            proposed = ProposedAction(kind="cancel_booking", payload={"appointment_id": appt_id})
+            if appt_id is None:
+                final_text = "Dạ anh/chị muốn hủy lịch khám nào ạ? Anh/chị cho em xin mã đặt khám nhé."
+            else:
+                session.pending_confirmation = PendingConfirmation(draft_id=f"cancel_{appt_id}", idempotency_key=f"cancel_{appt_id}")
+                self._transition(session, AgentState.AWAITING_CONFIRMATION)
+                requires_confirmation = True
+                proposed = ProposedAction(kind="cancel_booking", payload={"appointment_id": appt_id})
 
         # Chốt an toàn: model gọi tool nhưng không sinh câu trả lời (hết _MAX_ITERS
         # hoặc trả rỗng) -> KHÔNG để tin nhắn trống "biến mất". Ưu tiên trình slot/
@@ -522,13 +527,30 @@ class SchedulingAgent:
         intent = classify_confirmation(user_message)
         pc = session.pending_confirmation
 
+        # Chốt hạn: yêu cầu xác nhận chỉ sống trong _CONFIRM_TTL. Quá hạn thì KHÔNG
+        # thực thi (nút cũ trong lịch sử chat bấm lại phải vô hiệu), đưa session về
+        # COLLECTING để user đặt lại từ đầu.
+        if pc is not None and _confirmation_expired(pc):
+            is_cancel = pc.draft_id.startswith("cancel_")
+            session.pending_confirmation = None
+            self._transition(session, AgentState.COLLECTING)
+            msg = ("Dạ yêu cầu xác nhận huỷ lịch này đã quá hạn rồi ạ. Nếu anh/chị vẫn muốn huỷ, "
+                   "anh/chị nhắn lại giúp em nhé."
+                   if is_cancel else
+                   "Dạ yêu cầu đặt lịch này đã quá hạn xác nhận rồi ạ. Anh/chị muốn đặt lại thì "
+                   "nhắn em thông tin lịch khám, em kiểm tra chỗ trống mới nhất cho mình nhé.")
+            return self._resp(session, msg, trace_id)
+
         if intent == ConfirmIntent.CONFIRM and pc is not None:
             if pc.draft_id.startswith("cancel_"):
-                appt_id = int(pc.draft_id.split("_")[1])
+                try:
+                    appt_id = int(pc.draft_id.split("_")[1])
+                except (ValueError, IndexError):
+                    return self._resp(session, "Dạ anh/chị cho em xin mã lịch khám cụ thể để em kiểm tra nhé.", trace_id)
+
                 result = await self._tools.execute("cancel_appointment", {"appointment_id": appt_id}, session_id=session.session_id)
                 if result.get("error_code"):
                     self._transition(session, AgentState.FAILED)
-                    code = result["error_code"]
                     msg = "Rất tiếc, không thể hủy lịch khám này (lịch khám có thể đã diễn ra hoặc quá sát giờ)."
                     return self._resp(session, msg, trace_id)
                 session.pending_confirmation = None
@@ -537,10 +559,12 @@ class SchedulingAgent:
             else:
                 result = await self._tools.execute("confirm_booking", {"draft_id": pc.draft_id}, session_id=session.session_id)
                 if result.get("error_code"):
+                    # Draft chết rồi -> phải xoá pending, nếu giữ lại session sẽ kẹt
+                    # (SLOT không vào _handle_confirmation nữa nhưng pending treo mãi).
+                    session.pending_confirmation = None
                     self._transition(session, AgentState.SLOT)
-                    code = result["error_code"]
                     msg = ("Rất tiếc, khung giờ vừa bị đặt mất rồi ạ. Anh/chị chọn giúp em giờ khác nhé?"
-                           if code == "slot_taken" else
+                           if result["error_code"] == "slot_taken" else
                            "Bản nháp đã hết hạn ạ. Anh/chị xác nhận lại lịch muốn đặt giúp em nhé?")
                     return self._resp(session, msg, trace_id)
                 session.pending_confirmation = None

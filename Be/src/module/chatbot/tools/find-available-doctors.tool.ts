@@ -1,5 +1,5 @@
 import { PrismaService } from '@/common/prisma/prisma.service';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { format, isBefore, isValid, parse } from 'date-fns';
 import { vi } from 'date-fns/locale';
 
@@ -14,11 +14,15 @@ interface FindAvailableDoctorsParams {
 
 @Injectable()
 export class FindAvailableDoctorsTool {
+  private readonly logger = new Logger(FindAvailableDoctorsTool.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   async execute(params: FindAvailableDoctorsParams) {
     try {
-      console.log('🔎 FindAvailableDoctors Params:', params);
+      this.logger.debug(
+        `FindAvailableDoctors params: ${JSON.stringify(params)}`,
+      );
 
       // 1. Validate: Phải có ít nhất locationName hoặc serviceName
       if (!params.locationName && !params.serviceName) {
@@ -395,7 +399,7 @@ export class FindAvailableDoctorsTool {
         doctors: availableDoctors,
       };
     } catch (error) {
-      console.error('Find available doctors tool error:', error);
+      this.logger.error('Find available doctors tool error', error?.stack);
       return {
         error: 'Có lỗi xảy ra khi tìm kiếm bác sĩ available',
         details: error.message,

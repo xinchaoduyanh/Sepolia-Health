@@ -21,12 +21,14 @@ class TimePreference(str, Enum):
 
 
 # Biên giờ mặc định (cứng trong code, configurable). GMT+7.
+# MORNING kết thúc 12:00 để khớp luồng đặt lịch của app (slot bắt đầu trước
+# 12:00 là buổi sáng -> slot 11:30-12:00 vẫn thuộc sáng). Nửa mở [start, end).
 _DEFAULT_WINDOWS: dict[TimePreference, tuple[time, time]] = {
-    TimePreference.MORNING: (time(6, 0), time(11, 30)),
-    TimePreference.NOON: (time(11, 30), time(13, 0)),
-    TimePreference.AFTERNOON: (time(13, 0), time(17, 0)),
+    TimePreference.MORNING: (time(6, 0), time(12, 0)),
+    TimePreference.NOON: (time(11, 0), time(13, 30)),
+    TimePreference.AFTERNOON: (time(12, 0), time(17, 30)),
     TimePreference.EVENING: (time(17, 0), time(21, 0)),
-    TimePreference.OFFICE: (time(8, 0), time(17, 0)),
+    TimePreference.OFFICE: (time(8, 0), time(17, 30)),
 }
 
 

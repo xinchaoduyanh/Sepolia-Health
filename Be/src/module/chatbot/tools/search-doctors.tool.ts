@@ -1,5 +1,5 @@
 import { PrismaService } from '@/common/prisma/prisma.service';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import Fuse from 'fuse.js';
 
 interface SearchDoctorsParams {
@@ -11,6 +11,8 @@ interface SearchDoctorsParams {
 
 @Injectable()
 export class SearchDoctorsTool {
+  private readonly logger = new Logger(SearchDoctorsTool.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   async execute(params: SearchDoctorsParams) {
@@ -220,7 +222,7 @@ export class SearchDoctorsTool {
           'Bạn có thể trả lời bằng số thứ tự hoặc tên đầy đủ của bác sĩ để mình hỗ trợ nhanh nhất nhé.',
       };
     } catch (error) {
-      console.error('Search doctors tool error:', error);
+      this.logger.error('Search doctors tool error', error?.stack);
       return {
         error: 'Có lỗi xảy ra khi tìm kiếm bác sĩ',
         details: error.message,

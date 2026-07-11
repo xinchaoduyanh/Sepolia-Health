@@ -1,10 +1,12 @@
 import { InjectQueue } from '@nestjs/bullmq';
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Queue } from 'bullmq';
 import { CRON_JOB } from './cron-job.constant';
 
 @Injectable()
 export class CronJobService implements OnModuleInit {
+  private readonly logger = new Logger(CronJobService.name);
+
   constructor(
     @InjectQueue(CRON_JOB.APPOINTMENT.QUEUE_NAME)
     private readonly appointmentQueue: Queue,
@@ -24,6 +26,8 @@ export class CronJobService implements OnModuleInit {
       },
     );
 
-    console.log('✅ Appointment status update cronjob scheduled (every hour)');
+    this.logger.log(
+      'Appointment status update cronjob scheduled (every 30 minutes)',
+    );
   }
 }

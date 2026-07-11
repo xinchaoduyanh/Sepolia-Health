@@ -1,6 +1,7 @@
 """Dependency injection cho FastAPI."""
 from __future__ import annotations
 
+import hmac
 from functools import lru_cache
 
 from fastapi import Depends, Header, HTTPException
@@ -99,7 +100,6 @@ def build_agent_for_user(
         model,
         ToolRegistry(scoped_bridge, retriever=retriever),
         prompts,
-        retriever=retriever,
         emergency_detector=emergency_detector,
         knowledge_policy=knowledge_policy,
     )
@@ -109,5 +109,6 @@ def require_internal_token(
     x_internal_token: str | None = Header(default=None),
     settings: Settings = Depends(get_settings),
 ) -> None:
-    if x_internal_token != settings.internal_shared_secret:
+    # So sánh hằng-thời-gian: != rò rỉ độ dài prefix khớp qua timing side-channel.
+    if x_internal_token is None or not hmac.compare_digest(x_internal_token, settings.internal_shared_secret):
         raise HTTPException(status_code=401, detail="invalid or missing X-Internal-Token")

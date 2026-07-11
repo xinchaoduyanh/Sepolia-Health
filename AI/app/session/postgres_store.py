@@ -178,7 +178,10 @@ class PostgresSessionStore(SessionStore):
                 # Increment version
                 new_version = state.version + 1
                 state.version = new_version
-                
+                # Refresh last_updated trong snapshot JSON — create_session dựa vào
+                # field này để quyết định reconnect hay mở session mới.
+                state.last_updated = datetime.datetime.now(datetime.timezone.utc)
+
                 db_state = state.model_dump(mode='json')
                 
                 now = datetime.datetime.utcnow()
@@ -189,8 +192,7 @@ class PostgresSessionStore(SessionStore):
                 db_session.state = db_state
                 db_session.version = new_version
                 db_session.updatedAt = now
-                if closed_at:
-                    db_session.closedAt = closed_at
+                db_session.closedAt = closed_at
 
         return state
 

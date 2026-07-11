@@ -15,7 +15,7 @@ def _registry() -> PromptRegistry:
 
 def test_load_system_prompt():
     p = _registry().get("scheduling-copilot")
-    assert p.kind == "system" and p.version == 1 and p.status == "active"
+    assert p.kind == "system" and p.version == 2 and p.status == "active"
 
 
 def test_refusals_loaded():

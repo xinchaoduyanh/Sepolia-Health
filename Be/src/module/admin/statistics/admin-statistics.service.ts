@@ -1,5 +1,5 @@
 import { PrismaService } from '@/common/prisma/prisma.service';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { AppointmentStatus, PaymentStatus, Role } from '@prisma/client';
 import {
   AppointmentsChartResponseDto,
@@ -16,6 +16,8 @@ import {
 
 @Injectable()
 export class AdminStatisticsService {
+  private readonly logger = new Logger(AdminStatisticsService.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   async getUserStatistics(
@@ -1158,13 +1160,13 @@ export class AdminStatisticsService {
         },
       });
 
-      console.log(
+      this.logger.debug(
         `3months query: Found ${revenueData.length} billing records between ${startDate.toISOString()} and ${endDate.toISOString()}`,
       );
 
       // Generate all week ranges
       const weekRanges = this.generateWeekRanges(startDate, endDate);
-      console.log(`3months: Generated ${weekRanges.length} week ranges`);
+      this.logger.debug(`3months: Generated ${weekRanges.length} week ranges`);
 
       // Initialize data map with all weeks and clinics
       const dataMap = new Map<string, Map<number, number>>();
@@ -1223,7 +1225,10 @@ export class AdminStatisticsService {
         clinics: clinics.map((c) => ({ clinicId: c.id, clinicName: c.name })),
       };
     } catch (error) {
-      console.error('Error in getRevenueChartBy3MonthsOptimized:', error);
+      this.logger.error(
+        'Error in getRevenueChartBy3MonthsOptimized',
+        error?.stack,
+      );
       throw error;
     }
   }
@@ -1355,7 +1360,7 @@ export class AdminStatisticsService {
         clinics: clinics.map((c) => ({ clinicId: c.id, clinicName: c.name })),
       };
     } catch (error) {
-      console.error('Error in getRevenueChartByYearOptimized:', error);
+      this.logger.error('Error in getRevenueChartByYearOptimized', error?.stack);
       throw error;
     }
   }

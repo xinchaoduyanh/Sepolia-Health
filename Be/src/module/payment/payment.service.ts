@@ -3,6 +3,7 @@ import {
   BadRequestException,
   NotFoundException,
   Inject,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '@/common/prisma/prisma.service';
 import { ConfigType } from '@nestjs/config';
@@ -22,6 +23,8 @@ import { MarkAsPaidDto } from './dto/request/mark-as-paid.dto';
 
 @Injectable()
 export class PaymentService {
+  private readonly logger = new Logger(PaymentService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
@@ -225,14 +228,10 @@ export class PaymentService {
       await this.redis.getPaymentCodeByAppointmentId(appointmentId);
     if (existingCode) {
       await this.redis.cancelPaymentCode(existingCode);
+      this.logger.debug(
+        `Cancelled existing payment code ${existingCode} for appointment ${appointmentId}`,
+      );
     }
-
-    console.log(
-      'Cancelling existing payment code for appointment:',
-      appointmentId,
-      'Code:',
-      existingCode,
-    );
 
     // Create transaction record with userPromotionId (if provided)
     const transaction = await this.prisma.transaction.create({
@@ -264,15 +263,9 @@ export class PaymentService {
     // SEPAY QR format: https://qr.sepay.vn/img?acc={account}&bank={bankCode}&amount={amount}&des={description}
     const qrCodeUrl = `https://qr.sepay.vn/img?acc=${sepayAccountNumber}&bank=${sepayBankCode}&amount=4000&des=DADZ${paymentCode}`;
 
-    console.log('Generated QR Code Details:');
-    console.log('- Payment Code (raw):', paymentCode);
-    console.log('- Payment Code (full):', fullPaymentCode);
-    console.log('- Original Amount:', amount);
-    console.log('- QR Amount: 4000 (hardcoded)');
-    console.log('- Description: DADZ' + paymentCode);
-    console.log('- SEPAY Account:', sepayAccountNumber);
-    console.log('- SEPAY Bank Code:', sepayBankCode);
-    console.log('- QR Code URL:', qrCodeUrl);
+    this.logger.debug(
+      `Generated QR code for appointment ${appointmentId}: code=${fullPaymentCode}, amount=${amount}`,
+    );
 
     return {
       qrCodeUrl,
@@ -350,15 +343,12 @@ export class PaymentService {
 
     const paymentCode = `DADZ${paymentCodeMatch[1]}`;
 
-    console.log('Webhook processing:');
-    console.log('- Raw content:', webhookPayload.content);
-    console.log('- Extracted payment code:', paymentCode);
-    console.log('- Transfer amount:', webhookPayload.transferAmount);
+    this.logger.log(
+      `Processing SEPAY webhook: code=${paymentCode}, transferAmount=${webhookPayload.transferAmount}`,
+    );
 
     // Get payment code from Redis
     const paymentCodeData = await this.redis.getPaymentCode(paymentCode);
-
-    console.log('- Payment code data from Redis:', paymentCodeData);
 
     if (!paymentCodeData) {
       throw new NotFoundException(
@@ -506,11 +496,11 @@ export class PaymentService {
         });
       }
     } catch (error) {
-      console.error(
-        'Failed to send payment success notification to patient:',
-        error,
-      );
       // Don't throw error, just log it
+      this.logger.error(
+        'Failed to send payment success notification to patient',
+        error instanceof Error ? error.stack : String(error),
+      );
     }
 
     return {
@@ -600,13 +590,6 @@ export class PaymentService {
     // Find payment code for this appointment
     const existingCode =
       await this.redis.getPaymentCodeByAppointmentId(appointmentId);
-
-    console.log(
-      'Cancelling payment code for appointment:',
-      appointmentId,
-      'Found code:',
-      existingCode,
-    );
 
     if (!existingCode) {
       throw new NotFoundException(

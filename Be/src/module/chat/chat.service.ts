@@ -506,7 +506,7 @@ export class ChatService implements OnModuleInit {
       }
     } catch {
       // Channel chưa tồn tại, tiếp tục tạo mới
-      console.log('Channel does not exist, creating new one');
+      this.logger.debug('Channel does not exist, creating new one');
     }
 
     // Upsert users vào Stream Chat

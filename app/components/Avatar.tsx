@@ -25,7 +25,7 @@ export function Avatar({ source, name, size = 40, role, style }: AvatarProps) {
     return (
       <Image
         source={{ uri: source }}
-        style={avatarStyle}
+        style={avatarStyle as any}
       />
     );
   }

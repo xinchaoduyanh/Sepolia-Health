@@ -9,8 +9,7 @@ import json
 import logging
 import time
 import uuid
-import time
-import uuid
+from datetime import datetime, timedelta, timezone
 from typing import Callable, Awaitable
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -41,7 +40,7 @@ from app.rag.policy import KnowledgePolicy
 from app.rag.retriever import KnowledgeRetriever
 from app.routing.model_router import ModelRouter
 from app.session.models import SessionState
-from app.session.store import SessionStore
+from app.session.store import SessionStore, SessionConflictError
 from app.tools.be_bridge import BridgeClient
 
 _LOG = logging.getLogger(__name__)
@@ -49,16 +48,30 @@ _LOG = logging.getLogger(__name__)
 router = APIRouter(prefix="/chat", tags=["chat"])
 
 
+def _session_fresh(state: SessionState, max_age_minutes: int) -> bool:
+    last = state.last_updated
+    if last.tzinfo is None:  # snapshot cũ lưu naive datetime
+        last = last.replace(tzinfo=timezone.utc)
+    return datetime.now(timezone.utc) - last <= timedelta(minutes=max_age_minutes)
+
+
 @router.post("/sessions", response_model=CreateSessionResponse)
 async def create_session(
     req: CreateSessionRequest,
     store: SessionStore = Depends(get_store),
+    settings: Settings = Depends(get_settings),
 ) -> CreateSessionResponse:
     if req.channel_id:
         existing = await store.get_open_by_channel(req.channel_id)
         # Defense-in-depth: chỉ reconnect nếu session thuộc đúng user. Channel đã là
         # ai-consult-{userId} nhưng vẫn chốt để không nối nhầm session của user khác.
-        if existing and existing.user_id == req.user_id:
+        # Và chỉ reconnect session còn TƯƠI: state/requirement từ nhiều ngày trước
+        # (bác sĩ X, giờ Y đã qua) chỉ gây kẹt luồng mới — quá hạn thì mở session mới.
+        if (
+            existing
+            and existing.user_id == req.user_id
+            and _session_fresh(existing, settings.session_reconnect_max_age_minutes)
+        ):
             log_event("session_reconnected", session_id=existing.session_id, user_id=req.user_id)
             return CreateSessionResponse(session_id=existing.session_id)
 
@@ -109,24 +122,34 @@ async def _run_turn(
 
     trace_id = new_trace_id()
     started = time.perf_counter()
-    resp = await agent.handle_turn(state, message, trace_id, history=history, stream_callback=stream_callback)
-    latency_ms = int((time.perf_counter() - started) * 1000)
-    await store.update(state)
-    log_event("turn", session_id=session_id, trace_id=trace_id, state=state.agent_state.value)
-
-    # Observability: ghi AiTurn. Lỗi ghi không được làm hỏng lượt chat.
+    resp = None
     try:
-        await store.record_turn(
-            session_id=session_id,
-            trace_id=trace_id,
-            user_message=message,
-            ai_message=resp.message,
-            tool_results=[s.model_dump() for s in resp.tool_results_summary],
-            model=ModelRouter(settings).select("response"),
-            latency_ms=latency_ms,
-        )
-    except Exception:  # noqa: BLE001 - observability không được chặn happy path
-        _LOG.exception("record_turn failed for session %s trace %s", session_id, trace_id)
+        resp = await agent.handle_turn(state, message, trace_id, history=history, stream_callback=stream_callback)
+    finally:
+        latency_ms = int((time.perf_counter() - started) * 1000)
+        try:
+            await store.update(state)
+        except SessionConflictError:
+            if resp is None:
+                pass  # Do not mask original exception from handle_turn
+            else:
+                raise HTTPException(status_code=409, detail="session busy, retry")
+        
+        log_event("turn", session_id=session_id, trace_id=trace_id, state=state.agent_state.value)
+
+        if resp is not None:
+            try:
+                await store.record_turn(
+                    session_id=session_id,
+                    trace_id=trace_id,
+                    user_message=message,
+                    ai_message=resp.message,
+                    tool_results=[s.model_dump() for s in resp.tool_results_summary],
+                    model=ModelRouter(settings).select("response"),
+                    latency_ms=latency_ms,
+                )
+            except Exception:
+                _LOG.exception("record_turn failed for session %s trace %s", session_id, trace_id)
 
     return resp
 
@@ -165,27 +188,30 @@ async def stream_message(
     queue = asyncio.Queue()
 
     async def stream_callback(chunk: str):
-        await queue.put(chunk)
+        await queue.put({"type": "chunk", "text": chunk})
 
     async def run_task():
         try:
             resp = await _run_turn(
                 session_id, req.message, store, provider, bridge, prompts, settings, retriever, emergency_detector, knowledge_policy, stream_callback=stream_callback
             )
-            await queue.put({"final_response": resp.model_dump(mode="json")})
+            await queue.put({"type": "final", "response": resp.model_dump(mode="json")})
         except Exception as e:
             _LOG.exception("Error in stream task")
-            await queue.put(f"[ERROR] {str(e)}")
+            await queue.put({"type": "error", "message": "Có lỗi xảy ra, anh/chị thử lại giúp em nhé."})
         finally:
             await queue.put(None)  # EOF
 
     async def sse_generator():
         task = asyncio.create_task(run_task())
-        while True:
-            chunk = await queue.get()
-            if chunk is None:
-                break
-            yield f"data: {json.dumps({'chunk': chunk}, ensure_ascii=False)}\n\n"
+        try:
+            while True:
+                chunk = await queue.get()
+                if chunk is None:
+                    break
+                yield f"data: {json.dumps(chunk, ensure_ascii=False)}\n\n"
+        finally:
+            task.cancel()
             
     return StreamingResponse(sse_generator(), media_type="text/event-stream")
 

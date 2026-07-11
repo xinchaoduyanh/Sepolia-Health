@@ -9,6 +9,7 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import {
@@ -32,6 +33,8 @@ import {
 
 @Injectable()
 export class AppointmentService {
+  private readonly logger = new Logger(AppointmentService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly notificationService: NotificationService,
@@ -453,8 +456,11 @@ export class AppointmentService {
           );
         }
       } catch (error) {
-        console.error('Failed to send update notification to patient:', error);
         // Don't throw error, just log it
+        this.logger.error(
+          'Failed to send update notification to patient',
+          error?.stack,
+        );
       }
     }
 
@@ -531,11 +537,11 @@ export class AppointmentService {
         );
       }
     } catch (error) {
-      console.error(
-        'Failed to send cancellation notification to patient:',
-        error,
-      );
       // Don't throw error, just log it
+      this.logger.error(
+        'Failed to send cancellation notification to patient',
+        error?.stack,
+      );
     }
 
     return new SuccessResponseDto();
@@ -601,8 +607,7 @@ export class AppointmentService {
       };
     }
 
-    console.log(where.patientProfileId);
-    // Xử lý filter theo thời gian:
+// Xử lý filter theo thời gian:
     // - Cho UPCOMING/ON_GOING: chỉ lấy appointments trong tương lai
     // - Cho COMPLETED/CANCELLED: không filter thời gian (để lấy lịch sử trong quá khứ)
     const isHistoryQuery = status === 'COMPLETED' || status === 'CANCELLED';
@@ -1205,8 +1210,8 @@ export class AppointmentService {
     try {
       const patientUserId = appointment.patientProfile?.managerId?.toString();
       if (!patientUserId) {
-        console.warn(
-          '⚠️ [AppointmentService] Cannot send notification: patientProfile.managerId is missing',
+        this.logger.warn(
+          'Cannot send notification: patientProfile.managerId is missing',
         );
       } else {
         await this.notificationService.sendCreateAppointmentPatientNotification(
@@ -1223,7 +1228,10 @@ export class AppointmentService {
         );
       }
     } catch (error) {
-      console.error('Failed to send notification:', error);
+      this.logger.error(
+        'Failed to send notification to patient',
+        error?.stack,
+      );
     }
 
     // Send notification to doctor
@@ -1240,7 +1248,7 @@ export class AppointmentService {
         hostUrl: appointment.hostUrl,
       });
     } catch (error) {
-      console.error('Failed to send notification to doctor:', error);
+      this.logger.error('Failed to send notification to doctor', error?.stack);
     }
 
     // Return appointment response with all required data

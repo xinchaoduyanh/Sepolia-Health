@@ -1,11 +1,14 @@
 import { PrismaService } from '@/common/prisma/prisma.service';
 import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
+import { Logger } from '@nestjs/common';
 import { AppointmentStatus } from '@prisma/client';
 import { Job } from 'bullmq';
 import { CRON_JOB } from './cron-job.constant';
 
 @Processor(CRON_JOB.APPOINTMENT.QUEUE_NAME)
 export class CronJobProcessor extends WorkerHost {
+  private readonly logger = new Logger(CronJobProcessor.name);
+
   constructor(private readonly prisma: PrismaService) {
     super();
   }
@@ -39,8 +42,8 @@ export class CronJobProcessor extends WorkerHost {
 
     // Log the results for monitoring
     if (completedResult.count > 0 || cancelledResult.count > 0) {
-      console.log(
-        `📅 Updated appointments: ${completedResult.count} completed, ${cancelledResult.count} cancelled`,
+      this.logger.log(
+        `Updated appointments: ${completedResult.count} completed, ${cancelledResult.count} cancelled`,
       );
     }
   }
@@ -65,19 +68,19 @@ export class CronJobProcessor extends WorkerHost {
 
   @OnWorkerEvent('completed')
   onCompleted(job: Job<any>) {
-    console.log(`✅ Appointment status update job #${job.id} completed`);
+    this.logger.log(`Appointment status update job #${job.id} completed`);
   }
 
   @OnWorkerEvent('failed')
   onFailed(job: Job<any>, error: Error) {
-    console.log(
-      `❌ Appointment status update job #${job.id} failed:`,
-      error.message,
+    this.logger.error(
+      `Appointment status update job #${job.id} failed: ${error.message}`,
+      error.stack,
     );
   }
 
   @OnWorkerEvent('active')
   onActive(job: Job<any>) {
-    console.log(`🔄 Appointment status update job #${job.id} is running...`);
+    this.logger.log(`Appointment status update job #${job.id} is running...`);
   }
 }

@@ -429,20 +429,28 @@ const AddPatientProfileScreen = () => {
               <Text className="mb-3 text-xs font-bold uppercase tracking-wider text-[#64748B]">
                 Đây là hồ sơ của <Text className="text-red-500">*</Text>
               </Text>
-              <View className="flex-row flex-wrap gap-y-3 justify-between">
-                {relationshipOptions.map((option) => {
-                  const isSelected = formData.relationship === option.value;
-                  return (
+              <View className="flex-col">
+                <View className="mb-3 flex-row space-x-3">
+                  {relationshipOptions.slice(0, 3).map((option) => (
                     <Pressable
                       key={option.value}
-                      className="rounded-full py-2.5 border"
+                      className={`flex-1 rounded-lg border-2 py-3 px-1 ${
+                        formData.relationship === option.value
+                          ? 'border-emerald-500 bg-emerald-100'
+                          : relationshipError
+                            ? 'border-red-200 bg-red-50'
+                            : 'border-gray-200 bg-gray-50'
+                      }`}
                       style={({ pressed }) => [
+                        { opacity: pressed ? 0.7 : 1 },
                         {
-                          width: '31%',
-                          opacity: pressed ? 0.7 : 1,
-                          backgroundColor: isSelected ? '#0284C7' : '#FFFFFF',
-                          borderColor: isSelected ? '#0284C7' : relationshipError ? '#FCA5A5' : '#E2E8F0',
-                          borderWidth: 1,
+                          zIndex: formData.relationship === option.value ? 10 : 1,
+                          backgroundColor:
+                            formData.relationship === option.value
+                              ? '#D1FAE5'
+                              : relationshipError
+                                ? '#FEF2F2'
+                                : '#F9FAFB',
                         },
                       ]}
                       onPress={() => {
@@ -451,13 +459,116 @@ const AddPatientProfileScreen = () => {
                       }}>
                       <Text
                         className={`text-center text-sm font-semibold ${
-                          isSelected ? 'text-white' : relationshipError ? 'text-red-500' : 'text-[#475569]'
+                          formData.relationship === option.value
+                            ? 'text-emerald-700'
+                            : relationshipError
+                              ? 'text-red-600'
+                              : 'text-gray-600'
+                        }`}
+                        numberOfLines={1}
+                        adjustsFontSizeToFit>
+                        {option.label}
+                      </Text>
+                      {formData.relationship === option.value && (
+                        <View className="absolute -right-2 -top-2 h-5 w-5 items-center justify-center rounded-full bg-emerald-500">
+                          <Ionicons name="checkmark" size={12} color="white" />
+                        </View>
+                      )}
+                    </Pressable>
+                  ))}
+                </View>
+                <View className="mb-3 flex-row space-x-3">
+                  {relationshipOptions.slice(3, 6).map((option) => (
+                    <Pressable
+                      key={option.value}
+                      className={`flex-1 rounded-lg border-2 py-3 px-1 ${
+                        formData.relationship === option.value
+                          ? 'border-emerald-500 bg-emerald-100'
+                          : relationshipError
+                            ? 'border-red-200 bg-red-50'
+                            : 'border-gray-200 bg-gray-50'
+                      }`}
+                      style={({ pressed }) => [
+                        { opacity: pressed ? 0.7 : 1 },
+                        {
+                          zIndex: formData.relationship === option.value ? 10 : 1,
+                          backgroundColor:
+                            formData.relationship === option.value
+                              ? '#D1FAE5'
+                              : relationshipError
+                                ? '#FEF2F2'
+                                : '#F9FAFB',
+                        },
+                      ]}
+                      onPress={() => {
+                        setFormData((prev) => ({ ...prev, relationship: option.value }));
+                        if (relationshipError) setRelationshipError('');
+                      }}>
+                      <Text
+                        className={`text-center text-sm font-semibold ${
+                          formData.relationship === option.value
+                            ? 'text-emerald-700'
+                            : relationshipError
+                              ? 'text-red-600'
+                              : 'text-gray-600'
+                        }`}
+                        numberOfLines={1}
+                        adjustsFontSizeToFit>
+                        {option.label}
+                      </Text>
+                      {formData.relationship === option.value && (
+                        <View className="absolute -right-2 -top-2 h-5 w-5 items-center justify-center rounded-full bg-emerald-500">
+                          <Ionicons name="checkmark" size={12} color="white" />
+                        </View>
+                      )}
+                    </Pressable>
+                  ))}
+                </View>
+                <View className="flex-row space-x-3">
+                  {relationshipOptions.slice(6).map((option) => (
+                    <Pressable
+                      key={option.value}
+                      className={`flex-1 rounded-lg border-2 py-3 px-1 ${
+                        formData.relationship === option.value
+                          ? 'border-emerald-500 bg-emerald-100'
+                          : relationshipError
+                            ? 'border-red-200 bg-red-50'
+                            : 'border-gray-200 bg-gray-50'
+                      }`}
+                      style={({ pressed }) => [
+                        { opacity: pressed ? 0.7 : 1 },
+                        {
+                          zIndex: formData.relationship === option.value ? 10 : 1,
+                          backgroundColor:
+                            formData.relationship === option.value
+                              ? '#D1FAE5'
+                              : relationshipError
+                                ? '#FEF2F2'
+                                : '#F9FAFB',
+                        },
+                      ]}
+                      onPress={() => {
+                        setFormData((prev) => ({ ...prev, relationship: option.value }));
+                        if (relationshipError) setRelationshipError('');
+                      }}>
+                      <Text
+                        className={`text-center text-sm font-semibold ${
+                          formData.relationship === option.value
+                            ? 'text-emerald-700'
+                            : relationshipError
+                              ? 'text-red-600'
+                              : 'text-gray-600'
                         }`}>
                         {option.label}
                       </Text>
+                      {formData.relationship === option.value && (
+                        <View className="absolute -right-2 -top-2 h-5 w-5 items-center justify-center rounded-full bg-emerald-500">
+                          <Ionicons name="checkmark" size={12} color="white" />
+                        </View>
+                      )}
                     </Pressable>
-                  );
-                })}
+                  ))}
+                </View>
               </View>
               {relationshipError && (
                 <Text className="mt-2 text-xs text-red-600">{relationshipError}</Text>

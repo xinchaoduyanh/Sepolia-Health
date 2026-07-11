@@ -1,0 +1,1 @@
+const { PrismaClient } = require('@prisma/client'); const prisma = new PrismaClient(); async function main() { const docs = await prisma.doctorAvailability.findMany({ where: { dayOfWeek: 5 }, include: { doctor: { select: { firstName: true, lastName: true } } } }); console.log(JSON.stringify(docs, null, 2)); } main();

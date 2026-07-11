@@ -30,6 +30,14 @@ class FakeProvider:
         self.calls.append(messages)
         return self._responses.pop(0)
 
+    async def chat_stream(self, model, messages, tools=None, temperature=0.1, max_tokens=1024):
+        self.calls.append(messages)
+        response = self._responses.pop(0)
+        for tc in response.tool_calls:
+            yield tc
+        if response.content:
+            yield response.content
+
     async def embed(self, model, texts):
         return [[0.0] * 1024 for _ in texts]
 

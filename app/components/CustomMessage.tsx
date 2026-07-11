@@ -134,23 +134,46 @@ const getMarkdownStyles = (isMyMessage: boolean) => ({
   },
 });
 
+// Nút xác nhận chỉ sống 10 phút (khớp TTL draft ở BE ai-bridge và agent AI).
+// Quá hạn thì thẻ đổi sang "Đã hết hạn" — bấm tin nhắn cũ không thực thi nữa.
+const CONFIRM_TTL_MS = 10 * 60 * 1000;
+
 // Thẻ "Tin nhắn xác nhận" kèm nút — user chỉ cần bấm, không phải chat lại.
 const ConfirmationCard = ({
   text,
   kind,
   channelId,
+  createdAt,
+  resolved,
 }: {
   text: string;
   kind?: string;
   channelId?: string;
+  createdAt?: Date;
+  resolved?: boolean;
 }) => {
   const queryClient = useQueryClient();
-  const [status, setStatus] = React.useState<'idle' | 'loading' | 'done' | 'error'>('idle');
+  // resolved: BE đã đánh dấu thẻ này xử lý xong (extra.resolved trên message) —
+  // bền qua việc rời/vào lại đoạn chat, khác state cục bộ chỉ sống trong 1 mount.
+  const [status, setStatus] = React.useState<'idle' | 'loading' | 'done' | 'error'>(
+    resolved ? 'done' : 'idle'
+  );
   const isCancel = kind === 'cancel_booking';
   const accent = isCancel ? '#DC2626' : '#059669'; // đỏ huỷ / xanh lá xác nhận
 
+  const expiresAtMs = createdAt ? createdAt.getTime() + CONFIRM_TTL_MS : null;
+  const [expired, setExpired] = React.useState(
+    expiresAtMs !== null && Date.now() > expiresAtMs
+  );
+  // Thẻ đang mở trên màn hình mà vừa quá hạn -> tự chuyển trạng thái.
+  React.useEffect(() => {
+    if (expired || expiresAtMs === null) return;
+    const timer = setTimeout(() => setExpired(true), expiresAtMs - Date.now());
+    return () => clearTimeout(timer);
+  }, [expired, expiresAtMs]);
+
   const handlePress = async () => {
-    if (!channelId || status === 'loading' || status === 'done') return;
+    if (!channelId || expired || status === 'loading' || status === 'done') return;
     setStatus('loading');
     try {
       await ChatbotAPI.confirmBooking(channelId);
@@ -210,6 +233,23 @@ const ConfirmationCard = ({
             }}>
             <Ionicons name="checkmark-circle" size={18} color={accent} />
             <Text style={{ color: accent, fontWeight: '700' }}>Đã xác nhận</Text>
+          </View>
+        ) : expired ? (
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 6,
+              marginTop: 10,
+              paddingVertical: 10,
+              borderRadius: 10,
+              backgroundColor: '#F1F5F9',
+            }}>
+            <Ionicons name="time-outline" size={18} color="#94A3B8" />
+            <Text style={{ color: '#94A3B8', fontWeight: '700' }}>
+              Đã hết hạn — nhắn lại để đặt mới
+            </Text>
           </View>
         ) : (
           <TouchableOpacity
@@ -294,6 +334,8 @@ export const CustomMessage = () => {
             text={message.text || ''}
             kind={meta?.proposedAction?.kind}
             channelId={channel?.id}
+            createdAt={message.created_at ? new Date(message.created_at) : undefined}
+            resolved={Boolean(meta?.resolved)}
           />
         </View>
       </Pressable>
@@ -358,19 +400,19 @@ export const CustomMessage = () => {
           {/* Message Bubble with attachment */}
           <View
             style={{
-              backgroundColor: isMyMessage ? '#2563EB' : '#FFFFFF',
+              backgroundColor: isMyMessage ? '#2563EB' : isAIMessage ? '#FFFFFF' : '#FFFFFF',
               borderRadius: 20,
               borderBottomLeftRadius: isMyMessage ? 20 : 4,
               borderBottomRightRadius: isMyMessage ? 4 : 20,
               paddingHorizontal: 16,
               paddingVertical: 10,
-              shadowColor: isMyMessage ? '#2563EB' : '#000',
+              shadowColor: isMyMessage ? '#2563EB' : isAIMessage ? '#A855F7' : '#000',
               shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: isMyMessage ? 0.2 : 0.05,
-              shadowRadius: isMyMessage ? 4 : 2,
-              elevation: isMyMessage ? 2 : 1,
+              shadowOpacity: isMyMessage ? 0.2 : isAIMessage ? 0.12 : 0.05,
+              shadowRadius: isMyMessage ? 4 : isAIMessage ? 6 : 2,
+              elevation: isMyMessage ? 2 : isAIMessage ? 2 : 1,
               borderWidth: isMyMessage ? 0 : 1,
-              borderColor: '#E2E8F0',
+              borderColor: isAIMessage ? '#E9D5FF' : '#E2E8F0',
             }}>
             {displayText && (
               <Markdown style={getMarkdownStyles(isMyMessage)}>{displayText}</Markdown>

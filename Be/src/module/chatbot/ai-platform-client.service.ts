@@ -155,6 +155,7 @@ export class AiPlatformClient {
 
     return new Promise((resolve, reject) => {
       let finalState: AiMessageResponse | null = null;
+      let streamError: Error | null = null;
       let buffer = '';
 
       resp.data.on('data', (chunkBuffer: Buffer) => {
@@ -168,12 +169,15 @@ export class AiPlatformClient {
           if (line.startsWith('data: ')) {
             try {
               const data = JSON.parse(line.slice(6));
-              if (data.chunk) {
-                if (typeof data.chunk === 'string') {
-                  onChunk(data.chunk);
-                } else if (data.chunk.final_response) {
-                  finalState = data.chunk.final_response;
-                }
+              // SSE của AI có type (AI/app/api/chat.py::stream_message):
+              // chunk = text từng đoạn, final = MessageResponse đầy đủ,
+              // error = lỗi đã che chi tiết nội bộ.
+              if (data.type === 'chunk' && typeof data.text === 'string') {
+                onChunk(data.text);
+              } else if (data.type === 'final' && data.response) {
+                finalState = data.response;
+              } else if (data.type === 'error') {
+                streamError = new Error(data.message || 'AI stream error');
               }
             } catch (e) {
               this.logger.error('Failed to parse SSE line', e);
@@ -183,7 +187,8 @@ export class AiPlatformClient {
       });
 
       resp.data.on('end', () => {
-        if (finalState) resolve(finalState);
+        if (streamError) reject(streamError);
+        else if (finalState) resolve(finalState);
         else reject(new Error('Stream ended without final response'));
       });
       

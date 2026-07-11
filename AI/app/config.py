@@ -2,8 +2,11 @@
 from __future__ import annotations
 
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+_BASE = Path(__file__).resolve().parents[1]
 
 
 class Settings(BaseSettings):
@@ -19,8 +22,6 @@ class Settings(BaseSettings):
     default_model_response: str = "qwen2.5:3b-instruct-q4_K_M"
     default_model_summarization: str = "qwen2.5:3b-instruct-q4_K_M"
     embedding_model: str = "bge-m3"
-    ai_history_max_turns: int = 6
-
 
     # Gemini (cloud) — nếu bật (api_key HOẶC use_vertex), chat/tool-calling dùng
     # Gemini thay Ollama (xem deps.get_provider + ModelRouter). Embedding/RAG vẫn local.
@@ -47,9 +48,13 @@ class Settings(BaseSettings):
     # Gemini context lớn nên 6 lượt thoải mái; tăng nếu cần nhớ xa hơn (đổi cost/latency).
     ai_history_max_turns: int = 6
 
-    prompts_dir: str = "./prompts"
-    knowledge_dir: str = "./knowledge"
-    chroma_dir: str = "./data/chroma"
+    # Session mở trên channel chỉ được reconnect trong khoảng này; cũ hơn thì mở
+    # session mới (state/requirement cũ nhiều ngày trước chỉ gây kẹt và nhiễu).
+    session_reconnect_max_age_minutes: int = 120
+
+    prompts_dir: str = str(_BASE / "prompts")
+    knowledge_dir: str = str(_BASE / "knowledge")
+    chroma_dir: str = str(_BASE / "data" / "chroma")
 
 
 @lru_cache

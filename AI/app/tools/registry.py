@@ -32,26 +32,31 @@ _S = AgentState
 _SPEC: dict[str, tuple[type[BaseModel], str, set[AgentState]]] = {
     "resolve_date": (S.ResolveDateInput, "Đổi cụm thời gian tương đối thành ngày ISO. GỌI TRƯỚC mọi tool lịch.",
                      {_S.IDLE, _S.COLLECTING, _S.CANDIDATE, _S.SLOT}),
+    # Tool ĐỌC dữ liệu mở cho mọi state đang hội thoại (kể cả SLOT): user có quyền
+    # đổi hướng giữa chừng ("khám mắt ở Hà Đông đi") — chặn tool là model chỉ biết
+    # hứa "để em kiểm tra" rồi im vì không có gì để gọi.
     "search_clinics": (S.SearchClinicsInput, "Tìm/liệt kê cơ sở phòng khám. Để q trống để lấy TẤT CẢ cơ sở; lọc theo khu vực qua location.",
-                       {_S.IDLE, _S.COLLECTING}),
+                       {_S.IDLE, _S.COLLECTING, _S.CANDIDATE, _S.SLOT}),
     "search_services": (S.SearchServicesInput, "Tìm dịch vụ, có thể lọc theo phòng khám.",
-                        {_S.IDLE, _S.COLLECTING}),
+                        {_S.IDLE, _S.COLLECTING, _S.CANDIDATE, _S.SLOT}),
     "search_doctors": (S.SearchDoctorsInput, "Tìm bác sĩ (fuzzy theo tên), lọc theo dịch vụ.",
-                       {_S.IDLE, _S.COLLECTING, _S.CANDIDATE}),
+                       {_S.IDLE, _S.COLLECTING, _S.CANDIDATE, _S.SLOT}),
     "get_clinic_detail": (S.GetClinicDetailInput, "Lấy thông tin chi tiết phòng khám (sđt, mô tả, danh sách dịch vụ, số lượng bác sĩ).",
-                          {_S.IDLE, _S.COLLECTING, _S.CANDIDATE}),
+                          {_S.IDLE, _S.COLLECTING, _S.CANDIDATE, _S.SLOT}),
     "get_doctor_detail": (S.GetDoctorDetailInput, "Lấy thông tin chi tiết bác sĩ (kinh nghiệm, đánh giá trung bình, danh sách chuyên khoa và dịch vụ).",
-                          {_S.IDLE, _S.COLLECTING, _S.CANDIDATE}),
+                          {_S.IDLE, _S.COLLECTING, _S.CANDIDATE, _S.SLOT}),
     "get_doctor_availability": (S.GetDoctorAvailabilityInput, "Lịch trống của 1 bác sĩ ngày X (date ISO).",
                                 {_S.IDLE, _S.COLLECTING, _S.CANDIDATE, _S.SLOT}),
     "find_available_doctors": (S.FindAvailableDoctorsInput, "Tìm bác sĩ rảnh trong ngày/khung giờ.",
-                               {_S.IDLE, _S.COLLECTING, _S.CANDIDATE}),
+                               {_S.IDLE, _S.COLLECTING, _S.CANDIDATE, _S.SLOT}),
     "search_knowledge": (S.SearchKnowledgeInput, "Tra cứu kiến thức: bệnh/triệu chứng -> gợi ý chuyên khoa; thủ tục/chính sách đặt-huỷ-đổi lịch.",
                          {_S.IDLE, _S.COLLECTING, _S.CANDIDATE, _S.SLOT}),
     "resolve_patient_profile": (S.ResolvePatientProfileInput, "Lấy hồ sơ bệnh nhân của user.",
-                                {_S.IDLE, _S.COLLECTING}),
+                                {_S.IDLE, _S.COLLECTING, _S.CANDIDATE, _S.SLOT}),
+    # SLOT phải được phép: sau khi trình slot hoặc confirm fail (slot_taken/draft_expired)
+    # session ở SLOT — user chọn giờ xong model cần tạo draft ngay, thiếu SLOT thì kẹt vĩnh viễn.
     "create_booking_draft": (S.CreateBookingDraftInput, "Tạo bản nháp đặt lịch (chưa phải lịch thật). Chỉ gọi khi đã đủ bác sĩ + dịch vụ + giờ cụ thể.",
-                             {_S.COLLECTING, _S.DRAFT_READY}),
+                             {_S.COLLECTING, _S.SLOT, _S.DRAFT_READY}),
     "get_my_upcoming_appointments": (S.GetUpcomingAppointmentsInput, "Lịch hẹn sắp tới của user.",
                                      {_S.IDLE, _S.COLLECTING, _S.BOOKED, _S.FAILED}),
     "get_patient_history": (S.GetPatientHistoryInput, "Lịch sử khám bệnh gần đây của user bao gồm chẩn đoán, dặn dò và đơn thuốc.",
@@ -117,7 +122,9 @@ class ToolRegistry:
             if not self._retriever:
                 return {"error_code": "retriever_not_available"}
             chunks = await self._retriever.retrieve(a.query, top_k=5, filter_types=a.types, allowed_only=True)
-            return {"chunks": [{"canonical_name": c.canonical_name, "type": c.type, "text": c.text, "score": c.similarity_score} for c in chunks]}
+            if not chunks:
+                return {"chunks": [], "note": "không có tài liệu liên quan, hãy hỏi thêm triệu chứng"}
+            return {"chunks": [{"canonical_name": c.canonical_name, "type": c.type, "text": c.text[:1200], "score": c.similarity_score} for c in chunks]}
         if name == "get_doctor_availability":
             return await b.get_doctor_availability(a.doctor_id, a.date, a.service_id)
         if name == "find_available_doctors":

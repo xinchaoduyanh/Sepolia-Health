@@ -97,7 +97,7 @@ const NotificationProvider = ({ children }: { children: ReactNode }) => {
       // Cleanup old channel if exists
       if (notificationChannel) {
         try {
-          notificationChannel.off();
+          (notificationChannel as any).off();
           setNotificationChannel(undefined);
         } catch (err) {
           // Ignore cleanup errors
@@ -134,7 +134,7 @@ const NotificationProvider = ({ children }: { children: ReactNode }) => {
         if (notificationChannel) {
           try {
             console.log('🧹 [NotificationContext] Cleaning up old channel...');
-            notificationChannel.off();
+            (notificationChannel as any).off();
             setNotificationChannel(undefined);
           } catch (err) {
             console.warn('⚠️ [NotificationContext] Error cleaning up old channel:', err);
@@ -238,14 +238,14 @@ const NotificationProvider = ({ children }: { children: ReactNode }) => {
       isCancelled = true;
       if (currentChannel) {
         try {
-          currentChannel.off();
+          (currentChannel as any).off();
         } catch (err) {
           // Ignore cleanup errors
         }
       }
       if (notificationChannel) {
         try {
-          notificationChannel.off();
+          (notificationChannel as any).off();
           setNotificationChannel(undefined);
         } catch (err) {
           // Ignore cleanup errors

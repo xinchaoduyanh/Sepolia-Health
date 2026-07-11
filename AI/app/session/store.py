@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from app.session.models import SessionState
+from app.session.models import SessionState, _now
 
 
 class SessionConflictError(RuntimeError):
@@ -91,6 +91,7 @@ class InMemorySessionStore(SessionStore):
             )
         new = state.model_copy(deep=True)
         new.version += 1
+        new.last_updated = _now()  # cùng semantics với PostgresSessionStore
         self._data[state.session_id] = new
         return new.model_copy(deep=True)
 

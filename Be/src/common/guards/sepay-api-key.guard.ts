@@ -45,8 +45,6 @@ export class SepayApiKeyGuard implements CanActivate {
     }
 
     if (providedApiKey !== expectedApiKey) {
-      console.log('providedApiKey', providedApiKey);
-      console.log('expectedApiKey', expectedApiKey);
       this.logger.warn('Invalid SEPAY API key provided');
       throw new UnauthorizedException('Invalid API key');
     }

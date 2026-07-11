@@ -1,0 +1,1 @@
+const { PrismaClient } = require('@prisma/client'); const prisma = new PrismaClient(); async function main() { const a = await prisma.appointment.findFirst({ orderBy: { createdAt: 'desc' }, include: { doctor: { include: { clinic: true } }, service: true } }); console.log(JSON.stringify(a, null, 2)); } main();

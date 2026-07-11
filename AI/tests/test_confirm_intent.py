@@ -21,3 +21,12 @@ def test_ambiguous(text):
 @pytest.mark.parametrize("text", ["mấy giờ khám", "bác sĩ nào", ""])
 def test_other(text):
     assert classify_confirmation(text) == ConfirmIntent.OTHER
+
+
+def test_confirm_strong():
+    assert classify_confirmation("thôi được rồi, đặt đi") == ConfirmIntent.CONFIRM
+    assert classify_confirmation("không vấn đề gì, xác nhận giúp em") == ConfirmIntent.CONFIRM
+    assert classify_confirmation("thôi khỏi") == ConfirmIntent.REJECT
+    assert classify_confirmation("thôi") == ConfirmIntent.REJECT
+    assert classify_confirmation("không") == ConfirmIntent.REJECT
+    assert classify_confirmation("cũng được") == ConfirmIntent.AMBIGUOUS

@@ -68,11 +68,8 @@ export class AiBridgeController {
     return this.bridge.searchDoctors(q, this.numOrUndef(serviceId), this.numOrUndef(clinicId));
   }
 
-  @Get('doctors/:id')
-  getDoctorDetail(@Param('id', ParseIntPipe) id: number) {
-    return this.bridge.getDoctorDetail(id);
-  }
-
+  // 'doctors/available' PHẢI đứng trước 'doctors/:id' — Nest match theo thứ tự
+  // khai báo, để sau thì :id nuốt "available" -> ParseIntPipe 400.
   @Get('doctors/available')
   findAvailableDoctors(
     @Query('date') date: string,
@@ -86,6 +83,11 @@ export class AiBridgeController {
       this.numOrUndef(clinicId),
       timePreference,
     );
+  }
+
+  @Get('doctors/:id')
+  getDoctorDetail(@Param('id', ParseIntPipe) id: number) {
+    return this.bridge.getDoctorDetail(id);
   }
 
   @Get('doctors/:id/availability')

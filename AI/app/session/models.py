@@ -63,6 +63,10 @@ class BookingDraft(BaseModel):
 class PendingConfirmation(BaseModel):
     draft_id: str
     idempotency_key: str
+    # Hạn chờ xác nhận tính từ lúc tạo; quá hạn thì agent từ chối thực thi
+    # (khớp TTL draft 10 phút ở Be/ai-bridge). Session cũ chưa có field này
+    # sẽ nhận default = lúc load — chấp nhận được vì chỉ nới thêm 1 cửa sổ 10'.
+    created_at: datetime = Field(default_factory=_now)
 
 
 class TurnSummary(BaseModel):

@@ -9,9 +9,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from app.nlu.textnorm import strip_diacritics
+from app.rag.text import contains_phrase
 
-# tất cả pattern viết dạng đã bỏ dấu (so khớp với strip_diacritics)
-_SELF_HARM = ["tu sat", "tu tu", "tu lam hai", "ket lieu doi", "khong muon song"]
+_SELF_HARM_EXACT = ["tự tử", "tự sát"]
+_SELF_HARM_COLLISIONS = ["tu tu", "tu sat"]
+_SELF_HARM_SAFE = ["tu lam hai", "ket lieu doi", "khong muon song"]
+
 _EMERGENCY = [
     "kho tho", "dau nguc", "co giat", "ngat xiu", "bat tinh",
     "mau khong ngung", "sot cao co giat", "kho tho du doi",
@@ -31,18 +34,27 @@ class PreFilterResult:
     injection_suspected: bool = False
 
 
-def _has(text: str, patterns: list[str]) -> bool:
-    return any(p in text for p in patterns)
-
-
 def check(text: str) -> PreFilterResult:
-    t = strip_diacritics(text)
-    injection = _has(t, _INJECTION)
+    lower_text = text.lower()
+    t_unsigned = strip_diacritics(text)
+    is_telex = t_unsigned == lower_text.replace("đ", "d")
+    
+    injection = any(contains_phrase(text, p) for p in _INJECTION)
+    
+    has_self_harm = False
+    if any(p in lower_text for p in _SELF_HARM_EXACT):
+        has_self_harm = True
+    if is_telex and any(contains_phrase(text, p) for p in _SELF_HARM_COLLISIONS):
+        has_self_harm = True
+    if any(contains_phrase(text, p) for p in _SELF_HARM_SAFE):
+        has_self_harm = True
 
-    if _has(t, _SELF_HARM):
+    if has_self_harm:
         return PreFilterResult(blocked=True, reason="self_harm", refusal_key="refusal-emergency",
                                injection_suspected=injection)
-    if _has(t, _EMERGENCY):
+                               
+    if any(contains_phrase(text, p) for p in _EMERGENCY):
         return PreFilterResult(blocked=True, reason="emergency", refusal_key="refusal-emergency",
                                injection_suspected=injection)
+                               
     return PreFilterResult(injection_suspected=injection)

@@ -1,8 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { UploadService } from '@/common/modules/upload/upload.service';
 
 @Injectable()
 export class AdminUploadService {
+  private readonly logger = new Logger(AdminUploadService.name);
+
   constructor(private readonly uploadService: UploadService) {}
 
   /**
@@ -27,7 +29,7 @@ export class AdminUploadService {
 
       return uploadResult;
     } catch (error) {
-      console.error('Admin avatar upload error:', error);
+      this.logger.error('Admin avatar upload error', error?.stack);
       return {
         success: false,
         error: error.message || 'Lỗi khi upload ảnh',
@@ -57,7 +59,7 @@ export class AdminUploadService {
 
       return uploadResult;
     } catch (error) {
-      console.error('Admin file upload error:', error);
+      this.logger.error('Admin file upload error', error?.stack);
       return {
         success: false,
         error: error.message || 'Lỗi khi upload file',

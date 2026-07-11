@@ -36,3 +36,9 @@ def test_post_disallowed_mention():
 
 def test_post_clean_ok():
     assert not post_validator.check("Em đã tìm được lịch trống cho anh/chị ạ.").violated
+
+
+def test_tu_tu_false_positive():
+    assert not pre_filter.check("anh cứ từ từ tìm giúp em").blocked
+    assert pre_filter.check("tôi muốn tự tử").blocked
+    assert pre_filter.check("toi muon tu tu").blocked
