@@ -19,10 +19,12 @@ import { useState } from 'react';
 import { useForgotPasswordFlow } from '@/lib/hooks/useFogotPassword';
 import { validatePassword } from '@/lib/utils/validation';
 import OtpInput from '@/components/OtpInput';
+import SuccessModal from '@/components/SuccessModal';
 
 type ForgotPasswordStep = 'email' | 'otp' | 'password';
 
 export default function ForgotPasswordScreen() {
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const {
     sendOtp,
     verifyOtp,
@@ -117,9 +119,7 @@ export default function ForgotPasswordScreen() {
 
     try {
       await resetPassword({ email, otp: otp.join(''), newPassword });
-      Alert.alert('Thành công', 'Đặt lại mật khẩu thành công!', [
-        { text: 'OK', onPress: () => router.push('/(auth)/login') },
-      ]);
+      setShowSuccessModal(true);
     } catch {
       // Error is handled by hook
     }
@@ -405,6 +405,17 @@ export default function ForgotPasswordScreen() {
           <View className="h-10" />
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <SuccessModal
+        visible={showSuccessModal}
+        title="Đặt lại mật khẩu thành công!"
+        message="Bạn có thể đăng nhập bằng mật khẩu mới."
+        primaryLabel="Đăng nhập"
+        onPrimary={() => {
+          setShowSuccessModal(false);
+          router.push('/(auth)/login');
+        }}
+      />
     </SafeAreaView>
   );
 }

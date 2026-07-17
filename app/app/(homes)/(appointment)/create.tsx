@@ -1,6 +1,7 @@
 import BirthDatePicker from '@/components/BirthDatePicker';
 import GenderSelector from '@/components/GenderSelector';
 import { TimeSlotSkeleton } from '@/components/SkeletonLoader';
+import SuccessModal from '@/components/SuccessModal';
 import TimeSlotPicker from '@/components/TimeSlotPicker';
 import { Relationship } from '@/constants/enum';
 import { useAppointment } from '@/contexts/AppointmentContext';
@@ -960,44 +961,28 @@ export default function AppointmentScreen() {
         </Modal>
       )}
 
-      {/* Success Modal */}
-      {showSuccessModal && (
-        <Modal
-          transparent={true}
-          animationType="fade"
-          visible={showSuccessModal}
-          onRequestClose={() => setShowSuccessModal(false)}>
-          <View className="flex-1 items-center justify-center bg-black/50">
-            <View className="mx-8 w-80 rounded-2xl bg-white p-6">
-              <View className="items-center">
-                <View className="mb-4 h-16 w-16 items-center justify-center rounded-full bg-green-100">
-                  <Ionicons name="checkmark-circle" size={48} color="#10B981" />
-                </View>
-                <Text className="mb-2 text-xl font-bold text-gray-900">Đặt lịch thành công!</Text>
-                <Text className="mb-6 text-center text-gray-600">
-                  Bạn đã đặt lịch khám thành công. Chúng tôi sẽ liên hệ với bạn để xác nhận.
-                </Text>
-                <TouchableOpacity
-                  onPress={() => {
-                    setShowSuccessModal(false);
-                    setCreatedAppointmentId(null);
-                    // Navigate to appointment detail
-                    if (createdAppointmentId) {
-                      router.push(`/(homes)/(appointment-detail)?id=${createdAppointmentId}`);
-                    } else {
-                      // Fallback to appointments list
-                      router.push('/(homes)/(appointment)/');
-                    }
-                  }}
-                  className="w-full items-center rounded-xl py-3"
-                  style={{ backgroundColor: '#0284C7' }}>
-                  <Text className="text-base font-semibold text-white">Xem chi tiết lịch hẹn</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </Modal>
-      )}
+      <SuccessModal
+        visible={showSuccessModal}
+        title="Đặt lịch thành công!"
+        message="Bạn đã đặt lịch khám thành công. Chúng tôi sẽ liên hệ với bạn để xác nhận."
+        primaryLabel="Xem chi tiết lịch hẹn"
+        onPrimary={() => {
+          const id = createdAppointmentId;
+          setShowSuccessModal(false);
+          setCreatedAppointmentId(null);
+          if (id) {
+            router.push(`/(homes)/(appointment-detail)?id=${id}`);
+          } else {
+            router.push('/(homes)/(appointment)/');
+          }
+        }}
+        secondaryLabel="Về trang chủ"
+        onSecondary={() => {
+          setShowSuccessModal(false);
+          setCreatedAppointmentId(null);
+          router.push('/(homes)');
+        }}
+      />
     </View>
   );
 }

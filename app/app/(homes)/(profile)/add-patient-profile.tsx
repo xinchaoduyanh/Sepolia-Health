@@ -20,6 +20,7 @@ import { userApi } from '@/lib/api';
 import { useUploadPatientProfileAvatar } from '@/lib/api/user';
 import BirthDatePicker from '@/components/BirthDatePicker';
 import GenderSelector from '@/components/GenderSelector';
+import SuccessModal from '@/components/SuccessModal';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { Relationship } from '@/constants/enum';
@@ -28,6 +29,7 @@ import { validatePhone } from '@/lib/utils';
 const AddPatientProfileScreen = () => {
   const { refreshProfile } = useAuth();
   const uploadAvatarMutation = useUploadPatientProfileAvatar();
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -168,12 +170,7 @@ const AddPatientProfileScreen = () => {
       // Refresh user data to get updated profiles (hook already handles cache, but refresh to be safe)
       await refreshProfile();
 
-      Alert.alert('Thành công', 'Hồ sơ bệnh nhân đã được tạo thành công', [
-        {
-          text: 'OK',
-          onPress: () => router.back(),
-        },
-      ]);
+      setShowSuccessModal(true);
     } catch (error) {
       console.error('Create profile error:', error);
       Alert.alert('Lỗi', 'Không thể tạo hồ sơ. Vui lòng thử lại.');
@@ -604,6 +601,17 @@ const AddPatientProfileScreen = () => {
           </View>
         </View>
       </ScrollView>
+
+      <SuccessModal
+        visible={showSuccessModal}
+        title="Tạo hồ sơ thành công"
+        message="Hồ sơ bệnh nhân đã được tạo thành công."
+        primaryLabel="OK"
+        onPrimary={() => {
+          setShowSuccessModal(false);
+          router.back();
+        }}
+      />
     </View>
   );
 };

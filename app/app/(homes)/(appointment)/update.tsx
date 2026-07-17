@@ -19,6 +19,7 @@ import {
 } from '@/lib/api/appointments';
 import { formatTime, formatDate, createISODateTime, isWithin4Hours } from '@/utils/datetime';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import SuccessModal from '@/components/SuccessModal';
 
 export default function UpdateAppointmentScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -34,6 +35,7 @@ export default function UpdateAppointmentScreen() {
   } | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [notes, setNotes] = useState('');
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   // Calculate date range (today to 30 days from now) - memoized to prevent re-renders
   const { startDate, endDate } = useMemo(() => {
@@ -100,12 +102,7 @@ export default function UpdateAppointmentScreen() {
         },
       });
 
-      Alert.alert('Thành công', 'Cập nhật lịch hẹn thành công', [
-        {
-          text: 'OK',
-          onPress: () => router.back(),
-        },
-      ]);
+      setShowSuccessModal(true);
     } catch (error: any) {
       Alert.alert('Lỗi', error?.response?.data?.message || 'Không thể cập nhật lịch hẹn');
     }
@@ -357,6 +354,17 @@ export default function UpdateAppointmentScreen() {
           )}
         </TouchableOpacity>
       </ScrollView>
+
+      <SuccessModal
+        visible={showSuccessModal}
+        title="Cập nhật thành công"
+        message="Lịch hẹn của bạn đã được cập nhật."
+        primaryLabel="OK"
+        onPrimary={() => {
+          setShowSuccessModal(false);
+          router.back();
+        }}
+      />
     </View>
   );
 }

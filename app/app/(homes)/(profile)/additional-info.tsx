@@ -1,3 +1,4 @@
+import SuccessModal from '@/components/SuccessModal';
 import { useUpdatePatientProfile } from '@/lib/api/user';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -24,6 +25,7 @@ export default function AdditionalInfoScreen() {
   const [address, setAddress] = useState(profile?.address || '');
   const [nationality, setNationality] = useState(profile?.nationality || '');
   const [ethnicity, setEthnicity] = useState(profile?.additionalInfo?.ethnicity || '');
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const updateProfileMutation = useUpdatePatientProfile();
   const isSubmitting = updateProfileMutation.isPending;
@@ -53,9 +55,7 @@ export default function AdditionalInfoScreen() {
         data: updateData,
       });
 
-      Alert.alert('Thành công', 'Cập nhật thông tin bổ sung thành công', [
-        { text: 'OK', onPress: () => router.back() },
-      ]);
+      setShowSuccessModal(true);
     } catch (error) {
       console.error('Update additional info error:', error);
       Alert.alert('Lỗi', 'Không thể cập nhật thông tin. Vui lòng thử lại.');
@@ -305,6 +305,17 @@ export default function AdditionalInfoScreen() {
           )}
         </TouchableOpacity>
       </View>
+
+      <SuccessModal
+        visible={showSuccessModal}
+        title="Cập nhật thành công"
+        message="Thông tin bổ sung đã được lưu."
+        primaryLabel="OK"
+        onPrimary={() => {
+          setShowSuccessModal(false);
+          router.back();
+        }}
+      />
     </View>
   );
 }

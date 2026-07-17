@@ -14,6 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useAppointment, useCreateFeedback } from '@/lib/api/appointments';
 import { AppointmentStatus } from '@/constants/enum';
+import SuccessModal from '@/components/SuccessModal';
 
 export default function FeedbackScreen() {
   const { id } = useLocalSearchParams();
@@ -24,6 +25,7 @@ export default function FeedbackScreen() {
   const [rating, setRating] = useState<number>(0);
   const [comment, setComment] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   if (isLoading) {
     return (
@@ -107,12 +109,7 @@ export default function FeedbackScreen() {
           comment: comment.trim() || undefined,
         },
       });
-      Alert.alert('Thành công', 'Cảm ơn bạn đã đánh giá!', [
-        {
-          text: 'OK',
-          onPress: () => router.back(),
-        },
-      ]);
+      setShowSuccessModal(true);
     } catch (error: any) {
       Alert.alert('Lỗi', error?.response?.data?.message || 'Có lỗi xảy ra khi gửi đánh giá');
     } finally {
@@ -236,6 +233,17 @@ export default function FeedbackScreen() {
           )}
         </TouchableOpacity>
       </ScrollView>
+
+      <SuccessModal
+        visible={showSuccessModal}
+        title="Cảm ơn bạn!"
+        message="Đánh giá của bạn đã được gửi thành công."
+        primaryLabel="OK"
+        onPrimary={() => {
+          setShowSuccessModal(false);
+          router.back();
+        }}
+      />
     </View>
   );
 }

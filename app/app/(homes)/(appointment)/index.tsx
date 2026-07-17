@@ -3,6 +3,7 @@ import { useCancelAppointment, useMyAppointments } from '@/lib/api/appointments'
 import { AppointmentStatus, PaymentStatus } from '@/types';
 import { formatTime } from '@/utils/datetime';
 import Colors from '@/constants/Colors';
+import SuccessModal from '@/components/SuccessModal';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -177,6 +178,7 @@ export default function AppointmentsListScreen() {
   const [paymentFilter, setPaymentFilter] = useState<'all' | 'PENDING' | 'PAID'>('all');
   const [refreshing, setRefreshing] = useState(false);
   const [cancellingId, setCancellingId] = useState<number | null>(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   // Always sort by date (default: Sớm nhất)
   const sortBy = 'date';
@@ -301,7 +303,7 @@ export default function AppointmentsListScreen() {
             try {
               setCancellingId(appointmentId);
               await cancelAppointmentMutation.mutateAsync(appointmentId);
-              Alert.alert('Thành công', 'Đã hủy lịch hẹn thành công');
+              setShowSuccessModal(true);
             } catch (error: any) {
               Alert.alert('Lỗi', error?.response?.data?.message || 'Không thể hủy lịch hẹn');
             } finally {
@@ -1474,6 +1476,14 @@ export default function AppointmentsListScreen() {
           </View>
         </View>
       </Modal>
+
+      <SuccessModal
+        visible={showSuccessModal}
+        title="Đã hủy lịch hẹn"
+        message="Lịch hẹn của bạn đã được hủy thành công."
+        primaryLabel="OK"
+        onPrimary={() => setShowSuccessModal(false)}
+      />
     </View>
   );
 }

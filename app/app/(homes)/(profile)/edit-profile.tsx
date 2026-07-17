@@ -2,6 +2,7 @@
 
 import BirthDatePicker from '@/components/BirthDatePicker';
 import GenderSelector from '@/components/GenderSelector';
+import SuccessModal from '@/components/SuccessModal';
 import { Relationship } from '@/constants/enum';
 import { useUpdatePatientProfile, useUploadPatientProfileAvatar } from '@/lib/api/user';
 import { validateName, validatePhone } from '@/lib/utils/validation';
@@ -9,6 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import {
   Alert,
@@ -37,6 +39,7 @@ export default function EditProfileScreen() {
 
   const updateProfileMutation = useUpdatePatientProfile();
   const uploadAvatarMutation = useUploadPatientProfileAvatar();
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const isUploading = uploadAvatarMutation.isPending;
   const isSubmitting = updateProfileMutation.isPending;
@@ -152,12 +155,7 @@ export default function EditProfileScreen() {
         }
       }
 
-      Alert.alert('Thành công', 'Hồ sơ bệnh nhân đã được cập nhật thành công', [
-        {
-          text: 'OK',
-          onPress: () => router.push('/(homes)/(profile)'),
-        },
-      ]);
+      setShowSuccessModal(true);
     } catch (error) {
       console.error('Update profile error:', error);
       Alert.alert('Lỗi', 'Không thể cập nhật hồ sơ. Vui lòng thử lại.');
@@ -525,6 +523,17 @@ export default function EditProfileScreen() {
           </Text>
         </Pressable>
       </View>
+
+      <SuccessModal
+        visible={showSuccessModal}
+        title="Cập nhật thành công"
+        message="Hồ sơ bệnh nhân đã được cập nhật thành công."
+        primaryLabel="OK"
+        onPrimary={() => {
+          setShowSuccessModal(false);
+          router.push('/(homes)/(profile)');
+        }}
+      />
     </View>
   );
 }

@@ -18,6 +18,7 @@ import {
   View,
 } from 'react-native';
 import ResultFileList from '@/components/ResultFileList';
+import SuccessModal from '@/components/SuccessModal';
 
 // Skeleton Component
 const SkeletonBox = ({
@@ -170,6 +171,8 @@ export default function AppointmentDetailScreen() {
     }
   }, [appointment]);
 
+  const [showSuccessModal, setShowSuccessModal] = React.useState(false);
+
   const handleCancel = () => {
     if (!appointment) return;
 
@@ -184,8 +187,8 @@ export default function AppointmentDetailScreen() {
           onPress: () => {
             cancelMutation.mutate(appointment.id, {
               onSuccess: () => {
-                Alert.alert('Thành công', 'Đã hủy lịch hẹn');
-                router.back();
+                // Chỉ modal — không Alert + router.back() cùng lúc (double/mất modal)
+                setShowSuccessModal(true);
               },
               onError: (error: any) => {
                 Alert.alert('Lỗi', error?.response?.data?.message || 'Không thể hủy lịch hẹn');
@@ -707,6 +710,17 @@ export default function AppointmentDetailScreen() {
             )}
         </View>
       )}
+
+      <SuccessModal
+        visible={showSuccessModal}
+        title="Đã hủy lịch hẹn"
+        message="Lịch hẹn của bạn đã được hủy thành công."
+        primaryLabel="OK"
+        onPrimary={() => {
+          setShowSuccessModal(false);
+          router.back();
+        }}
+      />
     </View>
   );
 }

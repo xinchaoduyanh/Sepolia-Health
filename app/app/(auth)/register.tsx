@@ -21,11 +21,13 @@ import { validatePassword, validateName, validatePhone } from '@/lib/utils/valid
 import BirthDatePicker from '@/components/BirthDatePicker';
 import GenderSelector from '@/components/GenderSelector';
 import OtpInput from '@/components/OtpInput';
+import SuccessModal from '@/components/SuccessModal';
 
 type RegisterStep = 'email' | 'otp' | 'info';
 
 export default function RegisterScreen() {
   const router = useRouter();
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const {
     register,
     verifyEmail,
@@ -177,9 +179,7 @@ export default function RegisterScreen() {
         gender: gender!,
         role: 'PATIENT',
       });
-      Alert.alert('Thành công', 'Đăng ký thành công!', [
-        { text: 'OK', onPress: () => router.push('/(auth)/login') },
-      ]);
+      setShowSuccessModal(true);
     } catch {
       // Error is handled by useAuth hook and displayed in UI
     }
@@ -567,6 +567,17 @@ export default function RegisterScreen() {
           <View className="h-10" />
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <SuccessModal
+        visible={showSuccessModal}
+        title="Đăng ký thành công!"
+        message="Tài khoản của bạn đã được tạo. Hãy đăng nhập để tiếp tục."
+        primaryLabel="Đăng nhập"
+        onPrimary={() => {
+          setShowSuccessModal(false);
+          router.push('/(auth)/login');
+        }}
+      />
     </SafeAreaView>
   );
 }

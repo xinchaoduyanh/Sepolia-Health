@@ -1,5 +1,6 @@
 'use client';
 
+import SuccessModal from '@/components/SuccessModal';
 import { useUploadPatientProfileAvatar, useUploadUserAvatar } from '@/lib/api/user';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { PatientProfile } from '@/types/auth';
@@ -8,12 +9,14 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { Alert, Image, ScrollView, StatusBar, Text, TouchableOpacity, View } from 'react-native';
 
 const ProfileScreen = () => {
   const { user } = useAuth();
   const uploadPatientAvatarMutation = useUploadPatientProfileAvatar();
   const uploadUserAvatarMutation = useUploadUserAvatar();
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   // Lấy patientProfiles từ user data
   const patientProfiles = user?.patientProfiles || [];
@@ -76,7 +79,7 @@ const ProfileScreen = () => {
           }
         }
 
-        Alert.alert('Thành công', 'Avatar đã được cập nhật');
+        setShowSuccessModal(true);
       }
     } catch (error) {
       console.error('Upload avatar error:', error);
@@ -330,6 +333,14 @@ const ProfileScreen = () => {
           </View>
         </View>
       </ScrollView>
+
+      <SuccessModal
+        visible={showSuccessModal}
+        title="Cập nhật thành công"
+        message="Avatar đã được cập nhật."
+        primaryLabel="OK"
+        onPrimary={() => setShowSuccessModal(false)}
+      />
     </View>
   );
 };

@@ -19,6 +19,7 @@ import { useCreateQrScan, useCancelPayment, checkPaymentStatus } from '@/lib/api
 import { usePayment } from '@/contexts/PaymentContext';
 import { QrScanResponse } from '@/types';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import SuccessModal from '@/components/SuccessModal';
 
 const COUNTDOWN_DURATION = 300; // 5 minutes
 const POLLING_INTERVAL = 3000; // 3 seconds
@@ -46,12 +47,14 @@ export default function QrPaymentScreen() {
   const [countdown, setCountdown] = useState(COUNTDOWN_DURATION);
   const [isPolling, setIsPolling] = useState(false);
   const [paymentCompleted, setPaymentCompleted] = useState(false);
-  const [shouldNavigateToAppointments, setShouldNavigateToAppointments] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [shouldNavigateToVoucherSelect, setShouldNavigateToVoucherSelect] = useState(false);
 
   const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const countdownStartedRef = useRef(false);
+  /** Chặn poll tick trùng → double success modal/alert. */
+  const paidHandledRef = useRef(false);
 
   // Define stopPolling first
   const stopPolling = useCallback(() => {
@@ -72,55 +75,33 @@ export default function QrPaymentScreen() {
 
     pollingIntervalRef.current = setInterval(async () => {
       try {
+        if (paidHandledRef.current) return;
+
         const status = await checkPaymentStatus(appointmentId);
-        if (status.isPaid) {
-          // Stop polling first
-          stopPolling();
+        if (!status.isPaid) return;
 
-          // Clear pending payment synchronously
-          clearPendingPayment();
+        // Chỉ xử lý success 1 lần — không Alert + modal song song
+        paidHandledRef.current = true;
+        stopPolling();
+        clearPendingPayment();
+        setPaymentCompleted(true);
+        setShowSuccessModal(true);
 
-          // Set completed state
-          setPaymentCompleted(true);
-
-          // Đơn giản hóa - chỉ hiển thị Alert và navigate
-          setTimeout(() => {
-            // Cải tiến: invalidate toàn bộ các query lịch hẹn (my/list/detail...)
-            queryClient.invalidateQueries({ queryKey: ['appointments'] });
-            // Dùng Promise.all để lấy lại dữ liệu mới nhất của cả detail và list
-            Promise.all([
-              queryClient.fetchQuery({
-                queryKey: ['appointments', 'detail', appointmentId],
-                queryFn: () =>
-                  import('@/lib/api/appointments').then((m) =>
-                    m.appointmentApi.getAppointment(appointmentId)
-                  ),
-              }),
-              queryClient.fetchQuery({
-                queryKey: ['appointments', 'my'],
-                queryFn: () =>
-                  import('@/lib/api/appointments').then((m) =>
-                    m.appointmentApi.getMyAppointments()
-                  ),
-              }),
-            ]);
-
-            // Hiển thị Alert đơn giản thay vì modal phức tạp
-            Alert.alert(
-              '🎉 Thanh toán thành công!',
-              `Đã thanh toán appointment #${appointmentId} thành công.`,
-              [
-                {
-                  text: 'OK',
-                  onPress: () => {
-                    // Set state để navigate sau
-                    setShouldNavigateToAppointments(true);
-                  },
-                },
-              ]
-            );
-          }, 300);
-        }
+        queryClient.invalidateQueries({ queryKey: ['appointments'] });
+        void Promise.all([
+          queryClient.fetchQuery({
+            queryKey: ['appointments', 'detail', appointmentId],
+            queryFn: () =>
+              import('@/lib/api/appointments').then((m) =>
+                m.appointmentApi.getAppointment(appointmentId)
+              ),
+          }),
+          queryClient.fetchQuery({
+            queryKey: ['appointments', 'my'],
+            queryFn: () =>
+              import('@/lib/api/appointments').then((m) => m.appointmentApi.getMyAppointments()),
+          }),
+        ]);
       } catch (error) {
         console.error('Polling error:', error);
       }
@@ -149,13 +130,10 @@ export default function QrPaymentScreen() {
     }
   }, [pendingPayment, appointmentId, isPendingPaymentForAppointment, clearPendingPayment]);
 
-  // Handle navigation after Alert
-  useEffect(() => {
-    if (shouldNavigateToAppointments) {
-      router.replace('/(homes)/(appointment)');
-      setShouldNavigateToAppointments(false);
-    }
-  }, [shouldNavigateToAppointments]);
+  const handlePaymentSuccessPrimary = useCallback(() => {
+    setShowSuccessModal(false);
+    router.replace('/(homes)/(appointment)');
+  }, []);
 
   useEffect(() => {
     if (shouldNavigateToVoucherSelect) {
@@ -283,6 +261,8 @@ export default function QrPaymentScreen() {
 
       setQrData(result);
       setPaymentCompleted(false);
+      setShowSuccessModal(false);
+      paidHandledRef.current = false;
       countdownStartedRef.current = false; // Reset for new QR
 
       // Refetch appointment after creating QR
@@ -332,11 +312,13 @@ export default function QrPaymentScreen() {
             setQrData(null);
             setCountdown(COUNTDOWN_DURATION);
             countdownStartedRef.current = false;
+            paidHandledRef.current = false;
+            setShowSuccessModal(false);
+            // Chỉ back 1 lần — không Alert success sau back (tránh orphan/double)
             router.back();
-            Alert.alert('✅ Thành công', 'Đã hủy thanh toán thành công.');
           } catch (error: any) {
             Alert.alert(
-              '❌ Lỗi',
+              'Lỗi',
               error?.response?.data?.message || 'Không thể hủy thanh toán. Vui lòng thử lại.'
             );
           }
@@ -552,6 +534,20 @@ export default function QrPaymentScreen() {
           )}
         </View>
       </ScrollView>
+
+      {/* Chỉ 1 modal success — không Alert song song */}
+      <SuccessModal
+        visible={showSuccessModal}
+        title="Thanh toán thành công"
+        message={`Đã thanh toán lịch hẹn #${appointmentId} thành công.`}
+        primaryLabel="Xem lịch hẹn"
+        onPrimary={handlePaymentSuccessPrimary}
+        secondaryLabel="Về trang chủ"
+        onSecondary={() => {
+          setShowSuccessModal(false);
+          router.replace('/(homes)');
+        }}
+      />
     </View>
   );
 }

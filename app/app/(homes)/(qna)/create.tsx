@@ -14,11 +14,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useCreateQuestion, useTags } from '@/lib/api/qna';
 import { Tag } from '@/types/qna';
+import SuccessModal from '@/components/SuccessModal';
 
 export default function CreateQuestionScreen() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [selectedTags, setSelectedTags] = useState<number[]>([]);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [createdQuestionId, setCreatedQuestionId] = useState<number | null>(null);
 
   const { data: tagsData } = useTags();
   const createQuestion = useCreateQuestion();
@@ -59,14 +62,8 @@ export default function CreateQuestionScreen() {
         content: content.trim(),
         tagIds: selectedTags,
       });
-      Alert.alert('Thành công', 'Câu hỏi đã được tạo thành công', [
-        {
-          text: 'OK',
-          onPress: () => {
-            router.replace(`/(homes)/(qna)/${question.id}`);
-          },
-        },
-      ]);
+      setCreatedQuestionId(question.id);
+      setShowSuccessModal(true);
     } catch (error: any) {
       Alert.alert('Lỗi', error?.response?.data?.message || 'Không thể tạo câu hỏi');
     }
@@ -294,6 +291,23 @@ export default function CreateQuestionScreen() {
           )}
         </TouchableOpacity>
       </ScrollView>
+
+      <SuccessModal
+        visible={showSuccessModal}
+        title="Đăng câu hỏi thành công"
+        message="Câu hỏi của bạn đã được tạo."
+        primaryLabel="Xem câu hỏi"
+        onPrimary={() => {
+          const id = createdQuestionId;
+          setShowSuccessModal(false);
+          setCreatedQuestionId(null);
+          if (id != null) {
+            router.replace(`/(homes)/(qna)/${id}`);
+          } else {
+            router.back();
+          }
+        }}
+      />
     </View>
   );
 }

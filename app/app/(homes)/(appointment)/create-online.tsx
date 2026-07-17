@@ -1,5 +1,6 @@
 import BirthDatePicker from '@/components/BirthDatePicker';
 import GenderSelector from '@/components/GenderSelector';
+import SuccessModal from '@/components/SuccessModal';
 import TimeSlotPicker from '@/components/TimeSlotPicker';
 import { Relationship } from '@/constants/enum';
 import { useAppointment } from '@/contexts/AppointmentContext';
@@ -903,57 +904,29 @@ export default function OnlineAppointmentScreen() {
         </Modal>
       )}
 
-      {/* Success Modal */}
-      <Modal
+      <SuccessModal
         visible={showSuccessModal}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setShowSuccessModal(false)}>
-        <View className="flex-1 items-center justify-center bg-black/50">
-          <View
-            className="mx-6 w-80 items-center rounded-3xl p-8"
-            style={{ backgroundColor: '#ECFDF5' }}>
-            <View className="mb-6 h-24 w-24 items-center justify-center rounded-full bg-emerald-100">
-              <View className="h-16 w-16 items-center justify-center rounded-full bg-emerald-500">
-                <Ionicons name="videocam" size={32} color="white" />
-              </View>
-            </View>
-
-            <Text className="mb-2 text-center text-2xl font-bold" style={{ color: '#10B981' }}>
-              Đặt lịch thành công!
-            </Text>
-
-            <Text className="mb-6 text-center text-base text-gray-600">
-              Lịch khám online của bạn đã được đặt thành công. Bạn sẽ nhận được link tham gia cuộc
-              gọi video trước giờ hẹn.
-            </Text>
-
-            <View className="w-full space-y-3">
-              <Pressable
-                onPress={() => {
-                  setShowSuccessModal(false);
-                  router.push(`/(homes)/(appointment-detail)?id=${createdAppointmentId}`);
-                }}
-                className="w-full items-center rounded-xl py-4"
-                style={{ backgroundColor: '#10B981' }}>
-                <Text className="text-base font-bold text-white">Xem chi tiết lịch hẹn</Text>
-              </Pressable>
-
-              <Pressable
-                onPress={() => {
-                  setShowSuccessModal(false);
-                  router.push('/(homes)');
-                }}
-                className="w-full items-center rounded-xl border-2 py-4"
-                style={{ borderColor: '#10B981', backgroundColor: 'white' }}>
-                <Text className="text-base font-bold" style={{ color: '#10B981' }}>
-                  Về trang chủ
-                </Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
-      </Modal>
+        title="Đặt lịch thành công!"
+        message="Lịch khám online của bạn đã được đặt thành công. Bạn sẽ nhận được link tham gia cuộc gọi video trước giờ hẹn."
+        iconName="videocam"
+        primaryLabel="Xem chi tiết lịch hẹn"
+        onPrimary={() => {
+          const id = createdAppointmentId;
+          setShowSuccessModal(false);
+          setCreatedAppointmentId(null);
+          if (id) {
+            router.push(`/(homes)/(appointment-detail)?id=${id}`);
+          } else {
+            router.push('/(homes)/(appointment)/');
+          }
+        }}
+        secondaryLabel="Về trang chủ"
+        onSecondary={() => {
+          setShowSuccessModal(false);
+          setCreatedAppointmentId(null);
+          router.push('/(homes)');
+        }}
+      />
     </View>
   );
 }

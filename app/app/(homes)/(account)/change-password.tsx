@@ -19,6 +19,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { useChangePassword } from '@/lib/api/auth';
 import { validatePassword } from '@/lib/utils/validation';
+import SuccessModal from '@/components/SuccessModal';
 
 export default function ChangePasswordScreen() {
   const [oldPassword, setOldPassword] = useState('');
@@ -27,6 +28,7 @@ export default function ChangePasswordScreen() {
   const [showOldPassword, setShowOldPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   // Validation errors
   const [oldPasswordError, setOldPasswordError] = useState('');
@@ -83,12 +85,7 @@ export default function ChangePasswordScreen() {
       },
       {
         onSuccess: () => {
-          Alert.alert('Thành công', 'Đổi mật khẩu thành công', [
-            {
-              text: 'OK',
-              onPress: () => router.back(),
-            },
-          ]);
+          setShowSuccessModal(true);
         },
         onError: (error: any) => {
           const errorMessage =
@@ -419,6 +416,17 @@ export default function ChangePasswordScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <SuccessModal
+        visible={showSuccessModal}
+        title="Đổi mật khẩu thành công"
+        message="Mật khẩu của bạn đã được cập nhật."
+        primaryLabel="OK"
+        onPrimary={() => {
+          setShowSuccessModal(false);
+          router.back();
+        }}
+      />
     </View>
   );
 }
