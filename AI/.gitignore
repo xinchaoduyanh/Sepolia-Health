@@ -7,3 +7,4 @@ data/chroma/
 # Service account key (Vertex AI) — KHÔNG commit
 secrets/
 *-sa-key.json
+eval/reports/

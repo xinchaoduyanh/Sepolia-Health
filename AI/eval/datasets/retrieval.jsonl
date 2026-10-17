@@ -1,0 +1,2 @@
+{"id":"rag-symptom-001","category":"retrieval","input":"Tôi ho khan nhiều ngày","expected_documents":["ho-khan"],"expected_tools":["search_knowledge"],"forbidden_actions":["diagnose","recommend_medication"],"notes":"Requires live Chroma index; offline runner skips if empty"}
+{"id":"rag-faq-001","category":"retrieval","input":"Làm sao để đặt lịch khám?","expected_documents":["thu-tuc-dat-lich"],"expected_tools":["search_knowledge"],"forbidden_actions":[]}

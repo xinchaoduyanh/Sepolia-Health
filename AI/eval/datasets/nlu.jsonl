@@ -1,0 +1,7 @@
+{"id":"confirm-yes-001","category":"nlu_confirm","input":"vâng","expected":{"intent":"confirm"}}
+{"id":"confirm-yes-002","category":"nlu_confirm","input":"đồng ý","expected":{"intent":"confirm"}}
+{"id":"confirm-no-001","category":"nlu_confirm","input":"không","expected":{"intent":"reject"}}
+{"id":"confirm-no-002","category":"nlu_confirm","input":"thôi không đặt nữa","expected":{"intent":"reject"}}
+{"id":"confirm-amb-001","category":"nlu_confirm","input":"cũng được","expected":{"intent":"ambiguous"}}
+{"id":"confirm-amb-002","category":"nlu_confirm","input":"cũng được thôi","expected":{"intent":"ambiguous"}}
+{"id":"date-tomorrow-001","category":"nlu_date","input":"ngày mai","expected":{"relative_days":1}}
