@@ -120,6 +120,22 @@ export class DoctorAppointmentService {
     }
 
     /**
+     * Start appointment (doctor)
+     * PATCH /doctor/appointments/:id/start
+     */
+    async startAppointment(id: number): Promise<{ success: boolean; message?: string }> {
+        return apiClient.patch<{ success: boolean; message?: string }>(`/doctor/appointments/${id}/start`)
+    }
+
+    /**
+     * Complete appointment (doctor)
+     * PATCH /doctor/appointments/:id/complete
+     */
+    async completeAppointment(id: number): Promise<{ success: boolean; message?: string }> {
+        return apiClient.patch<{ success: boolean; message?: string }>(`/doctor/appointments/${id}/complete`)
+    }
+
+    /**
      * Create or update appointment result
      * POST /doctor/appointments/:id/result
      */

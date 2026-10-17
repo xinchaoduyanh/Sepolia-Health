@@ -31,6 +31,8 @@ import {
   FindPatientResponseDto,
 } from './dto/response';
 
+const EARLY_CHECK_IN_WINDOW_MS = 10 * 60 * 1000; // 10 minutes in milliseconds
+
 @Injectable()
 export class ReceptionistAppointmentService {
   constructor(private readonly prisma: PrismaService) {}
@@ -230,7 +232,10 @@ export class ReceptionistAppointmentService {
       throw new BadRequestException(ERROR_MESSAGES.APPOINTMENT.NOT_PAID);
     }
 
-    if (appointment.startTime.getTime() > Date.now() + 10 * 60 + 1000) {
+    if (
+      appointment.startTime.getTime() >
+      Date.now() + EARLY_CHECK_IN_WINDOW_MS
+    ) {
       throw new BadRequestException(ERROR_MESSAGES.APPOINTMENT.NOT_YET_REACHED);
     }
 

@@ -46,6 +46,80 @@ export function useDoctorAppointment(id: number, isReady: boolean = true) {
 }
 
 /**
+ * Hook to start an appointment
+ */
+export function useStartAppointment() {
+    const queryClient = useQueryClient()
+
+    return useMutation<{ success: boolean; message?: string }, Error, number>({
+        mutationFn: (appointmentId: number) => doctorAppointmentService.startAppointment(appointmentId),
+        onSuccess: (_, appointmentId) => {
+            // Invalidate appointments list
+            queryClient.invalidateQueries({
+                queryKey: ['doctor', 'appointments'],
+            })
+            // Invalidate specific appointment
+            queryClient.invalidateQueries({
+                queryKey: ['doctor', 'appointments', appointmentId],
+            })
+            const queryKey = queryKeys.doctor?.appointments?.detail(appointmentId.toString())
+            if (queryKey) {
+                queryClient.invalidateQueries({ queryKey })
+            }
+
+            // Show success toast
+            toast.success({
+                title: 'Thành công',
+                description: 'Đã bắt đầu khám thành công!',
+            })
+        },
+        onError: (error: any) => {
+            toast.error({
+                title: 'Lỗi',
+                description: error?.response?.data?.message || error?.message || 'Không thể bắt đầu khám',
+            })
+        },
+    })
+}
+
+/**
+ * Hook to complete an appointment
+ */
+export function useCompleteAppointment() {
+    const queryClient = useQueryClient()
+
+    return useMutation<{ success: boolean; message?: string }, Error, number>({
+        mutationFn: (appointmentId: number) => doctorAppointmentService.completeAppointment(appointmentId),
+        onSuccess: (_, appointmentId) => {
+            // Invalidate appointments list
+            queryClient.invalidateQueries({
+                queryKey: ['doctor', 'appointments'],
+            })
+            // Invalidate specific appointment
+            queryClient.invalidateQueries({
+                queryKey: ['doctor', 'appointments', appointmentId],
+            })
+            const queryKey = queryKeys.doctor?.appointments?.detail(appointmentId.toString())
+            if (queryKey) {
+                queryClient.invalidateQueries({ queryKey })
+            }
+
+            // Show success toast
+            toast.success({
+                title: 'Thành công',
+                description: 'Đã kết thúc khám thành công!',
+            })
+        },
+        onError: (error: any) => {
+            toast.error({
+                title: 'Lỗi',
+                description: error?.response?.data?.message || error?.message || 'Không thể kết thúc khám',
+            })
+        },
+    })
+}
+
+/**
  * Hook to create or update appointment result
  */
 export function useCreateOrUpdateAppointmentResult() {

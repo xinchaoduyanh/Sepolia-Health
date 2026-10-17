@@ -2,15 +2,18 @@
 
 import { VoiceInputButton } from '@/shared/components/VoiceInputButton'
 import {
+    useCompleteAppointment,
     useCreateOrUpdateAppointmentResult,
     useDeleteResultFile,
     useDoctorAppointment,
     useSpeechToText,
+    useStartAppointment,
     useUploadResultFile,
 } from '@/shared/hooks'
 import { formatDate, formatTime } from '@/util/datetime'
 import { Avatar, AvatarFallback, AvatarImage } from '@workspace/ui/components/Avatar'
 import { Badge } from '@workspace/ui/components/Badge'
+import { Button } from '@workspace/ui/components/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@workspace/ui/components/Card'
 import { Skeleton } from '@workspace/ui/components/Skeleton'
 import { toast } from '@workspace/ui/components/Sonner'
@@ -31,6 +34,7 @@ import {
     Loader2,
     MapPin,
     Paperclip,
+    Play,
     Save,
     Star,
     Stethoscope,
@@ -86,6 +90,8 @@ export default function AppointmentDetailPage() {
     const createOrUpdateMutation = useCreateOrUpdateAppointmentResult()
     const uploadFileMutation = useUploadResultFile()
     const deleteFileMutation = useDeleteResultFile()
+    const startAppointmentMutation = useStartAppointment()
+    const completeAppointmentMutation = useCompleteAppointment()
 
     const [formData, setFormData] = useState({
         diagnosis: '',
@@ -326,13 +332,53 @@ export default function AppointmentDetailPage() {
                         <p className="text-sm text-muted-foreground mt-1">Mã lịch khám: #{appointment.id}</p>
                     </div>
                 </div>
-                <button
-                    onClick={() => router.push('/doctor')}
-                    className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white text-sm font-medium rounded-lg transition-colors"
-                >
-                    <Home className="h-4 w-4" />
-                    Về trang chủ
-                </button>
+                <div className="flex items-center gap-3">
+                    {appointment.status === 'UPCOMING' && (
+                        <Button
+                            onPress={() => startAppointmentMutation.mutate(appointmentId)}
+                            isDisabled={startAppointmentMutation.isPending}
+                            className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
+                        >
+                            {startAppointmentMutation.isPending ? (
+                                <>
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    Đang xử lý...
+                                </>
+                            ) : (
+                                <>
+                                    <Play className="h-4 w-4" />
+                                    Bắt đầu khám
+                                </>
+                            )}
+                        </Button>
+                    )}
+                    {appointment.status === 'ON_GOING' && (
+                        <Button
+                            onPress={() => completeAppointmentMutation.mutate(appointmentId)}
+                            isDisabled={completeAppointmentMutation.isPending}
+                            className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
+                        >
+                            {completeAppointmentMutation.isPending ? (
+                                <>
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    Đang xử lý...
+                                </>
+                            ) : (
+                                <>
+                                    <CheckCircle2 className="h-4 w-4" />
+                                    Kết thúc khám
+                                </>
+                            )}
+                        </Button>
+                    )}
+                    <button
+                        onClick={() => router.push('/doctor')}
+                        className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white text-sm font-medium rounded-lg transition-colors"
+                    >
+                        <Home className="h-4 w-4" />
+                        Về trang chủ
+                    </button>
+                </div>
             </div>
 
             {/* Appointment Info */}

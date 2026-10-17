@@ -1,4 +1,5 @@
 import { ERROR_MESSAGES, MESSAGES } from '@/common/constants';
+import { SuccessResponseDto } from '@/common/dto';
 import { UploadService } from '@/common/modules';
 import { PrismaService } from '@/common/prisma/prisma.service';
 import { NotificationService } from '@/module/notification/notification.service';
@@ -9,7 +10,11 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { AppointmentStatus } from '@prisma/client';
+import {
+  AppointmentStatus,
+  AppointmentType,
+  PaymentStatus,
+} from '@prisma/client';
 import { fileTypeFromBuffer } from 'file-type';
 import {
   AppointmentResultDto,
@@ -19,6 +24,8 @@ import {
   GetDoctorAppointmentsQueryDto,
 } from './dto';
 import { AppointmentResultFileDto } from './dto/appointment-result-file.dto';
+
+const EARLY_START_WINDOW_MS = 10 * 60 * 1000; // 10 minutes in milliseconds
 
 @Injectable()
 export class DoctorAppointmentService {
@@ -451,10 +458,13 @@ export class DoctorAppointmentService {
       );
     }
 
-    // Check if appointment is completed
-    if (appointment.status !== AppointmentStatus.COMPLETED) {
+    // Check if appointment is on-going or completed
+    if (
+      appointment.status !== AppointmentStatus.ON_GOING &&
+      appointment.status !== AppointmentStatus.COMPLETED
+    ) {
       throw new BadRequestException(
-        'Chỉ có thể tạo kết quả cho appointment đã hoàn thành',
+        'Chỉ có thể tạo kết quả cho appointment đang diễn ra hoặc đã hoàn thành',
       );
     }
 
@@ -882,5 +892,141 @@ export class DoctorAppointmentService {
     await this.prisma.appointmentResultFile.delete({
       where: { id: fileId },
     });
+  }
+
+  /**
+   * Bác sĩ bắt đầu khám
+   * Chuyển trạng thái từ UPCOMING -> ON_GOING
+   */
+  async startAppointment(
+    appointmentId: number,
+    userId: number,
+  ): Promise<SuccessResponseDto> {
+    const doctorProfile = await this.prisma.doctorProfile.findUnique({
+      where: { userId },
+    });
+
+    if (!doctorProfile) {
+      throw new NotFoundException(
+        MESSAGES.APPOINTMENT.DOCTOR_SERVICE_NOT_FOUND,
+      );
+    }
+
+    const appointment = await this.prisma.appointment.findUnique({
+      where: { id: appointmentId },
+      include: { billing: true },
+    });
+
+    if (!appointment) {
+      throw new NotFoundException(ERROR_MESSAGES.COMMON.RESOURCE_NOT_FOUND);
+    }
+
+    // Kiểm tra lịch hẹn có thuộc bác sĩ này không
+    if (appointment.doctorId !== doctorProfile.id) {
+      throw new ForbiddenException(
+        'Bạn không có quyền thao tác trên appointment này',
+      );
+    }
+
+    // Kiểm tra trạng thái phải là UPCOMING
+    if (appointment.status !== AppointmentStatus.UPCOMING) {
+      throw new BadRequestException(ERROR_MESSAGES.APPOINTMENT.INVALID_STATUS);
+    }
+
+    // Kiểm tra thời điểm hiện tại trong khoảng [startTime - 10 phút, endTime]
+    const now = Date.now();
+    const startTimeMs = appointment.startTime.getTime();
+    const endTimeMs = appointment.endTime.getTime();
+
+    if (now < startTimeMs - EARLY_START_WINDOW_MS) {
+      throw new BadRequestException(ERROR_MESSAGES.APPOINTMENT.NOT_YET_REACHED);
+    }
+
+    if (now > endTimeMs) {
+      throw new BadRequestException('Thời gian khám đã kết thúc');
+    }
+
+    // Với OFFLINE cần billing PAID giống check-in lễ tân; ONLINE không bắt buộc
+    if (
+      appointment.type === AppointmentType.OFFLINE &&
+      appointment.billing?.status !== PaymentStatus.PAID
+    ) {
+      throw new BadRequestException(ERROR_MESSAGES.APPOINTMENT.NOT_PAID);
+    }
+
+    // Cập nhật trạng thái an toàn đồng thời bằng updateMany
+    const result = await this.prisma.appointment.updateMany({
+      where: {
+        id: appointmentId,
+        doctorId: doctorProfile.id,
+        status: AppointmentStatus.UPCOMING,
+      },
+      data: {
+        status: AppointmentStatus.ON_GOING,
+      },
+    });
+
+    if (result.count === 0) {
+      throw new BadRequestException(ERROR_MESSAGES.APPOINTMENT.INVALID_STATUS);
+    }
+
+    return new SuccessResponseDto();
+  }
+
+  /**
+   * Bác sĩ kết thúc khám
+   * Chuyển trạng thái từ ON_GOING -> COMPLETED
+   */
+  async completeAppointment(
+    appointmentId: number,
+    userId: number,
+  ): Promise<SuccessResponseDto> {
+    const doctorProfile = await this.prisma.doctorProfile.findUnique({
+      where: { userId },
+    });
+
+    if (!doctorProfile) {
+      throw new NotFoundException(
+        MESSAGES.APPOINTMENT.DOCTOR_SERVICE_NOT_FOUND,
+      );
+    }
+
+    const appointment = await this.prisma.appointment.findUnique({
+      where: { id: appointmentId },
+    });
+
+    if (!appointment) {
+      throw new NotFoundException(ERROR_MESSAGES.COMMON.RESOURCE_NOT_FOUND);
+    }
+
+    // Kiểm tra lịch hẹn có thuộc bác sĩ này không
+    if (appointment.doctorId !== doctorProfile.id) {
+      throw new ForbiddenException(
+        'Bạn không có quyền thao tác trên appointment này',
+      );
+    }
+
+    // Kiểm tra trạng thái phải là ON_GOING
+    if (appointment.status !== AppointmentStatus.ON_GOING) {
+      throw new BadRequestException(ERROR_MESSAGES.APPOINTMENT.INVALID_STATUS);
+    }
+
+    // Cập nhật trạng thái an toàn đồng thời bằng updateMany
+    const result = await this.prisma.appointment.updateMany({
+      where: {
+        id: appointmentId,
+        doctorId: doctorProfile.id,
+        status: AppointmentStatus.ON_GOING,
+      },
+      data: {
+        status: AppointmentStatus.COMPLETED,
+      },
+    });
+
+    if (result.count === 0) {
+      throw new BadRequestException(ERROR_MESSAGES.APPOINTMENT.INVALID_STATUS);
+    }
+
+    return new SuccessResponseDto();
   }
 }

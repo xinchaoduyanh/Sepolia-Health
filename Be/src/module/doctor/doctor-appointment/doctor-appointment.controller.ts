@@ -1,4 +1,5 @@
 import { CurrentUser, Roles } from '@/common/decorators';
+import { SuccessResponseDto } from '@/common/dto';
 import { JwtAuthGuard, RolesGuard } from '@/common/guards';
 import {
   BadRequestException,
@@ -10,6 +11,7 @@ import {
   HttpStatus,
   Param,
   ParseIntPipe,
+  Patch,
   Post,
   Put,
   Query,
@@ -90,6 +92,69 @@ export class DoctorAppointmentController {
     );
   }
 
+  @Patch(':id/start')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Bắt đầu khám' })
+  @ApiParam({ name: 'id', type: 'number', description: 'ID appointment' })
+  @ApiResponse({
+    status: 200,
+    description: 'Bắt đầu khám thành công',
+    type: SuccessResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description:
+      'Trạng thái không hợp lệ, chưa đến giờ khám hoặc chưa thanh toán',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Không có quyền thao tác trên appointment này',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Không tìm thấy appointment',
+  })
+  async startAppointment(
+    @Param('id', ParseIntPipe) appointmentId: number,
+    @CurrentUser('userId') userId: number,
+  ): Promise<SuccessResponseDto> {
+    return this.doctorAppointmentService.startAppointment(
+      appointmentId,
+      userId,
+    );
+  }
+
+  @Patch(':id/complete')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Kết thúc khám' })
+  @ApiParam({ name: 'id', type: 'number', description: 'ID appointment' })
+  @ApiResponse({
+    status: 200,
+    description: 'Kết thúc khám thành công',
+    type: SuccessResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Trạng thái không hợp lệ',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Không có quyền thao tác trên appointment này',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Không tìm thấy appointment',
+  })
+  async completeAppointment(
+    @Param('id', ParseIntPipe) appointmentId: number,
+    @CurrentUser('userId') userId: number,
+  ): Promise<SuccessResponseDto> {
+    return this.doctorAppointmentService.completeAppointment(
+      appointmentId,
+      userId,
+    );
+  }
+
   @Post(':id/result')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
@@ -103,7 +168,7 @@ export class DoctorAppointmentController {
   })
   @ApiResponse({
     status: 400,
-    description: 'Appointment chưa hoàn thành hoặc dữ liệu không hợp lệ',
+    description: 'Appointment chưa diễn ra/hoàn thành hoặc dữ liệu không hợp lệ',
   })
   @ApiResponse({
     status: 403,
@@ -136,7 +201,7 @@ export class DoctorAppointmentController {
   })
   @ApiResponse({
     status: 400,
-    description: 'Appointment chưa hoàn thành hoặc dữ liệu không hợp lệ',
+    description: 'Appointment chưa diễn ra/hoàn thành hoặc dữ liệu không hợp lệ',
   })
   @ApiResponse({
     status: 403,
