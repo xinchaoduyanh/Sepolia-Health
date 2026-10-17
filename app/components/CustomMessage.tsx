@@ -9,6 +9,7 @@ import Markdown from 'react-native-markdown-display';
 import { useQueryClient } from '@tanstack/react-query';
 import { getChatUserInfoSync, type ChatUserInfo } from '@/lib/utils/chat-user-data';
 import { ChatbotAPI } from '@/lib/api/chatbot';
+import { readAiMessageExtra } from '@/types/ai-message';
 
 // Avatar cho tin nhắn của người khác. AI dùng ảnh bot bundled local.
 const MessageAvatar = ({ isAI, userImage }: { isAI: boolean; userImage?: string }) => {
@@ -144,12 +145,14 @@ const ConfirmationCard = ({
   kind,
   channelId,
   createdAt,
+  expiresAt,
   resolved,
 }: {
   text: string;
   kind?: string;
   channelId?: string;
   createdAt?: Date;
+  expiresAt?: Date;
   resolved?: boolean;
 }) => {
   const queryClient = useQueryClient();
@@ -161,7 +164,9 @@ const ConfirmationCard = ({
   const isCancel = kind === 'cancel_booking';
   const accent = isCancel ? '#DC2626' : '#059669'; // đỏ huỷ / xanh lá xác nhận
 
-  const expiresAtMs = createdAt ? createdAt.getTime() + CONFIRM_TTL_MS : null;
+  const expiresAtMs =
+    expiresAt?.getTime() ??
+    (createdAt ? createdAt.getTime() + CONFIRM_TTL_MS : null);
   const [expired, setExpired] = React.useState(
     expiresAtMs !== null && Date.now() > expiresAtMs
   );
@@ -316,8 +321,7 @@ export const CustomMessage = () => {
   const isAIMessage = !isMyMessage && message.user?.id === ChatbotAPI.getAIBotUserId();
 
   // Tin nhắn cần xác nhận (đặt/huỷ lịch) -> render THẺ có nút, user chỉ cần bấm.
-  // Stream có thể đặt custom field trong `.extra` HOẶC ở root -> đọc cả hai cho chắc.
-  const meta: any = (message as any).extra ?? (message as any);
+  const meta = readAiMessageExtra(message);
   if (isAIMessage && meta?.requiresConfirmation) {
     return (
       <Pressable
@@ -335,6 +339,7 @@ export const CustomMessage = () => {
             kind={meta?.proposedAction?.kind}
             channelId={channel?.id}
             createdAt={message.created_at ? new Date(message.created_at) : undefined}
+            expiresAt={meta?.expiresAt ? new Date(meta.expiresAt) : undefined}
             resolved={Boolean(meta?.resolved)}
           />
         </View>
