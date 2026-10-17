@@ -5,7 +5,18 @@ Output bridge tin tưởng (internal) nên validate nhẹ; có thể siết sau.
 """
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+import re
+from typing import Literal
+
+from pydantic import BaseModel, Field, field_validator
+
+KnowledgeTypeLiteral = Literal["disease", "symptom", "faq", "policy"]
+_ISO_DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+_ISO_DT = re.compile(
+    r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}"
+    r"(?:\.\d+)?"
+    r"(?:Z|[+-]\d{2}:\d{2})$"
+)
 
 
 # ---- input models ----------------------------------------------------------
@@ -19,77 +30,105 @@ class ResolveDateInput(BaseModel):
 
 
 class SearchKnowledgeInput(BaseModel):
-    query: str = Field(..., description="Câu hỏi hoặc từ khóa cần tra cứu kiến thức/quy trình/chính sách.")
-    types: list[str] = Field(
+    query: str = Field(
         ...,
-        description="Các loại kiến thức cần tra cứu. Chỉ chọn trong số: 'disease', 'symptom', 'faq', 'policy'."
+        min_length=1,
+        max_length=500,
+        description="Câu hỏi hoặc từ khóa cần tra cứu kiến thức/quy trình/chính sách.",
+    )
+    types: list[KnowledgeTypeLiteral] = Field(
+        ...,
+        min_length=1,
+        max_length=4,
+        description="Các loại kiến thức cần tra cứu. Chỉ chọn trong số: 'disease', 'symptom', 'faq', 'policy'.",
     )
 
 
 class GetClinicDetailInput(BaseModel):
-    clinic_id: int = Field(..., description="ID của phòng khám/cơ sở y tế cần xem chi tiết.")
+    clinic_id: int = Field(..., gt=0, description="ID của phòng khám/cơ sở y tế cần xem chi tiết.")
 
 
 class GetDoctorDetailInput(BaseModel):
-    doctor_id: int = Field(..., description="ID của bác sĩ cần xem chi tiết.")
+    doctor_id: int = Field(..., gt=0, description="ID của bác sĩ cần xem chi tiết.")
 
 
 class SearchClinicsInput(BaseModel):
-    q: str | None = Field(None, description="Từ khoá tên cơ sở. Để TRỐNG (None) để liệt kê TẤT CẢ cơ sở.")
-    location: str | None = Field(None, description="Lọc theo địa chỉ/khu vực, vd 'Hoàn Kiếm', 'Cầu Giấy'.")
+    q: str | None = Field(None, max_length=200, description="Từ khoá tên cơ sở. Để TRỐNG (None) để liệt kê TẤT CẢ cơ sở.")
+    location: str | None = Field(None, max_length=200, description="Lọc theo địa chỉ/khu vực, vd 'Hoàn Kiếm', 'Cầu Giấy'.")
 
 
 class SearchServicesInput(BaseModel):
-    q: str
-    clinic_id: int | None = None
+    q: str = Field(..., min_length=1, max_length=200)
+    clinic_id: int | None = Field(None, gt=0)
 
 
 class SearchDoctorsInput(BaseModel):
-    q: str | None = None
-    service_id: int | None = None
-    clinic_id: int | None = None
+    q: str | None = Field(None, max_length=200)
+    service_id: int | None = Field(None, gt=0)
+    clinic_id: int | None = Field(None, gt=0)
 
 
 class GetDoctorAvailabilityInput(BaseModel):
-    doctor_id: int
+    doctor_id: int = Field(..., gt=0)
     date: str = Field(..., description="ISO date 'YYYY-MM-DD' (từ resolve_date)")
-    service_id: int | None = None
+    service_id: int | None = Field(None, gt=0)
+
+    @field_validator("date")
+    @classmethod
+    def _iso_date(cls, v: str) -> str:
+        if not _ISO_DATE.match(v or ""):
+            raise ValueError("date must be YYYY-MM-DD")
+        return v
 
 
 class FindAvailableDoctorsInput(BaseModel):
     date: str
-    service_id: int | None = None
+    service_id: int | None = Field(None, gt=0)
     time_preference: str | None = Field(
         None, description="Buổi mong muốn: morning|noon|afternoon|evening|office (sáng/trưa/chiều/tối/giờ hành chính)."
     )
-    clinic_id: int | None = Field(None, description="Lọc bác sĩ theo cơ sở (lấy id từ search_clinics).")
+    clinic_id: int | None = Field(None, gt=0, description="Lọc bác sĩ theo cơ sở (lấy id từ search_clinics).")
+
+    @field_validator("date")
+    @classmethod
+    def _iso_date(cls, v: str) -> str:
+        if not _ISO_DATE.match(v or ""):
+            raise ValueError("date must be YYYY-MM-DD")
+        return v
 
 
 class ResolvePatientProfileInput(BaseModel):
-    user_id: int
+    user_id: int = Field(..., gt=0)
 
 
 class CreateBookingDraftInput(BaseModel):
-    patient_profile_id: int
-    doctor_id: int
-    service_id: int
+    patient_profile_id: int = Field(..., gt=0)
+    doctor_id: int = Field(..., gt=0)
+    service_id: int = Field(..., gt=0)
     start_time: str = Field(..., description="ISO datetime, vd 2026-06-23T09:00:00+07:00")
+
+    @field_validator("start_time")
+    @classmethod
+    def _iso_datetime(cls, v: str) -> str:
+        if not _ISO_DT.match(v or ""):
+            raise ValueError("start_time must be ISO-8601 with timezone, e.g. 2026-06-23T09:00:00+07:00")
+        return v
 
 
 class ConfirmBookingInput(BaseModel):
-    draft_id: str
+    draft_id: str = Field(..., min_length=1, max_length=64)
 
 
 class GetUpcomingAppointmentsInput(BaseModel):
-    user_id: int
+    user_id: int = Field(..., gt=0)
 
 
 class GetPatientHistoryInput(BaseModel):
-    user_id: int
+    user_id: int = Field(..., gt=0)
 
 
 class CancelAppointmentInput(BaseModel):
-    appointment_id: int
+    appointment_id: int = Field(..., gt=0)
 
 
 # ---- helper: pydantic model -> OpenAI tool schema --------------------------

@@ -37,5 +37,7 @@ export default registerAs('app', () => {
     aiInternalToken: parsed.AI_INTERNAL_TOKEN,
     aiBaseUrl: parsed.AI_BASE_URL,
     chatbotUseAiPlatform: parsed.CHATBOT_USE_AI_PLATFORM,
+    chatbotAllowDirectProcess: parsed.CHATBOT_ALLOW_DIRECT_PROCESS,
+    aiSessionCacheTtlSeconds: parsed.AI_SESSION_CACHE_TTL_SECONDS,
   };
 });

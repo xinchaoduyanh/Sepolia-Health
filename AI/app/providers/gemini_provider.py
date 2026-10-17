@@ -21,10 +21,17 @@ from typing import Sequence, AsyncGenerator, Union
 import httpx
 
 from app.providers.base import AIProvider, ChatResponse, ProviderError, ToolCall
+from app.resilience.circuit_breaker import CircuitBreaker, CircuitOpenError
 
 # JSON-Schema keys mà Gemini functionDeclarations KHÔNG nuốt được -> strip.
 _UNSUPPORTED_SCHEMA_KEYS = ("title", "default", "additionalProperties", "$schema")
 _CLOUD_PLATFORM_SCOPE = "https://www.googleapis.com/auth/cloud-platform"
+_SAFETY_SETTINGS = [
+    {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_ONLY_HIGH"},
+    {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_ONLY_HIGH"},
+    {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_ONLY_HIGH"},
+    {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_ONLY_HIGH"},
+]
 
 
 def _clean_schema(node):
@@ -33,7 +40,16 @@ def _clean_schema(node):
         return [_clean_schema(x) for x in node]
     if not isinstance(node, dict):
         return node
-    return {k: _clean_schema(v) for k, v in node.items() if k not in _UNSUPPORTED_SCHEMA_KEYS}
+    out = {k: _clean_schema(v) for k, v in node.items() if k not in _UNSUPPORTED_SCHEMA_KEYS}
+    # Pydantic `gt/lt` -> exclusiveMinimum/Maximum (Gemini 400); đổi sang minimum/maximum.
+    if isinstance(out.get("type"), str):
+        step = 1 if out["type"] == "integer" else 0
+        for ex, inc, delta in (("exclusiveMinimum", "minimum", step), ("exclusiveMaximum", "maximum", -step)):
+            if ex in out:
+                val = out.pop(ex)
+                if isinstance(val, (int, float)):
+                    out.setdefault(inc, val + delta)
+    return out
 
 
 def _to_tools(tools: list[dict] | None) -> list[dict] | None:
@@ -147,10 +163,12 @@ class GeminiProvider(AIProvider):
         credentials_path: str | None = None,
         client: httpx.AsyncClient | None = None,
         timeout: float = 60.0,
+        circuit: CircuitBreaker | None = None,
     ) -> None:
         self._vertex = vertex
         self._client = client  # inject để test; None -> tạo per-call
         self._timeout = timeout
+        self._circuit = circuit
 
         if vertex:
             if not project:
@@ -189,6 +207,11 @@ class GeminiProvider(AIProvider):
             return await client.post(url, json=payload, headers=headers)
 
     async def _post_json(self, url: str, headers: dict, payload: dict) -> dict:
+        if self._circuit is not None:
+            try:
+                self._circuit.before_call()
+            except CircuitOpenError as exc:
+                raise ProviderError("Gemini circuit is open") from exc
         last_err: Exception | None = None
         for _ in range(2):  # 1 retry cho 5xx / lỗi mạng
             try:
@@ -200,8 +223,14 @@ class GeminiProvider(AIProvider):
                 last_err = ProviderError(f"Gemini {resp.status_code} at {url}")
                 continue
             if resp.status_code >= 400:
+                if self._circuit is not None:
+                    self._circuit.record_success()
                 raise ProviderError(f"Gemini {resp.status_code}: {resp.text}")
+            if self._circuit is not None:
+                self._circuit.record_success()
             return resp.json()
+        if self._circuit is not None:
+            self._circuit.record_failure()
         raise ProviderError(f"Gemini không phản hồi sau retry: {url}") from last_err
 
     async def chat(
@@ -216,6 +245,7 @@ class GeminiProvider(AIProvider):
         payload: dict = {
             "contents": contents,
             "generationConfig": {"temperature": temperature, "maxOutputTokens": max_tokens},
+            "safetySettings": _SAFETY_SETTINGS,
         }
         if system_text:
             payload["systemInstruction"] = {"parts": [{"text": system_text}]}
@@ -263,6 +293,7 @@ class GeminiProvider(AIProvider):
         payload: dict = {
             "contents": contents,
             "generationConfig": {"temperature": temperature, "maxOutputTokens": max_tokens},
+            "safetySettings": _SAFETY_SETTINGS,
         }
         if system_text:
             payload["systemInstruction"] = {"parts": [{"text": system_text}]}
@@ -276,10 +307,20 @@ class GeminiProvider(AIProvider):
         if client is None:
             client = httpx.AsyncClient(timeout=self._timeout)
             
+        if self._circuit is not None:
+            try:
+                self._circuit.before_call()
+            except CircuitOpenError as exc:
+                raise ProviderError("Gemini circuit is open") from exc
         try:
             async with client.stream("POST", url, headers=headers, json=payload) as response:
                 if response.status_code >= 400:
                     await response.aread()
+                    if self._circuit is not None:
+                        if response.status_code >= 500:
+                            self._circuit.record_failure()
+                        else:
+                            self._circuit.record_success()
                     raise ProviderError(f"Gemini {response.status_code}: {response.text}")
                 
                 tool_call_idx = 0
@@ -302,6 +343,12 @@ class GeminiProvider(AIProvider):
                                         tool_call_idx += 1
                         except json.JSONDecodeError:
                             continue
+                if self._circuit is not None:
+                    self._circuit.record_success()
+        except (httpx.TimeoutException, httpx.TransportError):
+            if self._circuit is not None:
+                self._circuit.record_failure()
+            raise
         finally:
             if self._client is None:
                 await client.aclose()

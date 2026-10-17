@@ -4,9 +4,13 @@ from pathlib import Path
 
 from app.config import get_settings
 from app.providers.ollama_provider import OllamaProvider
-from app.rag.indexer import COLLECTION_METADATA, COLLECTION_NAME
+from app.rag.indexer import COLLECTION_NAME
 from app.rag.models import KnowledgeType, RetrievedChunk
 from app.rag.policy import KnowledgePolicy
+
+
+class RetrievalUnavailableError(RuntimeError):
+    """Index/embedding/query infrastructure is unavailable."""
 
 
 def _load_chromadb():
@@ -36,13 +40,24 @@ class KnowledgeRetriever:
         self._collection = None  # lazy + cached giữa các lần retrieve
 
     def _get_collection(self):
+        """Lấy collection đã index. Không get_or_create rỗng (giả ready)."""
         if self._collection is None:
             chromadb = _load_chromadb()
             client = chromadb.PersistentClient(path=self.chroma_dir)
-            self._collection = client.get_or_create_collection(
-                COLLECTION_NAME, metadata=COLLECTION_METADATA
-            )
+            try:
+                self._collection = client.get_collection(COLLECTION_NAME)
+            except Exception as exc:  # noqa: BLE001
+                raise RuntimeError(
+                    f"RAG collection '{COLLECTION_NAME}' missing. "
+                    "Run: python -m app.rag.indexer --rebuild"
+                ) from exc
         return self._collection
+
+    def collection_count(self) -> int:
+        try:
+            return int(self._get_collection().count())
+        except Exception:  # noqa: BLE001
+            return 0
 
     async def retrieve(
         self,
@@ -52,16 +67,30 @@ class KnowledgeRetriever:
         allowed_only: bool = True,
         min_score: float = 0.45,
     ) -> list[RetrievedChunk]:
-        collection = self._get_collection()
+        try:
+            collection = self._get_collection()
+            if collection.count() == 0:
+                raise RetrievalUnavailableError("RAG collection is empty")
+        except RetrievalUnavailableError:
+            raise
+        except Exception as exc:
+            raise RetrievalUnavailableError("RAG collection unavailable") from exc
 
-        query_embedding = (await self.provider.embed(self.embedding_model, [query]))[0]
+        try:
+            query_embedding = (await self.provider.embed(self.embedding_model, [query]))[0]
+        except Exception as exc:
+            raise RetrievalUnavailableError("Embedding provider unavailable") from exc
+
         where = {"type": {"$in": filter_types}} if filter_types else None
-        result = collection.query(
-            query_embeddings=[query_embedding],
-            n_results=top_k,
-            where=where,
-            include=["documents", "metadatas", "distances"],
-        )
+        try:
+            result = collection.query(
+                query_embeddings=[query_embedding],
+                n_results=top_k,
+                where=where,
+                include=["documents", "metadatas", "distances"],
+            )
+        except Exception as exc:
+            raise RetrievalUnavailableError("Vector query failed") from exc
 
         docs = result.get("documents", [[]])[0]
         metadatas = result.get("metadatas", [[]])[0]

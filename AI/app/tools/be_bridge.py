@@ -5,13 +5,55 @@ là bản thật gọi Be/ /internal/bridge/... kèm X-Internal-Token.
 """
 from __future__ import annotations
 
+import threading
 from typing import Protocol
 
 import httpx
 
+from app.config import Settings, get_settings
+from app.resilience.circuit_breaker import CircuitBreaker, CircuitOpenError
+
 
 class BridgeError(RuntimeError):
     pass
+
+
+# Shared across clients — thresholds from Settings (AI_BRIDGE_CIRCUIT_*).
+_BRIDGE_CIRCUIT: CircuitBreaker | None = None
+_BRIDGE_CIRCUIT_LOCK = threading.Lock()
+_BRIDGE_CIRCUIT_CFG: tuple[int, float] | None = None
+
+
+def get_bridge_circuit(settings: Settings | None = None) -> CircuitBreaker:
+    """Circuit breaker đọc AI_BRIDGE_CIRCUIT_FAILURES / RECOVERY_SEC.
+
+    Re-create nếu settings threshold đổi (vd test override).
+    """
+    global _BRIDGE_CIRCUIT, _BRIDGE_CIRCUIT_CFG
+    s = settings or get_settings()
+    failures = int(s.bridge_circuit_failures)
+    recovery = float(s.bridge_circuit_recovery_sec)
+    # 0 / âm = tắt breaker (threshold rất cao, hầu như không open).
+    threshold = failures if failures > 0 else 10**9
+    cfg = (threshold, recovery)
+    with _BRIDGE_CIRCUIT_LOCK:
+        if _BRIDGE_CIRCUIT is None or _BRIDGE_CIRCUIT_CFG != cfg:
+            _BRIDGE_CIRCUIT = CircuitBreaker(
+                "be_bridge",
+                failure_threshold=threshold,
+                recovery_timeout_sec=max(1.0, recovery),
+                half_open_successes=2,
+            )
+            _BRIDGE_CIRCUIT_CFG = cfg
+        return _BRIDGE_CIRCUIT
+
+
+def reset_bridge_circuit_for_tests() -> None:
+    """Test helper: drop singleton để lần get sau đọc settings mới."""
+    global _BRIDGE_CIRCUIT, _BRIDGE_CIRCUIT_CFG
+    with _BRIDGE_CIRCUIT_LOCK:
+        _BRIDGE_CIRCUIT = None
+        _BRIDGE_CIRCUIT_CFG = None
 
 
 def _unwrap(body: object) -> dict:
@@ -24,11 +66,21 @@ def _unwrap(body: object) -> dict:
     "mềm" (vd doctor_off) đi qua success envelope -> nằm sẵn trong data.
     """
     if isinstance(body, dict):
+        # HttpException object body: { error_code, message }
+        if body.get("error_code"):
+            return {"error_code": str(body["error_code"])}
         if body.get("success") is False:  # error envelope
-            return {"error_code": str(body.get("message") or "bridge_error")}
+            msg = body.get("message")
+            if isinstance(msg, dict) and msg.get("error_code"):
+                return {"error_code": str(msg["error_code"])}
+            return {"error_code": str(msg or "bridge_error")}
         if "data" in body and "statusCode" in body:  # success envelope
             inner = body["data"]
             return inner if isinstance(inner, dict) else {"data": inner}
+        # Nest default: { statusCode, message: {...} | string }
+        msg = body.get("message")
+        if isinstance(msg, dict) and msg.get("error_code"):
+            return {"error_code": str(msg["error_code"])}
     return body if isinstance(body, dict) else {"data": body}
 
 
@@ -60,6 +112,7 @@ class HttpBridgeClient:
         acting_user_id: int | None = None,
         client: httpx.AsyncClient | None = None,
         timeout: float = 10.0,
+        circuit: CircuitBreaker | None = None,
     ) -> None:
         self._base = base_url.rstrip("/")
         self._shared_secret = shared_secret
@@ -71,6 +124,11 @@ class HttpBridgeClient:
             self._headers["X-Acting-User-Id"] = str(acting_user_id)
         self._client = client
         self._timeout = timeout
+        # Inject circuit theo settings (deps.get_bridge); fallback lazy get_bridge_circuit().
+        self._circuit = circuit
+
+    def _get_circuit(self) -> CircuitBreaker:
+        return self._circuit if self._circuit is not None else get_bridge_circuit()
 
     def with_acting_user(self, acting_user_id: int) -> "HttpBridgeClient":
         return HttpBridgeClient(
@@ -79,6 +137,7 @@ class HttpBridgeClient:
             acting_user_id=acting_user_id,
             client=self._client,
             timeout=self._timeout,
+            circuit=self._circuit,
         )
 
     async def _request(self, method: str, path: str, *, params: dict | None = None, json: dict | None = None) -> dict:
@@ -87,23 +146,59 @@ class HttpBridgeClient:
         if params:
             params = {k: v for k, v in params.items() if v is not None}
         url = self._base + path
+        circuit = self._get_circuit()
+        try:
+            circuit.before_call()
+        except CircuitOpenError:
+            return {"error_code": "bridge_unavailable"}
+
+        # Retry nội bộ: CHỈ record_failure MỘT LẦN sau khi cả vòng retry fail.
+        # (Trước: mỗi attempt = 1 failure → threshold 5 mở sau ~3 logical request.)
         last_err: Exception | None = None
-        for _ in range(2):  # 1 retry cho 5xx / lỗi mạng
+        last_error_code: str | None = None
+        for attempt in range(2):  # 1 retry cho 5xx / lỗi mạng
             try:
                 if self._client is not None:
-                    resp = await self._client.request(method, url, params=params, json=json, headers=self._headers, timeout=self._timeout)
+                    resp = await self._client.request(
+                        method, url, params=params, json=json, headers=self._headers, timeout=self._timeout
+                    )
                 else:
                     async with httpx.AsyncClient(timeout=self._timeout) as c:
-                        resp = await c.request(method, url, params=params, json=json, headers=self._headers)
+                        resp = await c.request(
+                            method, url, params=params, json=json, headers=self._headers
+                        )
             except (httpx.TimeoutException, httpx.TransportError) as exc:
                 last_err = exc
-                continue
+                last_error_code = "bridge_internal_error"
+                if attempt == 0:
+                    continue
+                break
             if resp.status_code >= 500:
+                # Prefer stable error_code (vd bridge_internal_error từ confirm).
+                try:
+                    parsed = _unwrap(resp.json())
+                    if isinstance(parsed, dict) and parsed.get("error_code"):
+                        last_error_code = str(parsed["error_code"])
+                        last_err = BridgeError(
+                            f"{resp.status_code} {path} {last_error_code}"
+                        )
+                        if attempt == 0:
+                            continue
+                        break
+                except Exception:  # noqa: BLE001
+                    pass
                 last_err = BridgeError(f"{resp.status_code} {path}")
-                continue
-            # 4xx vẫn trả body cho LLM tự xử (đã bóc envelope -> {error_code})
+                last_error_code = "bridge_internal_error"
+                if attempt == 0:
+                    continue
+                break
+            # 2xx/4xx: success for circuit (4xx = business error, Be còn sống).
+            circuit.record_success()
             return _unwrap(resp.json())
-        raise BridgeError(f"Bridge không phản hồi: {path}") from last_err
+
+        # Cả request + retry đều fail → đúng 1 failure cho 1 logical call.
+        circuit.record_failure()
+        return {"error_code": last_error_code or "bridge_internal_error"}
 
     async def search_clinics(self, q, location=None):
         return await self._request("GET", "/api/internal/bridge/clinics", params={"q": q, "location": location})

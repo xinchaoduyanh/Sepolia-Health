@@ -29,7 +29,7 @@ class OfferedItem(BaseModel):
     """1 phần tử trong danh sách vừa trình cho user (để resolve 'cái thứ 2')."""
 
     index: int
-    kind: str  # "doctor" | "service" | "slot" | "clinic"
+    kind: str  # "doctor" | "service" | "slot" | "clinic" | "appointment"
     id: int | str
     label: str
     price: int | None = None

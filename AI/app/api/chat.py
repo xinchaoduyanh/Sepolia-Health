@@ -1,7 +1,4 @@
-"""Chat endpoints (skeleton). Business logic agent ở Phase 06 — V1 là stub.
-
-Auth qua require_internal_token (gắn ở router cha trong main.py).
-"""
+"""Chat endpoints — session + turn loop with locks, rate limit, privacy."""
 from __future__ import annotations
 
 import asyncio
@@ -10,11 +7,12 @@ import logging
 import time
 import uuid
 from datetime import datetime, timedelta, timezone
-from typing import Callable, Awaitable
+from typing import Awaitable, Callable
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 
+from app.api.rate_limit import get_rate_limiter
 from app.api.schemas import (
     CreateSessionRequest,
     CreateSessionResponse,
@@ -40,7 +38,7 @@ from app.rag.policy import KnowledgePolicy
 from app.rag.retriever import KnowledgeRetriever
 from app.routing.model_router import ModelRouter
 from app.session.models import SessionState
-from app.session.store import SessionStore, SessionConflictError
+from app.session.store import SessionClosedError, SessionConflictError, SessionStore
 from app.tools.be_bridge import BridgeClient
 
 _LOG = logging.getLogger(__name__)
@@ -55,6 +53,40 @@ def _session_fresh(state: SessionState, max_age_minutes: int) -> bool:
     return datetime.now(timezone.utc) - last <= timedelta(minutes=max_age_minutes)
 
 
+def _enforce_rate_limit(user_id: int, settings: Settings) -> None:
+    if settings.rate_limit_per_minute <= 0 and settings.rate_limit_per_day <= 0:
+        return
+    limiter = get_rate_limiter(
+        per_minute=max(1, settings.rate_limit_per_minute) if settings.rate_limit_per_minute else 10**9,
+        per_day=max(1, settings.rate_limit_per_day) if settings.rate_limit_per_day else 10**9,
+    )
+    decision = limiter.check(user_id)
+    if not decision.allowed:
+        log_event("rate_limited", user_id=user_id, reason=decision.reason)
+        raise HTTPException(
+            status_code=429,
+            detail={
+                "error_code": decision.reason or "rate_limited",
+                "retry_after_sec": decision.retry_after_sec,
+            },
+            headers={"Retry-After": str(decision.retry_after_sec or 60)},
+        )
+
+
+async def _require_open_session(store: SessionStore, session_id: str) -> SessionState:
+    """Chặn closed/deleted ở MỌI path turn (message / stream / confirm / cancel).
+
+    Dùng store.get() — KHÔNG dùng get_including_closed().
+    """
+    state = await store.get(session_id)
+    if state is None:
+        raise HTTPException(
+            status_code=404,
+            detail={"error_code": "session_not_found_or_closed", "session_id": session_id},
+        )
+    return state
+
+
 @router.post("/sessions", response_model=CreateSessionResponse)
 async def create_session(
     req: CreateSessionRequest,
@@ -63,31 +95,92 @@ async def create_session(
 ) -> CreateSessionResponse:
     if req.channel_id:
         existing = await store.get_open_by_channel(req.channel_id)
-        # Defense-in-depth: chỉ reconnect nếu session thuộc đúng user. Channel đã là
-        # ai-consult-{userId} nhưng vẫn chốt để không nối nhầm session của user khác.
-        # Và chỉ reconnect session còn TƯƠI: state/requirement từ nhiều ngày trước
-        # (bác sĩ X, giờ Y đã qua) chỉ gây kẹt luồng mới — quá hạn thì mở session mới.
-        if (
-            existing
-            and existing.user_id == req.user_id
-            and _session_fresh(existing, settings.session_reconnect_max_age_minutes)
-        ):
-            log_event("session_reconnected", session_id=existing.session_id, user_id=req.user_id)
-            return CreateSessionResponse(session_id=existing.session_id)
+        # Defense-in-depth: chỉ reconnect nếu session thuộc đúng user + còn tươi.
+        if existing:
+            if existing.user_id != req.user_id:
+                raise HTTPException(
+                    status_code=409,
+                    detail={"error_code": "channel_owned_by_another_user"},
+                )
+            if _session_fresh(existing, settings.session_reconnect_max_age_minutes):
+                log_event(
+                    "session_reconnected",
+                    session_id=existing.session_id,
+                    user_id=req.user_id,
+                )
+                return CreateSessionResponse(session_id=existing.session_id)
+            # Release partial unique index before creating the replacement.
+            await store.delete_session(existing.session_id, purge_turns=False)
+            log_event(
+                "session_expired",
+                session_id=existing.session_id,
+                user_id=req.user_id,
+            )
 
     session_id = "sess_" + uuid.uuid4().hex[:16]
     state = SessionState(session_id=session_id, user_id=req.user_id, channel_id=req.channel_id)
-    await store.create(state)
-    log_event("session_created", session_id=session_id, user_id=req.user_id)
-    return CreateSessionResponse(session_id=session_id)
+    created = await store.create(state)
+    if created.user_id != req.user_id:
+        raise HTTPException(
+            status_code=409,
+            detail={"error_code": "channel_owned_by_another_user"},
+        )
+    event = "session_created" if created.session_id == session_id else "session_reconnected"
+    log_event(event, session_id=created.session_id, user_id=req.user_id)
+    return CreateSessionResponse(session_id=created.session_id)
 
 
 @router.get("/sessions/{session_id}", response_model=SessionState)
 async def get_session(session_id: str, store: SessionStore = Depends(get_store)) -> SessionState:
-    state = await store.get(session_id)
-    if state is None:
+    # Active only — closed session 404 (cùng contract message/confirm).
+    return await _require_open_session(store, session_id)
+
+
+@router.get("/sessions/{session_id}/export")
+async def export_session(
+    session_id: str,
+    store: SessionStore = Depends(get_store),
+) -> dict:
+    """Privacy: export qua get_including_closed (metadata wipe), không reopen turn."""
+    payload = await store.export_session(session_id)
+    if payload is None:
         raise HTTPException(status_code=404, detail="session not found")
-    return state
+    return payload
+
+
+@router.delete("/sessions/{session_id}")
+async def delete_session(
+    session_id: str,
+    store: SessionStore = Depends(get_store),
+) -> dict:
+    """Privacy: invalidate session (closedAt + wipe state) and purge turns.
+
+    Sau DELETE: get() / messages / stream / confirm / cancel → 404.
+    BE Map cache phải recreate session (404/410).
+    """
+    # Cho phép delete idempotent cả session đã closed (export/audit row còn).
+    existing = await store.get_including_closed(session_id)
+    if existing is None:
+        raise HTTPException(status_code=404, detail="session not found")
+    ok = await store.delete_session(session_id, purge_turns=True)
+    if not ok:
+        raise HTTPException(status_code=404, detail="session not found")
+    log_event("session_deleted", session_id=session_id)
+    return {"status": "deleted", "session_id": session_id, "invalidated": True}
+
+
+@router.post("/admin/purge-expired")
+async def purge_expired(
+    store: SessionStore = Depends(get_store),
+    settings: Settings = Depends(get_settings),
+) -> dict:
+    """Retention job (call from cron with internal token)."""
+    result = await store.purge_expired(
+        session_days=settings.session_retention_days,
+        turn_days=settings.turn_retention_days,
+    )
+    log_event("retention_purge", **result)
+    return {"status": "ok", **result}
 
 
 async def _run_turn(
@@ -103,55 +196,85 @@ async def _run_turn(
     knowledge_policy: KnowledgePolicy | None,
     stream_callback: Callable[[str], Awaitable[None]] | None = None,
 ) -> MessageResponse:
-    state = await store.get(session_id)
-    if state is None:
-        raise HTTPException(status_code=404, detail="session not found")
-    agent = build_agent_for_user(
-        state.user_id,
-        provider,
-        bridge,
-        prompts,
-        settings,
-        retriever=retriever,
-        emergency_detector=emergency_detector,
-        knowledge_policy=knowledge_policy,
-    )
-    # Conversation memory: nhồi N lượt gần nhất (đã lưu ở AiTurn) làm context.
-    # Lấy TRƯỚC record_turn của lượt này nên không bị trùng câu hiện tại.
-    history = await store.list_recent_turns(session_id, settings.ai_history_max_turns)
+    # Gate closed session — message / confirm / cancel / stream đều qua đây.
+    state = await _require_open_session(store, session_id)
 
-    trace_id = new_trace_id()
-    started = time.perf_counter()
-    resp = None
-    try:
-        resp = await agent.handle_turn(state, message, trace_id, history=history, stream_callback=stream_callback)
-    finally:
-        latency_ms = int((time.perf_counter() - started) * 1000)
+    if len(message) > settings.max_message_chars:
+        raise HTTPException(
+            status_code=400,
+            detail={"error_code": "message_too_long", "max": settings.max_message_chars},
+        )
+
+    _enforce_rate_limit(state.user_id, settings)
+
+    # Phase 4: serialize turns before LLM/tool execution.
+    async with store.turn_lock(session_id):
+        # Re-read under lock (delete có thể xảy ra giữa chừng).
+        state = await _require_open_session(store, session_id)
+
+        agent = build_agent_for_user(
+            state.user_id,
+            provider,
+            bridge,
+            prompts,
+            settings,
+            retriever=retriever,
+            emergency_detector=emergency_detector,
+            knowledge_policy=knowledge_policy,
+        )
+        history = await store.list_recent_turns(session_id, settings.ai_history_max_turns)
+
+        trace_id = new_trace_id()
+        started = time.perf_counter()
+        resp = None
         try:
-            await store.update(state)
-        except SessionConflictError:
-            if resp is None:
-                pass  # Do not mask original exception from handle_turn
-            else:
-                raise HTTPException(status_code=409, detail="session busy, retry")
-        
-        log_event("turn", session_id=session_id, trace_id=trace_id, state=state.agent_state.value)
-
-        if resp is not None:
+            resp = await agent.handle_turn(
+                state, message, trace_id, history=history, stream_callback=stream_callback
+            )
+        finally:
+            latency_ms = int((time.perf_counter() - started) * 1000)
             try:
-                await store.record_turn(
-                    session_id=session_id,
-                    trace_id=trace_id,
-                    user_message=message,
-                    ai_message=resp.message,
-                    tool_results=[s.model_dump() for s in resp.tool_results_summary],
-                    model=ModelRouter(settings).select("response"),
-                    latency_ms=latency_ms,
-                )
-            except Exception:
-                _LOG.exception("record_turn failed for session %s trace %s", session_id, trace_id)
+                await store.update(state)
+            except SessionClosedError:
+                raise HTTPException(status_code=410, detail="session closed")
+            except SessionConflictError:
+                if resp is None:
+                    pass
+                else:
+                    raise HTTPException(status_code=409, detail="session busy, retry")
 
-    return resp
+            log_event(
+                "turn",
+                session_id=session_id,
+                trace_id=trace_id,
+                state=state.agent_state.value,
+                latency_ms=latency_ms,
+                injection_suspected=bool(resp and resp.injection_suspected),
+                policy_violations=(resp.policy_violations if resp else None),
+            )
+
+            if resp is not None:
+                try:
+                    # toolCalls = lời gọi (name+args); toolResults = summary ok/error.
+                    # Không copy summary vào toolCalls (P3 audit bug).
+                    await store.record_turn(
+                        session_id=session_id,
+                        trace_id=trace_id,
+                        user_message=message,
+                        ai_message=resp.message,
+                        tool_results=[s.model_dump() for s in resp.tool_results_summary],
+                        tool_calls=[c.model_dump() for c in resp.tool_calls_audit],
+                        model=ModelRouter(settings).select("response"),
+                        latency_ms=latency_ms,
+                        policy_violations={
+                            "violations": resp.policy_violations,
+                            "injection_suspected": resp.injection_suspected,
+                        },
+                    )
+                except Exception:
+                    _LOG.exception("record_turn failed for session %s trace %s", session_id, trace_id)
+
+        return resp
 
 
 @router.post("/sessions/{session_id}/messages", response_model=MessageResponse)
@@ -168,7 +291,16 @@ async def post_message(
     knowledge_policy: KnowledgePolicy = Depends(get_knowledge_policy),
 ) -> MessageResponse:
     return await _run_turn(
-        session_id, req.message, store, provider, bridge, prompts, settings, retriever, emergency_detector, knowledge_policy
+        session_id,
+        req.message,
+        store,
+        provider,
+        bridge,
+        prompts,
+        settings,
+        retriever,
+        emergency_detector,
+        knowledge_policy,
     )
 
 
@@ -185,7 +317,11 @@ async def stream_message(
     emergency_detector: EmergencyDetector = Depends(get_emergency_detector),
     knowledge_policy: KnowledgePolicy = Depends(get_knowledge_policy),
 ):
-    queue = asyncio.Queue()
+    # Fail-fast HTTP 404 TRƯỚC StreamingResponse (closed → get() None).
+    # Nếu để lỗi trong SSE task, BE nhận 200 và Map cache không invalidate.
+    await _require_open_session(store, session_id)
+
+    queue: asyncio.Queue = asyncio.Queue()
 
     async def stream_callback(chunk: str):
         await queue.put({"type": "chunk", "text": chunk})
@@ -193,14 +329,35 @@ async def stream_message(
     async def run_task():
         try:
             resp = await _run_turn(
-                session_id, req.message, store, provider, bridge, prompts, settings, retriever, emergency_detector, knowledge_policy, stream_callback=stream_callback
+                session_id,
+                req.message,
+                store,
+                provider,
+                bridge,
+                prompts,
+                settings,
+                retriever,
+                emergency_detector,
+                knowledge_policy,
+                stream_callback=stream_callback,
             )
             await queue.put({"type": "final", "response": resp.model_dump(mode="json")})
-        except Exception as e:
+        except HTTPException as he:
+            detail = he.detail if isinstance(he.detail, dict) else {"message": str(he.detail)}
+            await queue.put(
+                {
+                    "type": "error",
+                    "status": he.status_code,
+                    **(detail if isinstance(detail, dict) else {"message": detail}),
+                }
+            )
+        except Exception:
             _LOG.exception("Error in stream task")
-            await queue.put({"type": "error", "message": "Có lỗi xảy ra, anh/chị thử lại giúp em nhé."})
+            await queue.put(
+                {"type": "error", "message": "Có lỗi xảy ra, anh/chị thử lại giúp em nhé."}
+            )
         finally:
-            await queue.put(None)  # EOF
+            await queue.put(None)
 
     async def sse_generator():
         task = asyncio.create_task(run_task())
@@ -212,7 +369,7 @@ async def stream_message(
                 yield f"data: {json.dumps(chunk, ensure_ascii=False)}\n\n"
         finally:
             task.cancel()
-            
+
     return StreamingResponse(sse_generator(), media_type="text/event-stream")
 
 
@@ -228,9 +385,17 @@ async def confirm(
     emergency_detector: EmergencyDetector = Depends(get_emergency_detector),
     knowledge_policy: KnowledgePolicy = Depends(get_knowledge_policy),
 ) -> MessageResponse:
-    # FE bấm "Xác nhận" -> coi như user đồng ý (agent xử ở state awaiting_confirmation).
     return await _run_turn(
-        session_id, "vâng", store, provider, bridge, prompts, settings, retriever, emergency_detector, knowledge_policy
+        session_id,
+        "vâng",
+        store,
+        provider,
+        bridge,
+        prompts,
+        settings,
+        retriever,
+        emergency_detector,
+        knowledge_policy,
     )
 
 
@@ -247,5 +412,14 @@ async def cancel(
     knowledge_policy: KnowledgePolicy = Depends(get_knowledge_policy),
 ) -> MessageResponse:
     return await _run_turn(
-        session_id, "không", store, provider, bridge, prompts, settings, retriever, emergency_detector, knowledge_policy
+        session_id,
+        "không",
+        store,
+        provider,
+        bridge,
+        prompts,
+        settings,
+        retriever,
+        emergency_detector,
+        knowledge_policy,
     )

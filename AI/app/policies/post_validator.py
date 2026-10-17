@@ -2,7 +2,8 @@
 
 Bắt: (1) khẳng định chẩn đoán ("bạn bị ...", "chẩn đoán là"),
 (2) markdown rác (```json), (3) rò rỉ system prompt / internal token,
-(4) nhắc bệnh ngoài allowlist (truyền vào disallowed_terms từ Phase 04).
+(4) nhắc bệnh ngoài allowlist (truyền vào disallowed_terms từ Phase 04),
+(5) khuyến nghị thuốc / chỉnh liều (scope safety).
 """
 from __future__ import annotations
 
@@ -15,7 +16,13 @@ _DIAGNOSIS = [
     "ban bi", "ban dang bi", "chan doan la", "ket luan ban", "ban mac",
     "chac chan ban bi",
 ]
-_LEAK = ["x-internal-token", "internal_shared_secret", "system prompt:"]
+_MEDICATION = [
+    "ban nen uong", "ban nen dung", "hay uong thuoc", "ke don cho",
+    "lieu luong", "uong moi ngay", "tu y dung thuoc", "dung thuoc gi",
+    "toi khuyen ban uong", "nen uong thuoc", "uong thuoc khang sinh",
+    "anh nen uong", "chi nen uong",
+]
+_LEAK = ["x-internal-token", "internal_shared_secret", "system prompt:", "ai_internal"]
 _CODE_FENCE = re.compile(r"```")
 
 
@@ -32,6 +39,9 @@ def check(text: str, disallowed_terms: list[str] | None = None) -> PostValidateR
     if any(p in t for p in _DIAGNOSIS):
         res.violated = True
         res.reasons.append("diagnosis_assertion")
+    if any(p in t for p in _MEDICATION):
+        res.violated = True
+        res.reasons.append("medication_advice")
     if _CODE_FENCE.search(text):
         res.violated = True
         res.reasons.append("markdown_code_fence")

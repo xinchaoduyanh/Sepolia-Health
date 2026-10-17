@@ -9,6 +9,7 @@ import {
   Req,
   Headers,
   Logger,
+  NotFoundException,
   UnauthorizedException,
   RawBodyRequest,
 } from '@nestjs/common';
@@ -94,7 +95,7 @@ export class ChatbotController {
       },
     },
   })
-  handleStreamChatWebhook(
+  async handleStreamChatWebhook(
     @Req() req: RawBodyRequest<ExpressRequest>,
     @Headers('x-signature') signature: string,
     @Body() payload: StreamChatWebhookDto,
@@ -119,6 +120,13 @@ export class ChatbotController {
       return { status: 'ignored' };
     }
 
+    // 3b. Giới hạn độ dài (đồng bộ ProcessMessageDto max 2000).
+    const text = message.text.trim();
+    if (text.length > 2000) {
+      this.logger.warn(`Webhook message too long (${text.length}), ignored`);
+      return { status: 'ignored', reason: 'message_too_long' };
+    }
+
     // 4. Bỏ qua message do chính bot gửi (tránh vòng lặp).
     if (userId === this.config.aiBotUserId) {
       return { status: 'ignored' };
@@ -132,14 +140,20 @@ export class ChatbotController {
       return { status: 'ignored' };
     }
 
-    // 6. Xử lý bất đồng bộ. KHÔNG log full payload (chứa nội dung chat).
-    this.chatbotService
-      .processMessageAndReply(channelId, message.text, userId)
-      .catch((err) =>
-        this.logger.error(`Lỗi xử lý webhook message: ${err?.message}`),
-      );
-
-    return { status: 'ok' };
+    // 6. Durable handoff: chỉ ACK sau khi BullMQ đã persist job vào Redis.
+    // message.id → deterministic jobId, nên webhook retry không tạo double turn.
+    const streamMessageId = message.id;
+    if (!streamMessageId) {
+      this.logger.warn('Webhook message.new missing message.id');
+      return { status: 'ignored', reason: 'message_id_required' };
+    }
+    await this.chatbotService.enqueueStreamMessage({
+      streamMessageId,
+      channelId,
+      text,
+      userId,
+    });
+    return { status: 'queued' };
   }
 
   /**
@@ -159,6 +173,9 @@ export class ChatbotController {
     description: 'Message processed successfully',
   })
   async processMessage(@Body() dto: ProcessMessageDto, @Request() req) {
+    if (!this.config.chatbotAllowDirectProcess) {
+      throw new NotFoundException('Direct chatbot ingress is disabled');
+    }
     // User id LẤY TỪ JWT, KHÔNG tin dto.userId (ngăn giả mạo).
     const userId = req.user?.userId;
 

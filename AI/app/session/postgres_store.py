@@ -9,10 +9,12 @@ from sqlalchemy import Column, String, Integer, DateTime
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.future import select
 
-from app.session.models import SessionState, AgentState
-from app.session.store import SessionStore, SessionConflictError
+from app.session.locks import PostgresTurnLocker
+from app.session.models import AgentState, BookingRequirement, SessionState
+from app.session.store import SessionClosedError, SessionConflictError, SessionStore
 
 Base = declarative_base()
 
@@ -82,10 +84,22 @@ class PostgresSessionStore(SessionStore):
             class_=AsyncSession,
             expire_on_commit=False,
         )
+        self._turn_locker = PostgresTurnLocker(self.engine)
 
     async def dispose(self) -> None:
         """Đóng connection pool — gọi lúc app shutdown."""
         await self.engine.dispose()
+
+    async def ping(self) -> None:
+        """Readiness: kiểm tra DB reachable."""
+        from sqlalchemy import text
+
+        async with self.engine.connect() as conn:
+            await conn.execute(text("SELECT 1"))
+
+    def turn_lock(self, session_id: str):
+        """Serialize turns via PostgreSQL advisory lock (multi-worker safe)."""
+        return self._turn_locker.turn_lock(session_id)
 
     async def create(self, state: SessionState) -> SessionState:
         now = datetime.datetime.utcnow()
@@ -107,29 +121,85 @@ class PostgresSessionStore(SessionStore):
             closedAt=closed_at,
         )
         
-        async with self.session_factory() as session:
-            async with session.begin():
-                session.add(db_session)
-        return state
+        try:
+            async with self.session_factory() as session:
+                async with session.begin():
+                    session.add(db_session)
+            return state
+        except IntegrityError:
+            # Partial unique index guarantees one open session/channel. A
+            # concurrent creator should reconnect to the row that won.
+            if state.channel_id:
+                existing = await self.get_open_by_channel(state.channel_id)
+                if existing is not None:
+                    return existing
+            raise
+
+    def _row_to_state(self, db_session: AiSessionDb) -> SessionState:
+        data = dict(db_session.state or {})
+        data["session_id"] = db_session.id
+        data["user_id"] = db_session.userId
+        data["agent_state"] = db_session.agentState
+        data["channel_id"] = db_session.channelId
+        data["version"] = db_session.version
+        return SessionState.model_validate(data)
+
+    @staticmethod
+    def _wipe_state_dict(user_id: int, session_id: str, channel_id: str | None, version: int) -> dict:
+        """Strip PII / booking context after DELETE or retention close."""
+        wiped = SessionState(
+            session_id=session_id,
+            user_id=user_id,
+            agent_state=AgentState.FAILED,
+            channel_id=None,  # chặn reconnect theo channel
+            booking_requirement=BookingRequirement(),
+            booking_draft=None,
+            pending_confirmation=None,
+            last_offered=[],
+            turn_summaries=[],
+            patient_summary=None,
+            patient_profile_id=None,
+            trace_ids=[],
+            version=version,
+        )
+        return wiped.model_dump(mode="json")
+
+    def _invalidate_row(self, db_session: AiSessionDb, *, now: datetime.datetime) -> None:
+        """Vô hiệu hóa session: closedAt + FAILED + wipe state (không chỉ set cờ)."""
+        new_version = int(db_session.version or 0) + 1
+        db_session.closedAt = now
+        db_session.updatedAt = now
+        db_session.agentState = AgentState.FAILED.value
+        db_session.channelId = None
+        db_session.version = new_version
+        db_session.state = self._wipe_state_dict(
+            user_id=db_session.userId,
+            session_id=db_session.id,
+            channel_id=None,
+            version=new_version,
+        )
 
     async def get(self, session_id: str) -> SessionState | None:
+        """Active session only — closedAt set → None (message/confirm/cancel)."""
         async with self.session_factory() as session:
             stmt = select(AiSessionDb).where(AiSessionDb.id == session_id)
             result = await session.execute(stmt)
             db_session = result.scalars().first()
             if not db_session:
                 return None
-            
-            # Load state dictionary
-            data = db_session.state
-            # Sync columns values back to state
-            data['session_id'] = db_session.id
-            data['user_id'] = db_session.userId
-            data['agent_state'] = db_session.agentState
-            data['channel_id'] = db_session.channelId
-            data['version'] = db_session.version
-            
-            return SessionState.model_validate(data)
+            if db_session.closedAt is not None:
+                return None
+            return self._row_to_state(db_session)
+
+    async def get_including_closed(self, session_id: str) -> SessionState | None:
+        """Kể cả session đã DELETE/retention (export / audit)."""
+        async with self.session_factory() as session:
+            stmt = select(AiSessionDb).where(AiSessionDb.id == session_id)
+            result = await session.execute(stmt)
+            db_session = result.scalars().first()
+            if not db_session:
+                return None
+            return self._row_to_state(db_session)
 
     async def get_open_by_channel(self, channel_id: str) -> SessionState | None:
         async with self.session_factory() as session:
@@ -144,15 +214,7 @@ class PostgresSessionStore(SessionStore):
             db_session = result.scalars().first()
             if not db_session:
                 return None
-
-            data = db_session.state
-            data['session_id'] = db_session.id
-            data['user_id'] = db_session.userId
-            data['agent_state'] = db_session.agentState
-            data['channel_id'] = db_session.channelId
-            data['version'] = db_session.version
-
-            return SessionState.model_validate(data)
+            return self._row_to_state(db_session)
 
     async def update(self, state: SessionState) -> SessionState:
         async with self.session_factory() as session:
@@ -168,6 +230,10 @@ class PostgresSessionStore(SessionStore):
                 db_session = result.scalars().first()
                 if not db_session:
                     raise KeyError(state.session_id)
+
+                # Không cho update “mở lại” session đã DELETE/retention.
+                if db_session.closedAt is not None:
+                    raise SessionClosedError(state.session_id)
 
                 # Optimistic locking check
                 if db_session.version != state.version:
@@ -185,14 +251,16 @@ class PostgresSessionStore(SessionStore):
                 db_state = state.model_dump(mode='json')
                 
                 now = datetime.datetime.utcnow()
-                closed_at = now if state.agent_state in (AgentState.BOOKED, AgentState.FAILED) else None
+                # Chỉ SET closedAt khi vào terminal; không ghi đè closedAt=None
+                # (tránh vô tình reopen nếu logic khác set closed).
+                if state.agent_state in (AgentState.BOOKED, AgentState.FAILED):
+                    db_session.closedAt = now
                 
                 db_session.agentState = state.agent_state.value
                 db_session.channelId = state.channel_id
                 db_session.state = db_state
                 db_session.version = new_version
                 db_session.updatedAt = now
-                db_session.closedAt = closed_at
 
         return state
 
@@ -204,6 +272,7 @@ class PostgresSessionStore(SessionStore):
         user_message: str | None,
         ai_message: str | None,
         tool_results: list | dict | None = None,
+        tool_calls: list | dict | None = None,
         model: str | None = None,
         latency_ms: int | None = None,
         policy_violations: list | dict | None = None,
@@ -214,6 +283,7 @@ class PostgresSessionStore(SessionStore):
             traceId=trace_id,
             userMessage=user_message,
             aiMessage=ai_message,
+            toolCalls=tool_calls,
             toolResults=tool_results,
             model=model,
             latencyMs=latency_ms,
@@ -223,7 +293,6 @@ class PostgresSessionStore(SessionStore):
         async with self.session_factory() as session:
             async with session.begin():
                 session.add(turn)
-
 
     async def list_recent_turns(
         self, session_id: str, limit: int
@@ -244,3 +313,83 @@ class PostgresSessionStore(SessionStore):
         rows.reverse()
         return [(r.userMessage, r.aiMessage) for r in rows]
 
+    async def delete_session(self, session_id: str, *, purge_turns: bool = True) -> bool:
+        async with self.session_factory() as session:
+            async with session.begin():
+                stmt = (
+                    select(AiSessionDb)
+                    .where(AiSessionDb.id == session_id)
+                    .with_for_update()
+                )
+                result = await session.execute(stmt)
+                db_session = result.scalars().first()
+                if not db_session:
+                    return False
+                now = datetime.datetime.utcnow()
+                # Idempotent: đã closed vẫn wipe lại + purge turns nếu yêu cầu.
+                self._invalidate_row(db_session, now=now)
+                if purge_turns:
+                    from sqlalchemy import delete
+
+                    await session.execute(delete(AiTurnDb).where(AiTurnDb.sessionId == session_id))
+        return True
+
+    async def export_session(self, session_id: str) -> dict | None:
+        # Export sau soft-delete: metadata đã wipe (không PII).
+        state = await self.get_including_closed(session_id)
+        async with self.session_factory() as session:
+            stmt = select(AiSessionDb).where(AiSessionDb.id == session_id)
+            row = (await session.execute(stmt)).scalars().first()
+            turns_stmt = (
+                select(AiTurnDb)
+                .where(AiTurnDb.sessionId == session_id)
+                .order_by(AiTurnDb.createdAt.asc())
+            )
+            result = await session.execute(turns_stmt)
+            rows = list(result.scalars().all())
+        if state is None and not rows and row is None:
+            return None
+        return {
+            "session": state.model_dump(mode="json") if state else None,
+            "closed": bool(row and row.closedAt is not None),
+            "closed_at": row.closedAt.isoformat() if row and row.closedAt else None,
+            "turns": [
+                {
+                    "trace_id": r.traceId,
+                    "user_message": r.userMessage,
+                    "ai_message": r.aiMessage,
+                    "model": r.model,
+                    "latency_ms": r.latencyMs,
+                    "policy_violations": r.policyViolations,
+                    "created_at": r.createdAt.isoformat() if r.createdAt else None,
+                }
+                for r in rows
+            ],
+        }
+
+    async def purge_expired(self, *, session_days: int, turn_days: int) -> dict[str, int]:
+        from sqlalchemy import delete
+
+        now = datetime.datetime.utcnow()
+        session_cut = now - datetime.timedelta(days=max(1, session_days))
+        turn_cut = now - datetime.timedelta(days=max(1, turn_days))
+        closed = 0
+        deleted = 0
+        async with self.session_factory() as session:
+            async with session.begin():
+                # Load open sessions quá hạn rồi invalidate từng row (wipe state).
+                stmt = (
+                    select(AiSessionDb)
+                    .where(AiSessionDb.closedAt.is_(None))
+                    .where(AiSessionDb.updatedAt < session_cut)
+                    .with_for_update()
+                )
+                result = await session.execute(stmt)
+                for db_session in result.scalars().all():
+                    self._invalidate_row(db_session, now=now)
+                    closed += 1
+                res2 = await session.execute(
+                    delete(AiTurnDb).where(AiTurnDb.createdAt < turn_cut)
+                )
+                deleted = res2.rowcount or 0
+        return {"sessions_closed": int(closed), "turns_deleted": int(deleted)}

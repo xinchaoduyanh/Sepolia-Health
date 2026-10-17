@@ -120,11 +120,39 @@ class ToolRegistry:
             return await b.get_doctor_detail(a.doctor_id)
         if name == "search_knowledge":
             if not self._retriever:
-                return {"error_code": "retriever_not_available"}
-            chunks = await self._retriever.retrieve(a.query, top_k=5, filter_types=a.types, allowed_only=True)
+                return {
+                    "error_code": "retriever_not_available",
+                    "chunks": [],
+                    "note": "hệ thống kiến thức tạm không sẵn sàng; không được bịa thông tin y khoa",
+                }
+            try:
+                chunks = await self._retriever.retrieve(
+                    a.query, top_k=5, filter_types=a.types, allowed_only=True
+                )
+            except Exception:  # noqa: BLE001
+                return {
+                    "error_code": "retrieval_failed",
+                    "chunks": [],
+                    "note": "tra cứu kiến thức lỗi; không được bịa — hãy hỏi lại triệu chứng hoặc hướng dẫn đặt lịch",
+                }
             if not chunks:
-                return {"chunks": [], "note": "không có tài liệu liên quan, hãy hỏi thêm triệu chứng"}
-            return {"chunks": [{"canonical_name": c.canonical_name, "type": c.type, "text": c.text[:1200], "score": c.similarity_score} for c in chunks]}
+                return {
+                    "chunks": [],
+                    "note": "không có tài liệu liên quan trong knowledge base; không được bịa — hỏi thêm triệu chứng hoặc gợi ý đặt lịch chuyên khoa phù hợp",
+                }
+            return {
+                "chunks": [
+                    {
+                        "file_id": c.file_id,
+                        "canonical_name": c.canonical_name,
+                        "type": c.type,
+                        "text": c.text[:1200],
+                        "score": c.similarity_score,
+                        "version": (c.metadata or {}).get("version"),
+                    }
+                    for c in chunks
+                ]
+            }
         if name == "get_doctor_availability":
             return await b.get_doctor_availability(a.doctor_id, a.date, a.service_id)
         if name == "find_available_doctors":
@@ -132,8 +160,21 @@ class ToolRegistry:
         if name == "resolve_patient_profile":
             return await b.resolve_patient_profile(a.user_id)
         if name == "create_booking_draft":
-            key = self._idem(session_id, a.start_time, a.doctor_id)
-            return await b.create_booking_draft(a.patient_profile_id, a.doctor_id, a.service_id, a.start_time, key)
+            # Key phải gắn đủ doctor + service + time + profile: thiếu service_id
+            # khiến đổi dịch vụ vẫn reuse draft cũ → recap hiện service mới, confirm book service cũ.
+            key = self._idem(
+                session_id,
+                a.patient_profile_id,
+                a.doctor_id,
+                a.service_id,
+                a.start_time,
+            )
+            res = await b.create_booking_draft(a.patient_profile_id, a.doctor_id, a.service_id, a.start_time, key)
+            if isinstance(res, dict) and res.get("error_code") in ("service_not_found", "doctor_service_mismatch", "doctor_not_found"):
+                # Gợi ý tự sửa: LLM hay bịa service_id/doctor_id -> bắt lấy id THẬT rồi gọi lại, đừng bỏ cuộc.
+                res = {**res, "note": "id sai hoặc không khớp. Gọi search_services / search_doctors để lấy "
+                                      "service_id và doctor_id đúng (đúng bác sĩ + dịch vụ), rồi gọi lại create_booking_draft."}
+            return res
         if name == "confirm_booking":
             key = self._idem(session_id, a.draft_id)
             return await b.confirm_booking(a.draft_id, key)

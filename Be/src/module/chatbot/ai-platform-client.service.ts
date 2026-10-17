@@ -35,7 +35,10 @@ export interface AiMessageResponse {
 export class AiPlatformClient {
   private readonly logger = new Logger(AiPlatformClient.name);
   private readonly http: AxiosInstance;
-  private readonly sessionByChannel = new Map<string, string>();
+  private readonly sessionByChannel = new Map<
+    string,
+    { sessionId: string; expiresAt: number }
+  >();
 
   constructor(
     @Inject(appConfig.KEY)
@@ -55,6 +58,13 @@ export class AiPlatformClient {
     return `${userId}:${channelId ?? 'direct'}`;
   }
 
+  private cacheSession(key: string, sessionId: string): void {
+    this.sessionByChannel.set(key, {
+      sessionId,
+      expiresAt: Date.now() + this.config.aiSessionCacheTtlSeconds * 1000,
+    });
+  }
+
   async createSession(userId: number, channelId?: string): Promise<{ sessionId: string }> {
     const resp = await this.http.post('/internal/ai/chat/sessions', {
       user_id: userId,
@@ -66,10 +76,13 @@ export class AiPlatformClient {
   async getOrCreateSession(userId: number, channelId?: string): Promise<{ sessionId: string }> {
     const key = this.cacheKey(userId, channelId);
     const cached = this.sessionByChannel.get(key);
-    if (cached) return { sessionId: cached };
+    if (cached && cached.expiresAt > Date.now()) {
+      return { sessionId: cached.sessionId };
+    }
+    if (cached) this.sessionByChannel.delete(key);
 
     const session = await this.createSession(userId, channelId);
-    this.sessionByChannel.set(key, session.sessionId);
+    this.cacheSession(key, session.sessionId);
     this.logger.debug(`Created AI session ${session.sessionId} for ${key}`);
     return session;
   }
@@ -96,8 +109,11 @@ export class AiPlatformClient {
     return resp.data;
   }
 
-  private isSessionNotFound(err: unknown): boolean {
-    return axios.isAxiosError(err) && err.response?.status === 404;
+  /** Session đã xóa/retention-close (AI get() → None) hoặc 410 closed. */
+  private isSessionStale(err: unknown): boolean {
+    if (!axios.isAxiosError(err)) return false;
+    const status = err.response?.status;
+    return status === 404 || status === 410;
   }
 
   private invalidate(userId: number, channelId?: string): void {
@@ -105,8 +121,8 @@ export class AiPlatformClient {
   }
 
   /**
-   * Chạy fn với sessionId hiện tại; nếu AI báo 404 (session mất sau khi AI restart,
-   * vì InMemory store) -> xoá cache, tạo lại session, retry 1 lần.
+   * Chạy fn với sessionId hiện tại; nếu AI báo 404/410 (delete, retention,
+   * restart store) -> xoá Map cache, tạo session mới, retry 1 lần.
    */
   private async withFreshSession<T>(
     userId: number,
@@ -117,8 +133,8 @@ export class AiPlatformClient {
     try {
       return await fn(sessionId);
     } catch (err) {
-      if (!this.isSessionNotFound(err)) throw err;
-      this.logger.warn(`AI session ${sessionId} stale, recreating`);
+      if (!this.isSessionStale(err)) throw err;
+      this.logger.warn(`AI session ${sessionId} stale (404/410), recreating`);
       this.invalidate(userId, channelId);
       const fresh = await this.getOrCreateSession(userId, channelId);
       return await fn(fresh.sessionId);
@@ -202,6 +218,8 @@ export class AiPlatformClient {
     message: string,
     onChunk: (chunk: string) => void,
   ): Promise<AiMessageResponse> {
+    // withFreshSession: HTTP 404/410 từ stream endpoint (session closed) sẽ
+    // drop Map cache và mở session mới — không kẹt sessionId đã retention/delete.
     const resp = await this.withFreshSession(userId, channelId, (sid) =>
       this.streamMessage(sid, message, onChunk),
     );
@@ -210,6 +228,13 @@ export class AiPlatformClient {
       resp.session_state?.agent_state === 'handoff_or_failed'
     ) {
       this.invalidate(userId, channelId);
+    }
+    // Cache session id mới từ response (phòng createSession reconnect trả id khác).
+    if (resp.session_state?.session_id && channelId) {
+      this.cacheSession(
+        this.cacheKey(userId, channelId),
+        resp.session_state.session_id,
+      );
     }
     return resp;
   }

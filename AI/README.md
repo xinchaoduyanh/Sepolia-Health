@@ -5,7 +5,7 @@ Kế hoạch chi tiết: `../260609-2358-ollama-migration-and-code-cleanup/`.
 
 ## Trạng thái hiện tại
 
-Phần offline đã làm + test (`88 passed`, không cần Ollama thật cho pytest):
+Phần offline đã làm + test (`139 passed`, không cần Ollama thật cho pytest):
 
 - `app/nlu/` — 4 resolver "LLM trích tham số → code tính giá trị" (Phase 06 mục 2b/2c):
   - `vn_date.py` — ngày tiếng Việt ("thứ 3 tuần sau" → ISO). Fix bug luận sai ngày của path DO cũ.
@@ -20,24 +20,42 @@ Phần offline đã làm + test (`88 passed`, không cần Ollama thật cho pyt
 
 - **Session store bền (mới):** `app/session/postgres_store.py` — `PostgresSessionStore` (asyncpg/SQLAlchemy) ghi `AiSession` (JSONB) + optimistic lock có `with_for_update()` chống TOCTOU; `record_turn()` ghi `AiTurn` (observability, nuốt lỗi không hỏng lượt chat); TLS tự bật cho host non-localhost (Neon) + tự strip query libpq. Wired qua `deps.get_store`; engine dispose ở FastAPI lifespan. `AI_DATABASE_URL` trỏ cùng DB Neon với `Be/` (driver `+asyncpg`, endpoint direct không pooler).
 
-Chưa làm xong: E2E thật với `Be/` + Stream webhook + DB (chặn bởi Redis local + Stream Dashboard, không phải code), deprecation/xoá code DO cũ ở `Be/`, prompt-tuning thêm cho Qwen 3B khi trích tham số ngày. Chi tiết: `../260609-2358-ollama-migration-and-code-cleanup/PROGRESS.md`.
+E2E với credential/Stream Dashboard thật vẫn phải được chạy ở staging. Stream ingress
+đã dùng BullMQ durable job; direct `/chatbot/process` mặc định tắt. Xem
+`docs/production-runbook.md`, `docs/threat-model.md` và `docs/environment-matrix.md`.
 
 ## Chạy dev server
 
 ```powershell
+# Qua npm script (đọc AI_PORT / AI_ENV)
+node start.js
+
+# Hoặc trực tiếp
 .venv\Scripts\python.exe -m uvicorn app.main:app --reload --port 8088
 # GET http://127.0.0.1:8088/health -> {"status":"ok"}
+# GET http://127.0.0.1:8088/ready  -> readiness (DB + RAG manifest/hash ở production)
 ```
 
-## Chạy test (không cần model)
+## Production Docker
+
+```bash
+docker build -t sepolia-ai -f AI/Dockerfile AI
+# Mount secrets + chroma volume; set AI_INTERNAL_SHARED_SECRET (>=32 chars),
+# AI_DATABASE_URL, AI_BE_BRIDGE_BASE_URL, AI_RAG_REQUIRE_INDEX=true
+```
+
+`AI_ENV=production` fail-fast nếu secret còn `changeme`. Backend mirror check với `NODE_ENV=production`.
+
+## Chạy test (không cần model / Vertex)
 
 ```powershell
-# Tạo venv + cài pytest (1 lần)
-C:\Users\Admin\AppData\Local\Programs\Python\Python311\python.exe -m venv .venv
-.venv\Scripts\python.exe -m pip install pytest pytest-asyncio
+# Tạo venv + cài deps (1 lần)
+python -m venv .venv
+.venv\Scripts\python.exe -m pip install -r requirements.txt
 
 # Chạy test
 .venv\Scripts\python.exe -m pytest -q
+.venv\Scripts\python.exe -m compileall -q app
 ```
 
 Test offline cố định `now=2026-06-16` (thứ Ba) ở các resolver/agent để assert ngày tuyệt đối.
@@ -52,7 +70,8 @@ $env:AI_OLLAMA_BASE_URL="http://127.0.0.1:11435"
 .venv\Scripts\python.exe -m app.rag.indexer --rebuild
 ```
 
-Kết quả đã chạy: collection `knowledge_v1`, 7 files, 25 chunks. Index sinh ra ở `AI/data/chroma/` và đã được ignore khỏi git.
+Index sinh ra ở `AI/data/chroma/`, có `index_manifest.json`, và đã được ignore khỏi git.
+Production chỉ ready khi collection count, embedding model và knowledge hash khớp manifest.
 
 ## Yêu cầu phần cứng / cài đặt đầy đủ
 

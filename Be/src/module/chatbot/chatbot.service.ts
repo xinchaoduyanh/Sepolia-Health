@@ -1,5 +1,6 @@
 import { appConfig } from '@/common/config';
 import { PrismaService } from '@/common/prisma/prisma.service';
+import { InjectQueue } from '@nestjs/bullmq';
 import {
   ForbiddenException,
   Inject,
@@ -8,6 +9,8 @@ import {
 } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import axios from 'axios';
+import { Queue } from 'bullmq';
+import { createHash } from 'crypto';
 import { addDays, format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { StreamChat } from 'stream-chat';
@@ -15,11 +18,67 @@ import {
   AiMessageResponse,
   AiPlatformClient,
 } from './ai-platform-client.service';
+import { CHATBOT_QUEUE } from './chatbot.constant';
 import { DoctorScheduleTool } from './tools/doctor-schedule.tool';
 import { FindAvailableDoctorsTool } from './tools/find-available-doctors.tool';
 import { SearchClinicsTool } from './tools/search-clinics.tool';
 import { SearchDoctorsTool } from './tools/search-doctors.tool';
 import { SearchServicesTool } from './tools/search-services.tool';
+
+const THINKING_PLACEHOLDER = 'Đang soạn câu trả lời…';
+
+export interface StreamAiMessageJob {
+  streamMessageId: string;
+  channelId: string;
+  text: string;
+  userId: string;
+}
+
+/** Gắn cờ lifecycle lên Error để outer catch biết đã có placeholder / đã finalize. */
+const AI_PLACEHOLDER_CREATED = '__aiPlaceholderCreated';
+const AI_PLACEHOLDER_FINALIZED = '__aiPlaceholderFinalized';
+
+function markErrorMeta(
+  error: unknown,
+  meta: { placeholderCreated?: boolean; placeholderFinalized?: boolean },
+): void {
+  if (!error || typeof error !== 'object') return;
+  if (meta.placeholderCreated) {
+    (error as any)[AI_PLACEHOLDER_CREATED] = true;
+  }
+  if (meta.placeholderFinalized) {
+    (error as any)[AI_PLACEHOLDER_FINALIZED] = true;
+    (error as any)[AI_PLACEHOLDER_CREATED] = true;
+  }
+}
+
+function wasPlaceholderCreated(error: unknown): boolean {
+  return Boolean(
+    error &&
+      typeof error === 'object' &&
+      ((error as any)[AI_PLACEHOLDER_CREATED] ||
+        (error as any)[AI_PLACEHOLDER_FINALIZED]),
+  );
+}
+
+function wasPlaceholderFinalized(error: unknown): boolean {
+  return Boolean(
+    error && typeof error === 'object' && (error as any)[AI_PLACEHOLDER_FINALIZED],
+  );
+}
+
+function userFacingAiErrorMessage(error: any): string {
+  if (error?.response?.status === 502 || error?.response?.status === 503) {
+    return 'Xin lỗi, AI Agent đang tạm thời không khả dụng. Vui lòng thử lại sau vài giây.';
+  }
+  if (error?.response?.status === 429) {
+    return 'Xin lỗi, bạn gửi tin hơi nhanh. Vui lòng thử lại sau giây lát.';
+  }
+  if (error?.status === 403 || error?.name === 'ForbiddenException') {
+    return 'Xin lỗi, em không thể xử lý yêu cầu này. Vui lòng thử lại hoặc mở lại chat AI.';
+  }
+  return 'Xin lỗi, có lỗi xảy ra khi xử lý tin nhắn của bạn. Vui lòng thử lại sau.';
+}
 
 interface AgentMessage {
   role: 'user' | 'assistant' | 'system' | 'tool';
@@ -40,6 +99,8 @@ export class ChatbotService {
   private streamClient: StreamChat;
   private readonly botUserId: string;
 
+  private botReady = false;
+
   constructor(
     @Inject(appConfig.KEY)
     private readonly config: ConfigType<typeof appConfig>,
@@ -50,6 +111,8 @@ export class ChatbotService {
     private readonly findAvailableDoctorsTool: FindAvailableDoctorsTool,
     private readonly aiPlatformClient: AiPlatformClient,
     private readonly prisma: PrismaService,
+    @InjectQueue(CHATBOT_QUEUE.NAME)
+    private readonly streamMessageQueue: Queue<StreamAiMessageJob>,
   ) {
     // Initialize Stream Chat
     this.streamClient = StreamChat.getInstance(
@@ -58,6 +121,31 @@ export class ChatbotService {
     );
 
     this.botUserId = this.config.aiBotUserId || 'sepolia-health-ai-assistant';
+  }
+
+  async enqueueStreamMessage(job: StreamAiMessageJob): Promise<void> {
+    const jobId = `stream-${createHash('sha256')
+      .update(job.streamMessageId)
+      .digest('hex')}`;
+    await this.streamMessageQueue.add(CHATBOT_QUEUE.JOB, job, {
+      jobId,
+      attempts: 5,
+      backoff: { type: 'exponential', delay: 2_000 },
+      removeOnComplete: { age: 24 * 3600, count: 10_000 },
+      removeOnFail: { age: 24 * 3600, count: 10_000 },
+    });
+  }
+
+  private async ensureBotUser(): Promise<void> {
+    if (this.botReady) return;
+    await this.streamClient.upsertUser({
+      id: this.botUserId,
+      name: 'Trợ lý Y tế Thông minh',
+      role: 'user',
+      image:
+        'https://do-an-tot-nghiep-ptit.s3.ap-southeast-1.amazonaws.com/patient-avatars/612-727-1763463617117.jpg',
+    });
+    this.botReady = true;
   }
 
   private startTypingHeartbeat(channel: any): NodeJS.Timeout {
@@ -82,80 +170,158 @@ export class ChatbotService {
       throw new ForbiddenException('Invalid AI user id');
     }
 
-    // Pre-create message in stream
-    const msg = await channel.sendMessage({
-      text: '',
-      user_id: this.botUserId,
-    });
-    const messageId = msg.message.id;
+    // Track placeholderCreated: false → outer catch gửi error bubble;
+    // true + stream fail → update cùng bubble, không double-send.
+    let placeholderCreated = false;
+    let messageId: string | null = null;
+    try {
+      const msg = await channel.sendMessage({
+        text: THINKING_PLACEHOLDER,
+        user_id: this.botUserId,
+        extra: {
+          aiPlatform: true,
+          streamStatus: 'thinking',
+          schemaVersion: 1,
+        },
+      } as any);
+      messageId = msg.message.id;
+      placeholderCreated = true;
+    } catch (sendErr) {
+      this.log('processViaAiPlatform', 'error', 'Failed to create thinking placeholder', {
+        channelId,
+        error: sendErr instanceof Error ? sendErr.message : String(sendErr),
+      });
+      markErrorMeta(sendErr, { placeholderCreated: false });
+      throw sendErr;
+    }
 
     let fullText = '';
-    let lastUpdate = Date.now();
+    let lastUpdate = 0;
+    let updateChain: Promise<void> = Promise.resolve();
+    let partialUpdateFails = 0;
 
-    const onChunk = async (chunk: string) => {
+    const enqueuePartialUpdate = (text: string, streamStatus: string) => {
+      updateChain = updateChain
+        .then(async () => {
+          try {
+            await this.streamClient.updateMessage({
+              id: messageId!,
+              text,
+              user_id: this.botUserId,
+              extra: {
+                aiPlatform: true,
+                streamStatus,
+                schemaVersion: 1,
+              },
+            } as any);
+          } catch (e) {
+            partialUpdateFails += 1;
+            this.log('processViaAiPlatform', 'warn', 'stream_partial_update_fail', {
+              channelId,
+              messageId,
+              fails: partialUpdateFails,
+              error: e instanceof Error ? e.message : String(e),
+            });
+          }
+        })
+        .catch(() => undefined);
+    };
+
+    const onChunk = (chunk: string) => {
       fullText += chunk;
-      // throttle updates
-      if (Date.now() - lastUpdate > 300) {
-        lastUpdate = Date.now();
-        try {
-          await this.streamClient.updateMessage({
-            id: messageId,
-            text: fullText,
-          });
-        } catch (e) {
-          // ignore partial update errors
-        }
+      const now = Date.now();
+      if (now - lastUpdate > 300) {
+        lastUpdate = now;
+        // Serialize updates; do not fire-and-forget races against final.
+        enqueuePartialUpdate(fullText || THINKING_PLACEHOLDER, 'streaming');
       }
     };
 
-    const aiResp = await this.aiPlatformClient.streamMessageForChannel(
-      numericUserId,
-      channelId,
-      messageText,
-      onChunk
-    );
-    
-    const sessionId = aiResp.session_state.session_id;
-    const cleanedResponse = this.cleanResponse(aiResp.message);
+    try {
+      const aiResp = await this.aiPlatformClient.streamMessageForChannel(
+        numericUserId,
+        channelId,
+        messageText,
+        onChunk,
+      );
 
-    // Thẻ cũ hết vai trò khi: user xác nhận bằng chữ ("vâng" -> booked) hoặc có
-    // thẻ MỚI thay thế. Resolve TRƯỚC final update — message mới chưa có extra
-    // nên không tự resolve nhầm chính nó.
-    if (
-      aiResp.requires_confirmation ||
-      aiResp.session_state?.agent_state === 'booked'
-    ) {
-      await this.resolveConfirmationCards(channelId);
-    }
+      // Wait for any in-flight partial updates before final write wins.
+      await updateChain;
 
-    // Final update with clean text and extra data
-    await this.streamClient.updateMessage({
-      id: messageId,
-      text: cleanedResponse,
-      user_id: this.botUserId,
-      extra: {
-        aiPlatform: true,
+      const sessionId = aiResp.session_state.session_id;
+      const cleanedResponse = this.cleanResponse(aiResp.message);
+
+      // Thẻ cũ hết vai trò khi: user xác nhận bằng chữ ("vâng" -> booked) hoặc có
+      // thẻ MỚI thay thế. Resolve TRƯỚC final update.
+      if (
+        aiResp.requires_confirmation ||
+        aiResp.session_state?.agent_state === 'booked'
+      ) {
+        await this.resolveConfirmationCards(channelId);
+      }
+
+      await this.streamClient.updateMessage({
+        id: messageId!,
+        text: cleanedResponse || fullText || THINKING_PLACEHOLDER,
+        user_id: this.botUserId,
+        extra: {
+          aiPlatform: true,
+          streamStatus: 'completed',
+          schemaVersion: 1,
+          sessionId,
+          proposedAction: aiResp.proposed_action,
+          requiresConfirmation: aiResp.requires_confirmation,
+          expiresAt:
+            (aiResp.proposed_action?.payload?.expires_at as string | undefined) ??
+            undefined,
+          traceId: aiResp.trace_id,
+          toolResultsSummary: aiResp.tool_results_summary,
+        },
+      } as any);
+
+      this.log('processViaAiPlatform', 'info', 'AI Platform reply sent via stream', {
+        channelId,
         sessionId,
-        proposedAction: aiResp.proposed_action,
-        requiresConfirmation: aiResp.requires_confirmation,
         traceId: aiResp.trace_id,
-        toolResultsSummary: aiResp.tool_results_summary,
-      },
-    } as any);
+        requiresConfirmation: aiResp.requires_confirmation,
+        partialUpdateFails,
+      });
 
-    this.log('processViaAiPlatform', 'info', 'AI Platform reply sent via stream', {
-      channelId,
-      sessionId,
-      traceId: aiResp.trace_id,
-      requiresConfirmation: aiResp.requires_confirmation,
-    });
-
-    return {
-      response: cleanedResponse,
-      timestamp: new Date().toISOString(),
-      sessionId,
-      traceId: aiResp.trace_id,
-    };
+      return {
+        response: cleanedResponse,
+        timestamp: new Date().toISOString(),
+        sessionId,
+        traceId: aiResp.trace_id,
+      };
+    } catch (error: any) {
+      await updateChain.catch(() => undefined);
+      const errorMessage = userFacingAiErrorMessage(error);
+      markErrorMeta(error, { placeholderCreated });
+      if (placeholderCreated && messageId) {
+        try {
+          await this.streamClient.updateMessage({
+            id: messageId,
+            text: errorMessage,
+            user_id: this.botUserId,
+            extra: {
+              aiPlatform: true,
+              streamStatus: 'failed',
+              schemaVersion: 1,
+            },
+          } as any);
+          // Placeholder đã failed — outer catch không gửi bubble thứ 2.
+          markErrorMeta(error, { placeholderFinalized: true });
+        } catch (updateErr) {
+          this.log('processViaAiPlatform', 'error', 'Failed to finalize error message', {
+            channelId,
+            messageId,
+            error: updateErr instanceof Error ? updateErr.message : String(updateErr),
+          });
+          // placeholderCreated=true nhưng chưa finalize → outer có thể gửi bubble mới.
+        }
+      }
+      throw error;
+    }
   }
 
   /**
@@ -412,29 +578,30 @@ export class ChatbotService {
     }
   }
 
+  /**
+   * @returns delivered=true khi user đã nhận bot reply (success hoặc bubble lỗi).
+   * delivered=false / throw → webhook phải release Redis claim để Stream retry.
+   */
   async processMessageAndReply(
     channelId: string,
     messageText: string,
     userId?: string,
-  ) {
+  ): Promise<{
+    response: string;
+    timestamp: string;
+    delivered: boolean;
+    sessionId?: string;
+    traceId?: string;
+  }> {
     // Defense-in-depth: chốt ownership ngay cả khi controller đã kiểm tra.
     if (userId) {
       this.assertCanUseAiChannel(channelId, userId);
     }
     try {
-      // Ensure bot user exists with avatar before sending messages
-      await this.streamClient.upsertUser({
-        id: this.botUserId,
-        name: 'Trợ lý Y tế Thông minh',
-        role: 'user',
-        image:
-          'https://do-an-tot-nghiep-ptit.s3.ap-southeast-1.amazonaws.com/patient-avatars/612-727-1763463617117.jpg',
-      });
+      await this.ensureBotUser();
 
-      // Get channel
       const channel = this.streamClient.channel('messaging', channelId);
 
-      // Show typing indicator
       await channel.sendEvent({
         type: 'typing.start',
         user_id: this.botUserId,
@@ -452,12 +619,13 @@ export class ChatbotService {
 
       const heartbeat = this.startTypingHeartbeat(channel);
       try {
-        return await this.processViaAiPlatform(
+        const result = await this.processViaAiPlatform(
           channel,
           channelId,
           messageText,
           userId,
         );
+        return { ...result, delivered: true };
       } finally {
         clearInterval(heartbeat);
         await channel
@@ -475,50 +643,58 @@ export class ChatbotService {
         code: error.code,
       });
 
-      // Send error message to channel
-      let errorMessage =
-        'Xin lỗi, có lỗi xảy ra khi xử lý tin nhắn của bạn. Vui lòng thử lại sau.';
-
-      if (error.response?.status === 502 || error.response?.status === 503) {
-        errorMessage =
-          'Xin lỗi, AI Agent đang tạm thời không khả dụng. Vui lòng thử lại sau vài giây.';
-      }
+      const errorMessage = userFacingAiErrorMessage(error);
+      // Review: track placeholderCreated — chưa tạo thì gửi error bubble.
+      // Đã finalize failed trên placeholder → không double bubble.
+      const placeholderCreated = wasPlaceholderCreated(error);
+      const placeholderFinalized = wasPlaceholderFinalized(error);
+      let delivered = placeholderFinalized;
 
       try {
-        // Ensure bot user exists with avatar before sending error message
-        await this.streamClient.upsertUser({
-          id: this.botUserId,
-          name: 'Trợ lý Y tế Thông minh',
-          role: 'user',
-          image:
-            'https://do-an-tot-nghiep-ptit.s3.ap-southeast-1.amazonaws.com/patient-avatars/612-727-1763463617117.jpg',
-        });
-
+        await this.ensureBotUser();
         const channel = this.streamClient.channel('messaging', channelId);
-        await channel.sendEvent({
-          type: 'typing.stop',
-          user_id: this.botUserId,
-        });
-        await channel.sendMessage({
-          text: errorMessage,
-          user_id: this.botUserId,
-        });
+        await channel
+          .sendEvent({ type: 'typing.stop', user_id: this.botUserId })
+          .catch(() => undefined);
+
+        if (!placeholderFinalized) {
+          // Chưa có placeholder HOẶC có nhưng update failed → bubble lỗi mới.
+          await channel.sendMessage({
+            text: errorMessage,
+            user_id: this.botUserId,
+            extra: {
+              aiPlatform: true,
+              streamStatus: 'failed',
+              schemaVersion: 1,
+              placeholderCreated,
+            },
+          } as any);
+          delivered = true;
+        }
       } catch (sendError) {
         this.log(
           'processMessageAndReply',
           'error',
-          'Failed to send error message to channel',
+          'Failed to deliver error message to channel',
           {
             channelId,
-            error: sendError.message,
+            placeholderCreated,
+            placeholderFinalized,
+            error: sendError instanceof Error ? sendError.message : String(sendError),
           },
         );
+        delivered = false;
       }
 
-      // Return error response instead of throwing
+      if (!delivered) {
+        // Webhook: mark failed + release claim → Stream retry (không nuốt 24h).
+        throw error;
+      }
+
       return {
         response: errorMessage,
         timestamp: new Date().toISOString(),
+        delivered: true,
       };
     }
   }

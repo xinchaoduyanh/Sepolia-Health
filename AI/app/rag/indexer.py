@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import hashlib
+import json
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -14,6 +16,63 @@ from app.providers.ollama_provider import OllamaProvider
 COLLECTION_NAME = "knowledge_v1"
 # bge-m3 dùng cosine; mặc định Chroma là L2 -> similarity_score sẽ vô nghĩa.
 COLLECTION_METADATA = {"hnsw:space": "cosine"}
+MANIFEST_NAME = "index_manifest.json"
+
+
+def manifest_path(chroma_dir: str | Path) -> Path:
+    return Path(chroma_dir) / MANIFEST_NAME
+
+
+def load_index_manifest(chroma_dir: str | Path) -> dict | None:
+    path = manifest_path(chroma_dir)
+    if not path.is_file():
+        return None
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+
+
+def _knowledge_fingerprint(docs: list[KnowledgeDoc]) -> str:
+    h = hashlib.sha256()
+    for doc in sorted(docs, key=lambda d: str(d.path)):
+        h.update(str(doc.path.as_posix()).encode("utf-8"))
+        h.update(b"\0")
+        h.update(doc.body.encode("utf-8"))
+        h.update(b"\0")
+        h.update(json.dumps(doc.metadata, sort_keys=True, default=str).encode("utf-8"))
+        h.update(b"\n")
+    return h.hexdigest()
+
+
+def knowledge_fingerprint(knowledge_dir: str | Path) -> str:
+    """Fingerprint current source documents for readiness/staleness checks."""
+    return _knowledge_fingerprint(scan_docs(knowledge_dir))
+
+
+def write_index_manifest(
+    chroma_dir: str | Path,
+    *,
+    files: int,
+    chunks: int,
+    embedding_model: str,
+    knowledge_hash: str,
+    elapsed_ms: int,
+) -> dict:
+    payload = {
+        "collection": COLLECTION_NAME,
+        "files": files,
+        "chunks": chunks,
+        "embedding_model": embedding_model,
+        "knowledge_hash": knowledge_hash,
+        "built_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "elapsed_ms": elapsed_ms,
+        "version": 1,
+    }
+    path = manifest_path(chroma_dir)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    return payload
 
 
 @dataclass(frozen=True)
@@ -110,11 +169,22 @@ async def rebuild_index() -> dict:
     if documents:
         collection.upsert(ids=ids, documents=documents, metadatas=metadatas, embeddings=embeddings)
 
+    elapsed_ms = int((time.perf_counter() - t0) * 1000)
+    knowledge_hash = _knowledge_fingerprint(docs)
+    manifest = write_index_manifest(
+        settings.chroma_dir,
+        files=len(docs),
+        chunks=len(documents),
+        embedding_model=settings.embedding_model,
+        knowledge_hash=knowledge_hash,
+        elapsed_ms=elapsed_ms,
+    )
     return {
         "collection": COLLECTION_NAME,
         "files": len(docs),
         "chunks": len(documents),
-        "elapsed_ms": int((time.perf_counter() - t0) * 1000),
+        "elapsed_ms": elapsed_ms,
+        "manifest": manifest,
     }
 
 

@@ -72,8 +72,26 @@ class FakeBridge:
         return self._o.get("resolve_patient_profile", {"patient_profile_id": 100})
 
     async def create_booking_draft(self, patient_profile_id, doctor_id, service_id, start_time, idempotency_key):
-        self.calls.append(("create_booking_draft", idempotency_key))
-        return self._o.get("create_booking_draft", {"draft_id": "draft_1", "expires_at": "soon", "conflicts": []})
+        self.calls.append(("create_booking_draft", idempotency_key, service_id, doctor_id))
+        default = {
+            "draft_id": "draft_1",
+            "expires_at": "soon",
+            "conflicts": [],
+            "recap_data": {
+                "doctor_id": doctor_id,
+                "doctor_name": "BS. Test",
+                "service_id": service_id,
+                "service_name": f"Service#{service_id}",
+                "start_time": start_time,
+                "price": 200000,
+                "clinic_id": 1,
+                "clinic_name": "Sepolia",
+                "patient_profile_id": patient_profile_id,
+                "patient_name": "Nguyen Van A",
+                "appointment_type": "OFFLINE",
+            },
+        }
+        return self._o.get("create_booking_draft", default)
 
     async def confirm_booking(self, draft_id, idempotency_key):
         self.calls.append(("confirm_booking", draft_id))

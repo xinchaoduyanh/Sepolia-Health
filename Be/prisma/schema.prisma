@@ -849,6 +849,7 @@ model BookingDraft {
   estimatedPrice   Int?
   status           BookingDraftStatus @default(PENDING)
   idempotencyKey   String             @unique
+  confirmIdempotencyKey String?       @unique
   expiresAt        DateTime
   confirmedAppointmentId Int?         @unique
   createdAt        DateTime           @default(now())

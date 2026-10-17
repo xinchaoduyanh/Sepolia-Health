@@ -78,6 +78,10 @@ async def test_happy_path_creates_draft_then_books():
     assert resp.requires_confirmation is True
     assert resp.proposed_action.kind == "create_booking"
     assert session.pending_confirmation.draft_id == "draft_1"
+    # Thẻ/payload chỉ lấy từ recap_data (DB), khớp draft sẽ confirm — không tin args LLM lệch.
+    assert resp.proposed_action.payload["service_id"] == 5
+    assert resp.proposed_action.payload["service_name"] == "Service#5"
+    assert "Service#5" in resp.message
 
     # Turn 2: user "vâng" -> confirm thật
     resp2 = await agent.handle_turn(session, "vâng", "t2")
@@ -383,10 +387,13 @@ async def test_get_patient_history_tool_execution():
 async def test_cancel_appointment_flow():
     # Turn 1: LLM calls request_cancel_booking -> agent transitions to AWAITING_CONFIRMATION
     provider = FakeProvider([
+        chat_tools(("get_my_upcoming_appointments", {"user_id": 1})),
         chat_tools(("request_cancel_booking", {"appointment_id": 99})),
         chat_text("Anh/chị xác nhận hủy lịch hẹn khám này nhé?"),
     ])
-    bridge = FakeBridge()
+    bridge = FakeBridge(get_upcoming_appointments={"appointments": [
+        {"id": 99, "doctor_name": "BS. Test", "service_name": "Khám", "start_time": "2030-01-01T09:00:00+07:00", "status": "BOOKED"}
+    ]})
     agent = _agent(provider, bridge)
     session = _session()
 
@@ -438,3 +445,112 @@ async def test_booking_requirements_caching():
 
 
 
+
+
+async def test_cancel_rejects_appointment_id_not_from_list():
+    """LLM bịa appointment_id (không có trong danh sách vừa tra) → không vào AWAITING_CONFIRMATION."""
+    provider = FakeProvider([
+        chat_tools(("get_my_upcoming_appointments", {"user_id": 1})),
+        chat_tools(("request_cancel_booking", {"appointment_id": 12345})),
+        chat_text("Em chưa xác định được lịch cần hủy, anh/chị cho em biết lại nhé."),
+    ])
+    bridge = FakeBridge(get_upcoming_appointments={"appointments": [
+        {"id": 99, "doctor_name": "BS. Test", "service_name": "Khám", "start_time": "2030-01-01T09:00:00+07:00", "status": "BOOKED"}
+    ]})
+    agent = _agent(provider, bridge)
+    session = _session()
+    resp = await agent.handle_turn(session, "tôi muốn hủy lịch", "t1")
+    assert session.agent_state != AgentState.AWAITING_CONFIRMATION
+    assert resp.requires_confirmation is False
+    assert session.pending_confirmation is None
+
+
+async def test_llm_cannot_claim_booking_success():
+    """LLM nói 'đặt lịch thành công' khi chưa có xác nhận → bị chặn và ép viết lại."""
+    provider = FakeProvider([
+        chat_text("Dạ, lịch khám của anh đã được xác nhận thành công."),
+        chat_text("Em chưa đặt được, anh xác nhận lại giúp em nhé."),
+    ])
+    agent = _agent(provider, FakeBridge())
+    session = _session()
+    resp = await agent.handle_turn(session, "cũng được", "t1")
+    assert "thành công" not in resp.message
+    assert "ungrounded_success_claim" in resp.policy_violations
+
+
+async def test_llm_cannot_invent_availability_without_tool():
+    provider = FakeProvider([
+        chat_text("Bác sĩ còn lịch trống lúc 10:00 và 14:00 ạ."),
+        chat_tools(("get_doctor_availability", {"doctor_id": 12, "date": "2030-01-01", "service_id": 5})),
+        chat_text("Bác sĩ còn lịch trống lúc 09:00 và 14:00 ạ."),
+    ])
+    agent = _agent(provider, FakeBridge())
+    session = _session()
+    resp = await agent.handle_turn(session, "bác sĩ 12 còn giờ nào", "t1")
+    assert [a.name for a in resp.tool_calls_audit] == ["get_doctor_availability"]
+    assert "ungrounded_availability_claim" in resp.policy_violations
+
+
+async def test_change_request_while_awaiting_goes_to_llm_not_stale_confirm():
+    """'đổi sang 10h' khi đang chờ xác nhận không được bị nuốt (rồi 'vâng' chốt giờ cũ)."""
+    provider = FakeProvider([chat_text("Dạ khung 10:00 anh muốn đổi sang, anh cho em biết bác sĩ nào ạ?")])
+    agent = _agent(provider, FakeBridge())
+    session = _session()
+    session.agent_state = AgentState.AWAITING_CONFIRMATION
+    from app.session.models import PendingConfirmation
+    session.pending_confirmation = PendingConfirmation(draft_id="draft_1", idempotency_key="k")
+    await agent.handle_turn(session, "đổi sang 10h nhé", "t1")
+    assert session.pending_confirmation is None
+    assert provider.calls  # LLM được gọi
+
+
+async def test_llm_cannot_claim_draft_created_without_tool():
+    provider = FakeProvider([
+        chat_text("Vâng, em đã tạo bản nháp đặt lịch cho anh, anh xác nhận giúp em nhé."),
+        chat_tools(("resolve_patient_profile", {"user_id": 1})),
+        chat_text("Anh cho em xin thêm giờ khám mong muốn ạ?"),
+    ])
+    agent = _agent(provider, FakeBridge())
+    session = _session()
+    resp = await agent.handle_turn(session, "tạo giúp mình", "t1")
+    assert "ungrounded_draft_claim" in resp.policy_violations
+    assert "đã tạo bản nháp" not in resp.message
+
+
+async def test_parallel_draft_with_lookup_is_deferred_then_retried():
+    """create_booking_draft chung lô với search_* (id đoán mò) bị hoãn, vòng sau mới chạy."""
+    provider = FakeProvider([
+        chat_tools(("search_services", {"q": "da liễu"}), ("create_booking_draft", {
+            "patient_profile_id": 100, "doctor_id": 12, "service_id": 999, "start_time": "2030-01-01T09:00:00+07:00"})),
+        chat_tools(("create_booking_draft", {
+            "patient_profile_id": 100, "doctor_id": 12, "service_id": 5, "start_time": "2030-01-01T09:00:00+07:00"})),
+        chat_text("Anh xác nhận giúp em nhé."),
+    ])
+    bridge = FakeBridge()
+    agent = _agent(provider, bridge)
+    session = _session()
+    await agent.handle_turn(session, "đặt lịch", "t1")
+    drafts = [c for c in bridge.calls if c[0] == "create_booking_draft"]
+    assert len(drafts) == 1 and drafts[0][2] == 5  # chỉ lần gọi sau (service_id=5) chạm bridge
+
+
+async def test_booking_draft_uses_session_profile_id_not_llm_value():
+    """LLM điền patient_profile_id bịa (999) -> agent ghi đè bằng id thật từ Be (100)."""
+    provider = FakeProvider([
+        chat_tools(("create_booking_draft", {
+            "patient_profile_id": 999, "doctor_id": 12, "service_id": 5, "start_time": "2030-01-01T09:00:00+07:00"})),
+        chat_text("Anh xác nhận giúp em nhé."),
+    ])
+    bridge = FakeBridge()
+    agent = _agent(provider, bridge)
+    session = _session()
+    await agent.handle_turn(session, "đặt lịch", "t1")
+    assert session.patient_profile_id == 100
+    assert bridge.calls and bridge.calls[0][0] == "create_booking_draft"
+
+
+def test_format_booking_dt_converts_utc_to_vietnam_time():
+    from app.agents.scheduling_agent import _format_booking_dt
+    assert _format_booking_dt("2026-10-20T01:30:00.000Z").startswith("08:30")
+    assert _format_booking_dt("2026-10-20T09:00:00+07:00").startswith("09:00")
+    assert _format_booking_dt("2026-10-20T09:00:00").startswith("09:00")

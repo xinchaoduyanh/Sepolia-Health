@@ -24,16 +24,22 @@ async def lifespan(app: FastAPI):
 def create_app() -> FastAPI:
     settings = get_settings()
     logging.basicConfig(level=settings.log_level)
+    log = logging.getLogger(__name__)
 
-    if settings.internal_shared_secret == "changeme":
-        logging.getLogger(__name__).warning(
-            "AI_INTERNAL_SHARED_SECRET đang dùng giá trị mặc định 'changeme' — "
-            "đổi ngay trong .env trước khi deploy, nếu không /internal/ai/* coi như public."
+    # Production: fail-fast. Development: warn only.
+    try:
+        settings.validate_for_runtime()
+    except RuntimeError:
+        raise
+    if settings.internal_shared_secret.strip().lower() in {"changeme", "change-me", "secret"}:
+        log.warning(
+            "AI_INTERNAL_SHARED_SECRET đang dùng giá trị yếu — "
+            "đổi ngay trong .env trước khi deploy production."
         )
 
-    app = FastAPI(title="Sepolia AI Service", version="0.1.0", lifespan=lifespan)
+    app = FastAPI(title="Sepolia AI Service", version="0.2.0", lifespan=lifespan)
 
-    # Health: public.
+    # Health: public (liveness + readiness).
     app.include_router(health.router)
     # Internal API: bắt buộc X-Internal-Token.
     app.include_router(

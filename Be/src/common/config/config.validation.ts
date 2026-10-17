@@ -37,10 +37,31 @@ export const configSchema = z.object({
   //ai bot user id
   AI_BOT_USER_ID: z.string().nonempty(),
   // Shared secret giữa Be/ và AI/ (header X-Internal-Token cho bridge endpoints)
-  AI_INTERNAL_TOKEN: z.string().default('changeme'),
+  AI_INTERNAL_TOKEN: z
+    .string()
+    .default('changeme')
+    .superRefine((val, ctx) => {
+      const isProd =
+        (process.env.NODE_ENV || '').toLowerCase() === 'production' ||
+        (process.env.APP_ENV || '').toLowerCase() === 'production';
+      if (!isProd) return;
+      const weak = !val || ['changeme', 'change-me', 'secret', 'password'].includes(val.toLowerCase());
+      if (weak || val.length < 32) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message:
+            'AI_INTERNAL_TOKEN must be a strong secret (>=32 chars, not changeme) in production',
+        });
+      }
+    }),
   AI_BASE_URL: z.string().default('http://127.0.0.1:8088'),
   CHATBOT_USE_AI_PLATFORM: z
     .string()
     .default('false')
     .transform((value) => value.toLowerCase() === 'true'),
+  CHATBOT_ALLOW_DIRECT_PROCESS: z
+    .string()
+    .default('false')
+    .transform((value) => value.toLowerCase() === 'true'),
+  AI_SESSION_CACHE_TTL_SECONDS: z.coerce.number().int().positive().default(300),
 });

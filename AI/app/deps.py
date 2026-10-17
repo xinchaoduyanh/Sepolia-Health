@@ -20,6 +20,7 @@ from app.session.store import SessionStore
 from app.session.postgres_store import PostgresSessionStore
 from app.tools.be_bridge import BridgeClient, HttpBridgeClient
 from app.tools.registry import ToolRegistry
+from app.resilience.circuit_breaker import CircuitBreaker
 
 
 @lru_cache
@@ -32,22 +33,40 @@ def get_provider() -> AIProvider:
     # Vertex (tiêu credit Cloud) > AI Studio key > Ollama local. Embedding/RAG luôn
     # chạy Ollama (KnowledgeRetriever tự dựng provider riêng).
     s = get_settings()
+    provider_circuit = CircuitBreaker(
+        "gemini",
+        failure_threshold=max(1, s.provider_circuit_failures),
+        recovery_timeout_sec=max(1.0, s.provider_circuit_recovery_sec),
+        half_open_successes=2,
+    )
     if s.gemini_use_vertex:
         return GeminiProvider(
             vertex=True,
             project=s.gemini_project,
             location=s.gemini_location,
             credentials_path=s.google_credentials or None,
+            circuit=provider_circuit,
         )
     if s.gemini_api_key:
-        return GeminiProvider(api_key=s.gemini_api_key, base_url=s.gemini_base_url)
+        return GeminiProvider(
+            api_key=s.gemini_api_key,
+            base_url=s.gemini_base_url,
+            circuit=provider_circuit,
+        )
     return OllamaProvider(s.ollama_base_url)
 
 
 @lru_cache
 def get_bridge() -> BridgeClient:
     s = get_settings()
-    return HttpBridgeClient(s.be_bridge_base_url, s.internal_shared_secret)
+    from app.tools.be_bridge import get_bridge_circuit
+
+    # Circuit inject theo Settings (AI_BRIDGE_CIRCUIT_FAILURES / RECOVERY_SEC).
+    return HttpBridgeClient(
+        s.be_bridge_base_url,
+        s.internal_shared_secret,
+        circuit=get_bridge_circuit(s),
+    )
 
 
 @lru_cache

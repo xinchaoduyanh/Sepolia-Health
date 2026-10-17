@@ -153,10 +153,14 @@ export class AiBridgeController {
   @Post('booking-drafts/:id/confirm')
   confirmDraft(
     @Param('id') id: string,
-    @Body() _body: ConfirmBookingDto,
+    @Body() body: ConfirmBookingDto,
     @Headers('x-acting-user-id') acting?: string,
   ) {
-    return this.bridge.confirmBooking(this.actingUserId(acting), id);
+    return this.bridge.confirmBooking(
+      this.actingUserId(acting),
+      id,
+      body.idempotencyKey,
+    );
   }
 
   @Post('appointments/:id/cancel')

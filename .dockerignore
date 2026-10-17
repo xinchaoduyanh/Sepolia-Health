@@ -10,11 +10,13 @@ yarn-error.log*
 .next
 out
 
-# Environment files (chỉ ignore local files, giữ lại .env)
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+# Environment / secrets — never bake into image layers
+**/.env
+**/.env.*
+!**/.env.example
+**/secrets/
+**/*-sa-key.json
+**/*service-account*.json
 
 # Git
 .git
