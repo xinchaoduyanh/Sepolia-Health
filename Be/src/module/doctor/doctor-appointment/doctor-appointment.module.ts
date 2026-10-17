@@ -2,11 +2,17 @@ import { UploadModule } from '@/common/modules';
 import { PrismaModule } from '@/common/prisma/prisma.module';
 import { Module } from '@nestjs/common';
 import { NotificationModule } from '@/module/notification/notification.module';
+import { AppointmentStatusModule } from '@/module/appointment-status/appointment-status.module';
 import { DoctorAppointmentController } from './doctor-appointment.controller';
 import { DoctorAppointmentService } from './doctor-appointment.service';
 
 @Module({
-  imports: [PrismaModule, UploadModule, NotificationModule],
+  imports: [
+    PrismaModule,
+    UploadModule,
+    NotificationModule,
+    AppointmentStatusModule,
+  ],
   controllers: [DoctorAppointmentController],
   providers: [DoctorAppointmentService],
   exports: [DoctorAppointmentService],

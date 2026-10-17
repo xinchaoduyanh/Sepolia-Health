@@ -24,8 +24,8 @@ import {
   GetDoctorAppointmentsQueryDto,
 } from './dto';
 import { AppointmentResultFileDto } from './dto/appointment-result-file.dto';
-
-const EARLY_START_WINDOW_MS = 10 * 60 * 1000; // 10 minutes in milliseconds
+import { CHECK_IN_EARLY_WINDOW_MS } from '@/module/appointment-status/appointment-status.constant';
+import { AppointmentStatusService } from '@/module/appointment-status/appointment-status.service';
 
 @Injectable()
 export class DoctorAppointmentService {
@@ -35,6 +35,7 @@ export class DoctorAppointmentService {
     private readonly prisma: PrismaService,
     private readonly uploadService: UploadService,
     private readonly notificationService: NotificationService,
+    private readonly appointmentStatusService: AppointmentStatusService,
   ) {}
 
   /**
@@ -938,7 +939,7 @@ export class DoctorAppointmentService {
     const startTimeMs = appointment.startTime.getTime();
     const endTimeMs = appointment.endTime.getTime();
 
-    if (now < startTimeMs - EARLY_START_WINDOW_MS) {
+    if (now < startTimeMs - CHECK_IN_EARLY_WINDOW_MS) {
       throw new BadRequestException(ERROR_MESSAGES.APPOINTMENT.NOT_YET_REACHED);
     }
 
@@ -954,21 +955,14 @@ export class DoctorAppointmentService {
       throw new BadRequestException(ERROR_MESSAGES.APPOINTMENT.NOT_PAID);
     }
 
-    // Cập nhật trạng thái an toàn đồng thời bằng updateMany
-    const result = await this.prisma.appointment.updateMany({
-      where: {
-        id: appointmentId,
-        doctorId: doctorProfile.id,
-        status: AppointmentStatus.UPCOMING,
-      },
-      data: {
-        status: AppointmentStatus.ON_GOING,
-      },
+    await this.appointmentStatusService.transition({
+      appointmentId,
+      to: AppointmentStatus.ON_GOING,
+      allowedFrom: [AppointmentStatus.UPCOMING],
+      actor: 'DOCTOR',
+      actorUserId: userId,
+      extraWhere: { doctorId: doctorProfile.id },
     });
-
-    if (result.count === 0) {
-      throw new BadRequestException(ERROR_MESSAGES.APPOINTMENT.INVALID_STATUS);
-    }
 
     return new SuccessResponseDto();
   }
@@ -1011,21 +1005,14 @@ export class DoctorAppointmentService {
       throw new BadRequestException(ERROR_MESSAGES.APPOINTMENT.INVALID_STATUS);
     }
 
-    // Cập nhật trạng thái an toàn đồng thời bằng updateMany
-    const result = await this.prisma.appointment.updateMany({
-      where: {
-        id: appointmentId,
-        doctorId: doctorProfile.id,
-        status: AppointmentStatus.ON_GOING,
-      },
-      data: {
-        status: AppointmentStatus.COMPLETED,
-      },
+    await this.appointmentStatusService.transition({
+      appointmentId,
+      to: AppointmentStatus.COMPLETED,
+      allowedFrom: [AppointmentStatus.ON_GOING],
+      actor: 'DOCTOR',
+      actorUserId: userId,
+      extraWhere: { doctorId: doctorProfile.id },
     });
-
-    if (result.count === 0) {
-      throw new BadRequestException(ERROR_MESSAGES.APPOINTMENT.INVALID_STATUS);
-    }
 
     return new SuccessResponseDto();
   }

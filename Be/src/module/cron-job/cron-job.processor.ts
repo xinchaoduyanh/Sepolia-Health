@@ -1,4 +1,5 @@
 import { PrismaService } from '@/common/prisma/prisma.service';
+import { AppointmentStatusService } from '@/module/appointment-status/appointment-status.service';
 import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { AppointmentStatus } from '@prisma/client';
@@ -9,13 +10,28 @@ import { CRON_JOB } from './cron-job.constant';
 export class CronJobProcessor extends WorkerHost {
   private readonly logger = new Logger(CronJobProcessor.name);
 
-  constructor(private readonly prisma: PrismaService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly appointmentStatusService: AppointmentStatusService,
+  ) {
     super();
   }
 
   async process(): Promise<void> {
-    await this.cancelOrCompleteAppointment();
-    await this.sendReminderEmail();
+    try {
+      await this.cancelOrCompleteAppointment();
+    } catch (error) {
+      this.logger.error(
+        'Failed to cancel or complete appointments',
+        error?.stack,
+      );
+    }
+
+    try {
+      await this.sendReminderEmail();
+    } catch (error) {
+      this.logger.error('Failed to send reminder email', error?.stack);
+    }
   }
 
   private async cancelOrCompleteAppointment(): Promise<void> {
@@ -23,27 +39,31 @@ export class CronJobProcessor extends WorkerHost {
     now.setSeconds(0, 0);
 
     // Update ON_GOING appointments that have passed their endTime to COMPLETED
-    const completedResult = await this.prisma.appointment.updateMany({
+    const completedCount = await this.appointmentStatusService.bulkTransition({
       where: {
-        endTime: { lte: now }, // Less than or equal - catches all past appointments
-        status: AppointmentStatus.ON_GOING,
+        endTime: { lte: now },
       },
-      data: { status: AppointmentStatus.COMPLETED },
+      from: AppointmentStatus.ON_GOING,
+      to: AppointmentStatus.COMPLETED,
+      actor: 'SYSTEM',
+      reason: 'quá endTime',
     });
 
     // Update UPCOMING appointments that have passed their endTime to CANCELLED
-    const cancelledResult = await this.prisma.appointment.updateMany({
+    const cancelledCount = await this.appointmentStatusService.bulkTransition({
       where: {
-        status: AppointmentStatus.UPCOMING,
-        endTime: { lte: now }, // Less than or equal - catches all past appointments
+        endTime: { lte: now },
       },
-      data: { status: AppointmentStatus.CANCELLED },
+      from: AppointmentStatus.UPCOMING,
+      to: AppointmentStatus.CANCELLED,
+      actor: 'SYSTEM',
+      reason: 'quá giờ chưa check-in',
     });
 
     // Log the results for monitoring
-    if (completedResult.count > 0 || cancelledResult.count > 0) {
+    if (completedCount > 0 || cancelledCount > 0) {
       this.logger.log(
-        `Updated appointments: ${completedResult.count} completed, ${cancelledResult.count} cancelled`,
+        `Updated appointments: ${completedCount} completed, ${cancelledCount} cancelled`,
       );
     }
   }

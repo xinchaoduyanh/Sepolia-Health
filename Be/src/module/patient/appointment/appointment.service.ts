@@ -5,6 +5,7 @@ import { PrismaService } from '@/common/prisma/prisma.service';
 import { DateUtil, TimeUtil } from '@/common/utils';
 import { MeetingService } from '@/module/meeting/meeting.service';
 import { NotificationService } from '@/module/notification/notification.service';
+import { AppointmentStatusService } from '@/module/appointment-status/appointment-status.service';
 import {
   BadRequestException,
   ForbiddenException,
@@ -39,6 +40,7 @@ export class AppointmentService {
     private readonly prisma: PrismaService,
     private readonly notificationService: NotificationService,
     private readonly meetingService: MeetingService,
+    private readonly appointmentStatusService: AppointmentStatusService,
   ) { }
 
   /**
@@ -513,11 +515,12 @@ export class AppointmentService {
       throw new ForbiddenException(ERROR_MESSAGES.APPOINTMENT.CAN_NOT_CANCEL);
     }
 
-    await this.prisma.appointment.update({
-      where: { id },
-      data: {
-        status: AppointmentStatus.CANCELLED,
-      },
+    await this.appointmentStatusService.transition({
+      appointmentId: id,
+      to: AppointmentStatus.CANCELLED,
+      allowedFrom: [AppointmentStatus.UPCOMING],
+      actor: 'PATIENT',
+      actorUserId: userId,
     });
 
     // Send notification to patient when they cancel appointment

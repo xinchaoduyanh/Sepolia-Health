@@ -1,5 +1,7 @@
 import { PrismaService } from '@/common/prisma/prisma.service';
+import { AppointmentStatusService } from '@/module/appointment-status/appointment-status.service';
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { AppointmentStatus } from '@prisma/client';
 import {
   AppointmentDetailResponseDto,
   AppointmentListResponseDto,
@@ -9,7 +11,10 @@ import {
 
 @Injectable()
 export class AdminAppointmentService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly appointmentStatusService: AppointmentStatusService,
+  ) {}
 
   async getAppointments(
     query: GetAppointmentQueryDto,
@@ -285,15 +290,15 @@ export class AdminAppointmentService {
       throw new NotFoundException('Không tìm thấy cuộc hẹn');
     }
 
-    if (appointment.status === 'CANCELLED') {
+    if (appointment.status === AppointmentStatus.CANCELLED) {
       return { message: 'Cuộc hẹn đã được hủy trước đó' };
     }
 
-    await this.prisma.appointment.update({
-      where: { id },
-      data: {
-        status: 'CANCELLED',
-      },
+    await this.appointmentStatusService.transition({
+      appointmentId: id,
+      to: AppointmentStatus.CANCELLED,
+      allowedFrom: [AppointmentStatus.UPCOMING, AppointmentStatus.ON_GOING],
+      actor: 'ADMIN',
     });
 
     return { message: 'Hủy cuộc hẹn thành công' };

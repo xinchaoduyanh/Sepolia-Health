@@ -17,6 +17,8 @@ import {
   UserStatus,
 } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+import { CHECK_IN_EARLY_WINDOW_MS } from '@/module/appointment-status/appointment-status.constant';
+import { AppointmentStatusService } from '@/module/appointment-status/appointment-status.service';
 import {
   CreateAppointmentForPatientDto,
   CreatePatientAccountDto,
@@ -31,11 +33,12 @@ import {
   FindPatientResponseDto,
 } from './dto/response';
 
-const EARLY_CHECK_IN_WINDOW_MS = 10 * 60 * 1000; // 10 minutes in milliseconds
-
 @Injectable()
 export class ReceptionistAppointmentService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly appointmentStatusService: AppointmentStatusService,
+  ) {}
 
   /**
    * Get list of appointments with pagination and filters
@@ -234,14 +237,16 @@ export class ReceptionistAppointmentService {
 
     if (
       appointment.startTime.getTime() >
-      Date.now() + EARLY_CHECK_IN_WINDOW_MS
+      Date.now() + CHECK_IN_EARLY_WINDOW_MS
     ) {
       throw new BadRequestException(ERROR_MESSAGES.APPOINTMENT.NOT_YET_REACHED);
     }
 
-    await this.prisma.appointment.update({
-      where: { id },
-      data: { status: AppointmentStatus.ON_GOING },
+    await this.appointmentStatusService.transition({
+      appointmentId: id,
+      to: AppointmentStatus.ON_GOING,
+      allowedFrom: [AppointmentStatus.UPCOMING],
+      actor: 'RECEPTIONIST',
     });
 
     return new SuccessResponseDto();
@@ -389,9 +394,11 @@ export class ReceptionistAppointmentService {
       throw new BadRequestException(ERROR_MESSAGES.APPOINTMENT.CAN_NOT_CANCEL);
     }
 
-    await this.prisma.appointment.update({
-      where: { id },
-      data: { status: AppointmentStatus.CANCELLED },
+    await this.appointmentStatusService.transition({
+      appointmentId: id,
+      to: AppointmentStatus.CANCELLED,
+      allowedFrom: [AppointmentStatus.UPCOMING, AppointmentStatus.ON_GOING],
+      actor: 'RECEPTIONIST',
     });
 
     return new SuccessResponseDto();

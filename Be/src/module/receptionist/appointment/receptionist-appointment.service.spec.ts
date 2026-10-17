@@ -6,15 +6,21 @@ import { ReceptionistAppointmentService } from './receptionist-appointment.servi
 describe('ReceptionistAppointmentService', () => {
   let service: ReceptionistAppointmentService;
   let prismaMock: any;
+  let appointmentStatusServiceMock: any;
 
   beforeEach(() => {
     prismaMock = {
       appointment: {
         findUnique: jest.fn(),
-        update: jest.fn(),
       },
     };
-    service = new ReceptionistAppointmentService(prismaMock as any);
+    appointmentStatusServiceMock = {
+      transition: jest.fn().mockResolvedValue(undefined),
+    };
+    service = new ReceptionistAppointmentService(
+      prismaMock as any,
+      appointmentStatusServiceMock as any,
+    );
   });
 
   describe('checkInAppointment', () => {
@@ -28,16 +34,14 @@ describe('ReceptionistAppointmentService', () => {
       };
 
       prismaMock.appointment.findUnique.mockResolvedValue(appointment);
-      prismaMock.appointment.update.mockResolvedValue({
-        ...appointment,
-        status: AppointmentStatus.ON_GOING,
-      });
 
       const result = await service.checkInAppointment(1);
       expect(result.success).toBe(true);
-      expect(prismaMock.appointment.update).toHaveBeenCalledWith({
-        where: { id: 1 },
-        data: { status: AppointmentStatus.ON_GOING },
+      expect(appointmentStatusServiceMock.transition).toHaveBeenCalledWith({
+        appointmentId: 1,
+        to: AppointmentStatus.ON_GOING,
+        allowedFrom: [AppointmentStatus.UPCOMING],
+        actor: 'RECEPTIONIST',
       });
     });
 
@@ -58,7 +62,56 @@ describe('ReceptionistAppointmentService', () => {
       await expect(service.checkInAppointment(1)).rejects.toThrow(
         ERROR_MESSAGES.APPOINTMENT.NOT_YET_REACHED,
       );
-      expect(prismaMock.appointment.update).not.toHaveBeenCalled();
+      expect(appointmentStatusServiceMock.transition).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('cancelAppointment', () => {
+    it('cho phép hủy lịch UPCOMING', async () => {
+      prismaMock.appointment.findUnique.mockResolvedValue({
+        id: 1,
+        status: AppointmentStatus.UPCOMING,
+      });
+
+      const result = await service.cancelAppointment(1);
+      expect(result.success).toBe(true);
+      expect(appointmentStatusServiceMock.transition).toHaveBeenCalledWith({
+        appointmentId: 1,
+        to: AppointmentStatus.CANCELLED,
+        allowedFrom: [AppointmentStatus.UPCOMING, AppointmentStatus.ON_GOING],
+        actor: 'RECEPTIONIST',
+      });
+    });
+
+    it('cho phép hủy lịch ON_GOING', async () => {
+      prismaMock.appointment.findUnique.mockResolvedValue({
+        id: 1,
+        status: AppointmentStatus.ON_GOING,
+      });
+
+      const result = await service.cancelAppointment(1);
+      expect(result.success).toBe(true);
+      expect(appointmentStatusServiceMock.transition).toHaveBeenCalledWith({
+        appointmentId: 1,
+        to: AppointmentStatus.CANCELLED,
+        allowedFrom: [AppointmentStatus.UPCOMING, AppointmentStatus.ON_GOING],
+        actor: 'RECEPTIONIST',
+      });
+    });
+
+    it('từ chối hủy lịch COMPLETED', async () => {
+      prismaMock.appointment.findUnique.mockResolvedValue({
+        id: 1,
+        status: AppointmentStatus.COMPLETED,
+      });
+
+      await expect(service.cancelAppointment(1)).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(service.cancelAppointment(1)).rejects.toThrow(
+        ERROR_MESSAGES.APPOINTMENT.CAN_NOT_CANCEL,
+      );
+      expect(appointmentStatusServiceMock.transition).not.toHaveBeenCalled();
     });
   });
 });

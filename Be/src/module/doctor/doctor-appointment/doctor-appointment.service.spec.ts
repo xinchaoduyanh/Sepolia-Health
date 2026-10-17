@@ -20,6 +20,7 @@ describe('DoctorAppointmentService', () => {
   let prismaMock: any;
   let uploadServiceMock: any;
   let notificationServiceMock: any;
+  let appointmentStatusServiceMock: any;
 
   const doctorProfile = {
     id: 10,
@@ -35,7 +36,6 @@ describe('DoctorAppointmentService', () => {
       },
       appointment: {
         findUnique: jest.fn(),
-        updateMany: jest.fn(),
       },
       appointmentResult: {
         create: jest.fn(),
@@ -53,10 +53,15 @@ describe('DoctorAppointmentService', () => {
         .mockResolvedValue(true),
     };
 
+    appointmentStatusServiceMock = {
+      transition: jest.fn().mockResolvedValue(undefined),
+    };
+
     service = new DoctorAppointmentService(
       prismaMock as any,
       uploadServiceMock as any,
       notificationServiceMock as any,
+      appointmentStatusServiceMock as any,
     );
   });
 
@@ -77,6 +82,7 @@ describe('DoctorAppointmentService', () => {
       await expect(service.startAppointment(1, 1)).rejects.toThrow(
         ForbiddenException,
       );
+      expect(appointmentStatusServiceMock.transition).not.toHaveBeenCalled();
     });
 
     it('không phải UPCOMING → BadRequest', async () => {
@@ -92,6 +98,7 @@ describe('DoctorAppointmentService', () => {
       await expect(service.startAppointment(1, 1)).rejects.toThrow(
         BadRequestException,
       );
+      expect(appointmentStatusServiceMock.transition).not.toHaveBeenCalled();
     });
 
     it('quá sớm → BadRequest', async () => {
@@ -107,6 +114,7 @@ describe('DoctorAppointmentService', () => {
       await expect(service.startAppointment(1, 1)).rejects.toThrow(
         BadRequestException,
       );
+      expect(appointmentStatusServiceMock.transition).not.toHaveBeenCalled();
     });
 
     it('OFFLINE chưa PAID → BadRequest', async () => {
@@ -123,9 +131,10 @@ describe('DoctorAppointmentService', () => {
       await expect(service.startAppointment(1, 1)).rejects.toThrow(
         BadRequestException,
       );
+      expect(appointmentStatusServiceMock.transition).not.toHaveBeenCalled();
     });
 
-    it('ONLINE hợp lệ → gọi update sang ON_GOING', async () => {
+    it('ONLINE hợp lệ → gọi transition sang ON_GOING', async () => {
       prismaMock.appointment.findUnique.mockResolvedValue({
         id: 1,
         doctorId: 10,
@@ -136,19 +145,15 @@ describe('DoctorAppointmentService', () => {
         billing: { status: PaymentStatus.PENDING }, // ONLINE không bắt buộc PAID
       });
 
-      prismaMock.appointment.updateMany.mockResolvedValue({ count: 1 });
-
       const result = await service.startAppointment(1, 1);
       expect(result.success).toBe(true);
-      expect(prismaMock.appointment.updateMany).toHaveBeenCalledWith({
-        where: {
-          id: 1,
-          doctorId: 10,
-          status: AppointmentStatus.UPCOMING,
-        },
-        data: {
-          status: AppointmentStatus.ON_GOING,
-        },
+      expect(appointmentStatusServiceMock.transition).toHaveBeenCalledWith({
+        appointmentId: 1,
+        to: AppointmentStatus.ON_GOING,
+        allowedFrom: [AppointmentStatus.UPCOMING],
+        actor: 'DOCTOR',
+        actorUserId: 1,
+        extraWhere: { doctorId: 10 },
       });
     });
   });
@@ -161,19 +166,15 @@ describe('DoctorAppointmentService', () => {
         status: AppointmentStatus.ON_GOING,
       });
 
-      prismaMock.appointment.updateMany.mockResolvedValue({ count: 1 });
-
       const result = await service.completeAppointment(1, 1);
       expect(result.success).toBe(true);
-      expect(prismaMock.appointment.updateMany).toHaveBeenCalledWith({
-        where: {
-          id: 1,
-          doctorId: 10,
-          status: AppointmentStatus.ON_GOING,
-        },
-        data: {
-          status: AppointmentStatus.COMPLETED,
-        },
+      expect(appointmentStatusServiceMock.transition).toHaveBeenCalledWith({
+        appointmentId: 1,
+        to: AppointmentStatus.COMPLETED,
+        allowedFrom: [AppointmentStatus.ON_GOING],
+        actor: 'DOCTOR',
+        actorUserId: 1,
+        extraWhere: { doctorId: 10 },
       });
     });
 
@@ -187,7 +188,7 @@ describe('DoctorAppointmentService', () => {
       await expect(service.completeAppointment(1, 1)).rejects.toThrow(
         BadRequestException,
       );
-      expect(prismaMock.appointment.updateMany).not.toHaveBeenCalled();
+      expect(appointmentStatusServiceMock.transition).not.toHaveBeenCalled();
     });
   });
 

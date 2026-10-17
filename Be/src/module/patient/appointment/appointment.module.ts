@@ -4,9 +4,10 @@ import { AppointmentService } from './appointment.service';
 import { PrismaModule } from '@/common/prisma/prisma.module';
 import { BookingController } from './booking.controller';
 import { MeetingModule } from '@/module/meeting/meeting.module';
+import { AppointmentStatusModule } from '@/module/appointment-status/appointment-status.module';
 
 @Module({
-  imports: [PrismaModule, MeetingModule],
+  imports: [PrismaModule, MeetingModule, AppointmentStatusModule],
   controllers: [AppointmentController, BookingController],
   providers: [AppointmentService],
   exports: [AppointmentService],
