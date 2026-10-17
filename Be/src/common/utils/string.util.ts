@@ -1,3 +1,5 @@
+import { randomInt, randomUUID } from 'crypto';
+
 /**
  * String utility functions
  */
@@ -10,8 +12,9 @@ export class StringUtil {
     charset: string = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789',
   ): string {
     let result = '';
+    const charsetLength = charset.length;
     for (let i = 0; i < length; i++) {
-      result += charset.charAt(Math.floor(Math.random() * charset.length));
+      result += charset.charAt(randomInt(0, charsetLength));
     }
     return result;
   }
@@ -20,11 +23,7 @@ export class StringUtil {
    * Generate UUID v4
    */
   static uuid(): string {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-      const r = (Math.random() * 16) | 0;
-      const v = c === 'x' ? r : (r & 0x3) | 0x8;
-      return v.toString(16);
-    });
+    return randomUUID();
   }
 
   /**
@@ -132,20 +131,23 @@ export class StringUtil {
     let password = '';
 
     // Ensure at least one character from each category
-    password += lowercase[Math.floor(Math.random() * lowercase.length)];
-    password += uppercase[Math.floor(Math.random() * uppercase.length)];
-    password += numbers[Math.floor(Math.random() * numbers.length)];
-    password += symbols[Math.floor(Math.random() * symbols.length)];
+    password += lowercase[randomInt(0, lowercase.length)];
+    password += uppercase[randomInt(0, uppercase.length)];
+    password += numbers[randomInt(0, numbers.length)];
+    password += symbols[randomInt(0, symbols.length)];
 
     // Fill the rest randomly
     for (let i = 4; i < length; i++) {
-      password += allChars[Math.floor(Math.random() * allChars.length)];
+      password += allChars[randomInt(0, allChars.length)];
     }
 
-    // Shuffle the password
-    return password
-      .split('')
-      .sort(() => Math.random() - 0.5)
-      .join('');
+    // Shuffle password using Fisher-Yates algorithm with crypto.randomInt
+    const arr = password.split('');
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = randomInt(0, i + 1);
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+
+    return arr.join('');
   }
 }

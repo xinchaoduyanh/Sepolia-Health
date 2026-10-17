@@ -5,6 +5,7 @@ import { CustomJwtService } from './jwt.service';
 import { appConfig } from '@/common/config';
 import { ConfigType } from '@nestjs/config';
 import { JwtStrategy } from './jwt.strategy';
+import { RedisModule } from '../redis/redis.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { JwtStrategy } from './jwt.strategy';
         signOptions: { expiresIn: jwtConf.accessTokenExpiresIn },
       }),
     }),
+    RedisModule,
   ],
   providers: [CustomJwtService, JwtStrategy],
   exports: [CustomJwtService, PassportModule, JwtStrategy],

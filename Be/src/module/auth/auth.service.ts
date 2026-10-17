@@ -86,23 +86,6 @@ export class AuthService {
       role: user.role,
     });
 
-    // Store tokens in Redis with expiration
-    const accessTokenKey = `token:${user.id}:access:${Date.now()}`;
-    const refreshTokenKey = `token:${user.id}:refresh:${Date.now()}`;
-
-    // Store access token with configured expiration
-    await this.redisService.setToken(
-      accessTokenKey,
-      tokens.accessToken,
-      this.tokenConf.accessTokenExpiresIn,
-    );
-    // Store refresh token with configured expiration
-    await this.redisService.setToken(
-      refreshTokenKey,
-      tokens.refreshToken,
-      this.tokenConf.refreshTokenExpiresIn,
-    );
-
     return tokens;
   }
 
@@ -114,6 +97,15 @@ export class AuthService {
 
     // Check if user already exists
     await this.authRepository.isEmailExists(email);
+
+    // Kiểm tra cooldown gửi OTP (60s)
+    const canSend = await this.redisService.checkAndSetOtpCooldown(
+      email,
+      'register',
+    );
+    if (!canSend) {
+      throw new BadRequestException('Vui lòng đợi trước khi yêu cầu mã OTP mới');
+    }
 
     // Generate OTP
     const otp = StringUtil.random(6, '0123456789');
@@ -130,6 +122,15 @@ export class AuthService {
   async resendOtpEmail(body: RegisterDto): Promise<SuccessResponseDto> {
     const { email } = body;
     await this.authRepository.isEmailExists(email);
+
+    // Kiểm tra cooldown gửi OTP (60s)
+    const canSend = await this.redisService.checkAndSetOtpCooldown(
+      email,
+      'register',
+    );
+    if (!canSend) {
+      throw new BadRequestException('Vui lòng đợi trước khi yêu cầu mã OTP mới');
+    }
 
     const otp = StringUtil.random(6, '0123456789');
     await this.redisService.setOtp(email, otp, 5 * 60, 'register');
@@ -247,7 +248,24 @@ export class AuthService {
       );
     }
 
-    const user = await this.authRepository.findById(payload.payload.userId);
+    const userId = payload.payload.userId;
+
+    // Kiểm tra mốc thu hồi token của người dùng
+    const revokedBefore = await this.redisService.getTokensRevokedBefore(userId);
+    const issuedMs =
+      payload.payload.iatMs ??
+      (payload.payload.iat ? payload.payload.iat * 1000 : 0);
+
+    if (revokedBefore !== null && issuedMs < revokedBefore) {
+      this.logger.warn(
+        `Refresh token của user ${userId} đã bị thu hồi (issued: ${issuedMs}, revokedBefore: ${revokedBefore})`,
+      );
+      throw new UnauthorizedException(
+        ERROR_MESSAGES.AUTH.REFRESH_TOKEN_INVALID,
+      );
+    }
+
+    const user = await this.authRepository.findById(userId);
     if (!user) {
       throw new UnauthorizedException(ERROR_MESSAGES.AUTH.USER_NOT_FOUND);
     }
@@ -262,43 +280,29 @@ export class AuthService {
       role: user.role,
     });
 
-    // Store new tokens in Redis with expiration
-    const accessTokenKey = `token:${user.id}:access:${Date.now()}`;
-    const refreshTokenKey = `token:${user.id}:refresh:${Date.now()}`;
-
-    // Store access token with configured expiration
-    await this.redisService.setToken(
-      accessTokenKey,
-      tokens.accessToken,
-      this.tokenConf.accessTokenExpiresIn,
-    );
-    // Store refresh token with configured expiration
-    await this.redisService.setToken(
-      refreshTokenKey,
-      tokens.refreshToken,
-      this.tokenConf.refreshTokenExpiresIn,
-    );
-
     return tokens;
   }
 
   /**
-   * Logout user - xóa cả access token và refresh token khỏi Redis
+   * Logout user - thu hồi tất cả token phát hành trước mốc thời gian hiện tại
    */
   async logout(userId: number): Promise<void> {
-    // Lấy tất cả tokens của user (cả access và refresh tokens)
-    const tokens = await this.redisService.findAllTokens(userId);
-
-    // Xóa tất cả tokens của user khỏi Redis
-    if (tokens?.length) {
-      await this.redisService.deleteTokens(tokens);
-    }
+    await this.redisService.setTokensRevokedBefore(userId, Date.now());
   }
 
   async forgotPassword(body: ForgotPasswordDto): Promise<SuccessResponseDto> {
     const { email } = body;
     // Check if user exists
     await this.authRepository.findByEmail(email);
+
+    // Kiểm tra cooldown gửi OTP (60s)
+    const canSend = await this.redisService.checkAndSetOtpCooldown(
+      email,
+      'reset_password',
+    );
+    if (!canSend) {
+      throw new BadRequestException('Vui lòng đợi trước khi yêu cầu mã OTP mới');
+    }
 
     // Generate 6-digit OTP (same as register)
     const otp = StringUtil.random(6, '0123456789');
@@ -388,6 +392,9 @@ export class AuthService {
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
     await this.authRepository.updateUser(userId, { password: hashedPassword });
+
+    // Thu hồi toàn bộ token trên mọi thiết bị
+    await this.redisService.setTokensRevokedBefore(userId, Date.now());
   }
 
   /**

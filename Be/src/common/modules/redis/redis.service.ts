@@ -1,14 +1,20 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import { RedisSetOptions, RedisGetResult, RedisKeyValue } from './redis.types';
 import IORedis from 'ioredis';
+import { appConfig } from '@/common/config';
+import { ConfigType } from '@nestjs/config';
 
 @Injectable()
 export class RedisService {
   private readonly logger = new Logger(RedisService.name);
-  @Inject('REDIS_CLIENT')
-  private readonly client: IORedis;
 
-  constructor() {}
+  constructor(
+    @Inject('REDIS_CLIENT')
+    private readonly client: IORedis,
+    @Optional()
+    @Inject(appConfig.KEY)
+    private readonly appConf?: ConfigType<typeof appConfig>,
+  ) {}
 
   /**
    * Set a key-value pair
@@ -138,7 +144,7 @@ export class RedisService {
 
   /**
    * Set OTP with expiration
-   * Kiểm tra và xóa OTP cũ trước khi set OTP mới
+   * Kiểm tra và xóa OTP cũ trước khi set OTP mới, đồng thời reset bộ đếm lần sai
    */
   async setOtp(
     email: string,
@@ -147,6 +153,7 @@ export class RedisService {
     type: 'register' | 'reset_password',
   ): Promise<boolean> {
     const key = `otp:${type}:${email}`;
+    const attemptsKey = `otp_attempts:${type}:${email}`;
 
     // Kiểm tra xem có OTP cũ tồn tại không
     const existingOtp = await this.exists(key);
@@ -155,6 +162,9 @@ export class RedisService {
       await this.del(key);
       this.logger.log(`Deleted existing OTP for ${email} with type ${type}`);
     }
+
+    // Reset bộ đếm số lần nhập sai khi gửi OTP mới
+    await this.del(attemptsKey);
 
     const value = JSON.stringify({
       email,
@@ -186,9 +196,11 @@ export class RedisService {
     createdAt: string;
   } | null> {
     const key = `otp:${type}:${email}`;
+    const attemptsKey = `otp_attempts:${type}:${email}`;
     const result = await this.get(key);
     if (result.exists && result.value) {
       await this.del(key);
+      await this.del(attemptsKey);
       return JSON.parse(result.value);
     }
     return null;
@@ -196,6 +208,7 @@ export class RedisService {
 
   /**
    * Verify OTP without deleting
+   * Giới hạn tối đa 5 lần nhập sai
    */
   async verifyOtp(
     email: string,
@@ -203,12 +216,48 @@ export class RedisService {
     type: 'register' | 'reset_password',
   ): Promise<boolean> {
     const key = `otp:${type}:${email}`;
+    const attemptsKey = `otp_attempts:${type}:${email}`;
+
     const result = await this.get(key);
-    if (result.exists && result.value) {
-      const otpData = JSON.parse(result.value);
-      return otpData.otp === otp;
+    if (!result.exists || !result.value) {
+      return false;
     }
+
+    const otpData = JSON.parse(result.value);
+    if (otpData.otp === otp) {
+      return true;
+    }
+
+    // Khi sai thì tăng bộ đếm otp_attempts:{type}:{email}
+    const attempts = await this.incr(attemptsKey);
+    const remainingTtl = await this.ttl(key);
+    const ttlToSet = remainingTtl > 60 ? remainingTtl : 60;
+    await this.expire(attemptsKey, ttlToSet);
+
+    if (attempts >= 5) {
+      // Đạt 5 lần sai thì xoá OTP + bộ đếm và trả false
+      await this.del(key);
+      await this.del(attemptsKey);
+      this.logger.warn(
+        `OTP của ${email} (${type}) đã bị xoá do nhập sai quá 5 lần`,
+      );
+    }
+
     return false;
+  }
+
+  /**
+   * Check and set OTP cooldown (60 seconds)
+   * Returns true if cooldown was successfully acquired (can send OTP)
+   * Returns false if still in cooldown (cannot send OTP)
+   */
+  async checkAndSetOtpCooldown(
+    email: string,
+    type: 'register' | 'reset_password',
+    cooldownSeconds: number = 60,
+  ): Promise<boolean> {
+    const key = `otp_cooldown:${type}:${email}`;
+    return await this.set(key, '1', { ex: cooldownSeconds, nx: true });
   }
 
   /**
@@ -264,17 +313,31 @@ export class RedisService {
   }
 
   /**
-   * Find all tokens by user ID
+   * Set token revocation timestamp for user (revoke all tokens issued before this timestamp)
+   * Key format: auth:revoked_before:{userId}
+   * TTL: refreshTokenExpiresIn (seconds)
    */
-  async findAllTokens(userId: number): Promise<string[]> {
-    return await this.client.keys(`token:${userId}:*`);
+  async setTokensRevokedBefore(
+    userId: number,
+    ms: number,
+    ttlSeconds?: number,
+  ): Promise<boolean> {
+    const key = `auth:revoked_before:${userId}`;
+    const ttl = ttlSeconds ?? this.appConf?.refreshTokenExpiresIn ?? 604800;
+    return await this.set(key, ms.toString(), { ex: ttl });
   }
 
   /**
-   * Delete tokens
+   * Get token revocation timestamp for user
    */
-  async deleteTokens(tokens: string[]): Promise<void> {
-    await this.client.del(tokens);
+  async getTokensRevokedBefore(userId: number): Promise<number | null> {
+    const key = `auth:revoked_before:${userId}`;
+    const result = await this.get(key);
+    if (result.exists && result.value) {
+      const parsed = Number(result.value);
+      return isNaN(parsed) ? null : parsed;
+    }
+    return null;
   }
 
   /**
@@ -284,6 +347,7 @@ export class RedisService {
   /**
    * Set payment code with billing data and auto-expiration (15 minutes)
    * Key format: payment_code:{code}
+   * Index format: payment_code_by_appointment:{appointmentId} -> {code}
    * Value: JSON with billingId, appointmentId, amount, createdAt, expiresAt
    */
   async setPaymentCode(
@@ -311,6 +375,10 @@ export class RedisService {
 
     const result = await this.set(key, value, { ex: expiresInSeconds });
     if (result) {
+      // Lưu thêm index payment_code_by_appointment:{appointmentId} -> code (cùng TTL)
+      const indexKey = `payment_code_by_appointment:${data.appointmentId}`;
+      await this.set(indexKey, code, { ex: expiresInSeconds });
+
       this.logger.log(
         `Created payment code ${code} for appointment ${data.appointmentId}, expires in ${expiresInSeconds}s`,
       );
@@ -376,9 +444,15 @@ export class RedisService {
    */
   async cancelPaymentCode(code: string): Promise<boolean> {
     const key = `payment_code:${code}`;
+    const paymentData = await this.getPaymentCode(code);
     const result = await this.del(key);
 
     if (result > 0) {
+      if (paymentData?.appointmentId) {
+        await this.del(
+          `payment_code_by_appointment:${paymentData.appointmentId}`,
+        );
+      }
       this.logger.log(`Cancelled payment code ${code}`);
       return true;
     }
@@ -414,24 +488,63 @@ export class RedisService {
 
   /**
    * Get payment code by appointment ID (if exists)
-   * Note: This is a scan operation, use sparingly
+   * Sử dụng index payment_code_by_appointment trước; fallback dùng SCAN với MATCH, COUNT 100
    */
   async getPaymentCodeByAppointmentId(
     appointmentId: number,
   ): Promise<string | null> {
-    const pattern = 'payment_code:*';
-    const keys = await this.client.keys(pattern);
+    // 1. Đọc index trước
+    const indexKey = `payment_code_by_appointment:${appointmentId}`;
+    const indexResult = await this.get(indexKey);
 
-    for (const key of keys) {
-      const data = await this.get(key);
-      if (data.exists && data.value) {
-        const paymentData = JSON.parse(data.value);
-        if (paymentData.appointmentId === appointmentId) {
-          // Extract code from key (remove "payment_code:" prefix)
-          return key.replace('payment_code:', '');
-        }
+    if (indexResult.exists && indexResult.value) {
+      const code = indexResult.value;
+      const codeKey = `payment_code:${code}`;
+      const codeExists = await this.exists(codeKey);
+      if (codeExists) {
+        return code;
+      } else {
+        // Dọn dẹp index nếu key chính đã hết hạn hoặc bị xóa
+        await this.del(indexKey);
       }
     }
+
+    // 2. Fallback: dùng vòng lặp SCAN thay cho lệnh KEYS
+    let cursor = '0';
+    do {
+      const [nextCursor, keys] = await this.client.scan(
+        cursor,
+        'MATCH',
+        'payment_code:*',
+        'COUNT',
+        100,
+      );
+      cursor = nextCursor;
+
+      for (const key of keys) {
+        if (key.startsWith('payment_code_by_appointment:')) {
+          continue;
+        }
+
+        const data = await this.get(key);
+        if (data.exists && data.value) {
+          try {
+            const paymentData = JSON.parse(data.value);
+            if (paymentData.appointmentId === appointmentId) {
+              const code = key.replace('payment_code:', '');
+              // Tái tạo lại index nếu còn TTL
+              const ttl = await this.ttl(key);
+              if (ttl > 0) {
+                await this.set(indexKey, code, { ex: ttl });
+              }
+              return code;
+            }
+          } catch {
+            // Bỏ qua lỗi parse JSON
+          }
+        }
+      }
+    } while (cursor !== '0');
 
     return null;
   }

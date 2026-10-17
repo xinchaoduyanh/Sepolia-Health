@@ -21,26 +21,38 @@ export class CustomJwtService {
    * Generate access token
    */
   generateAccessToken(payload: Omit<TokenPayload, 'exp' | 'iat'>): string {
-    return this.jwtService.sign(payload);
+    const iatMs = payload.iatMs ?? Date.now();
+    return this.jwtService.sign({
+      ...payload,
+      iatMs,
+    });
   }
 
   /**
    * Generate refresh token
    */
   generateRefreshToken(payload: Omit<TokenPayload, 'exp' | 'iat'>): string {
-    return this.jwtService.sign(payload, {
-      secret: this.jwtConf.refreshSecret,
-      expiresIn: this.jwtConf.refreshTokenExpiresIn,
-    });
+    const iatMs = payload.iatMs ?? Date.now();
+    return this.jwtService.sign(
+      {
+        ...payload,
+        iatMs,
+      },
+      {
+        secret: this.jwtConf.refreshSecret,
+        expiresIn: this.jwtConf.refreshTokenExpiresIn,
+      },
+    );
   }
 
   /**
    * Generate both access and refresh tokens
    */
   generateTokens(payload: Omit<TokenPayload, 'exp' | 'iat'>): JwtTokens {
+    const iatMs = payload.iatMs ?? Date.now();
     return {
-      accessToken: this.generateAccessToken(payload),
-      refreshToken: this.generateRefreshToken(payload),
+      accessToken: this.generateAccessToken({ ...payload, iatMs }),
+      refreshToken: this.generateRefreshToken({ ...payload, iatMs }),
     };
   }
 
