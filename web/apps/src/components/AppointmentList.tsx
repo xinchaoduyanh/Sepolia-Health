@@ -83,6 +83,9 @@ interface AppointmentListProps {
     totalItems?: number
     pageSize?: number
     onPageChange: (page: number) => void
+    toolbar?: React.ReactNode
+    title?: string
+    subtitle?: React.ReactNode
 }
 
 export function AppointmentList({
@@ -99,6 +102,9 @@ export function AppointmentList({
     totalItems = 0,
     pageSize = 10,
     onPageChange,
+    toolbar,
+    title = 'Quản lý lịch hẹn',
+    subtitle = 'Xem và quản lý tất cả các lịch hẹn trong hệ thống',
 }: AppointmentListProps) {
     const [searchTerm, setSearchTerm] = useState('')
     const [selectedStatus, setSelectedStatus] = useState('all')
@@ -318,7 +324,7 @@ export function AppointmentList({
                 <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => onViewDetail(row.original.id)}
+                    onPress={() => onViewDetail(row.original.id)}
                     className="h-8 w-8 p-0 rounded-full hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:text-emerald-600 transition-colors"
                 >
                     <Eye className="h-4 w-4" />
@@ -329,15 +335,17 @@ export function AppointmentList({
 
     return (
         <div className="space-y-6">
+            {toolbar}
+
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-2xl font-bold text-foreground">Quản lý lịch hẹn</h2>
-                    <p className="text-sm text-muted-foreground mt-1">
-                        Xem và quản lý tất cả các lịch hẹn trong hệ thống
-                    </p>
+                    <h2 className="text-2xl font-bold text-foreground">{title}</h2>
+                    <div className="text-sm text-muted-foreground mt-1">
+                        {subtitle}
+                    </div>
                 </div>
-                <Button onClick={onCreateNew} className="flex items-center space-x-2">
+                <Button onPress={onCreateNew} className="flex items-center space-x-2">
                     <Plus className="h-4 w-4" />
                     <span>Tạo lịch hẹn mới</span>
                 </Button>

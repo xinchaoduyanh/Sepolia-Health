@@ -16,7 +16,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { ReceptionistAppointmentService } from './receptionist-appointment.service';
-import { Roles } from '@/common/decorators';
+import { CurrentUser, Roles } from '@/common/decorators';
 import { Role } from '@prisma/client';
 import { AppointmentDetailResponseDto } from '@/module/patient/appointment/dto';
 import {
@@ -53,8 +53,9 @@ export class ReceptionistAppointmentController {
   })
   async getAppointments(
     @Query() query: GetAppointmentsQueryDto,
+    @CurrentUser('userId') userId: number,
   ): Promise<AppointmentsListResponseDto> {
-    return this.receptionistAppointmentService.getAppointments(query);
+    return this.receptionistAppointmentService.getAppointments(query, userId);
   }
 
   @Get('summary')
@@ -64,8 +65,10 @@ export class ReceptionistAppointmentController {
     description: 'Lấy thông tin tổng hợp lịch hẹn thành công',
     type: [AppointmentSummaryResponseDto],
   })
-  async getAppointmentSummary(): Promise<AppointmentSummaryResponseDto[]> {
-    return this.receptionistAppointmentService.getAppointmentSummary();
+  async getAppointmentSummary(
+    @CurrentUser('userId') userId: number,
+  ): Promise<AppointmentSummaryResponseDto[]> {
+    return this.receptionistAppointmentService.getAppointmentSummary(userId);
   }
 
 

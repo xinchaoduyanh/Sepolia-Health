@@ -18,6 +18,7 @@ import {
     Building2,
     MessageSquare,
     Smartphone,
+    CalendarCheck,
 } from 'lucide-react'
 import {
     Sidebar,
@@ -204,6 +205,11 @@ const doctorMenuItems = [
 
 // Menu items cho RECEPTIONIST
 const receptionistMenuItems = [
+    {
+        title: 'Lịch hẹn & check-in',
+        url: '/receptionist/appointment',
+        icon: CalendarCheck,
+    },
     {
         title: 'Đặt lịch cho bệnh nhân',
         url: '/receptionist/schedule-appointment',

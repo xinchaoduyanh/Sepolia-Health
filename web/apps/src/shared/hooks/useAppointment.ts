@@ -22,26 +22,31 @@ export function useAppointment(id: number, isReady: boolean = true) {
 /**
  * Hook to get list of appointments with pagination and filters
  */
-export function useAppointments(params: AppointmentListParams = {}) {
+export function useAppointments(
+	params: AppointmentListParams = {},
+	options?: { refetchInterval?: number },
+) {
 	return useQuery({
 		queryKey: queryKeys.admin.appointments.list(params),
 		queryFn: () => appointmentService.getAppointments(params),
 		staleTime: 2 * 60 * 1000, // 2 minutes
 		retry: 1,
 		refetchOnWindowFocus: false,
+		refetchInterval: options?.refetchInterval,
 	})
 }
 
 /**
  * Hook to get appointment summary statistics
  */
-export function useAppointmentSummary() {
+export function useAppointmentSummary(options?: { refetchInterval?: number }) {
 	return useQuery({
 		queryKey: ['appointments', 'summary'],
 		queryFn: () => appointmentService.getAppointmentSummary(),
 		staleTime: 5 * 60 * 1000, // 5 minutes
 		retry: 1,
 		refetchOnWindowFocus: false,
+		refetchInterval: options?.refetchInterval,
 	})
 }
 

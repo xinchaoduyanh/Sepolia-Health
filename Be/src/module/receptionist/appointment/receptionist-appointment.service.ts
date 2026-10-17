@@ -45,6 +45,7 @@ export class ReceptionistAppointmentService {
    */
   async getAppointments(
     query: GetAppointmentsQueryDto,
+    userId?: number,
   ): Promise<AppointmentsListResponseDto> {
     const { page = 1, limit = 10, search, status, startDate, endDate } = query;
 
@@ -52,6 +53,19 @@ export class ReceptionistAppointmentService {
 
     // Build where clause
     const where: any = {};
+
+    if (userId) {
+      const receptionist = await this.prisma.receptionistProfile.findUnique({
+        where: { userId },
+      });
+      if (receptionist?.clinicId) {
+        const clinicId = receptionist.clinicId;
+        where.AND = [
+          ...(where.AND ?? []),
+          { OR: [{ clinicId }, { type: 'ONLINE' }] },
+        ];
+      }
+    }
 
     // Search by patient name, phone, or appointment ID
     if (search) {
@@ -107,7 +121,7 @@ export class ReceptionistAppointmentService {
         },
         skip,
         take: limit,
-        orderBy: { startTime: SortOrder.DESC },
+        orderBy: { startTime: startDate ? SortOrder.ASC : SortOrder.DESC },
       }),
       this.prisma.appointment.count({ where }),
     ]);
@@ -135,9 +149,27 @@ export class ReceptionistAppointmentService {
     };
   }
 
-  async getAppointmentSummary(): Promise<AppointmentSummaryResponseDto[]> {
+  async getAppointmentSummary(
+    userId?: number,
+  ): Promise<AppointmentSummaryResponseDto[]> {
+    const where: any = {};
+
+    if (userId) {
+      const receptionist = await this.prisma.receptionistProfile.findUnique({
+        where: { userId },
+      });
+      if (receptionist?.clinicId) {
+        const clinicId = receptionist.clinicId;
+        where.AND = [
+          ...(where.AND ?? []),
+          { OR: [{ clinicId }, { type: 'ONLINE' }] },
+        ];
+      }
+    }
+
     const summary = await this.prisma.appointment.groupBy({
       by: ['status'],
+      where: Object.keys(where).length > 0 ? where : undefined,
       _count: {
         status: true,
       },

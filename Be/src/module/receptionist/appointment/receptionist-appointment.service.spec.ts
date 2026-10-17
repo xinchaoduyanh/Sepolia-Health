@@ -12,6 +12,12 @@ describe('ReceptionistAppointmentService', () => {
     prismaMock = {
       appointment: {
         findUnique: jest.fn(),
+        findMany: jest.fn(),
+        count: jest.fn(),
+        groupBy: jest.fn(),
+      },
+      receptionistProfile: {
+        findUnique: jest.fn(),
       },
     };
     appointmentStatusServiceMock = {
@@ -112,6 +118,131 @@ describe('ReceptionistAppointmentService', () => {
         ERROR_MESSAGES.APPOINTMENT.CAN_NOT_CANCEL,
       );
       expect(appointmentStatusServiceMock.transition).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getAppointments', () => {
+    beforeEach(() => {
+      prismaMock.appointment.findMany.mockResolvedValue([]);
+      prismaMock.appointment.count.mockResolvedValue(0);
+    });
+
+    it('lễ tân có clinicId → where có AND chứa điều kiện clinic/ONLINE và search OR vẫn còn', async () => {
+      prismaMock.receptionistProfile.findUnique.mockResolvedValue({
+        clinicId: 10,
+      });
+
+      await service.getAppointments(
+        {
+          page: 1,
+          limit: 10,
+          search: 'Nguyen',
+        },
+        1,
+      );
+
+      expect(prismaMock.receptionistProfile.findUnique).toHaveBeenCalledWith({
+        where: { userId: 1 },
+      });
+
+      const findManyCall = prismaMock.appointment.findMany.mock.calls[0][0];
+      expect(findManyCall.where.AND).toEqual(
+        expect.arrayContaining([
+          {
+            OR: [{ clinicId: 10 }, { type: 'ONLINE' }],
+          },
+        ]),
+      );
+      expect(findManyCall.where.OR).toBeDefined();
+      expect(findManyCall.where.OR.length).toBeGreaterThan(0);
+    });
+
+    it('không có clinicId → không thêm điều kiện clinic/ONLINE', async () => {
+      prismaMock.receptionistProfile.findUnique.mockResolvedValue({
+        clinicId: null,
+      });
+
+      await service.getAppointments(
+        {
+          page: 1,
+          limit: 10,
+        },
+        2,
+      );
+
+      const findManyCall = prismaMock.appointment.findMany.mock.calls[0][0];
+      expect(findManyCall.where.AND).toBeUndefined();
+    });
+
+    it('không có userId → không truy vấn receptionistProfile và không thêm AND', async () => {
+      await service.getAppointments({
+        page: 1,
+        limit: 10,
+      });
+
+      expect(prismaMock.receptionistProfile.findUnique).not.toHaveBeenCalled();
+      const findManyCall = prismaMock.appointment.findMany.mock.calls[0][0];
+      expect(findManyCall.where.AND).toBeUndefined();
+    });
+
+    it('có startDate → orderBy startTime ASC', async () => {
+      await service.getAppointments({
+        page: 1,
+        limit: 10,
+        startDate: '2026-10-17',
+      });
+
+      const findManyCall = prismaMock.appointment.findMany.mock.calls[0][0];
+      expect(findManyCall.orderBy).toEqual({ startTime: 'asc' });
+    });
+
+    it('không có startDate → orderBy startTime DESC', async () => {
+      await service.getAppointments({ page: 1, limit: 10 });
+
+      const findManyCall = prismaMock.appointment.findMany.mock.calls[0][0];
+      expect(findManyCall.orderBy).toEqual({ startTime: 'desc' });
+    });
+  });
+
+  describe('getAppointmentSummary', () => {
+    it('lễ tân có clinicId → groupBy có where lọc theo clinicId hoặc ONLINE', async () => {
+      prismaMock.receptionistProfile.findUnique.mockResolvedValue({
+        clinicId: 10,
+      });
+      prismaMock.appointment.groupBy.mockResolvedValue([
+        { status: AppointmentStatus.UPCOMING, _count: { status: 5 } },
+      ]);
+
+      const result = await service.getAppointmentSummary(1);
+
+      expect(prismaMock.receptionistProfile.findUnique).toHaveBeenCalledWith({
+        where: { userId: 1 },
+      });
+      expect(prismaMock.appointment.groupBy).toHaveBeenCalledWith({
+        by: ['status'],
+        where: {
+          AND: [{ OR: [{ clinicId: 10 }, { type: 'ONLINE' }] }],
+        },
+        _count: { status: true },
+      });
+      expect(result).toEqual([
+        { appointmentStatus: AppointmentStatus.UPCOMING, count: 5 },
+      ]);
+    });
+
+    it('không có clinicId → groupBy không có where', async () => {
+      prismaMock.receptionistProfile.findUnique.mockResolvedValue({
+        clinicId: null,
+      });
+      prismaMock.appointment.groupBy.mockResolvedValue([]);
+
+      await service.getAppointmentSummary(2);
+
+      expect(prismaMock.appointment.groupBy).toHaveBeenCalledWith({
+        by: ['status'],
+        where: undefined,
+        _count: { status: true },
+      });
     });
   });
 });
