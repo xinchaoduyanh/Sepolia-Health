@@ -110,7 +110,7 @@ async def discover_world(lb: "LiveBackend", doc_id: int) -> dict:
 # ---------------- LLM judge ----------------
 async def judge(provider, model: str, transcript: str, criterion: str) -> tuple[bool, str]:
     sys_p = ("Bạn là giám khảo QA cho chatbot đặt lịch khám bệnh. Chỉ trả JSON một dòng: "
-             '{"pass": true|false, "reason": "<một câu tiếng Việt>"}. Chấm nghiêm túc, chỉ dựa trên tiêu chí.')
+             '{"pass": true|false, "reason": "<một câu tiếng Việt>"}. Chấm nghiêm túc, chỉ dựa trên tiêu chí. Lưu ý: tên người dùng trong lời chào là hợp lệ (lấy từ hồ sơ tài khoản), không phải bịa.')
     user = f"HỘI THOẠI:\n{transcript}\n\nTIÊU CHÍ CẦN ĐẠT:\n{criterion}"
     try:
         r = await provider.chat(model, [{"role": "system", "content": sys_p}, {"role": "user", "content": user}],
@@ -124,9 +124,20 @@ async def judge(provider, model: str, transcript: str, criterion: str) -> tuple[
         return False, f"judge_error:{type(exc).__name__}: {exc}"[:300]
 
 
+# Mọi câu trả lời cho user đều KHÔNG được lộ id/tên tool nội bộ.
+GLOBAL_FORBIDDEN = [
+    r"\bservice_id\b", r"\bdoctor_id\b", r"patient_profile", r"\bdraft_\d", r"\bappointment_id\b",
+    r"mã (dịch vụ|bác sĩ|bệnh nhân|lịch|hồ sơ)( là| :|:)? ?\d+", r"\bid\s*[:=]\s*\d+",
+    r"create_booking_draft|search_doctors|search_services|get_doctor_availability|find_available_doctors|resolve_patient|tool_call",
+]
+
+
 def check_turn(exp: dict, resp: dict, tools: list[str]) -> list[str]:
     f: list[str] = []
     reply = resp.get("message", "")
+    for p in GLOBAL_FORBIDDEN:
+        if re.search(p, reply, re.I):
+            f.append(f"LỘ nội bộ /{p}/ trong reply")
     if exp.get("reply_any") and not any(re.search(p, reply, re.I) for p in exp["reply_any"]):
         f.append(f"reply thiếu một trong {exp['reply_any']}")
     for p in exp.get("reply_all", []):
@@ -191,6 +202,13 @@ async def run_scenario(sc: Scenario, client: httpx.AsyncClient, bridge_holder: d
                     break
                 r = await client.post(f"{P}/sessions/{sid}/messages", json={"message": turn.say}, headers=hdr, timeout=120)
             lat = time.perf_counter() - t0
+            if turn.expect.get("status"):
+                if r.status_code != turn.expect["status"]:
+                    res.ok = False
+                    res.turns.append(TurnLog(turn.say[:80] + "…", fails=[f"HTTP {r.status_code} (kỳ vọng {turn.expect['status']})"], latency=lat))
+                else:
+                    res.turns.append(TurnLog(turn.say[:80] + "…", reply=f"HTTP {r.status_code} (đúng kỳ vọng)", latency=lat))
+                continue
             if r.status_code != 200:
                 res.ok = False
                 res.turns.append(TurnLog(turn.say, fails=[f"HTTP {r.status_code}: {r.text[:200]}"], latency=lat))
