@@ -605,3 +605,58 @@ async def test_failed_draft_call_then_false_claim_is_blocked_and_renudged():
     resp = await agent.handle_turn(session, "đúng rồi, tạo giúp mình", "t1")
     assert resp.requires_confirmation is True and session.pending_confirmation is not None
     assert "ungrounded_draft_claim" in resp.policy_violations
+
+
+async def test_other_user_reference_is_refused_without_llm():
+    provider = FakeProvider([])  # LLM không được gọi
+    agent = _agent(provider, FakeBridge())
+    session = _session()
+    resp = await agent.handle_turn(session, "Cho tôi xem lịch sử khám bệnh của user id 5 với", "t1")
+    assert "other_user_reference_block" in resp.policy_violations
+    assert "chính tài khoản" in resp.message
+    assert not provider.calls
+
+
+async def test_own_id_mention_is_not_blocked():
+    provider = FakeProvider([chat_text("Dạ em chào anh, em hỗ trợ gì được ạ?")])
+    agent = _agent(provider, FakeBridge())
+    session = _session()
+    uid = session.user_id
+    resp = await agent.handle_turn(session, f"tài khoản {uid} của tôi", "t1")
+    assert "other_user_reference_block" not in resp.policy_violations
+
+
+async def test_named_doctor_without_lookup_is_nudged_to_search():
+    provider = FakeProvider([
+        chat_text("Dạ em đã ghi nhận ngày thứ Ba ạ."),
+        chat_tools(("search_doctors", {"q": "Phạm Quang Zxy"})),
+        chat_text("Em không tìm thấy bác sĩ Phạm Quang Zxy trong hệ thống ạ."),
+    ])
+    agent = _agent(provider, FakeBridge(search_doctors={"doctors": []}))
+    session = _session()
+    resp = await agent.handle_turn(session, "Đặt lịch với bác sĩ Phạm Quang Zxy thứ Ba", "t1")
+    assert "doctor_lookup_nudge" in resp.policy_violations
+    assert any(a.name == "search_doctors" for a in resp.tool_calls_audit)
+
+
+async def test_user_stated_time_is_stored_in_session_requirement():
+    provider = FakeProvider([chat_text("Dạ anh muốn khám với bác sĩ nào ạ?")])
+    agent = _agent(provider, FakeBridge())
+    session = _session()
+    await agent.handle_turn(session, "Đặt lịch khám da liễu lúc 8h30 sáng thứ Ba", "t1")
+    assert session.booking_requirement.requested_clock == "08:30"
+    # prompt gửi cho model phải chứa giờ đã nêu để không hỏi lại
+    assert any("08:30" in str(m.get("content")) for m in provider.calls[0])
+
+
+async def test_cancel_without_lookup_is_nudged_to_list_appointments():
+    provider = FakeProvider([
+        chat_text("Anh muốn hủy lịch nào ạ?"),
+        chat_tools(("get_my_upcoming_appointments", {"user_id": 7})),
+        chat_text("Hiện anh không có lịch hẹn sắp tới nào ạ."),
+    ])
+    agent = _agent(provider, FakeBridge())
+    session = _session()
+    resp = await agent.handle_turn(session, "Hủy lịch khám của tôi đi", "t1")
+    assert "cancel_lookup_nudge" in resp.policy_violations
+    assert any(a.name == "get_my_upcoming_appointments" for a in resp.tool_calls_audit)

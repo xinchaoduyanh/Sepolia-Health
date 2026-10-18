@@ -17,6 +17,7 @@ from app.providers.base import ToolCall
 
 from app.agents.state_machine import ensure_transition
 from app.api.schemas import MessageResponse, ProposedAction, ToolCallAudit, ToolResultSummary
+from app.nlu.clock_time import parse_clock_time
 from app.nlu.confirm_intent import ConfirmIntent, classify_confirmation
 from app.policies import post_validator, pre_filter
 from app.prompts.loader import PromptRegistry
@@ -118,6 +119,60 @@ _SAFE_NO_BOOKING = (
     "Dạ em chưa hoàn tất việc đặt/huỷ lịch ạ. Anh/chị cho em xác nhận lại thông tin lịch khám "
     "để em thực hiện giúp nhé."
 )
+
+
+# Người dùng nhắc tới ID/tài khoản của NGƯỜI KHÁC (vd "user id 5", "tài khoản 7") -> từ chối tất định.
+_OTHER_USER_RE = re.compile(
+    r"(?:(?:user|người dùng|tài khoản|hồ sơ|bệnh nhân|khách hàng)(?:\s+(?:id|số|mã))?|\bid)\s*[:#]?\s*(\d{1,10})\b",
+    re.IGNORECASE,
+)
+_OTHER_USER_REFUSAL = (
+    "Dạ em chỉ hỗ trợ thông tin của chính tài khoản đang đăng nhập thôi ạ, em không thể xem hay "
+    "cung cấp dữ liệu của người khác. Anh/chị cần em hỗ trợ đặt lịch hoặc xem lịch hẹn của mình không ạ?"
+)
+_NAMED_DOCTOR_RE = re.compile(r"bác sĩ\s+[A-ZÀ-Ỵ][\wÀ-ỹ]+|bác sĩ[^.?!]{0,40}(nào|không)\b", re.UNICODE)
+_DOCTOR_LOOKUP_TOOLS = {
+    "search_doctors", "find_available_doctors", "get_doctor_detail", "get_doctor_availability",
+    "search_knowledge", "get_my_upcoming_appointments", "get_patient_history",
+}
+_DOCTOR_LOOKUP_NUDGE = (
+    "[GHI CHÚ HỆ THỐNG — user KHÔNG thấy] User nhắc tới/hỏi về bác sĩ nhưng bạn CHƯA tra cứu bằng "
+    "search_doctors. Hãy GỌI search_doctors (theo tên hoặc chuyên khoa user nêu) rồi trả lời dựa trên kết quả. "
+    "Nếu không có kết quả thì nói rõ không tìm thấy bác sĩ đó, đừng tiếp tục như thể bác sĩ tồn tại."
+)
+
+
+def _other_user_reference(user_message: str, own_user_id: int) -> bool:
+    return any(int(m.group(1)) != own_user_id for m in _OTHER_USER_RE.finditer(user_message))
+
+
+def _doctor_unchecked(user_message: str, called: set[str], session: "SessionState") -> bool:
+    return bool(_NAMED_DOCTOR_RE.search(user_message)) and not (called & _DOCTOR_LOOKUP_TOOLS)
+
+
+_CANCEL_INTENT_RE = re.compile(r"(hủy|huỷ)\s+(lịch|cuộc hẹn|hẹn)", re.IGNORECASE)
+_PAST_DATE_RE = re.compile(r"hôm qua|hôm kia|hôm trước|tuần trước|tháng trước|năm ngoái", re.IGNORECASE)
+_BOOK_VERB_RE = re.compile(r"đặt|hẹn|đăng ký|dk\b", re.IGNORECASE)
+_CANCEL_LOOKUP_NUDGE = (
+    "[GHI CHÚ HỆ THỐNG — user KHÔNG thấy] User muốn hủy lịch nhưng bạn CHƯA tra lịch của họ. "
+    "Hãy GỌI get_my_upcoming_appointments TRƯỚC: nếu không có lịch nào thì nói rõ hiện không có lịch sắp tới; "
+    "nếu có thì đọc ra cho user chọn rồi mới request_cancel_booking."
+)
+_PAST_DATE_NUDGE = (
+    "[GHI CHÚ HỆ THỐNG — user KHÔNG thấy] User nhắc một ngày ĐÃ QUA (hôm qua/tuần trước...). Không được đặt "
+    "lịch vào quá khứ: hãy nói rõ ngày giờ đó đã qua và hỏi user một ngày giờ từ hôm nay trở đi."
+)
+
+
+def _extra_nudge(user_message: str, called: set[str], session: "SessionState") -> tuple[str, str] | None:
+    """Nudge bổ sung (tag, nội dung) khi model bỏ qua bước tra cứu/kiểm tra bắt buộc."""
+    if (_CANCEL_INTENT_RE.search(user_message)
+            and not (called & {"get_my_upcoming_appointments", "request_cancel_booking"})
+            and not any(o.kind == "appointment" for o in session.last_offered)):
+        return "cancel_lookup_nudge", _CANCEL_LOOKUP_NUDGE
+    if _PAST_DATE_RE.search(user_message) and _BOOK_VERB_RE.search(user_message) and "resolve_date" not in called:
+        return "past_date_nudge", _PAST_DATE_NUDGE
+    return None
 
 
 def _agreed_but_no_draft(user_message: str, session: "SessionState", pending_ok: bool) -> bool:
@@ -382,6 +437,14 @@ class SchedulingAgent:
                     policy_violations=policy_violations + ["emergency_detector"],
                 )
 
+        # 1b. Đòi dữ liệu của người khác: từ chối tất định, không để LLM "lặng lẽ trả dữ liệu của mình".
+        if _other_user_reference(user_message, session.user_id):
+            policy_violations.append("other_user_reference_block")
+            if session.agent_state == AgentState.IDLE:
+                self._transition(session, AgentState.COLLECTING)
+            return self._resp(session, _OTHER_USER_REFUSAL, trace_id,
+                              injection_suspected=injection_suspected, policy_violations=policy_violations)
+
         # 2. Đang chờ xác nhận: chốt an toàn bằng confirm_intent
         if session.agent_state == AgentState.AWAITING_CONFIRMATION:
             if classify_confirmation(user_message) != ConfirmIntent.OTHER:
@@ -422,6 +485,9 @@ class SchedulingAgent:
 
         # Build booking requirement context string
         req = session.booking_requirement
+        _clock = parse_clock_time(user_message)
+        if _clock:
+            req.requested_clock = _clock
         req_lines = []
         req_lines.append(f"- Chuyên khoa: {req.specialty or 'Chưa biết'}")
         _doc_str = req.doctor_name or "Chưa biết"
@@ -432,6 +498,10 @@ class SchedulingAgent:
         req_lines.append(f"- Ngày khám: {req.date or 'Chưa biết'}")
         req_lines.append(f"- Buổi khám: {req.time_preference or 'Chưa biết'}")
         req_lines.append(f"- Giờ khám cụ thể: {req.specific_time or 'Chưa biết'}")
+        if req.requested_clock:
+            req_lines.append(
+                f"- Giờ user ĐÃ NÊU: {req.requested_clock} (giờ VN) — dùng làm start_time, TUYỆT ĐỐI KHÔNG hỏi lại giờ"
+            )
         booking_req_str = "\n".join(req_lines)
 
         # 4. Dựng messages
@@ -512,6 +582,18 @@ class SchedulingAgent:
                         messages.append({"role": "assistant", "content": text})
                         messages.append({"role": "user", "content": _AGREED_NUDGE})
                         continue
+                    elif nudges_left and _doctor_unchecked(user_message, {a.name for a in tool_calls_audit}, session):
+                        nudges_left -= 1
+                        policy_violations.append("doctor_lookup_nudge")
+                        messages.append({"role": "assistant", "content": text})
+                        messages.append({"role": "user", "content": _DOCTOR_LOOKUP_NUDGE})
+                        continue
+                    elif nudges_left and (_xn := _extra_nudge(user_message, {a.name for a in tool_calls_audit}, session)):
+                        nudges_left -= 1
+                        policy_violations.append(_xn[0])
+                        messages.append({"role": "assistant", "content": text})
+                        messages.append({"role": "user", "content": _xn[1]})
+                        continue
                     if nudges_left and _is_unkept_promise(text):
                         nudges_left -= 1
                         messages.append({"role": "assistant", "content": text})
@@ -552,6 +634,18 @@ class SchedulingAgent:
                         policy_violations.append("agreed_but_no_draft_nudge")
                         messages.append({"role": "assistant", "content": iter_text})
                         messages.append({"role": "user", "content": _AGREED_NUDGE})
+                        continue
+                    elif nudges_left and _doctor_unchecked(user_message, {a.name for a in tool_calls_audit}, session):
+                        nudges_left -= 1
+                        policy_violations.append("doctor_lookup_nudge")
+                        messages.append({"role": "assistant", "content": iter_text})
+                        messages.append({"role": "user", "content": _DOCTOR_LOOKUP_NUDGE})
+                        continue
+                    elif nudges_left and (_xn := _extra_nudge(user_message, {a.name for a in tool_calls_audit}, session)):
+                        nudges_left -= 1
+                        policy_violations.append(_xn[0])
+                        messages.append({"role": "assistant", "content": iter_text})
+                        messages.append({"role": "user", "content": _xn[1]})
                         continue
                     if nudges_left and _is_unkept_promise(iter_text):
                         nudges_left -= 1

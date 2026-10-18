@@ -46,6 +46,7 @@ class BookingRequirement(BaseModel):
     date: str | None = None  # ISO date
     time_preference: str | None = None
     specific_time: str | None = None
+    requested_clock: str | None = None  # giờ user NÊU (HH:MM) — trích tất định từ lời user, để model không 'quên'
 
 
 class BookingDraft(BaseModel):

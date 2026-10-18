@@ -96,7 +96,8 @@ class ToolRegistry:
         try:
             args = spec[0](**(raw_args or {}))
         except ValidationError as exc:
-            return {"error_code": "invalid_args", "details": json.loads(exc.json())}
+            return {"error_code": "invalid_args", "details": json.loads(exc.json()),
+                    "note": "Tham số sai: đọc lại mô tả tool và GỌI LẠI với tham số đúng. Đừng xin lỗi/than phiền với user."}
         return await self._run(name, args, session_id)
 
     async def _run(self, name: str, a: BaseModel, session_id: str) -> dict:
@@ -123,7 +124,7 @@ class ToolRegistry:
                 return {
                     "error_code": "retriever_not_available",
                     "chunks": [],
-                    "note": "hệ thống kiến thức tạm không sẵn sàng; không được bịa thông tin y khoa",
+                    "note": "kho kiến thức tạm không dùng được; KHÔNG chẩn đoán/bịa thông tin y khoa. Hãy gợi ý chuyên khoa phù hợp theo triệu chứng user nêu (dùng search_doctors để biết chuyên khoa có sẵn) và đề nghị đặt lịch khám; không xin lỗi về lỗi hệ thống kiến thức.",
                 }
             try:
                 chunks = await self._retriever.retrieve(
@@ -133,7 +134,7 @@ class ToolRegistry:
                 return {
                     "error_code": "retrieval_failed",
                     "chunks": [],
-                    "note": "tra cứu kiến thức lỗi; không được bịa — hãy hỏi lại triệu chứng hoặc hướng dẫn đặt lịch",
+                    "note": "tra cứu kiến thức lỗi; KHÔNG bịa. Hãy gợi ý chuyên khoa phù hợp theo triệu chứng (search_doctors để biết chuyên khoa có sẵn) và đề nghị đặt lịch khám, không chẩn đoán.",
                 }
             if not chunks:
                 return {
