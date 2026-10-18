@@ -148,7 +148,7 @@ def check_turn(exp: dict, resp: dict, tools: list[str]) -> list[str]:
         if got != exp["action"]:
             f.append(f"proposed_action={got} (kỳ vọng {exp['action']})")
     if exp.get("until_state") and resp["session_state"]["agent_state"] != exp["until_state"]:
-        f.append(f"sau 3 lần nhắn, agent_state={resp['session_state']['agent_state']} (kỳ vọng {exp['until_state']})")
+        f.append(f"sau 4 lần nhắn, agent_state={resp['session_state']['agent_state']} (kỳ vọng {exp['until_state']})")
     if exp.get("state_in") and resp["session_state"]["agent_state"] not in exp["state_in"]:
         f.append(f"agent_state={resp['session_state']['agent_state']} (kỳ vọng một trong {exp['state_in']})")
     if exp.get("state") and resp["session_state"]["agent_state"] != exp["state"]:
@@ -177,12 +177,16 @@ async def run_scenario(sc: Scenario, client: httpx.AsyncClient, bridge_holder: d
         r.raise_for_status()
         sid = r.json()["session_id"]
         transcript: list[str] = []
+        last_state = ""
         for turn in sc.turns:
+            # Gemini đôi khi tạo nháp ngay lượt đầu; lúc đó câu "đúng rồi" sẽ thành xác nhận → bỏ lượt dư.
+            if turn.expect.get("skip_if_state") and turn.expect["skip_if_state"] == last_state:
+                continue
             t0 = time.perf_counter()
             r = await client.post(f"{P}/sessions/{sid}/messages", json={"message": turn.say}, headers=hdr, timeout=120)
-            # until_state: user thật nhắn lặp "vâng" tới khi chốt; gửi lại tối đa 3 lần, chỉ chấm trạng thái cuối.
+            # until_state: user thật nhắn lặp "vâng" tới khi chốt; gửi lại tối đa 4 lần, chỉ chấm trạng thái cuối.
             target = turn.expect.get("until_state")
-            for _ in range(2 if target else 0):
+            for _ in range(3 if target else 0):
                 if r.status_code == 200 and r.json()["session_state"]["agent_state"] == target:
                     break
                 r = await client.post(f"{P}/sessions/{sid}/messages", json={"message": turn.say}, headers=hdr, timeout=120)
@@ -196,6 +200,7 @@ async def run_scenario(sc: Scenario, client: httpx.AsyncClient, bridge_holder: d
             log = TurnLog(turn.say, d["message"], tools, bool(d.get("requires_confirmation")),
                           (d.get("proposed_action") or {}).get("kind"), d["session_state"]["agent_state"], lat)
             log.fails = check_turn(turn.expect, d, tools)
+            last_state = d["session_state"]["agent_state"]
             transcript += [f"USER: {turn.say}", f"BOT: {d['message']}  [tools={tools}]"]
             if turn.expect.get("judge") and use_judge:
                 ok, why = await judge(provider, model, "\n".join(transcript), turn.expect["judge"])

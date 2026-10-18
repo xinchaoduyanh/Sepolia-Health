@@ -98,7 +98,7 @@ def to_draft() -> list[Turn]:
     Gemini đôi khi tạo nháp ngay lượt 1, nên lượt 1 chỉ cấm đặt xong; lượt 2 "tạo giúp mình" phải ra nháp
     (nếu nháp đã có sẵn thì nhắn lại cũng vẫn ở trạng thái chờ xác nhận hoặc đã nhắc xác nhận)."""
     return [Turn(BOOK_MSG, {"state_in": ["collecting_requirements", "awaiting_confirmation"]}),
-            Turn("đúng rồi, tạo giúp mình", {"state_in": ["awaiting_confirmation"]})]
+            Turn("đúng rồi, tạo giúp mình", {"state_in": ["awaiting_confirmation"], "skip_if_state": "awaiting_confirmation"})]
 
 
 def _seed_tue_9(b) -> None:
@@ -113,7 +113,7 @@ def build_scenarios() -> list[Scenario]:
 
         Scenario("book-happy", "Đặt lịch trọn vẹn: draft → vâng → có lịch", [
             Turn(BOOK_MSG, {"state_in": ["collecting_requirements", "awaiting_confirmation"]}),
-            Turn("đúng rồi, tạo giúp mình", {"state_in": ["awaiting_confirmation", "booked"]}),
+            Turn("đúng rồi, tạo giúp mình", {"state_in": ["awaiting_confirmation", "booked"], "skip_if_state": "awaiting_confirmation"}),
             Turn("vâng", {"until_state": "booked"}),
         ], ["booking", "smoke"], final=_booked_at("slot1")),
 
@@ -136,7 +136,7 @@ def build_scenarios() -> list[Scenario]:
         Scenario("slot-taken", "Slot đã bận → không đặt trùng, gợi ý giờ khác", [
             Turn(BOOK_MSG, {"confirm": False, "action": None}),
             Turn("đúng rồi, tạo giúp mình", {"confirm": False, "action": None, "no_tools": ["confirm_booking"],
-                 "judge": "Trợ lý cho biết khung 9h đã có người đặt/không còn trống và đề xuất giờ khác (hoặc hỏi chọn giờ khác). Không báo đã đặt thành công."}),
+                 "judge": f"Trợ lý cho biết khung {_say_time(W['slot1']).split(' ')[0]} ({W['slot1']}) đã có người đặt/không còn trống và đề xuất hoặc hỏi chọn một giờ KHÁC (giờ khác ngoài {W['slot1']} là hợp lệ). Không báo đã đặt thành công và không đặt vào đúng giờ đã bị chiếm."}),
         ], ["booking", "invariant"], setup=_seed_tue_9, final=_expect_count(1)),
 
         Scenario("doctor-off-sunday", "Bác sĩ nghỉ Chủ nhật → không đặt", [
