@@ -108,13 +108,27 @@ _UNGROUNDED_NUDGE = {
         "giờ trống thật, tuyệt đối không tự bịa giờ."
     ),
 }
+_AGREED_NUDGE = (
+    "[GHI CHÚ HỆ THỐNG — user KHÔNG thấy] Người dùng VỪA ĐỒNG Ý đặt lịch nhưng bạn chưa gọi "
+    "create_booking_draft. Hãy GỌI NGAY create_booking_draft với doctor_id, service_id, start_time "
+    "(ISO, giờ Việt Nam) lấy từ các kết quả tra cứu và yêu cầu user đã nêu ở trên. Đừng hỏi lại, đừng "
+    "nói 'đã tìm thấy' rồi dừng. Nếu thực sự thiếu id/giờ thì gọi search_*/get_doctor_availability trước."
+)
 _SAFE_NO_BOOKING = (
     "Dạ em chưa hoàn tất việc đặt/huỷ lịch ạ. Anh/chị cho em xác nhận lại thông tin lịch khám "
     "để em thực hiện giúp nhé."
 )
 
 
-def _ungrounded_claim(text: str, called: set[str], session: "SessionState") -> str | None:
+def _agreed_but_no_draft(user_message: str, session: "SessionState", pending_ok: bool) -> bool:
+    """User vừa nói 'đúng/vâng/tạo đi' khi đã chọn bác sĩ mà lượt này KHÔNG tạo được bản nháp/yêu cầu hủy
+    thành công (chưa gọi tool, hoặc gọi nhưng lỗi)."""
+    if pending_ok or session.booking_requirement.doctor_id is None:
+        return False
+    return classify_confirmation(user_message) == ConfirmIntent.CONFIRM
+
+
+def _ungrounded_claim(text: str, called: set[str], session: "SessionState", pending_ok: bool = False) -> str | None:
     """Phát hiện tuyên bố không có căn cứ: 'đã đặt thành công' hoặc liệt kê giờ trống mà
     lượt này chưa tra cứu. Trả 'success' | 'availability' | None."""
     if not text:
@@ -124,7 +138,7 @@ def _ungrounded_claim(text: str, called: set[str], session: "SessionState") -> s
         _LOG.warning("ungrounded success claim matched %r", m.group(0))
         return "success"
     m = _DRAFT_CLAIM_RE.search(text)
-    if m and not (called & _DRAFT_TOOLS):
+    if m and not pending_ok:
         _LOG.warning("ungrounded draft claim matched %r", m.group(0))
         return "draft"
     if _SLOT_TIME_RE.search(text) and _AVAIL_WORD_RE.search(text) and not (called & _AVAIL_TOOLS):
@@ -483,7 +497,7 @@ class SchedulingAgent:
                 )
                 if not response.tool_calls:
                     text = (response.content if response else "") or ""
-                    bad = _ungrounded_claim(text, {a.name for a in tool_calls_audit}, session)
+                    bad = _ungrounded_claim(text, {a.name for a in tool_calls_audit}, session, draft_result is not None or cancel_result is not None)
                     if bad and nudges_left:
                         nudges_left -= 1
                         policy_violations.append(f"ungrounded_{bad}_claim")
@@ -492,6 +506,12 @@ class SchedulingAgent:
                         continue
                     if bad in ("success", "draft"):
                         text = _SAFE_NO_BOOKING
+                    elif nudges_left and _agreed_but_no_draft(user_message, session, draft_result is not None or cancel_result is not None):
+                        nudges_left -= 1
+                        policy_violations.append("agreed_but_no_draft_nudge")
+                        messages.append({"role": "assistant", "content": text})
+                        messages.append({"role": "user", "content": _AGREED_NUDGE})
+                        continue
                     if nudges_left and _is_unkept_promise(text):
                         nudges_left -= 1
                         messages.append({"role": "assistant", "content": text})
@@ -518,7 +538,7 @@ class SchedulingAgent:
                 if not tool_calls:
                     # Hứa suông ("để em kiểm tra...") -> chưa stream gì ra, lặng lẽ
                     # nudge và chạy lại; user chỉ thấy câu trả lời thật cuối cùng.
-                    bad = _ungrounded_claim(iter_text, {a.name for a in tool_calls_audit}, session)
+                    bad = _ungrounded_claim(iter_text, {a.name for a in tool_calls_audit}, session, draft_result is not None or cancel_result is not None)
                     if bad and nudges_left:
                         nudges_left -= 1
                         policy_violations.append(f"ungrounded_{bad}_claim")
@@ -527,6 +547,12 @@ class SchedulingAgent:
                         continue
                     if bad in ("success", "draft"):
                         iter_text = _SAFE_NO_BOOKING
+                    elif nudges_left and _agreed_but_no_draft(user_message, session, draft_result is not None or cancel_result is not None):
+                        nudges_left -= 1
+                        policy_violations.append("agreed_but_no_draft_nudge")
+                        messages.append({"role": "assistant", "content": iter_text})
+                        messages.append({"role": "user", "content": _AGREED_NUDGE})
+                        continue
                     if nudges_left and _is_unkept_promise(iter_text):
                         nudges_left -= 1
                         messages.append({"role": "assistant", "content": iter_text})

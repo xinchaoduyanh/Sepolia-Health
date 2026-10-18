@@ -554,3 +554,54 @@ def test_format_booking_dt_converts_utc_to_vietnam_time():
     assert _format_booking_dt("2026-10-20T01:30:00.000Z").startswith("08:30")
     assert _format_booking_dt("2026-10-20T09:00:00+07:00").startswith("09:00")
     assert _format_booking_dt("2026-10-20T09:00:00").startswith("09:00")
+
+
+async def test_agreement_without_draft_call_is_nudged_to_create_draft():
+    """User 'đúng rồi, tạo giúp mình' mà model chỉ nói 'đã tìm thấy dịch vụ' → ép gọi create_booking_draft."""
+    provider = FakeProvider([
+        chat_text("Dạ em đã tìm thấy dịch vụ Khám da liễu rồi ạ."),
+        chat_tools(("create_booking_draft", {
+            "patient_profile_id": 100, "doctor_id": 12, "service_id": 5, "start_time": "2030-01-01T09:00:00+07:00"})),
+        chat_text("Anh xác nhận giúp em nhé."),
+    ])
+    bridge = FakeBridge()
+    agent = _agent(provider, bridge)
+    session = _session()
+    session.booking_requirement.doctor_id = 12
+    resp = await agent.handle_turn(session, "đúng rồi, tạo giúp mình", "t1")
+    assert "agreed_but_no_draft_nudge" in resp.policy_violations
+    assert resp.requires_confirmation is True and session.pending_confirmation is not None
+
+
+async def test_bare_agreement_without_booking_context_not_nudged():
+    provider = FakeProvider([chat_text("Dạ vâng ạ, anh cần em hỗ trợ gì thêm không?")])
+    agent = _agent(provider, FakeBridge())
+    session = _session()
+    resp = await agent.handle_turn(session, "vâng", "t1")
+    assert "agreed_but_no_draft_nudge" not in resp.policy_violations
+
+
+async def test_failed_draft_call_then_false_claim_is_blocked_and_renudged():
+    """Gọi create_booking_draft nhưng lỗi, rồi model vẫn nói 'đã tạo bản nháp' → bị chặn, ép thử lại."""
+    class FailThenOk(FakeBridge):
+        n = 0
+
+        async def create_booking_draft(self, *a, **k):
+            FailThenOk.n += 1
+            if FailThenOk.n == 1:
+                return {"error_code": "service_not_found"}
+            return await super().create_booking_draft(*a, **k)
+
+    args = {"patient_profile_id": 100, "doctor_id": 12, "service_id": 5, "start_time": "2030-01-01T09:00:00+07:00"}
+    provider = FakeProvider([
+        chat_tools(("create_booking_draft", args)),
+        chat_text("Dạ em đã tạo bản nháp cho anh rồi ạ."),
+        chat_tools(("create_booking_draft", args)),
+        chat_text("Anh xác nhận giúp em nhé."),
+    ])
+    agent = _agent(provider, FailThenOk())
+    session = _session()
+    session.booking_requirement.doctor_id = 12
+    resp = await agent.handle_turn(session, "đúng rồi, tạo giúp mình", "t1")
+    assert resp.requires_confirmation is True and session.pending_confirmation is not None
+    assert "ungrounded_draft_claim" in resp.policy_violations
