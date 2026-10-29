@@ -44,7 +44,10 @@ docker build -t sepolia-ai -f AI/Dockerfile AI
 # AI_DATABASE_URL, AI_BE_BRIDGE_BASE_URL, AI_RAG_REQUIRE_INDEX=true
 ```
 
-`AI_ENV=production` fail-fast nếu secret còn `changeme`. Backend mirror check với `NODE_ENV=production`.
+Container nhận `$PORT`, chạy non-root, không `--reload`; `HEALTHCHECK` dùng `/health` (liveness).
+`/ready` (503 nếu fail) kiểm tra: DB, Be bridge (HTTP reachable), credential Vertex (khi `AI_GEMINI_USE_VERTEX=true`), RAG index (khi `AI_RAG_REQUIRE_INDEX=true`).
+
+`AI_ENV=production` fail-fast nếu secret còn `changeme`/rỗng/<32 ký tự, thiếu project/credential Vertex, hoặc `AI_RAG_REQUIRE_INDEX` không bật. Backend mirror check với `NODE_ENV=production`.
 
 ## Chạy test (không cần model / Vertex)
 
@@ -59,6 +62,16 @@ python -m venv .venv
 ```
 
 Test offline cố định `now=2026-06-16` (thứ Ba) ở các resolver/agent để assert ngày tuyệt đối.
+
+## Baseline build/test chuẩn (cũng là CI: `.github/workflows/ai-module.yml`)
+
+```bash
+pnpm install --frozen-lockfile
+pnpm --filter be exec prisma generate
+pnpm --filter be build
+cd AI && python -m pip install -r requirements.txt
+python -m pytest -q && python -m eval.run_offline && python -m compileall -q app
+```
 
 ## RAG local
 
