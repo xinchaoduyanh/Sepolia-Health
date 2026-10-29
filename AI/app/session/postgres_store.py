@@ -387,6 +387,7 @@ class PostgresSessionStore(SessionStore):
         turn_cut = now - datetime.timedelta(days=max(1, turn_days))
         closed = 0
         deleted = 0
+        removed = 0
         async with self.session_factory() as session:
             async with session.begin():
                 # Load open sessions quá hạn rồi invalidate từng row (wipe state).
@@ -404,4 +405,25 @@ class PostgresSessionStore(SessionStore):
                     delete(AiTurnDb).where(AiTurnDb.createdAt < turn_cut)
                 )
                 deleted = res2.rowcount or 0
-        return {"sessions_closed": int(closed), "turns_deleted": int(deleted)}
+                # Session đã đóng (state đã wipe) quá hạn: xoá hẳn row. AiTurn không
+                # cascade nên dọn turn còn sót của chúng trước (FK).
+                old_closed = select(AiSessionDb.id).where(
+                    AiSessionDb.closedAt.is_not(None),
+                    AiSessionDb.closedAt < session_cut,
+                )
+                res3 = await session.execute(
+                    delete(AiTurnDb).where(AiTurnDb.sessionId.in_(old_closed))
+                )
+                deleted += res3.rowcount or 0
+                res4 = await session.execute(
+                    delete(AiSessionDb).where(
+                        AiSessionDb.closedAt.is_not(None),
+                        AiSessionDb.closedAt < session_cut,
+                    )
+                )
+                removed = res4.rowcount or 0
+        return {
+            "sessions_closed": int(closed),
+            "turns_deleted": int(deleted),
+            "sessions_deleted": int(removed),
+        }

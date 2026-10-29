@@ -5,6 +5,7 @@ PostgresSessionStore (asyncpg/SQLAlchemy) — xem postgres_store.py.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from datetime import timedelta
 from contextlib import asynccontextmanager
 from typing import Any, AsyncIterator
 
@@ -102,7 +103,7 @@ class SessionStore(ABC):
 
     async def purge_expired(self, *, session_days: int, turn_days: int) -> dict[str, int]:
         """Retention job: close old sessions / delete old turns."""
-        return {"sessions_closed": 0, "turns_deleted": 0}
+        return {"sessions_closed": 0, "turns_deleted": 0, "sessions_deleted": 0}
 
 
 class InMemorySessionStore(SessionStore):
@@ -110,10 +111,12 @@ class InMemorySessionStore(SessionStore):
         self._data: dict[str, SessionState] = {}
         self._closed: set[str] = set()
         self._turns: dict[str, list[dict[str, Any]]] = {}
+        self._closed_at: dict[str, datetime] = {}
 
     async def create(self, state: SessionState) -> SessionState:
         self._data[state.session_id] = state.model_copy(deep=True)
         self._closed.discard(state.session_id)
+        self._closed_at.pop(state.session_id, None)
         return state.model_copy(deep=True)
 
     async def get(self, session_id: str) -> SessionState | None:
@@ -172,6 +175,7 @@ class InMemorySessionStore(SessionStore):
             self._turns[session_id] = []
         self._turns[session_id].append(
             {
+                "at": _now(),
                 "trace_id": trace_id,
                 "user_message": user_message,
                 "ai_message": ai_message,
@@ -210,6 +214,7 @@ class InMemorySessionStore(SessionStore):
             wiped.last_updated = _now()
             self._data[session_id] = wiped
             self._closed.add(session_id)
+            self._closed_at[session_id] = _now()
         if purge_turns:
             self._turns.pop(session_id, None)
         return existed
@@ -236,15 +241,29 @@ class InMemorySessionStore(SessionStore):
         }
 
     async def purge_expired(self, *, session_days: int, turn_days: int) -> dict[str, int]:
-        # In-memory tests: close everything still open (deterministic).
+        """Cùng semantics với PostgresSessionStore (theo thời gian, không phải 'xoá hết')."""
+        now = _now()
+        session_cut = now - timedelta(days=max(1, session_days))
+        turn_cut = now - timedelta(days=max(1, turn_days))
         closed = 0
-        for sid in list(self._data.keys()):
-            if sid not in self._closed:
+        for sid, st in list(self._data.items()):
+            if sid not in self._closed and st.last_updated < session_cut:
                 await self.delete_session(sid, purge_turns=False)
                 closed += 1
         deleted = 0
-        if turn_days >= 0:
-            for sid in list(self._turns.keys()):
-                if sid in self._closed:
-                    deleted += len(self._turns.pop(sid, []))
-        return {"sessions_closed": closed, "turns_deleted": deleted}
+        for sid, turns in list(self._turns.items()):
+            keep = [t for t in turns if t.get("at", now) >= turn_cut]
+            deleted += len(turns) - len(keep)
+            if keep:
+                self._turns[sid] = keep
+            else:
+                self._turns.pop(sid)
+        removed = 0
+        for sid in list(self._closed):
+            if self._closed_at.get(sid, now) < session_cut:
+                self._turns.pop(sid, None)
+                self._data.pop(sid, None)
+                self._closed.discard(sid)
+                self._closed_at.pop(sid, None)
+                removed += 1
+        return {"sessions_closed": closed, "turns_deleted": deleted, "sessions_deleted": removed}

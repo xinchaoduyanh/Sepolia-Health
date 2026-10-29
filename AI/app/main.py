@@ -1,6 +1,7 @@
 """FastAPI entry. Chạy dev: uvicorn app.main:app --reload --port 8088."""
 from __future__ import annotations
 
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 
@@ -8,12 +9,25 @@ from fastapi import Depends, FastAPI
 
 from app.api import chat, health
 from app.config import get_settings
+from app.session.retention import retention_loop
 from app.deps import get_store, require_internal_token
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    yield
+    settings = get_settings()
+    purge_task = None
+    if settings.retention_purge_interval_minutes > 0:
+        purge_task = asyncio.create_task(retention_loop(get_store, settings))
+    try:
+        yield
+    finally:
+        if purge_task is not None:
+            purge_task.cancel()
+            try:
+                await purge_task
+            except asyncio.CancelledError:
+                pass
     # Đóng connection pool của session store lúc shutdown.
     store = get_store()
     dispose = getattr(store, "dispose", None)
