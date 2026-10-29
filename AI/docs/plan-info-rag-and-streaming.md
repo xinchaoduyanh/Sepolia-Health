@@ -134,3 +134,23 @@ giữa stream; BE throttle không update quá dày (đếm số lần update tro
 - RAG output luôn qua `post_validator` + `KnowledgePolicy`; KHÔNG chẩn đoán.
 - Streaming KHÔNG được bỏ qua validator — buffer theo câu trước khi emit.
 - Mỗi đổi prompt: bump version + cập nhật `_version-log.md`.
+
+---
+
+## Cập nhật Phase 5–6 (RAG runtime + đánh giá) — 2026-10-29
+
+Trạng thái triển khai so với kế hoạch ở trên (chi tiết quy trình: `knowledge/GOVERNANCE.md`, `eval/README.md`).
+
+- **RAG là tool** (`search_knowledge`) — đã xong từ Phase A; kết quả nay kèm `file_id`, `version`, `review_status`, `sources`.
+- **Embedding không còn phụ thuộc Ollama**: `AI_EMBEDDING_PROVIDER=auto` đi theo chat provider
+  (Vertex `text-multilingual-embedding-002`, Gemini API `gemini-embedding-001`, hoặc Ollama `bge-m3` khi chọn/không có cloud).
+  Đổi provider/model/dimension ⇒ index cũ stale, `/ready` trả 503 cho tới khi build lại.
+- **Index**: collection có hậu tố build-id, swap nguyên tử qua `index_manifest.json`
+  (`knowledge_hash`, provider/model/dimension, chunks, chính sách review). `python -m app.rag.indexer --ensure`
+  (idempotent, có file lock) hoặc `AI_RAG_AUTO_BUILD=true` build nền lúc khởi động. Build lỗi giữ nguyên index cũ.
+- **Retrieval hybrid** (dense + BM25 + RRF, `AI_RAG_HYBRID`, mặc định bật) và `AI_RAG_MIN_SCORE` theo model (Vertex 0.60).
+  Số liệu trong `eval/reports/retrieval-baseline.md`.
+- **Lỗi embedding/index** vẫn trả `error_code` rõ ràng cho tool (không bịa); BM25 KHÔNG được dùng làm fallback
+  vì điểm BM25 không tách được câu ngoài phạm vi (đã đo).
+- **Giới hạn đã biết**: ngưỡng similarity không loại được câu ngoài phạm vi/gần y khoa (xem false-positive trong báo cáo) —
+  an toàn dựa vào prompt + `KnowledgePolicy` + post-validator, không dựa vào retrieval rỗng.
