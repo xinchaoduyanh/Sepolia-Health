@@ -62,7 +62,8 @@ class Settings(BaseSettings):
 
     # Chờ tối đa N giây để lấy turn lock của session (turn trước còn chạy);
     # quá hạn -> 409 session_busy thay vì treo connection vô hạn.
-    session_turn_lock_timeout_sec: float = 90.0
+    # Giữ < timeout HTTP của BE->AI (70s) để BE nhận 409 chứ không phải timeout.
+    session_turn_lock_timeout_sec: float = 60.0
 
     # Readiness: require non-empty RAG collection (manifest + chroma count).
     # Default false for local/dev; set true (or AI_ENV=production) in deploy.

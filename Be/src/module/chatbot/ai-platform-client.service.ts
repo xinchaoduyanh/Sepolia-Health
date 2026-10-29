@@ -58,7 +58,21 @@ export class AiPlatformClient {
     return `${userId}:${channelId ?? 'direct'}`;
   }
 
+  private static readonly CACHE_PRUNE_THRESHOLD = 1000;
+
+  private pruneExpiredSessions(): void {
+    const now = Date.now();
+    for (const [key, entry] of this.sessionByChannel) {
+      if (entry.expiresAt <= now) this.sessionByChannel.delete(key);
+    }
+  }
+
   private cacheSession(key: string, sessionId: string): void {
+    // Map chỉ là cache cục bộ (DB AiSession là source of truth); không để giữ
+    // key hết hạn vô hạn nếu user không quay lại.
+    if (this.sessionByChannel.size >= AiPlatformClient.CACHE_PRUNE_THRESHOLD) {
+      this.pruneExpiredSessions();
+    }
     this.sessionByChannel.set(key, {
       sessionId,
       expiresAt: Date.now() + this.config.aiSessionCacheTtlSeconds * 1000,
