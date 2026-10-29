@@ -5,6 +5,7 @@ import asyncio
 import json
 import logging
 import time
+from contextlib import asynccontextmanager
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Awaitable, Callable
@@ -38,7 +39,12 @@ from app.rag.policy import KnowledgePolicy
 from app.rag.retriever import KnowledgeRetriever
 from app.routing.model_router import ModelRouter
 from app.session.models import SessionState
-from app.session.store import SessionClosedError, SessionConflictError, SessionStore
+from app.session.store import (
+    SessionBusyError,
+    SessionClosedError,
+    SessionConflictError,
+    SessionStore,
+)
 from app.tools.be_bridge import BridgeClient
 
 _LOG = logging.getLogger(__name__)
@@ -183,6 +189,20 @@ async def purge_expired(
     return {"status": "ok", **result}
 
 
+@asynccontextmanager
+async def _turn_guard(store: SessionStore, session_id: str, settings: Settings):
+    """Turn lock; quá hạn chờ -> 409 session_busy (client retry)."""
+    try:
+        async with store.turn_lock(session_id, settings.session_turn_lock_timeout_sec):
+            yield
+    except SessionBusyError:
+        raise HTTPException(
+            status_code=409,
+            detail={"error_code": "session_busy", "retry_after_sec": 5},
+            headers={"Retry-After": "5"},
+        ) from None
+
+
 async def _run_turn(
     session_id: str,
     message: str,
@@ -208,7 +228,7 @@ async def _run_turn(
     _enforce_rate_limit(state.user_id, settings)
 
     # Phase 4: serialize turns before LLM/tool execution.
-    async with store.turn_lock(session_id):
+    async with _turn_guard(store, session_id, settings):
         # Re-read under lock (delete có thể xảy ra giữa chừng).
         state = await _require_open_session(store, session_id)
 

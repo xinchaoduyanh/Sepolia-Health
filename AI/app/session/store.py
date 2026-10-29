@@ -8,7 +8,7 @@ from abc import ABC, abstractmethod
 from contextlib import asynccontextmanager
 from typing import Any, AsyncIterator
 
-from app.session.locks import get_memory_turn_locker
+from app.session.locks import TurnLockTimeout, get_memory_turn_locker
 from app.session.models import SessionState, _now
 
 
@@ -79,10 +79,18 @@ class SessionStore(ABC):
         return []
 
     @asynccontextmanager
-    async def turn_lock(self, session_id: str) -> AsyncIterator[None]:
-        """Serialize turns for one session before LLM/tool work."""
-        async with get_memory_turn_locker().turn_lock(session_id):
-            yield
+    async def turn_lock(
+        self, session_id: str, timeout: float | None = None
+    ) -> AsyncIterator[None]:
+        """Serialize turns for one session before LLM/tool work.
+
+        Quá `timeout` giây chưa lấy được lock -> SessionBusyError.
+        """
+        try:
+            async with get_memory_turn_locker().turn_lock(session_id, timeout):
+                yield
+        except TurnLockTimeout as exc:
+            raise SessionBusyError(session_id) from exc
 
     async def delete_session(self, session_id: str, *, purge_turns: bool = True) -> bool:
         """Close/delete session for privacy. Return True if found."""

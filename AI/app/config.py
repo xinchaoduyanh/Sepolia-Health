@@ -60,6 +60,10 @@ class Settings(BaseSettings):
     # session mới (state/requirement cũ nhiều ngày trước chỉ gây kẹt và nhiễu).
     session_reconnect_max_age_minutes: int = 120
 
+    # Chờ tối đa N giây để lấy turn lock của session (turn trước còn chạy);
+    # quá hạn -> 409 session_busy thay vì treo connection vô hạn.
+    session_turn_lock_timeout_sec: float = 90.0
+
     # Readiness: require non-empty RAG collection (manifest + chroma count).
     # Default false for local/dev; set true (or AI_ENV=production) in deploy.
     rag_require_index: bool = False
