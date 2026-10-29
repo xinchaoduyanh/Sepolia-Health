@@ -38,7 +38,9 @@ from app.rag.emergency import EmergencyDetector
 from app.rag.policy import KnowledgePolicy
 from app.rag.retriever import KnowledgeRetriever
 from app.routing.model_router import ModelRouter
+from app.session.history import build_history_digest
 from app.session.models import SessionState
+from app.session.retention import run_purge_once
 from app.session.store import (
     SessionBusyError,
     SessionClosedError,
@@ -181,11 +183,7 @@ async def purge_expired(
     settings: Settings = Depends(get_settings),
 ) -> dict:
     """Retention job (call from cron with internal token)."""
-    result = await store.purge_expired(
-        session_days=settings.session_retention_days,
-        turn_days=settings.turn_retention_days,
-    )
-    log_event("retention_purge", **result)
+    result = await run_purge_once(store, settings)
     return {"status": "ok", **result}
 
 
@@ -201,6 +199,19 @@ async def _turn_guard(store: SessionStore, session_id: str, settings: Settings):
             detail={"error_code": "session_busy", "retry_after_sec": 5},
             headers={"Retry-After": "5"},
         ) from None
+
+
+async def _load_history(
+    store: SessionStore, session_id: str, settings: Settings
+) -> list[tuple[str | None, str | None]]:
+    window = settings.ai_history_max_turns
+    extra = max(0, settings.ai_history_digest_turns)
+    turns = await store.list_recent_turns(session_id, window + extra)
+    if len(turns) <= window:
+        return turns
+    older, recent = turns[:-window] if window > 0 else turns, turns[-window:] if window > 0 else []
+    digest = build_history_digest(older, max_chars=settings.ai_history_digest_max_chars)
+    return ([(digest, None)] if digest else []) + recent
 
 
 async def _run_turn(
@@ -242,7 +253,7 @@ async def _run_turn(
             emergency_detector=emergency_detector,
             knowledge_policy=knowledge_policy,
         )
-        history = await store.list_recent_turns(session_id, settings.ai_history_max_turns)
+        history = await _load_history(store, session_id, settings)
 
         trace_id = new_trace_id()
         started = time.perf_counter()
