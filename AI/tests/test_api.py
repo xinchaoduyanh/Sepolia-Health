@@ -135,7 +135,7 @@ def test_ready_reports_bridge_and_vertex(monkeypatch):
         be_bridge_base_url="http://127.0.0.1:1",
     )
     assert health._vertex_credential_state(s) == (False, "credential_file_missing")
-    s2 = Settings(internal_shared_secret="x" * 40, gemini_use_vertex=True)
+    s2 = Settings(internal_shared_secret="x" * 40, gemini_use_vertex=True, gemini_project="")
     assert health._vertex_credential_state(s2) == (False, "missing_project")
 
 
