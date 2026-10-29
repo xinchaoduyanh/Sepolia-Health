@@ -5,6 +5,8 @@ import ssl
 import uuid
 from urllib.parse import urlsplit, parse_qsl, urlencode, urlunsplit
 
+from contextlib import asynccontextmanager
+
 from sqlalchemy import Column, String, Integer, DateTime
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import declarative_base
@@ -12,9 +14,14 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sess
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.future import select
 
-from app.session.locks import PostgresTurnLocker
+from app.session.locks import PostgresTurnLocker, TurnLockTimeout
 from app.session.models import AgentState, BookingRequirement, SessionState
-from app.session.store import SessionClosedError, SessionConflictError, SessionStore
+from app.session.store import (
+    SessionBusyError,
+    SessionClosedError,
+    SessionConflictError,
+    SessionStore,
+)
 
 Base = declarative_base()
 
@@ -97,9 +104,14 @@ class PostgresSessionStore(SessionStore):
         async with self.engine.connect() as conn:
             await conn.execute(text("SELECT 1"))
 
-    def turn_lock(self, session_id: str):
+    @asynccontextmanager
+    async def turn_lock(self, session_id: str, timeout: float | None = None):
         """Serialize turns via PostgreSQL advisory lock (multi-worker safe)."""
-        return self._turn_locker.turn_lock(session_id)
+        try:
+            async with self._turn_locker.turn_lock(session_id, timeout):
+                yield
+        except TurnLockTimeout as exc:
+            raise SessionBusyError(session_id) from exc
 
     async def create(self, state: SessionState) -> SessionState:
         now = datetime.datetime.utcnow()
@@ -375,6 +387,7 @@ class PostgresSessionStore(SessionStore):
         turn_cut = now - datetime.timedelta(days=max(1, turn_days))
         closed = 0
         deleted = 0
+        removed = 0
         async with self.session_factory() as session:
             async with session.begin():
                 # Load open sessions quá hạn rồi invalidate từng row (wipe state).
@@ -392,4 +405,25 @@ class PostgresSessionStore(SessionStore):
                     delete(AiTurnDb).where(AiTurnDb.createdAt < turn_cut)
                 )
                 deleted = res2.rowcount or 0
-        return {"sessions_closed": int(closed), "turns_deleted": int(deleted)}
+                # Session đã đóng (state đã wipe) quá hạn: xoá hẳn row. AiTurn không
+                # cascade nên dọn turn còn sót của chúng trước (FK).
+                old_closed = select(AiSessionDb.id).where(
+                    AiSessionDb.closedAt.is_not(None),
+                    AiSessionDb.closedAt < session_cut,
+                )
+                res3 = await session.execute(
+                    delete(AiTurnDb).where(AiTurnDb.sessionId.in_(old_closed))
+                )
+                deleted += res3.rowcount or 0
+                res4 = await session.execute(
+                    delete(AiSessionDb).where(
+                        AiSessionDb.closedAt.is_not(None),
+                        AiSessionDb.closedAt < session_cut,
+                    )
+                )
+                removed = res4.rowcount or 0
+        return {
+            "sessions_closed": int(closed),
+            "turns_deleted": int(deleted),
+            "sessions_deleted": int(removed),
+        }

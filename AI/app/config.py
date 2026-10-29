@@ -55,10 +55,18 @@ class Settings(BaseSettings):
     # Conversation memory: số lượt (user+assistant) gần nhất nhồi lại vào prompt.
     # Gemini context lớn nên 6 lượt thoải mái; tăng nếu cần nhớ xa hơn (đổi cost/latency).
     ai_history_max_turns: int = 6
+    # Số lượt cũ hơn cửa sổ trên được nén thành 1 đoạn digest (0 = tắt).
+    ai_history_digest_turns: int = 20
+    ai_history_digest_max_chars: int = 600
 
     # Session mở trên channel chỉ được reconnect trong khoảng này; cũ hơn thì mở
     # session mới (state/requirement cũ nhiều ngày trước chỉ gây kẹt và nhiễu).
     session_reconnect_max_age_minutes: int = 120
+
+    # Chờ tối đa N giây để lấy turn lock của session (turn trước còn chạy);
+    # quá hạn -> 409 session_busy thay vì treo connection vô hạn.
+    # Giữ < timeout HTTP của BE->AI (70s) để BE nhận 409 chứ không phải timeout.
+    session_turn_lock_timeout_sec: float = 60.0
 
     # Readiness: require non-empty RAG collection (manifest + chroma count).
     # Default false for local/dev; set true (or AI_ENV=production) in deploy.
@@ -81,6 +89,9 @@ class Settings(BaseSettings):
     # Privacy: auto-close sessions older than N days when purge runs.
     session_retention_days: int = 30
     turn_retention_days: int = 30
+    # Chu kỳ chạy purge nền trong process AI (phút); 0 = tắt (dùng cron gọi
+    # /admin/purge-expired). Purge idempotent nên nhiều replica cùng chạy vẫn an toàn.
+    retention_purge_interval_minutes: int = 360
 
     prompts_dir: str = str(_BASE / "prompts")
     knowledge_dir: str = str(_BASE / "knowledge")
