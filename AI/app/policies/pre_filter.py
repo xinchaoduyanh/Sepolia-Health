@@ -34,6 +34,18 @@ _EMERGENCY = [
     "ngo doc", "uong qua lieu", "tim dap nhanh du doi", "tuc nguc du doi",
     "khong tho duoc", "nghet tho", "sung moi luoi", "phan ung phan ve",
 ]
+# Nạn nhân bạo lực/lạm dụng -> trả hotline, không vào LLM.
+_ABUSE_VICTIM = [
+    "bi bao hanh", "bao hanh gia dinh", "bi danh dap", "bi chong danh", "bi vo danh",
+    "bi hanh hung", "bi xam hai", "xam hai tinh duc", "xam hai tre em", "cuong hiep",
+    "hiep dam", "bi quay roi tinh duc", "bi nguoc dai", "bi de doa tinh mang",
+]
+# Ý định hại người khác. "muốn giết muỗi/thời gian" không tính.
+_HARM_OTHERS = [
+    "giet nguoi", "muon giet ai", "muon giet no", "muon giet han", "muon giet chong",
+    "muon giet vo", "muon giet anh ta", "muon giet co ta", "muon dau doc", "muon danh chet",
+    "muon hai nguoi",
+]
 _INJECTION = [
     "bo qua huong dan", "bo qua chi thi", "bo qua moi", "bo qua cac quy tac",
     "bo qua tat ca", "quen het", "quen di",
@@ -55,7 +67,7 @@ _INJECTION_REGEX = [
 @dataclass
 class PreFilterResult:
     blocked: bool = False
-    reason: str | None = None          # "self_harm" | "emergency"
+    reason: str | None = None          # "self_harm" | "emergency" | "violence_abuse"
     refusal_key: str | None = None     # id prompt refusal để trả thẳng
     injection_suspected: bool = False
     matched: list[str] = field(default_factory=list)  # nhãn rule (KHÔNG chứa text người dùng)
@@ -88,5 +100,11 @@ def check(text: str) -> PreFilterResult:
     if em_hits:
         return PreFilterResult(blocked=True, reason="emergency", refusal_key="refusal-emergency",
                                injection_suspected=injection, matched=em_hits + inj_hits)
+
+    ab_hits = [f"ab:{p}" for p in _ABUSE_VICTIM if contains_phrase(text, p)]
+    ab_hits += [f"ho:{p}" for p in _HARM_OTHERS if contains_phrase(text, p)]
+    if ab_hits:
+        return PreFilterResult(blocked=True, reason="violence_abuse", refusal_key="refusal-safety-abuse",
+                               injection_suspected=injection, matched=ab_hits + inj_hits)
 
     return PreFilterResult(injection_suspected=injection, matched=inj_hits)

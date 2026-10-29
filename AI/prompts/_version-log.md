@@ -23,3 +23,6 @@ Mọi lần bump version phải thêm entry ở đây.
 ## few_shot
 - few-shot-booking-happy v1, few-shot-disambiguation v1 (2026-06-10).
 - few-shot-multi-slot v1 (2026-07-01): trích xuất nhiều slot trong một câu yêu cầu.
+
+## refusals (Phase 7)
+- refusal-safety-abuse v1 (2026-10-29): bạo lực/lạm dụng/ý định hại người khác (111/113/115).

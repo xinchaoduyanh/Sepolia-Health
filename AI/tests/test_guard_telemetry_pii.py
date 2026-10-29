@@ -132,3 +132,15 @@ def test_ip_rate_limit_ignores_spoofed_forwarded_for_by_default():
              for i in range(2)]
     assert codes == [200, 429]  # header bị bỏ qua khi trust_proxy_headers=False
     reset_rate_limiter_for_tests()
+
+
+def test_violence_guard_end_to_end_with_telemetry():
+    reset_rate_limiter_for_tests()
+    guards.reset_for_tests()
+    c = _client(InMemorySessionStore(), ["KHÔNG ĐƯỢC GỌI LLM"])
+    sid = _sid(c, 906)
+    r = c.post(f"/internal/ai/chat/sessions/{sid}/messages", json={"message": "tôi bị bạo hành gia đình"}, headers=AUTH)
+    body = r.json()
+    assert r.status_code == 200 and "113" in body["message"] and "KHÔNG ĐƯỢC" not in body["message"]
+    assert "violence_abuse_block" in body["policy_violations"]
+    assert guards.snapshot().get("pre_filter:block") == 1

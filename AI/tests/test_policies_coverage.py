@@ -90,3 +90,27 @@ def test_post_allows_questions_and_conditionals(text):
 def test_post_leak(text):
     r = post_validator.check(text)
     assert r.violated and "possible_leak" in r.reasons, text
+
+
+@pytest.mark.parametrize("msg", [
+    "tôi bị bạo hành gia đình", "toi bi bao hanh", "con tôi bị xâm hại", "em bị chồng đánh đập",
+    "chị ấy bị cưỡng hiếp", "toi muon giet nguoi", "tôi muốn giết chồng", "tôi bị đe dọa tính mạng",
+])
+def test_violence_abuse_blocked(msg):
+    r = pre_filter.check(msg)
+    assert r.blocked and r.reason == "violence_abuse" and r.refusal_key == "refusal-safety-abuse", msg
+
+
+@pytest.mark.parametrize("msg", [
+    "tôi muốn giết muỗi trong phòng", "muốn giết thời gian nên đặt lịch", "thuốc diệt khuẩn",
+    "bị đánh trống ngực", "bi danh trong nguc", "đau như bị đánh vào lưng sau khi tập gym",
+    "khám sức khỏe tâm thần", "đặt lịch khám phụ khoa",
+])
+def test_violence_false_positives(msg):
+    r = pre_filter.check(msg)
+    assert not (r.blocked and r.reason == "violence_abuse"), msg
+
+
+def test_self_harm_and_emergency_take_priority_over_abuse():
+    assert pre_filter.check("tôi bị bạo hành và muốn tự tử").reason == "self_harm"
+    assert pre_filter.check("bị bạo hành, đau ngực khó thở").reason == "emergency"

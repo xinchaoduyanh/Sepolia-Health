@@ -421,6 +421,15 @@ class SchedulingAgent:
                     injection_suspected=injection_suspected,
                     policy_violations=policy_violations + ["self_harm_block"],
                 )
+            elif pf.reason == "violence_abuse":
+                self._transition(session, AgentState.COLLECTING)
+                return self._resp(
+                    session,
+                    self._prompts.render(pf.refusal_key or "refusal-safety-abuse", {}),
+                    trace_id,
+                    injection_suspected=injection_suspected,
+                    policy_violations=policy_violations + ["violence_abuse_block"],
+                )
             else:
                 self._transition(session, AgentState.COLLECTING)
                 warning_msg = self._prompts.render(pf.refusal_key or "refusal-emergency", {}) + " Nếu triệu chứng nhẹ hoặc kéo dài, em có thể hỗ trợ anh/chị đặt lịch khám chuyên khoa phù hợp ạ."
