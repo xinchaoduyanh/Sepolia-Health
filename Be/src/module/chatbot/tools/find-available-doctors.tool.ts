@@ -12,6 +12,11 @@ interface FindAvailableDoctorsParams {
   time?: string; // HH:mm (Ví dụ: "09:00", "15:30")
 }
 
+/**
+ * @deprecated Tool cũ (trả prose cho chatbot cũ). Nguồn sự thật hiện tại là
+ * `ai-bridge/ai-bridge.service.ts` (DATA-only + error_code). Không thêm logic mới ở đây;
+ * xem chatbot/tools/DEPRECATED.md.
+ */
 @Injectable()
 export class FindAvailableDoctorsTool {
   private readonly logger = new Logger(FindAvailableDoctorsTool.name);

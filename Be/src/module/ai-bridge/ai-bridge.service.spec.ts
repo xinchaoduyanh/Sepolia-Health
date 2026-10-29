@@ -1,6 +1,13 @@
 import { ForbiddenException, HttpException } from '@nestjs/common';
 import { AiBridgeService } from './ai-bridge.service';
 import { CreateBookingDraftSchema } from './dto/ai-bridge.dto';
+import {
+  BookingDraftResponseSchema,
+  CancelAppointmentResponseSchema,
+  ConfirmBookingResponseSchema,
+  ErrorCodeSchema,
+  SearchServicesResponseSchema,
+} from './dto/ai-bridge.responses';
 
 const USER = 10;
 const OTHER_USER = 11;
@@ -520,5 +527,45 @@ describe('CreateBookingDraftSchema', () => {
     expect(CreateBookingDraftSchema.safeParse({ ...base, startTime: '2030-01-01T09:00:00' }).success).toBe(false);
     expect(CreateBookingDraftSchema.safeParse({ ...base, startTime: 'ngày mai' }).success).toBe(false);
     expect(CreateBookingDraftSchema.safeParse({ ...base, startTime: '2030-01-01T09:00:00Z', doctorId: 0 }).success).toBe(false);
+  });
+});
+
+describe('output contract (AI/ <-> Be/)', () => {
+  it('draft / confirm / cancel / search_services khớp schema output', async () => {
+    const { svc, state } = makeService();
+    const d: any = await svc.createBookingDraft(USER, draftInput());
+    expect(BookingDraftResponseSchema.parse(d)).toBeDefined();
+    expect(BookingDraftResponseSchema.parse(await svc.createBookingDraft(USER, draftInput()))).toBeDefined();
+
+    const c: any = await svc.confirmBooking(USER, d.draft_id, 'c1');
+    expect(ConfirmBookingResponseSchema.parse(c)).toEqual(c);
+
+    state.appointments[0].startTime = new Date(Date.now() + 48 * 3600 * 1000);
+    const x: any = await svc.cancelAppointment(USER, c.appointment_id);
+    expect(CancelAppointmentResponseSchema.parse(x)).toBeDefined();
+  });
+
+  it('mọi nhánh lỗi chỉ có error_code ổn định, không message/stack', async () => {
+    const { svc, state } = makeService();
+    state.doctorServices.length = 0;
+    const errs: any[] = [
+      await svc.createBookingDraft(USER, draftInput({ patientProfileId: 200 })),
+      await svc.createBookingDraft(USER, draftInput()),
+      await svc.createBookingDraft(USER, draftInput({ startTime: slotIso(-2) })),
+      await svc.confirmBooking(USER, 'nope', 'c1'),
+      await svc.cancelAppointment(USER, 999),
+    ];
+    for (const e of errs) {
+      expect(Object.keys(ErrorCodeSchema.parse(e))).toEqual(['error_code']);
+      expect(Object.keys(e).filter((k) => k !== 'error_code')).toEqual([]);
+    }
+  });
+
+  it('search_services output khớp schema', async () => {
+    const findMany = jest.fn(async () => [
+      { id: 1, name: 'Mắt', price: 100000, duration: 30, specialty: { name: 'Nhãn khoa' } },
+    ]);
+    const svc = new AiBridgeService({ service: { findMany } } as any, {} as any);
+    expect(SearchServicesResponseSchema.parse(await svc.searchServices('mắt', 3)).clinic_id).toBe(3);
   });
 });
