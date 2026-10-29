@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     # Đổi provider/model/dimension => index cũ stale, phải rebuild (xem manifest).
     embedding_provider: str = "auto"
     embedding_model: str = "bge-m3"
-    cloud_embedding_model: str = "text-multilingual-embedding-002"
+    cloud_embedding_model: str = ""  # "" = mặc định theo provider (xem app.rag.embedding)
     embedding_dimension: int = 0  # 0 = mặc định của model
 
     # Gemini (cloud) — nếu bật (api_key HOẶC use_vertex), chat/tool-calling dùng
@@ -71,6 +71,11 @@ class Settings(BaseSettings):
     rag_require_index: bool = False
     # Tự build index lúc khởi động nếu thiếu/stale (có file lock). Bật ở deploy.
     rag_auto_build: bool = False
+    # Ngưỡng cosine similarity tối thiểu cho chunk. <0 = mặc định theo embedding model
+    # (đã hiệu chỉnh bằng eval/run_retrieval.py; xem DEFAULT_MIN_SCORE).
+    rag_min_score: float = -1.0
+    # Trộn dense + BM25 (RRF). Benchmark: Hit@5 96.6% -> 98.3%, MRR 0.927 -> 0.957.
+    rag_hybrid: bool = True
     # Chỉ index tài liệu có review_status=reviewed (governance). Bật khi đã có
     # clinical review thật; mặc định tắt vì knowledge seed chưa được duyệt.
     rag_require_reviewed: bool = False

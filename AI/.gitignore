@@ -7,4 +7,8 @@ data/chroma/
 # Service account key (Vertex AI) — KHÔNG commit
 secrets/
 *-sa-key.json
-eval/reports/
+# Báo cáo chạy local bỏ qua; baseline/benchmark đã duyệt thì commit.
+eval/reports/*
+!eval/reports/README.md
+!eval/reports/retrieval-baseline.*
+!eval/reports/benchmark-*.md

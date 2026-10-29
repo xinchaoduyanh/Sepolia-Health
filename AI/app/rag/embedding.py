@@ -21,6 +21,14 @@ from app.providers.ollama_provider import OllamaProvider
 _DEFAULT_BATCH = 8  # predict giới hạn ~20k token/request; chunk ≤2200 ký tự
 
 
+DEFAULT_CLOUD_MODEL = {"vertex": "text-multilingual-embedding-002", "gemini": "gemini-embedding-001"}
+# Ngưỡng similarity đã đo trên golden set (eval/reports/retrieval-baseline.md). Với
+# text-multilingual-embedding-002 query ngoài phạm vi vẫn đạt ~0.59-0.68 nên 0.45 không lọc
+# được gì; 0.60 cắt bớt nhiễu mà không mất recall. Model khác chưa đo -> dùng 0.45 cũ.
+DEFAULT_MIN_SCORE = {("vertex", "text-multilingual-embedding-002"): 0.60}
+FALLBACK_MIN_SCORE = 0.45
+
+
 class Embedder(Protocol):
     provider: str
     model: str
@@ -53,8 +61,19 @@ def resolve_embedding_spec(settings: Settings | None = None) -> EmbeddingSpec:
             provider = "ollama"
     if provider not in {"vertex", "gemini", "ollama"}:
         raise ValueError(f"AI_EMBEDDING_PROVIDER không hợp lệ: {s.embedding_provider!r}")
-    model = s.embedding_model if provider == "ollama" else s.cloud_embedding_model
+    if provider == "ollama":
+        model = s.embedding_model
+    else:
+        model = s.cloud_embedding_model or DEFAULT_CLOUD_MODEL[provider]
     return EmbeddingSpec(provider=provider, model=model, dimension=s.embedding_dimension)
+
+
+def resolve_min_score(settings: Settings | None = None) -> float:
+    s = settings or get_settings()
+    if s.rag_min_score >= 0:
+        return s.rag_min_score
+    spec = resolve_embedding_spec(s)
+    return DEFAULT_MIN_SCORE.get((spec.provider, spec.model), FALLBACK_MIN_SCORE)
 
 
 class OllamaEmbedder:

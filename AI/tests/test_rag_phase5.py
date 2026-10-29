@@ -19,6 +19,15 @@ from app.rag.embedding import (
 from app.rag.indexer import check_index, ensure_index, load_index_manifest
 
 
+@pytest.fixture(autouse=True)
+def _hermetic_env(monkeypatch):
+    # Settings đọc env AI_*; test không được phụ thuộc cấu hình Vertex/Ollama của máy chạy.
+    import os
+
+    for key in [k for k in os.environ if k.startswith("AI_") and k != "AI_AGENT"]:
+        monkeypatch.delenv(key)
+
+
 # ---- embedding spec -------------------------------------------------------
 def _settings(tmp_path: Path, **kw) -> Settings:
     base = dict(
