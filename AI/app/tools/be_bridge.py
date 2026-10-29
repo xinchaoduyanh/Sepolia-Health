@@ -5,6 +5,7 @@ là bản thật gọi Be/ /internal/bridge/... kèm X-Internal-Token.
 """
 from __future__ import annotations
 
+import re
 import threading
 from typing import Protocol
 
@@ -16,6 +17,16 @@ from app.resilience.circuit_breaker import CircuitBreaker, CircuitOpenError
 
 class BridgeError(RuntimeError):
     pass
+
+
+# Chỉ error_code ổn định (snake_case) mới được tới LLM; message tự do/stack của Be/
+# (vd "Missing X-Acting-User-Id", chuỗi Prisma) bị thay bằng mã chung.
+_STABLE_CODE = re.compile(r"^[a-z][a-z0-9_]{2,63}$")
+
+
+def _stable_code(value: object, default: str = "bridge_error") -> str:
+    text = str(value) if value is not None else ""
+    return text if _STABLE_CODE.match(text) else default
 
 
 # Shared across clients — thresholds from Settings (AI_BRIDGE_CIRCUIT_*).
@@ -68,25 +79,27 @@ def _unwrap(body: object) -> dict:
     if isinstance(body, dict):
         # HttpException object body: { error_code, message }
         if body.get("error_code"):
-            return {"error_code": str(body["error_code"])}
+            return {"error_code": _stable_code(body["error_code"])}
         if body.get("success") is False:  # error envelope
             msg = body.get("message")
             if isinstance(msg, dict) and msg.get("error_code"):
-                return {"error_code": str(msg["error_code"])}
-            return {"error_code": str(msg or "bridge_error")}
+                return {"error_code": _stable_code(msg["error_code"])}
+            return {"error_code": _stable_code(msg)}
         if "data" in body and "statusCode" in body:  # success envelope
             inner = body["data"]
             return inner if isinstance(inner, dict) else {"data": inner}
         # Nest default: { statusCode, message: {...} | string }
         msg = body.get("message")
         if isinstance(msg, dict) and msg.get("error_code"):
-            return {"error_code": str(msg["error_code"])}
+            return {"error_code": _stable_code(msg["error_code"])}
+        if isinstance(msg, str) and body.get("statusCode", 0) >= 400:
+            return {"error_code": _stable_code(msg)}
     return body if isinstance(body, dict) else {"data": body}
 
 
 class BridgeClient(Protocol):
-    async def search_clinics(self, q: str, location: str | None = None) -> dict: ...
-    async def search_services(self, q: str, clinic_id: int | None = None) -> dict: ...
+    async def search_clinics(self, q: str | None, location: str | None = None) -> dict: ...
+    async def search_services(self, q: str | None, clinic_id: int | None = None) -> dict: ...
     async def search_doctors(self, q: str | None, service_id: int | None, clinic_id: int | None) -> dict: ...
     async def get_clinic_detail(self, clinic_id: int) -> dict: ...
     async def get_doctor_detail(self, doctor_id: int) -> dict: ...

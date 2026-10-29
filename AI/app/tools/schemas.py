@@ -6,17 +6,30 @@ Output bridge tin tưởng (internal) nên validate nhẹ; có thể siết sau.
 from __future__ import annotations
 
 import re
+from datetime import date, datetime
 from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
 KnowledgeTypeLiteral = Literal["disease", "symptom", "faq", "policy"]
+TimePreferenceLiteral = Literal["morning", "noon", "afternoon", "evening", "office"]
 _ISO_DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 _ISO_DT = re.compile(
     r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}"
     r"(?:\.\d+)?"
     r"(?:Z|[+-]\d{2}:\d{2})$"
 )
+
+
+def _check_iso_date(v: str) -> str:
+    """YYYY-MM-DD và là ngày lịch hợp lệ (2026-02-31 bị loại)."""
+    if not _ISO_DATE.match(v or ""):
+        raise ValueError("date must be YYYY-MM-DD")
+    try:
+        date.fromisoformat(v)
+    except ValueError as exc:
+        raise ValueError("date is not a valid calendar date") from exc
+    return v
 
 
 # ---- input models ----------------------------------------------------------
@@ -58,7 +71,7 @@ class SearchClinicsInput(BaseModel):
 
 
 class SearchServicesInput(BaseModel):
-    q: str = Field(..., min_length=1, max_length=200)
+    q: str | None = Field(None, max_length=200, description="Từ khoá tên dịch vụ. Để TRỐNG để liệt kê dịch vụ (kết hợp clinic_id).")
     clinic_id: int | None = Field(None, gt=0)
 
 
@@ -76,15 +89,13 @@ class GetDoctorAvailabilityInput(BaseModel):
     @field_validator("date")
     @classmethod
     def _iso_date(cls, v: str) -> str:
-        if not _ISO_DATE.match(v or ""):
-            raise ValueError("date must be YYYY-MM-DD")
-        return v
+        return _check_iso_date(v)
 
 
 class FindAvailableDoctorsInput(BaseModel):
-    date: str
+    date: str = Field(..., description="ISO date 'YYYY-MM-DD' (từ resolve_date)")
     service_id: int | None = Field(None, gt=0)
-    time_preference: str | None = Field(
+    time_preference: TimePreferenceLiteral | None = Field(
         None, description="Buổi mong muốn: morning|noon|afternoon|evening|office (sáng/trưa/chiều/tối/giờ hành chính)."
     )
     clinic_id: int | None = Field(None, gt=0, description="Lọc bác sĩ theo cơ sở (lấy id từ search_clinics).")
@@ -92,9 +103,7 @@ class FindAvailableDoctorsInput(BaseModel):
     @field_validator("date")
     @classmethod
     def _iso_date(cls, v: str) -> str:
-        if not _ISO_DATE.match(v or ""):
-            raise ValueError("date must be YYYY-MM-DD")
-        return v
+        return _check_iso_date(v)
 
 
 class ResolvePatientProfileInput(BaseModel):
@@ -112,11 +121,15 @@ class CreateBookingDraftInput(BaseModel):
     def _iso_datetime(cls, v: str) -> str:
         if not _ISO_DT.match(v or ""):
             raise ValueError("start_time must be ISO-8601 with timezone, e.g. 2026-06-23T09:00:00+07:00")
+        try:
+            datetime.fromisoformat(v.replace("Z", "+00:00"))
+        except ValueError as exc:
+            raise ValueError("start_time is not a valid datetime") from exc
         return v
 
 
 class ConfirmBookingInput(BaseModel):
-    draft_id: str = Field(..., min_length=1, max_length=64)
+    draft_id: str = Field(..., min_length=1, max_length=64, pattern=r"^[A-Za-z0-9_-]+$")
 
 
 class GetUpcomingAppointmentsInput(BaseModel):
