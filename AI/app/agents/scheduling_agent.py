@@ -19,6 +19,7 @@ from app.agents.state_machine import ensure_transition
 from app.api.schemas import MessageResponse, ProposedAction, ToolCallAudit, ToolResultSummary
 from app.nlu.clock_time import parse_clock_time
 from app.nlu.confirm_intent import ConfirmIntent, classify_confirmation
+from app.observability.guards import record_guard
 from app.policies import post_validator, pre_filter
 from app.prompts.loader import PromptRegistry
 from app.providers.base import AIProvider
@@ -395,6 +396,13 @@ class SchedulingAgent:
         pf = pre_filter.check(user_message)
         injection_suspected = pf.injection_suspected
         policy_violations: list[str] = []
+        if pf.blocked or injection_suspected:
+            record_guard(
+                "pre_filter",
+                "block" if pf.blocked else "flag",
+                trace_id=trace_id, session_id=session.session_id, user_id=session.user_id,
+                rules=([pf.reason] if pf.reason else []) + pf.matched,
+            )
         if injection_suspected:
             policy_violations.append("injection_suspected")
             _LOG.info(
@@ -413,6 +421,15 @@ class SchedulingAgent:
                     injection_suspected=injection_suspected,
                     policy_violations=policy_violations + ["self_harm_block"],
                 )
+            elif pf.reason == "violence_abuse":
+                self._transition(session, AgentState.COLLECTING)
+                return self._resp(
+                    session,
+                    self._prompts.render(pf.refusal_key or "refusal-safety-abuse", {}),
+                    trace_id,
+                    injection_suspected=injection_suspected,
+                    policy_violations=policy_violations + ["violence_abuse_block"],
+                )
             else:
                 self._transition(session, AgentState.COLLECTING)
                 warning_msg = self._prompts.render(pf.refusal_key or "refusal-emergency", {}) + " Nếu triệu chứng nhẹ hoặc kéo dài, em có thể hỗ trợ anh/chị đặt lịch khám chuyên khoa phù hợp ạ."
@@ -427,6 +444,8 @@ class SchedulingAgent:
         if self._emergency_detector is not None:
             emergency = self._emergency_detector.detect(user_message)
             if emergency.emergency:
+                record_guard("emergency_detector", "block", trace_id=trace_id,
+                             session_id=session.session_id, user_id=session.user_id)
                 self._transition(session, AgentState.COLLECTING)
                 warning_msg = self._prompts.render("refusal-emergency", {}) + " Nếu triệu chứng nhẹ hoặc kéo dài, em có thể hỗ trợ anh/chị đặt lịch khám chuyên khoa phù hợp ạ."
                 return self._resp(
@@ -440,6 +459,8 @@ class SchedulingAgent:
         # 1b. Đòi dữ liệu của người khác: từ chối tất định, không để LLM "lặng lẽ trả dữ liệu của mình".
         if _other_user_reference(user_message, session.user_id):
             policy_violations.append("other_user_reference_block")
+            record_guard("other_user_reference", "block", trace_id=trace_id,
+                         session_id=session.session_id, user_id=session.user_id)
             if session.agent_state == AgentState.IDLE:
                 self._transition(session, AgentState.COLLECTING)
             return self._resp(session, _OTHER_USER_REFUSAL, trace_id,
@@ -664,6 +685,9 @@ class SchedulingAgent:
                             policy_violations.append("disallowed_disease_mention")
                             _LOG.warning("Blocked-disease mention in stream %s", trace_id)
                     if violated:
+                        record_guard("post_validator", "replace", trace_id=trace_id,
+                                     session_id=session.session_id, user_id=session.user_id,
+                                     rules=list(pv.reasons))
                         violated_policy = True
                         final_text = self._prompts.render("refusal-diagnosis", {"suggested_specialty": "phù hợp"})
                     for chunk in _stream_chunks(final_text):
@@ -777,6 +801,9 @@ class SchedulingAgent:
                     policy_violations.append("disallowed_disease_mention")
                     _LOG.warning("Blocked-disease mention in response %s: %s", trace_id, mention.found)
             if violated:
+                record_guard("post_validator", "replace", trace_id=trace_id,
+                             session_id=session.session_id, user_id=session.user_id,
+                             rules=list(pv.reasons))
                 final_text = self._prompts.render("refusal-diagnosis", {"suggested_specialty": "phù hợp"})
 
         # 7. Transition theo kết quả

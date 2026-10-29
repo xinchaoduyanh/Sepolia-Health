@@ -27,11 +27,11 @@ class UserRateLimiter:
     ) -> None:
         self.per_minute = per_minute
         self.per_day = per_day
-        self._minute: dict[int, deque[float]] = defaultdict(deque)
-        self._day: dict[int, deque[float]] = defaultdict(deque)
+        self._minute: dict[int | str, deque[float]] = defaultdict(deque)
+        self._day: dict[int | str, deque[float]] = defaultdict(deque)
         self._lock = threading.Lock()
 
-    def check(self, user_id: int) -> RateLimitDecision:
+    def check(self, user_id: int | str) -> RateLimitDecision:
         now = time.time()
         minute_cut = now - 60.0
         day_cut = now - 86400.0
@@ -66,7 +66,20 @@ def get_rate_limiter(per_minute: int = 30, per_day: int = 500) -> UserRateLimite
         return _limiter
 
 
+_ip_limiter: UserRateLimiter | None = None
+
+
+def get_ip_rate_limiter(per_minute: int, per_day: int) -> UserRateLimiter:
+    """Limiter riêng theo client IP (cùng cơ chế sliding window với user limiter)."""
+    global _ip_limiter
+    with _limiter_lock:
+        if _ip_limiter is None:
+            _ip_limiter = UserRateLimiter(per_minute=per_minute, per_day=per_day)
+        return _ip_limiter
+
+
 def reset_rate_limiter_for_tests() -> None:
-    global _limiter
+    global _limiter, _ip_limiter
     with _limiter_lock:
         _limiter = None
+        _ip_limiter = None

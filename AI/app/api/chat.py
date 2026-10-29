@@ -10,10 +10,10 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Awaitable, Callable
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 
-from app.api.rate_limit import get_rate_limiter
+from app.api.rate_limit import get_ip_rate_limiter, get_rate_limiter
 from app.api.schemas import (
     CreateSessionRequest,
     CreateSessionResponse,
@@ -31,6 +31,8 @@ from app.deps import (
     get_retriever,
     get_store,
 )
+from app.observability.guards import record_guard
+from app.observability.redact import redact_obj, redact_text
 from app.observability.tracing import log_event, new_trace_id
 from app.prompts.loader import PromptRegistry
 from app.providers.base import AIProvider
@@ -70,11 +72,42 @@ def _enforce_rate_limit(user_id: int, settings: Settings) -> None:
     )
     decision = limiter.check(user_id)
     if not decision.allowed:
-        log_event("rate_limited", user_id=user_id, reason=decision.reason)
+        record_guard("rate_limit", "reject", user_id=user_id, rules=[decision.reason or "rate_limited"])
         raise HTTPException(
             status_code=429,
             detail={
                 "error_code": decision.reason or "rate_limited",
+                "retry_after_sec": decision.retry_after_sec,
+            },
+            headers={"Retry-After": str(decision.retry_after_sec or 60)},
+        )
+
+
+def client_ip(request: Request, settings: Settings) -> str:
+    if settings.trust_proxy_headers:
+        fwd = request.headers.get("x-forwarded-for", "")
+        first = fwd.split(",")[0].strip()
+        if first:
+            return first
+    return request.client.host if request.client else "unknown"
+
+
+def enforce_ip_rate_limit(request: Request, settings: Settings = Depends(get_settings)) -> None:
+    """Dependency cho các route sinh turn: 429 khi một IP vượt ngưỡng."""
+    per_min, per_day = settings.ip_rate_limit_per_minute, settings.ip_rate_limit_per_day
+    if per_min <= 0 and per_day <= 0:
+        return
+    limiter = get_ip_rate_limiter(
+        per_minute=per_min if per_min > 0 else 10**9,
+        per_day=per_day if per_day > 0 else 10**9,
+    )
+    decision = limiter.check(client_ip(request, settings))
+    if not decision.allowed:
+        record_guard("ip_rate_limit", "reject", rules=[decision.reason or "rate_limited"])
+        raise HTTPException(
+            status_code=429,
+            detail={
+                "error_code": "ip_" + (decision.reason or "rate_limited"),
                 "retry_after_sec": decision.retry_after_sec,
             },
             headers={"Retry-After": str(decision.retry_after_sec or 60)},
@@ -291,10 +324,10 @@ async def _run_turn(
                     await store.record_turn(
                         session_id=session_id,
                         trace_id=trace_id,
-                        user_message=message,
-                        ai_message=resp.message,
-                        tool_results=[s.model_dump() for s in resp.tool_results_summary],
-                        tool_calls=[c.model_dump() for c in resp.tool_calls_audit],
+                        user_message=redact_text(message),
+                        ai_message=redact_text(resp.message),
+                        tool_results=redact_obj([s.model_dump() for s in resp.tool_results_summary]),
+                        tool_calls=redact_obj([c.model_dump() for c in resp.tool_calls_audit]),
                         model=ModelRouter(settings).select("response"),
                         latency_ms=latency_ms,
                         policy_violations={
@@ -308,7 +341,7 @@ async def _run_turn(
         return resp
 
 
-@router.post("/sessions/{session_id}/messages", response_model=MessageResponse)
+@router.post("/sessions/{session_id}/messages", response_model=MessageResponse, dependencies=[Depends(enforce_ip_rate_limit)])
 async def post_message(
     session_id: str,
     req: MessageRequest,
@@ -335,7 +368,7 @@ async def post_message(
     )
 
 
-@router.post("/sessions/{session_id}/messages/stream")
+@router.post("/sessions/{session_id}/messages/stream", dependencies=[Depends(enforce_ip_rate_limit)])
 async def stream_message(
     session_id: str,
     req: MessageRequest,
@@ -404,7 +437,7 @@ async def stream_message(
     return StreamingResponse(sse_generator(), media_type="text/event-stream")
 
 
-@router.post("/sessions/{session_id}/confirm", response_model=MessageResponse)
+@router.post("/sessions/{session_id}/confirm", response_model=MessageResponse, dependencies=[Depends(enforce_ip_rate_limit)])
 async def confirm(
     session_id: str,
     store: SessionStore = Depends(get_store),
@@ -430,7 +463,7 @@ async def confirm(
     )
 
 
-@router.post("/sessions/{session_id}/cancel", response_model=MessageResponse)
+@router.post("/sessions/{session_id}/cancel", response_model=MessageResponse, dependencies=[Depends(enforce_ip_rate_limit)])
 async def cancel(
     session_id: str,
     store: SessionStore = Depends(get_store),
