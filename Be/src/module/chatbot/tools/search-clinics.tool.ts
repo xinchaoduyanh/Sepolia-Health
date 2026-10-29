@@ -6,6 +6,11 @@ interface SearchClinicsParams {
   locationName?: string;
 }
 
+/**
+ * @deprecated Tool cũ (trả prose cho chatbot cũ). Nguồn sự thật hiện tại là
+ * `ai-bridge/ai-bridge.service.ts` (DATA-only + error_code). Không thêm logic mới ở đây;
+ * xem chatbot/tools/DEPRECATED.md.
+ */
 @Injectable()
 export class SearchClinicsTool {
   private readonly logger = new Logger(SearchClinicsTool.name);

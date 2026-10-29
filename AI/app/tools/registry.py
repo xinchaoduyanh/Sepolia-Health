@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import dataclasses
 import hashlib
-import json
 from collections.abc import Callable
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -96,7 +95,9 @@ class ToolRegistry:
         try:
             args = spec[0](**(raw_args or {}))
         except ValidationError as exc:
-            return {"error_code": "invalid_args", "details": json.loads(exc.json()),
+            # Chỉ giữ vị trí + lý do; bỏ input/url/ctx của pydantic (không lộ giá trị thô/nội bộ).
+            details = [{"field": ".".join(str(x) for x in e["loc"]), "reason": e["msg"]} for e in exc.errors()]
+            return {"error_code": "invalid_args", "details": details,
                     "note": "Tham số sai: đọc lại mô tả tool và GỌI LẠI với tham số đúng. Đừng xin lỗi/than phiền với user."}
         return await self._run(name, args, session_id)
 

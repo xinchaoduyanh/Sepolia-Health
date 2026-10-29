@@ -9,6 +9,11 @@ interface SearchDoctorsParams {
   specialtyName?: string; // Tên chuyên khoa để kiểm tra mâu thuẫn
 }
 
+/**
+ * @deprecated Tool cũ (trả prose cho chatbot cũ). Nguồn sự thật hiện tại là
+ * `ai-bridge/ai-bridge.service.ts` (DATA-only + error_code). Không thêm logic mới ở đây;
+ * xem chatbot/tools/DEPRECATED.md.
+ */
 @Injectable()
 export class SearchDoctorsTool {
   private readonly logger = new Logger(SearchDoctorsTool.name);

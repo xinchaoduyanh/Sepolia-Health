@@ -262,7 +262,7 @@ export class ChatbotController {
    * Direct tool access: Doctor Schedule
    */
   @Get('tools/doctor-schedule')
-  @ApiOperation({ summary: 'Get doctor schedule (direct tool access)' })
+  @ApiOperation({ summary: 'Get doctor schedule (direct tool access)', deprecated: true })
   @ApiResponse({ status: 200, description: 'Schedule retrieved' })
   async getDoctorSchedule(@Query() query: DoctorScheduleQueryDto) {
     return await this.doctorScheduleTool.execute(query);
@@ -276,7 +276,7 @@ export class ChatbotController {
    * Direct tool access: Search Doctors
    */
   @Get('tools/search-doctors')
-  @ApiOperation({ summary: 'Search doctors by name (direct tool access)' })
+  @ApiOperation({ summary: 'Search doctors by name (direct tool access)', deprecated: true })
   @ApiResponse({ status: 200, description: 'Doctors found' })
   async searchDoctors(@Query() query: SearchDoctorsDto) {
     return await this.searchDoctorsTool.execute(query);

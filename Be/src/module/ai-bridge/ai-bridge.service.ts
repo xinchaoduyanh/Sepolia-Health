@@ -9,6 +9,8 @@ import {
 import { PaymentStatus, Prisma } from '@prisma/client';
 
 const TZ_OFFSET_MS = 7 * 3600 * 1000; // GMT+7
+type DbClient = PrismaService | Prisma.TransactionClient;
+const CONFIRM_MAX_ATTEMPTS = 3;
 const ACTIVE_STATUSES = ['UPCOMING', 'ON_GOING'] as const;
 const DEFAULT_SLOT_MIN = 30;
 /** AI booking scope hiện tại: chỉ offline (product decision). */
@@ -198,7 +200,12 @@ export class AiBridgeService {
   }
 
   // ---------- availability ----------
-  async getDoctorAvailability(doctorId: number, date: string, serviceId?: number) {
+  async getDoctorAvailability(
+    doctorId: number,
+    date: string,
+    serviceId?: number,
+    db: DbClient = this.prisma,
+  ) {
     const parts = date.split('-').map(Number);
     if (parts.length !== 3 || parts.some((n) => !n)) {
       return { doctor_id: doctorId, date, error_code: 'invalid_date' };
@@ -208,7 +215,7 @@ export class AiBridgeService {
 
     let duration = DEFAULT_SLOT_MIN;
     if (serviceId) {
-      const svc = await this.prisma.service.findUnique({ where: { id: serviceId } });
+      const svc = await db.service.findUnique({ where: { id: serviceId } });
       if (svc) duration = svc.duration;
     }
 
@@ -221,7 +228,7 @@ export class AiBridgeService {
     };
 
     // override ngày cụ thể (nghỉ / đổi giờ)
-    const override = await this.prisma.availabilityOverride.findUnique({
+    const override = await db.availabilityOverride.findUnique({
       where: { doctorId_date: { doctorId, date: new Date(Date.UTC(y, mo - 1, d)) } },
     });
     let startStr: string;
@@ -233,7 +240,7 @@ export class AiBridgeService {
       startStr = override.startTime;
       endStr = override.endTime;
     } else {
-      const avail = await this.prisma.doctorAvailability.findUnique({
+      const avail = await db.doctorAvailability.findUnique({
         where: { doctorId_dayOfWeek: { doctorId, dayOfWeek: dow } },
       });
       if (!avail) return { ...empty, error_code: 'doctor_off' };
@@ -251,7 +258,7 @@ export class AiBridgeService {
     // slot đã có lịch (active) trong ngày (theo giờ VN)
     const dayStart = new Date(`${date}T00:00:00+07:00`);
     const dayEnd = new Date(dayStart.getTime() + 24 * 3600 * 1000);
-    const appts = await this.prisma.appointment.findMany({
+    const appts = await db.appointment.findMany({
       where: {
         doctorId,
         status: { in: ACTIVE_STATUSES as unknown as any[] },
@@ -428,6 +435,7 @@ export class AiBridgeService {
     serviceId: number,
     start: Date,
     durationMin: number,
+    db: DbClient = this.prisma,
   ): Promise<{ error_code: string } | null> {
     if (Number.isNaN(start.getTime())) {
       return { error_code: 'invalid_start_time' };
@@ -438,7 +446,7 @@ export class AiBridgeService {
 
     const dateVn = new Date(start.getTime() + TZ_OFFSET_MS).toISOString().slice(0, 10);
     const slotHhmm = this.toHHMM(this.vnMinuteOfDay(start));
-    const availability = await this.getDoctorAvailability(doctorId, dateVn, serviceId);
+    const availability = await this.getDoctorAvailability(doctorId, dateVn, serviceId, db);
     if ((availability as any).error_code === 'doctor_off') {
       return { error_code: 'doctor_off' };
     }
@@ -616,7 +624,12 @@ export class AiBridgeService {
 
     const existing = await this.prisma.bookingDraft.findUnique({
       where: { idempotencyKey: input.idempotencyKey },
+      include: { patientProfile: { select: { managerId: true } } },
     });
+    // Key thuộc draft của user khác: không reuse/ghi đè, không lộ tồn tại.
+    if (existing && existing.patientProfile.managerId !== actingUserId) {
+      return { error_code: 'idempotency_conflict' };
+    }
     if (existing) {
       // CONFIRMED -> idempotent, recap từ appointment/draft đã chốt.
       if (existing.status === 'CONFIRMED') {
@@ -740,7 +753,8 @@ export class AiBridgeService {
   ) {
     // Atomic: lock draft row → re-check conflict → create appointment + billing → confirm.
     try {
-      const result = await this.prisma.$transaction(
+      const result = await this.withSerializableRetry(() =>
+        this.prisma.$transaction(
         async (tx) => {
           await tx.$executeRaw`SELECT id FROM "BookingDraft" WHERE id = ${draftId} FOR UPDATE`;
 
@@ -794,6 +808,16 @@ export class AiBridgeService {
           if (draft.doctor.deletedAt) {
             return { error_code: 'doctor_not_found' as const };
           }
+          // Giờ hẹn có thể đã qua / bác sĩ đổi lịch làm việc kể từ lúc tạo draft.
+          // assertSlotBookable báo slot_taken nếu slot đã có lịch (đọc trong tx).
+          const slotErr = await this.assertSlotBookable(
+            draft.doctorId,
+            draft.serviceId,
+            draft.startTime,
+            draft.service.duration,
+            tx,
+          );
+          if (slotErr) return { error_code: slotErr.error_code };
           const ds = await tx.doctorService.findFirst({
             where: { doctorId: draft.doctorId, serviceId: draft.serviceId },
           });
@@ -858,6 +882,7 @@ export class AiBridgeService {
           };
         },
         { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+        ),
       );
 
       if ('error_code' in result) return result;
@@ -925,6 +950,28 @@ export class AiBridgeService {
   }
 
   /**
+   * Serializable tx có thể abort (40001/P2034) khi confirm đồng thời. Retry:
+   * lần sau thấy draft đã CONFIRMED (trả cùng appointment) hoặc thấy conflict thật
+   * (slot_taken) thay vì báo slot_taken oan cho chính draft vừa được đặt.
+   */
+  private async withSerializableRetry<T>(run: () => Promise<T>): Promise<T> {
+    for (let attempt = 1; ; attempt++) {
+      try {
+        return await run();
+      } catch (err) {
+        const code =
+          err && typeof err === 'object' && 'code' in err
+            ? String((err as { code?: unknown }).code)
+            : '';
+        const msg = err instanceof Error ? err.message : String(err);
+        const retryable =
+          code === 'P2034' || /could not serialize|serialization failure|deadlock detected/i.test(msg);
+        if (!retryable || attempt >= CONFIRM_MAX_ATTEMPTS) throw err;
+      }
+    }
+  }
+
+  /**
    * Chỉ map serialization / unique-conflict → slot_taken.
    * Mọi lỗi khác → bridge_internal_error (+ 5xx ở caller).
    */
@@ -942,7 +989,8 @@ export class AiBridgeService {
     const isRaceOrUnique =
       prismaCode === 'P2034' ||
       prismaCode === 'P2002' ||
-      /could not serialize|serialization failure|deadlock detected|write conflict|unique constraint|duplicate key/i.test(
+      prismaCode === '23P01' ||
+      /could not serialize|serialization failure|deadlock detected|write conflict|unique constraint|duplicate key|exclusion constraint|Appointment_doctor_active_no_overlap/i.test(
         msg,
       );
 
@@ -1090,7 +1138,15 @@ export class AiBridgeService {
       data: { status: 'CANCELLED' },
     });
     if (updated.count === 0) {
-      return { success: true, already_cancelled: true };
+      // Mất race: đọc lại để phân biệt đã hủy (idempotent) với chuyển trạng thái khác.
+      const current = await this.prisma.appointment.findUnique({
+        where: { id: appointmentId },
+        select: { status: true },
+      });
+      if (current?.status === 'CANCELLED') {
+        return { success: true, already_cancelled: true };
+      }
+      return { error_code: 'appointment_not_cancellable' };
     }
 
     // Best-effort notifications (domain parity).

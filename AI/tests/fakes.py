@@ -55,6 +55,12 @@ class FakeBridge:
     async def search_services(self, q, clinic_id=None):
         return self._o.get("search_services", {"services": []})
 
+    async def get_clinic_detail(self, clinic_id):
+        return self._o.get("get_clinic_detail", {"id": clinic_id, "name": "Sepolia", "services": []})
+
+    async def get_doctor_detail(self, doctor_id):
+        return self._o.get("get_doctor_detail", {"id": doctor_id, "first_name": "Canh", "last_name": "Vương"})
+
     async def search_doctors(self, q, service_id, clinic_id):
         return self._o.get("search_doctors", {"doctors": [
             {"id": 12, "first_name": "Hữu Canh", "last_name": "Vương", "specialty": "Da liễu"}

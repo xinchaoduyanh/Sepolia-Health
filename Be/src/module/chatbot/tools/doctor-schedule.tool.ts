@@ -14,6 +14,11 @@ interface DoctorScheduleParams {
   serviceName?: string; // Tên dịch vụ để tính duration
 }
 
+/**
+ * @deprecated Tool cũ (trả prose cho chatbot cũ). Nguồn sự thật hiện tại là
+ * `ai-bridge/ai-bridge.service.ts` (DATA-only + error_code). Không thêm logic mới ở đây;
+ * xem chatbot/tools/DEPRECATED.md.
+ */
 @Injectable()
 export class DoctorScheduleTool {
   private readonly logger = new Logger(DoctorScheduleTool.name);
