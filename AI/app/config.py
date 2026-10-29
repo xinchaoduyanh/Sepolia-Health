@@ -68,6 +68,11 @@ class Settings(BaseSettings):
     # Rate limits (per acting user_id). 0 = disabled.
     rate_limit_per_minute: int = 30
     rate_limit_per_day: int = 500
+    # Rate limits per client IP (AI_IP_RATE_LIMIT_*). 0 = disabled.
+    # trust_proxy_headers: chỉ bật khi AI đứng sau proxy tin cậy (dùng X-Forwarded-For hop đầu).
+    ip_rate_limit_per_minute: int = 120
+    ip_rate_limit_per_day: int = 0
+    trust_proxy_headers: bool = False
 
     # Circuit breaker for Be bridge HTTP (AI_BRIDGE_CIRCUIT_*).
     # failures: số lỗi liên tiếp trước khi open; 0 = tắt breaker.

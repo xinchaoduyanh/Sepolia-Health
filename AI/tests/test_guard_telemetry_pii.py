@@ -86,3 +86,49 @@ def test_rate_limit_emits_guard_event():
     assert codes[-1] == 429
     assert guards.snapshot().get("rate_limit:reject") == 1
     reset_rate_limiter_for_tests()
+
+
+def _ip_client(store, **kw):
+    c = _client(store, ["ok"] * 10)
+    app.dependency_overrides[get_settings] = lambda: Settings(
+        internal_shared_secret=TOKEN, rate_limit_per_minute=0, rate_limit_per_day=0, **kw
+    )
+    return c
+
+
+def test_ip_rate_limit_429_clear_error():
+    reset_rate_limiter_for_tests()
+    guards.reset_for_tests()
+    c = _ip_client(InMemorySessionStore(), ip_rate_limit_per_minute=2)
+    sid = _sid(c, 903)
+    resp = [c.post(f"/internal/ai/chat/sessions/{sid}/messages", json={"message": "chào"}, headers=AUTH)
+            for _ in range(3)]
+    assert [r.status_code for r in resp] == [200, 200, 429]
+    body = resp[-1].json()["detail"]
+    assert body["error_code"] == "ip_rate_limit_minute" and body["retry_after_sec"] >= 1
+    assert "retry-after" in resp[-1].headers
+    assert guards.snapshot().get("ip_rate_limit:reject") == 1
+    reset_rate_limiter_for_tests()
+
+
+def test_ip_rate_limit_forwarded_for_only_when_trusted():
+    reset_rate_limiter_for_tests()
+    c = _ip_client(InMemorySessionStore(), ip_rate_limit_per_minute=1, trust_proxy_headers=True)
+    sid = _sid(c, 904)
+    url = f"/internal/ai/chat/sessions/{sid}/messages"
+    a = c.post(url, json={"message": "chào"}, headers={**AUTH, "X-Forwarded-For": "1.1.1.1, 9.9.9.9"})
+    b = c.post(url, json={"message": "chào"}, headers={**AUTH, "X-Forwarded-For": "2.2.2.2"})
+    c2 = c.post(url, json={"message": "chào"}, headers={**AUTH, "X-Forwarded-For": "1.1.1.1"})
+    assert (a.status_code, b.status_code, c2.status_code) == (200, 200, 429)
+    reset_rate_limiter_for_tests()
+
+
+def test_ip_rate_limit_ignores_spoofed_forwarded_for_by_default():
+    reset_rate_limiter_for_tests()
+    c = _ip_client(InMemorySessionStore(), ip_rate_limit_per_minute=1)
+    sid = _sid(c, 905)
+    url = f"/internal/ai/chat/sessions/{sid}/messages"
+    codes = [c.post(url, json={"message": "chào"}, headers={**AUTH, "X-Forwarded-For": f"3.3.3.{i}"}).status_code
+             for i in range(2)]
+    assert codes == [200, 429]  # header bị bỏ qua khi trust_proxy_headers=False
+    reset_rate_limiter_for_tests()
