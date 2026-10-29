@@ -121,3 +121,39 @@ def test_session_conflict_error():
             f"/internal/ai/chat/sessions/{sid}/messages", json={"message": "hello"}, headers=AUTH
         )
         assert r2.status_code == 409
+
+
+def test_ready_reports_bridge_and_vertex(monkeypatch):
+    from app.api import health
+    from app.config import Settings
+
+    s = Settings(
+        internal_shared_secret="x" * 40,
+        gemini_use_vertex=True,
+        gemini_project="p",
+        google_credentials="/nonexistent/sa.json",
+        be_bridge_base_url="http://127.0.0.1:1",
+    )
+    assert health._vertex_credential_state(s) == (False, "credential_file_missing")
+    s2 = Settings(internal_shared_secret="x" * 40, gemini_use_vertex=True)
+    assert health._vertex_credential_state(s2) == (False, "missing_project")
+
+
+def test_ready_503_when_bridge_unreachable():
+    from app.api import health
+
+    app.dependency_overrides[get_settings] = lambda: Settings(
+        internal_shared_secret=_TEST_TOKEN, be_bridge_base_url="http://127.0.0.1:1"
+    )
+    # health.ready uses get_settings() directly; patch it there too.
+    orig = health.get_settings
+    health.get_settings = lambda: Settings(
+        internal_shared_secret=_TEST_TOKEN, be_bridge_base_url="http://127.0.0.1:1"
+    )
+    try:
+        r = client.get("/ready")
+    finally:
+        health.get_settings = orig
+        app.dependency_overrides[get_settings] = lambda: Settings(internal_shared_secret=_TEST_TOKEN)
+    assert r.status_code == 503
+    assert r.json()["checks"]["bridge"].startswith("unreachable")
