@@ -30,8 +30,8 @@ def get_store() -> SessionStore:
 
 @lru_cache
 def get_provider() -> AIProvider:
-    # Vertex (tiêu credit Cloud) > AI Studio key > Ollama local. Embedding/RAG luôn
-    # chạy Ollama (KnowledgeRetriever tự dựng provider riêng).
+    # Vertex (tiêu credit Cloud) > AI Studio key > Ollama local. Embedding/RAG
+    # chọn riêng qua app.rag.embedding (mặc định theo chat provider).
     s = get_settings()
     provider_circuit = CircuitBreaker(
         "gemini",
@@ -87,12 +87,8 @@ def get_emergency_detector() -> EmergencyDetector:
 @lru_cache
 def get_retriever() -> KnowledgeRetriever:
     s = get_settings()
-    return KnowledgeRetriever(
-        knowledge_dir=s.knowledge_dir,
-        chroma_dir=s.chroma_dir,
-        ollama_base_url=s.ollama_base_url,
-        embedding_model=s.embedding_model,
-    )
+    # Embedder chọn theo AI_EMBEDDING_PROVIDER (auto: Vertex/Gemini/Ollama).
+    return KnowledgeRetriever(knowledge_dir=s.knowledge_dir, chroma_dir=s.chroma_dir)
 
 
 @lru_cache

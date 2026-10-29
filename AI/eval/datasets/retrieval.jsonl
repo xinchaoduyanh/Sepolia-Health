@@ -1,2 +1,71 @@
-{"id":"rag-symptom-001","category":"retrieval","input":"Tôi ho khan nhiều ngày","expected_documents":["ho-khan"],"expected_tools":["search_knowledge"],"forbidden_actions":["diagnose","recommend_medication"],"notes":"Requires live Chroma index; offline runner skips if empty"}
-{"id":"rag-faq-001","category":"retrieval","input":"Làm sao để đặt lịch khám?","expected_documents":["thu-tuc-dat-lich"],"expected_tools":["search_knowledge"],"forbidden_actions":[]}
+{"id":"rag-symptom-001","category":"symptom","input":"Tôi ho khan nhiều ngày","expected_documents":["ho-khan"],"expected_tools":["search_knowledge"],"forbidden_actions":["diagnose","recommend_medication"]}
+{"id":"rag-symptom-002","category":"symptom","input":"mấy hôm nay cứ ho hoài mà không có đờm","expected_documents":["ho-khan"]}
+{"id":"rag-symptom-003","category":"symptom","input":"bé nhà em bị nóng người, lên cơn sốt về chiều","expected_documents":["sot","sot-moc-rang"]}
+{"id":"rag-symptom-004","category":"symptom","input":"mình khó ngủ, hay tỉnh giấc giữa đêm cả tuần nay","expected_documents":["mat-ngu-keo-dai"]}
+{"id":"rag-symptom-005","category":"symptom","input":"đau mỏi cổ vai gáy do ngồi máy tính nhiều","expected_documents":["dau-vai-gay"]}
+{"id":"rag-symptom-006","category":"symptom","input":"mắt tôi hay bị cộm rát, mỏi khi nhìn màn hình","expected_documents":["kho-mat"]}
+{"id":"rag-symptom-007","category":"symptom","input":"người nổi mẩn đỏ rất ngứa, nghi nổi mề đay","expected_documents":["noi-man-do-ngua","viem-da-co-dia"]}
+{"id":"rag-symptom-008","category":"symptom","input":"bụng đầy hơi, chướng bụng khó tiêu sau khi ăn","expected_documents":["dau-bung-kho-tieu"]}
+{"id":"rag-symptom-009","category":"symptom","input":"răng trong cùng sưng lợi đau nhức, hình như đang mọc răng khôn","expected_documents":["dau-rang-khon"]}
+{"id":"rag-symptom-010","category":"symptom","input":"em đang mang thai, sáng nào cũng buồn nôn","expected_documents":["ong-nghen"]}
+{"id":"rag-symptom-011","category":"symptom","input":"bé 8 tháng sốt, nướu sưng đỏ, quấy khóc","expected_documents":["sot-moc-rang"]}
+{"id":"rag-symptom-012","category":"symptom","input":"tôi đau họng, nuốt nước bọt thấy rát","expected_documents":["viem-hong-cap"]}
+{"id":"rag-symptom-013","category":"symptom","input":"hắt hơi sổ mũi, nghẹt mũi, người mệt mỏi","expected_documents":["cam-cum-thong-thuong"]}
+{"id":"rag-symptom-014","category":"symptom","input":"đau nhói vùng thượng vị lúc đói","expected_documents":["viem-loet-da-day","dau-bung-kho-tieu"]}
+{"id":"rag-symptom-015","category":"symptom","input":"ợ chua, nóng rát sau xương ức khi nằm","expected_documents":["trao-nguoc-da-day"]}
+{"id":"rag-symptom-016","category":"symptom","input":"đau thắt lưng lan xuống chân, tê bì","expected_documents":["thoat-vi-dia-dem"]}
+{"id":"rag-symptom-017","category":"symptom","input":"trên mặt nổi nhiều mụn bọc, mụn đầu đen","expected_documents":["mun-trung-ca"]}
+{"id":"rag-symptom-018","category":"symptom","input":"mắt đỏ, ghèn, ngứa, cộm như có sạn","expected_documents":["dau-mat-do","kho-mat"]}
+{"id":"rag-symptom-019","category":"symptom","input":"con tôi đi ngoài phân lỏng nhiều lần, nôn","expected_documents":["tieu-chay-cap-o-tre"]}
+{"id":"rag-symptom-020","category":"symptom","input":"ngứa vùng kín, khí hư có mùi lạ","expected_documents":["viem-am-dao"]}
+{"id":"rag-symptom-021","category":"symptom","input":"răng buốt khi uống nước lạnh, có lỗ đen","expected_documents":["sau-rang"]}
+{"id":"rag-symptom-022","category":"symptom","input":"hay lo lắng, hồi hộp, căng thẳng kéo dài không kiểm soát được","expected_documents":["roi-loan-lo-au","mat-ngu-keo-dai"]}
+{"id":"rag-symptom-023","category":"symptom","input":"da khô, ngứa, nổi chàm ở khuỷu tay","expected_documents":["viem-da-co-dia"]}
+{"id":"rag-symptom-024","category":"symptom","input":"tôi tăng cân nhanh, muốn giảm cân","expected_documents":["thua-can-beo-phi"]}
+{"id":"rag-alias-001","category":"alias","input":"cúm mùa","expected_documents":["cam-cum-thong-thuong"]}
+{"id":"rag-alias-002","category":"alias","input":"gerd là gì","expected_documents":["trao-nguoc-da-day"]}
+{"id":"rag-alias-003","category":"alias","input":"eczema","expected_documents":["viem-da-co-dia"]}
+{"id":"rag-alias-004","category":"alias","input":"pink eye","expected_documents":["dau-mat-do"]}
+{"id":"rag-alias-005","category":"alias","input":"acne","expected_documents":["mun-trung-ca"]}
+{"id":"rag-alias-006","category":"alias","input":"insomnia","expected_documents":["mat-ngu-keo-dai"]}
+{"id":"rag-alias-007","category":"alias","input":"khám tổng quát định kỳ gồm những gì","expected_documents":["kham-suc-khoe-tong-quat"]}
+{"id":"rag-alias-008","category":"alias","input":"viêm kết mạc","expected_documents":["dau-mat-do"]}
+{"id":"rag-alias-009","category":"alias","input":"rotavirus ở trẻ nhỏ","expected_documents":["tieu-chay-cap-o-tre"]}
+{"id":"rag-alias-010","category":"alias","input":"gastritis","expected_documents":["viem-loet-da-day"]}
+{"id":"rag-alias-011","category":"alias","input":"viêm phụ khoa","expected_documents":["viem-am-dao"]}
+{"id":"rag-alias-012","category":"alias","input":"thoát vị đĩa đệm có nguy hiểm không","expected_documents":["thoat-vi-dia-dem"]}
+{"id":"rag-nodiac-001","category":"no_diacritics","input":"toi bi ho khan keo dai","expected_documents":["ho-khan"]}
+{"id":"rag-nodiac-002","category":"no_diacritics","input":"dau vai gay do ngoi nhieu","expected_documents":["dau-vai-gay"]}
+{"id":"rag-nodiac-003","category":"no_diacritics","input":"bi mat ngu ca tuan nay","expected_documents":["mat-ngu-keo-dai"]}
+{"id":"rag-nodiac-004","category":"no_diacritics","input":"dau rang kho moc lech","expected_documents":["dau-rang-khon","sau-rang"]}
+{"id":"rag-nodiac-005","category":"no_diacritics","input":"tre bi tieu chay cap","expected_documents":["tieu-chay-cap-o-tre"]}
+{"id":"rag-nodiac-006","category":"no_diacritics","input":"dat lich kham nhu the nao","expected_documents":["thu-tuc-dat-lich"]}
+{"id":"rag-faq-001","category":"faq","input":"Làm sao để đặt lịch khám?","expected_documents":["thu-tuc-dat-lich"],"expected_tools":["search_knowledge"],"types":["faq"]}
+{"id":"rag-faq-002","category":"faq","input":"các bước đặt lịch hẹn với bác sĩ","expected_documents":["thu-tuc-dat-lich"],"types":["faq"]}
+{"id":"rag-faq-003","category":"faq","input":"sau khi đặt lịch tôi có được xác nhận không","expected_documents":["thu-tuc-dat-lich"],"types":["faq","policy"]}
+{"id":"rag-faq-004","category":"faq","input":"thủ tục đặt lịch cần giấy tờ gì","expected_documents":["thu-tuc-dat-lich"]}
+{"id":"rag-faq-005","category":"faq","input":"muốn hẹn khám thì làm thế nào","expected_documents":["thu-tuc-dat-lich"]}
+{"id":"rag-policy-001","category":"policy","input":"chính sách hủy lịch hẹn như thế nào","expected_documents":["huy-lich-doi-lich"],"types":["policy"]}
+{"id":"rag-policy-002","category":"policy","input":"tôi muốn đổi lịch khám sang ngày khác có mất phí không","expected_documents":["huy-lich-doi-lich"],"types":["policy"]}
+{"id":"rag-policy-003","category":"policy","input":"hủy lịch trước bao lâu thì được","expected_documents":["huy-lich-doi-lich"]}
+{"id":"rag-policy-004","category":"policy","input":"thông tin cá nhân của tôi có được bảo mật khi đặt lịch không","expected_documents":["huy-lich-doi-lich","thu-tuc-dat-lich"]}
+{"id":"rag-policy-005","category":"policy","input":"dời lịch hẹn","expected_documents":["huy-lich-doi-lich"]}
+{"id":"rag-multi-001","category":"multi_doc","input":"đau họng, sốt và ho","expected_documents":["viem-hong-cap","sot","ho-khan","cam-cum-thong-thuong"]}
+{"id":"rag-multi-002","category":"multi_doc","input":"bị trào ngược và đau dạ dày thì nên khám gì","expected_documents":["trao-nguoc-da-day","viem-loet-da-day"]}
+{"id":"rag-multi-003","category":"multi_doc","input":"đau răng và sưng lợi","expected_documents":["sau-rang","dau-rang-khon"]}
+{"id":"rag-multi-004","category":"multi_doc","input":"mất ngủ do lo lắng stress","expected_documents":["mat-ngu-keo-dai","roi-loan-lo-au"]}
+{"id":"rag-type-001","category":"type_filter","input":"đau họng","expected_documents":["viem-hong-cap"],"types":["disease"]}
+{"id":"rag-type-002","category":"type_filter","input":"đau họng","expected_documents":["ho-khan","sot"],"types":["symptom"]}
+{"id":"rag-type-003","category":"type_filter","input":"sốt cao","expected_documents":["sot","sot-moc-rang"],"types":["symptom"]}
+{"id":"rag-neg-001","category":"negative","input":"giá vàng hôm nay là bao nhiêu","expected_documents":[],"expect_empty":true}
+{"id":"rag-neg-002","category":"negative","input":"hôm nay thời tiết Hà Nội thế nào","expected_documents":[],"expect_empty":true}
+{"id":"rag-neg-003","category":"negative","input":"cách nấu phở bò ngon","expected_documents":[],"expect_empty":true}
+{"id":"rag-neg-004","category":"negative","input":"viết giúp tôi đoạn code python sắp xếp mảng","expected_documents":[],"expect_empty":true}
+{"id":"rag-neg-005","category":"negative","input":"tỷ số trận bóng đá tối qua","expected_documents":[],"expect_empty":true}
+{"id":"rag-neg-006","category":"negative","input":"mua vé máy bay đi Đà Nẵng","expected_documents":[],"expect_empty":true}
+{"id":"rag-negnear-001","category":"negative_near","input":"bệnh tiểu đường nên ăn gì","expected_documents":[],"expect_empty":true,"notes":"gần miền y khoa nhưng không có trong KB"}
+{"id":"rag-negnear-002","category":"negative_near","input":"phẫu thuật bắc cầu động mạch vành","expected_documents":[],"expect_empty":true}
+{"id":"rag-negnear-003","category":"negative_near","input":"liều thuốc paracetamol cho người lớn","expected_documents":[],"expect_empty":true,"notes":"không được kê đơn; KB không có"}
+{"id":"rag-negnear-004","category":"negative_near","input":"lịch tiêm vắc xin cho trẻ sơ sinh","expected_documents":[],"expect_empty":true}
+{"id":"rag-negnear-005","category":"negative_near","input":"bệnh gout kiêng ăn gì","expected_documents":[],"expect_empty":true}
+{"id":"rag-negnear-006","category":"negative_near","input":"xét nghiệm máu hết bao nhiêu tiền","expected_documents":[],"expect_empty":true}

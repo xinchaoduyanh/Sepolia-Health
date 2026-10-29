@@ -1,0 +1,754 @@
+{
+  "config": {
+    "generated_at": "2026-10-29T14:53:07Z",
+    "dataset": "retrieval.jsonl",
+    "dataset_sha": "1b9902effcc17904b1167f06d5fa867d92185a9629a4e94549215e218e6e51fb",
+    "cases": 71,
+    "embedding": "vertex:text-multilingual-embedding-002",
+    "index_collection": "knowledge_v1_d40a8a9f7d",
+    "index_chunks": 108,
+    "knowledge_hash": "c59a87ac328a01332d94e0107b33e6e4c1b3a9e18426c986369d23ad04ae4b71",
+    "threshold": 0.6
+  },
+  "modes": {
+    "dense": {
+      "metrics": {
+        "threshold": 0.6,
+        "positive_cases": 59,
+        "negative_cases": 12,
+        "hit@1": 0.8983050847457628,
+        "recall@1": 0.8008474576271186,
+        "hit@3": 0.9491525423728814,
+        "recall@3": 0.9194915254237288,
+        "hit@5": 0.9661016949152542,
+        "recall@5": 0.9491525423728814,
+        "mrr": 0.9274818401937046,
+        "empty_rate": 0.0,
+        "wrong_type_rate": 0.0,
+        "negative_false_positive_rate": 0.75,
+        "by_category": {
+          "alias": {
+            "n": 12,
+            "hit@1": 1.0,
+            "hit@5": 1.0,
+            "mrr": 1.0
+          },
+          "faq": {
+            "n": 5,
+            "hit@1": 1.0,
+            "hit@5": 1.0,
+            "mrr": 1.0
+          },
+          "multi_doc": {
+            "n": 4,
+            "hit@1": 1.0,
+            "hit@5": 1.0,
+            "mrr": 1.0
+          },
+          "no_diacritics": {
+            "n": 6,
+            "hit@1": 0.3333333333333333,
+            "hit@5": 0.6666666666666666,
+            "mrr": 0.4535714285714287
+          },
+          "policy": {
+            "n": 5,
+            "hit@1": 0.8,
+            "hit@5": 1.0,
+            "mrr": 0.9
+          },
+          "symptom": {
+            "n": 24,
+            "hit@1": 1.0,
+            "hit@5": 1.0,
+            "mrr": 1.0
+          },
+          "type_filter": {
+            "n": 3,
+            "hit@1": 0.6666666666666666,
+            "hit@5": 1.0,
+            "mrr": 0.8333333333333334
+          },
+          "negative": {
+            "n": 6,
+            "false_positive_rate": 0.5
+          },
+          "negative_near": {
+            "n": 6,
+            "false_positive_rate": 1.0
+          }
+        },
+        "failures": [
+          {
+            "id": "rag-nodiac-003",
+            "input": "bi mat ngu ca tuan nay",
+            "expected": [
+              "mat-ngu-keo-dai"
+            ],
+            "got": [
+              "dau-vai-gay",
+              "viem-hong-cap",
+              "mun-trung-ca",
+              "viem-loet-da-day",
+              "trao-nguoc-da-day"
+            ]
+          },
+          {
+            "id": "rag-nodiac-006",
+            "input": "dat lich kham nhu the nao",
+            "expected": [
+              "thu-tuc-dat-lich"
+            ],
+            "got": [
+              "kho-mat",
+              "ong-nghen",
+              "tieu-chay-cap-o-tre",
+              "dau-vai-gay",
+              "sot"
+            ]
+          }
+        ],
+        "false_positives": [
+          {
+            "id": "rag-neg-002",
+            "input": "hôm nay thời tiết Hà Nội thế nào",
+            "got": [
+              "ho-khan",
+              "sot",
+              "cam-cum-thong-thuong",
+              "kho-mat",
+              "dau-vai-gay"
+            ]
+          },
+          {
+            "id": "rag-neg-003",
+            "input": "cách nấu phở bò ngon",
+            "got": [
+              "ong-nghen",
+              "thua-can-beo-phi",
+              "trao-nguoc-da-day",
+              "dau-bung-kho-tieu",
+              "sot"
+            ]
+          },
+          {
+            "id": "rag-neg-006",
+            "input": "mua vé máy bay đi Đà Nẵng",
+            "got": [
+              "thu-tuc-dat-lich",
+              "huy-lich-doi-lich",
+              "dau-vai-gay",
+              "kham-suc-khoe-tong-quat",
+              "ong-nghen"
+            ]
+          },
+          {
+            "id": "rag-negnear-001",
+            "input": "bệnh tiểu đường nên ăn gì",
+            "got": [
+              "thua-can-beo-phi",
+              "tieu-chay-cap-o-tre",
+              "trao-nguoc-da-day",
+              "dau-bung-kho-tieu",
+              "viem-loet-da-day"
+            ]
+          },
+          {
+            "id": "rag-negnear-002",
+            "input": "phẫu thuật bắc cầu động mạch vành",
+            "got": [
+              "thoat-vi-dia-dem",
+              "dau-vai-gay",
+              "thu-tuc-dat-lich",
+              "sau-rang",
+              "kham-suc-khoe-tong-quat"
+            ]
+          },
+          {
+            "id": "rag-negnear-003",
+            "input": "liều thuốc paracetamol cho người lớn",
+            "got": [
+              "sot",
+              "thua-can-beo-phi",
+              "tieu-chay-cap-o-tre",
+              "mat-ngu-keo-dai",
+              "kham-suc-khoe-tong-quat"
+            ]
+          },
+          {
+            "id": "rag-negnear-004",
+            "input": "lịch tiêm vắc xin cho trẻ sơ sinh",
+            "got": [
+              "sot-moc-rang",
+              "thu-tuc-dat-lich",
+              "huy-lich-doi-lich",
+              "kham-suc-khoe-tong-quat",
+              "ong-nghen"
+            ]
+          },
+          {
+            "id": "rag-negnear-005",
+            "input": "bệnh gout kiêng ăn gì",
+            "got": [
+              "thua-can-beo-phi",
+              "dau-bung-kho-tieu",
+              "tieu-chay-cap-o-tre",
+              "viem-loet-da-day",
+              "sot"
+            ]
+          },
+          {
+            "id": "rag-negnear-006",
+            "input": "xét nghiệm máu hết bao nhiêu tiền",
+            "got": [
+              "kham-suc-khoe-tong-quat",
+              "kho-mat",
+              "sot"
+            ]
+          }
+        ]
+      },
+      "sweep": [
+        {
+          "threshold": 0.0,
+          "hit@5": 0.9661016949152542,
+          "mrr": 0.9274818401937046,
+          "empty_rate": 0.0,
+          "negative_false_positive_rate": 1.0
+        },
+        {
+          "threshold": 0.3,
+          "hit@5": 0.9661016949152542,
+          "mrr": 0.9274818401937046,
+          "empty_rate": 0.0,
+          "negative_false_positive_rate": 1.0
+        },
+        {
+          "threshold": 0.4,
+          "hit@5": 0.9661016949152542,
+          "mrr": 0.9274818401937046,
+          "empty_rate": 0.0,
+          "negative_false_positive_rate": 1.0
+        },
+        {
+          "threshold": 0.45,
+          "hit@5": 0.9661016949152542,
+          "mrr": 0.9274818401937046,
+          "empty_rate": 0.0,
+          "negative_false_positive_rate": 1.0
+        },
+        {
+          "threshold": 0.5,
+          "hit@5": 0.9661016949152542,
+          "mrr": 0.9274818401937046,
+          "empty_rate": 0.0,
+          "negative_false_positive_rate": 1.0
+        },
+        {
+          "threshold": 0.55,
+          "hit@5": 0.9661016949152542,
+          "mrr": 0.9274818401937046,
+          "empty_rate": 0.0,
+          "negative_false_positive_rate": 1.0
+        },
+        {
+          "threshold": 0.6,
+          "hit@5": 0.9661016949152542,
+          "mrr": 0.9274818401937046,
+          "empty_rate": 0.0,
+          "negative_false_positive_rate": 0.75
+        },
+        {
+          "threshold": 0.65,
+          "hit@5": 0.9152542372881356,
+          "mrr": 0.8870056497175142,
+          "empty_rate": 0.05084745762711865,
+          "negative_false_positive_rate": 0.5833333333333334
+        },
+        {
+          "threshold": 0.7,
+          "hit@5": 0.8305084745762712,
+          "mrr": 0.8135593220338984,
+          "empty_rate": 0.1694915254237288,
+          "negative_false_positive_rate": 0.08333333333333333
+        }
+      ]
+    },
+    "bm25": {
+      "metrics": {
+        "threshold": 0.0,
+        "positive_cases": 59,
+        "negative_cases": 12,
+        "hit@1": 0.8305084745762712,
+        "recall@1": 0.7330508474576272,
+        "hit@3": 0.9152542372881356,
+        "recall@3": 0.8686440677966102,
+        "hit@5": 0.9152542372881356,
+        "recall@5": 0.9067796610169492,
+        "mrr": 0.8728813559322034,
+        "empty_rate": 0.0847457627118644,
+        "wrong_type_rate": 0.0,
+        "negative_false_positive_rate": 1.0,
+        "by_category": {
+          "alias": {
+            "n": 12,
+            "hit@1": 0.5833333333333334,
+            "hit@5": 0.5833333333333334,
+            "mrr": 0.5833333333333334
+          },
+          "faq": {
+            "n": 5,
+            "hit@1": 1.0,
+            "hit@5": 1.0,
+            "mrr": 1.0
+          },
+          "multi_doc": {
+            "n": 4,
+            "hit@1": 1.0,
+            "hit@5": 1.0,
+            "mrr": 1.0
+          },
+          "no_diacritics": {
+            "n": 6,
+            "hit@1": 0.6666666666666666,
+            "hit@5": 1.0,
+            "mrr": 0.8333333333333334
+          },
+          "policy": {
+            "n": 5,
+            "hit@1": 0.8,
+            "hit@5": 1.0,
+            "mrr": 0.9
+          },
+          "symptom": {
+            "n": 24,
+            "hit@1": 0.9583333333333334,
+            "hit@5": 1.0,
+            "mrr": 0.9791666666666666
+          },
+          "type_filter": {
+            "n": 3,
+            "hit@1": 0.6666666666666666,
+            "hit@5": 1.0,
+            "mrr": 0.8333333333333334
+          },
+          "negative": {
+            "n": 6,
+            "false_positive_rate": 1.0
+          },
+          "negative_near": {
+            "n": 6,
+            "false_positive_rate": 1.0
+          }
+        },
+        "failures": [
+          {
+            "id": "rag-alias-003",
+            "input": "eczema",
+            "expected": [
+              "viem-da-co-dia"
+            ],
+            "got": []
+          },
+          {
+            "id": "rag-alias-004",
+            "input": "pink eye",
+            "expected": [
+              "dau-mat-do"
+            ],
+            "got": []
+          },
+          {
+            "id": "rag-alias-005",
+            "input": "acne",
+            "expected": [
+              "mun-trung-ca"
+            ],
+            "got": []
+          },
+          {
+            "id": "rag-alias-006",
+            "input": "insomnia",
+            "expected": [
+              "mat-ngu-keo-dai"
+            ],
+            "got": []
+          },
+          {
+            "id": "rag-alias-010",
+            "input": "gastritis",
+            "expected": [
+              "viem-loet-da-day"
+            ],
+            "got": []
+          }
+        ],
+        "false_positives": [
+          {
+            "id": "rag-neg-001",
+            "input": "giá vàng hôm nay là bao nhiêu",
+            "got": [
+              "sot",
+              "dau-mat-do",
+              "ho-khan",
+              "cam-cum-thong-thuong",
+              "mun-trung-ca"
+            ]
+          },
+          {
+            "id": "rag-neg-002",
+            "input": "hôm nay thời tiết Hà Nội thế nào",
+            "got": [
+              "tieu-chay-cap-o-tre",
+              "ho-khan",
+              "huy-lich-doi-lich",
+              "dau-rang-khon",
+              "viem-am-dao"
+            ]
+          },
+          {
+            "id": "rag-neg-003",
+            "input": "cách nấu phở bò ngon",
+            "got": [
+              "sau-rang",
+              "viem-da-co-dia",
+              "thoat-vi-dia-dem",
+              "dau-bung-kho-tieu",
+              "sot-moc-rang"
+            ]
+          },
+          {
+            "id": "rag-neg-004",
+            "input": "viết giúp tôi đoạn code python sắp xếp mảng",
+            "got": [
+              "huy-lich-doi-lich",
+              "cam-cum-thong-thuong",
+              "kham-suc-khoe-tong-quat",
+              "thua-can-beo-phi",
+              "ong-nghen"
+            ]
+          },
+          {
+            "id": "rag-neg-005",
+            "input": "tỷ số trận bóng đá tối qua",
+            "got": [
+              "viem-da-co-dia",
+              "thua-can-beo-phi",
+              "dau-mat-do",
+              "roi-loan-lo-au",
+              "huy-lich-doi-lich"
+            ]
+          },
+          {
+            "id": "rag-neg-006",
+            "input": "mua vé máy bay đi Đà Nẵng",
+            "got": [
+              "mat-ngu-keo-dai",
+              "noi-man-do-ngua",
+              "dau-mat-do",
+              "mun-trung-ca",
+              "thua-can-beo-phi"
+            ]
+          },
+          {
+            "id": "rag-negnear-001",
+            "input": "bệnh tiểu đường nên ăn gì",
+            "got": [
+              "kham-suc-khoe-tong-quat",
+              "thua-can-beo-phi",
+              "sot",
+              "cam-cum-thong-thuong",
+              "ong-nghen"
+            ]
+          },
+          {
+            "id": "rag-negnear-002",
+            "input": "phẫu thuật bắc cầu động mạch vành",
+            "got": [
+              "kham-suc-khoe-tong-quat",
+              "trao-nguoc-da-day",
+              "thu-tuc-dat-lich",
+              "thoat-vi-dia-dem",
+              "huy-lich-doi-lich"
+            ]
+          },
+          {
+            "id": "rag-negnear-003",
+            "input": "liều thuốc paracetamol cho người lớn",
+            "got": [
+              "thua-can-beo-phi",
+              "huy-lich-doi-lich",
+              "cam-cum-thong-thuong",
+              "ong-nghen",
+              "viem-da-co-dia"
+            ]
+          },
+          {
+            "id": "rag-negnear-004",
+            "input": "lịch tiêm vắc xin cho trẻ sơ sinh",
+            "got": [
+              "ong-nghen",
+              "sot-moc-rang",
+              "ho-khan",
+              "thua-can-beo-phi",
+              "tieu-chay-cap-o-tre"
+            ]
+          },
+          {
+            "id": "rag-negnear-005",
+            "input": "bệnh gout kiêng ăn gì",
+            "got": [
+              "cam-cum-thong-thuong",
+              "thua-can-beo-phi",
+              "kham-suc-khoe-tong-quat",
+              "trao-nguoc-da-day",
+              "viem-da-co-dia"
+            ]
+          },
+          {
+            "id": "rag-negnear-006",
+            "input": "xét nghiệm máu hết bao nhiêu tiền",
+            "got": [
+              "sot",
+              "dau-mat-do",
+              "tieu-chay-cap-o-tre",
+              "viem-am-dao",
+              "roi-loan-lo-au"
+            ]
+          }
+        ]
+      },
+      "sweep": []
+    },
+    "hybrid": {
+      "metrics": {
+        "threshold": 0.6,
+        "positive_cases": 59,
+        "negative_cases": 12,
+        "hit@1": 0.9830508474576272,
+        "recall@1": 0.8686440677966102,
+        "hit@3": 1.0,
+        "recall@3": 0.9788135593220338,
+        "hit@5": 1.0,
+        "recall@5": 1.0,
+        "mrr": 0.9915254237288136,
+        "empty_rate": 0.0,
+        "wrong_type_rate": 0.0,
+        "negative_false_positive_rate": 0.75,
+        "by_category": {
+          "alias": {
+            "n": 12,
+            "hit@1": 1.0,
+            "hit@5": 1.0,
+            "mrr": 1.0
+          },
+          "faq": {
+            "n": 5,
+            "hit@1": 1.0,
+            "hit@5": 1.0,
+            "mrr": 1.0
+          },
+          "multi_doc": {
+            "n": 4,
+            "hit@1": 1.0,
+            "hit@5": 1.0,
+            "mrr": 1.0
+          },
+          "no_diacritics": {
+            "n": 6,
+            "hit@1": 0.8333333333333334,
+            "hit@5": 1.0,
+            "mrr": 0.9166666666666666
+          },
+          "policy": {
+            "n": 5,
+            "hit@1": 1.0,
+            "hit@5": 1.0,
+            "mrr": 1.0
+          },
+          "symptom": {
+            "n": 24,
+            "hit@1": 1.0,
+            "hit@5": 1.0,
+            "mrr": 1.0
+          },
+          "type_filter": {
+            "n": 3,
+            "hit@1": 1.0,
+            "hit@5": 1.0,
+            "mrr": 1.0
+          },
+          "negative": {
+            "n": 6,
+            "false_positive_rate": 0.5
+          },
+          "negative_near": {
+            "n": 6,
+            "false_positive_rate": 1.0
+          }
+        },
+        "failures": [],
+        "false_positives": [
+          {
+            "id": "rag-neg-002",
+            "input": "hôm nay thời tiết Hà Nội thế nào",
+            "got": [
+              "ho-khan",
+              "cam-cum-thong-thuong",
+              "sot",
+              "kho-mat"
+            ]
+          },
+          {
+            "id": "rag-neg-003",
+            "input": "cách nấu phở bò ngon",
+            "got": [
+              "trao-nguoc-da-day",
+              "tieu-chay-cap-o-tre",
+              "viem-loet-da-day",
+              "ong-nghen",
+              "sot"
+            ]
+          },
+          {
+            "id": "rag-neg-006",
+            "input": "mua vé máy bay đi Đà Nẵng",
+            "got": [
+              "thu-tuc-dat-lich",
+              "huy-lich-doi-lich",
+              "kham-suc-khoe-tong-quat",
+              "sot"
+            ]
+          },
+          {
+            "id": "rag-negnear-001",
+            "input": "bệnh tiểu đường nên ăn gì",
+            "got": [
+              "thua-can-beo-phi",
+              "kham-suc-khoe-tong-quat",
+              "trao-nguoc-da-day",
+              "tieu-chay-cap-o-tre",
+              "ong-nghen"
+            ]
+          },
+          {
+            "id": "rag-negnear-002",
+            "input": "phẫu thuật bắc cầu động mạch vành",
+            "got": [
+              "thu-tuc-dat-lich",
+              "trao-nguoc-da-day",
+              "thoat-vi-dia-dem",
+              "huy-lich-doi-lich",
+              "kham-suc-khoe-tong-quat"
+            ]
+          },
+          {
+            "id": "rag-negnear-003",
+            "input": "liều thuốc paracetamol cho người lớn",
+            "got": [
+              "thua-can-beo-phi",
+              "sot",
+              "thoat-vi-dia-dem",
+              "cam-cum-thong-thuong",
+              "kham-suc-khoe-tong-quat"
+            ]
+          },
+          {
+            "id": "rag-negnear-004",
+            "input": "lịch tiêm vắc xin cho trẻ sơ sinh",
+            "got": [
+              "ong-nghen",
+              "ho-khan",
+              "thu-tuc-dat-lich",
+              "sot-moc-rang",
+              "huy-lich-doi-lich"
+            ]
+          },
+          {
+            "id": "rag-negnear-005",
+            "input": "bệnh gout kiêng ăn gì",
+            "got": [
+              "thua-can-beo-phi",
+              "tieu-chay-cap-o-tre",
+              "viem-loet-da-day",
+              "sau-rang",
+              "noi-man-do-ngua"
+            ]
+          },
+          {
+            "id": "rag-negnear-006",
+            "input": "xét nghiệm máu hết bao nhiêu tiền",
+            "got": [
+              "sot"
+            ]
+          }
+        ]
+      },
+      "sweep": [
+        {
+          "threshold": 0.0,
+          "hit@5": 1.0,
+          "mrr": 0.9915254237288136,
+          "empty_rate": 0.0,
+          "negative_false_positive_rate": 1.0
+        },
+        {
+          "threshold": 0.3,
+          "hit@5": 1.0,
+          "mrr": 0.9915254237288136,
+          "empty_rate": 0.0,
+          "negative_false_positive_rate": 1.0
+        },
+        {
+          "threshold": 0.4,
+          "hit@5": 1.0,
+          "mrr": 0.9915254237288136,
+          "empty_rate": 0.0,
+          "negative_false_positive_rate": 1.0
+        },
+        {
+          "threshold": 0.45,
+          "hit@5": 1.0,
+          "mrr": 0.9915254237288136,
+          "empty_rate": 0.0,
+          "negative_false_positive_rate": 1.0
+        },
+        {
+          "threshold": 0.5,
+          "hit@5": 1.0,
+          "mrr": 0.9915254237288136,
+          "empty_rate": 0.0,
+          "negative_false_positive_rate": 1.0
+        },
+        {
+          "threshold": 0.55,
+          "hit@5": 1.0,
+          "mrr": 0.9915254237288136,
+          "empty_rate": 0.0,
+          "negative_false_positive_rate": 1.0
+        },
+        {
+          "threshold": 0.6,
+          "hit@5": 1.0,
+          "mrr": 0.9915254237288136,
+          "empty_rate": 0.0,
+          "negative_false_positive_rate": 0.75
+        },
+        {
+          "threshold": 0.65,
+          "hit@5": 0.9152542372881356,
+          "mrr": 0.9152542372881356,
+          "empty_rate": 0.06779661016949153,
+          "negative_false_positive_rate": 0.5
+        },
+        {
+          "threshold": 0.7,
+          "hit@5": 0.8305084745762712,
+          "mrr": 0.8305084745762712,
+          "empty_rate": 0.1694915254237288,
+          "negative_false_positive_rate": 0.0
+        }
+      ]
+    }
+  }
+}

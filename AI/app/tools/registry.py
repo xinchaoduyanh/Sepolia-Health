@@ -151,6 +151,8 @@ class ToolRegistry:
                         "text": c.text[:1200],
                         "score": c.similarity_score,
                         "version": (c.metadata or {}).get("version"),
+                        "review_status": (c.metadata or {}).get("review_status"),
+                        "sources": (c.metadata or {}).get("sources"),
                     }
                     for c in chunks
                 ]

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import asyncio
 import os
 from pathlib import Path
 
@@ -10,11 +11,7 @@ from fastapi import APIRouter, Response, status
 
 from app.config import get_settings
 from app.deps import get_store
-from app.rag.indexer import (
-    COLLECTION_NAME,
-    knowledge_fingerprint,
-    load_index_manifest,
-)
+from app.rag.indexer import check_index
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["health"])
@@ -67,51 +64,10 @@ async def ready(response: Response) -> dict:
 
     # --- RAG index (enable via AI_RAG_REQUIRE_INDEX=true after index build) ---
     if settings.rag_require_index:
-        manifest = load_index_manifest(settings.chroma_dir)
-        chroma_path = Path(settings.chroma_dir)
-        if not manifest:
+        status_ = await asyncio.to_thread(check_index, settings)
+        checks["rag"] = status_.detail()
+        if not status_.ok:
             ready_ok = False
-            checks["rag"] = "missing_manifest"
-        elif not chroma_path.exists():
-            ready_ok = False
-            checks["rag"] = "missing_chroma_dir"
-        else:
-            try:
-                import chromadb  # type: ignore
-
-                client = chromadb.PersistentClient(path=str(chroma_path))
-                try:
-                    coll = client.get_collection(COLLECTION_NAME)
-                    count = coll.count()
-                except Exception:  # noqa: BLE001
-                    count = 0
-                expected = int(manifest.get("chunks") or 0)
-                current_hash = knowledge_fingerprint(settings.knowledge_dir)
-                manifest_ok = (
-                    manifest.get("collection") == COLLECTION_NAME
-                    and manifest.get("embedding_model") == settings.embedding_model
-                    and manifest.get("knowledge_hash") == current_hash
-                )
-                if count <= 0 or count != expected or not manifest_ok:
-                    ready_ok = False
-                    checks["rag"] = {
-                        "status": "empty_or_stale",
-                        "count": count,
-                        "manifest_chunks": expected,
-                        "embedding_model": manifest.get("embedding_model"),
-                        "manifest_matches_runtime": manifest_ok,
-                    }
-                else:
-                    checks["rag"] = {
-                        "status": "ok",
-                        "count": count,
-                        "manifest_chunks": expected,
-                        "embedding_model": manifest.get("embedding_model"),
-                        "collection": manifest.get("collection", COLLECTION_NAME),
-                    }
-            except Exception as exc:  # noqa: BLE001
-                ready_ok = False
-                checks["rag"] = f"error:{type(exc).__name__}"
     else:
         checks["rag"] = "skipped"
 

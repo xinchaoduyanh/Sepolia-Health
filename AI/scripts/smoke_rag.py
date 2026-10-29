@@ -13,6 +13,7 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
 from app.config import get_settings
+from app.rag.embedding import resolve_embedding_spec
 from app.rag.retriever import KnowledgeRetriever
 
 QUERIES = [
@@ -24,13 +25,9 @@ QUERIES = [
 
 async def main() -> None:
     s = get_settings()
-    print(f"chroma_dir={s.chroma_dir}  ollama={s.ollama_base_url}  embed={s.embedding_model}")
-    retriever = KnowledgeRetriever(
-        knowledge_dir=s.knowledge_dir,
-        chroma_dir=s.chroma_dir,
-        ollama_base_url=s.ollama_base_url,
-        embedding_model=s.embedding_model,
-    )
+    spec = resolve_embedding_spec(s)
+    print(f"chroma_dir={s.chroma_dir}  embed={spec.label}")
+    retriever = KnowledgeRetriever(knowledge_dir=s.knowledge_dir, chroma_dir=s.chroma_dir)
 
     for q in QUERIES:
         print("=" * 70)
@@ -41,7 +38,7 @@ async def main() -> None:
             )
         except Exception as exc:  # noqa: BLE001
             print(f"  !! retrieve lỗi: {type(exc).__name__}: {exc}")
-            print("  Gợi ý: kiểm tra Ollama có bge-m3 + đã chạy indexer --rebuild chưa.")
+            print("  Gợi ý: kiểm tra embedding provider + đã chạy `python -m app.rag.indexer --ensure` chưa.")
             continue
         if not chunks:
             print("  (không có chunk nào — index rỗng hoặc bị allowlist lọc hết)")

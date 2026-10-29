@@ -19,9 +19,23 @@ async def lifespan(app: FastAPI):
     purge_task = None
     if settings.retention_purge_interval_minutes > 0:
         purge_task = asyncio.create_task(retention_loop(get_store, settings))
+    build_task = None
+    if settings.rag_auto_build:
+        # Build nền (có file lock): /ready giữ 503 tới khi index đúng version.
+        from app.rag.indexer import ensure_index
+
+        async def _build() -> None:
+            try:
+                logging.getLogger(__name__).info("RAG ensure_index: %s", await ensure_index(settings))
+            except Exception:  # noqa: BLE001
+                logging.getLogger(__name__).exception("RAG ensure_index thất bại")
+
+        build_task = asyncio.create_task(_build())
     try:
         yield
     finally:
+        if build_task is not None and not build_task.done():
+            build_task.cancel()
         if purge_task is not None:
             purge_task.cancel()
             try:

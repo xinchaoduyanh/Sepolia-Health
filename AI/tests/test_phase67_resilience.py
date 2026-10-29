@@ -267,7 +267,10 @@ async def test_retriever_propagates_embedding_outage(tmp_path):
     from app.rag.retriever import KnowledgeRetriever, RetrievalUnavailableError
 
     class BrokenEmbedding:
-        async def embed(self, model, texts):
+        provider = "test"
+        model = "test"
+
+        async def embed_query(self, text):
             raise RuntimeError("down")
 
     class NonEmptyCollection:
@@ -275,11 +278,10 @@ async def test_retriever_propagates_embedding_outage(tmp_path):
             return 1
 
     retriever = KnowledgeRetriever(
-        embedding_model="test",
         chroma_dir=str(tmp_path),
         knowledge_dir=str(tmp_path),
+        embedder=BrokenEmbedding(),
     )
-    retriever.provider = BrokenEmbedding()
     retriever._collection = NonEmptyCollection()
     with pytest.raises(RetrievalUnavailableError):
         await retriever.retrieve("hello")

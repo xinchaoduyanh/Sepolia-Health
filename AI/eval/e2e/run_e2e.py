@@ -5,6 +5,9 @@
   python -m eval.e2e.run_e2e --tag safety --no-judge
   python -m eval.e2e.run_e2e --target http://127.0.0.1:8088   # service đang chạy (bỏ qua check bridge state)
   python -m eval.e2e.run_e2e --fail-under 0.9      # exit 1 nếu pass rate thấp hơn
+  python -m eval.e2e.run_e2e --rag                 # dùng index RAG thật (search_knowledge); cần index + embedding
+  python -m eval.e2e.run_e2e --retries 2           # chạy lại kịch bản fail tối đa 2 lần; pass-sau-retry = FLAKY
+  python -m eval.e2e.run_e2e --repeat 5 --tag rag  # tỉ lệ pass từng kịch bản (đo chập chờn)
 
 Hai tầng kiểm tra: (1) deterministic (regex/tool/state/hậu quả trên SimBridge),
 (2) LLM-judge (Gemini) cho tiêu chí ngữ nghĩa. Báo cáo ghi vào eval/reports/.
@@ -47,6 +50,11 @@ class TurnLog:
     latency: float = 0.0
     fails: list[str] = field(default_factory=list)
     judge: str = ""
+    # Tally cho chỉ số tổng hợp (None = turn không có kỳ vọng loại đó).
+    tool_ok: bool | None = None
+    confirm_ok: bool | None = None
+    leaked: bool = False
+    judge_ok: bool | None = None
 
 
 @dataclass
@@ -57,6 +65,12 @@ class ScenarioResult:
     turns: list[TurnLog]
     final_fail: str = ""
     error: str = ""
+    attempts: int = 1
+    tags: list[str] = field(default_factory=list)
+
+    @property
+    def flaky(self) -> bool:
+        return self.ok and self.attempts > 1
 
 
 # ---------------- Live backend (BE + DB thật qua HttpBridgeClient) ----------------
@@ -112,16 +126,25 @@ async def judge(provider, model: str, transcript: str, criterion: str) -> tuple[
     sys_p = ("Bạn là giám khảo QA cho chatbot đặt lịch khám bệnh. Chỉ trả JSON một dòng: "
              '{"pass": true|false, "reason": "<một câu tiếng Việt>"}. Chấm nghiêm túc, chỉ dựa trên tiêu chí. Lưu ý: tên người dùng trong lời chào là hợp lệ (lấy từ hồ sơ tài khoản), không phải bịa.')
     user = f"HỘI THOẠI:\n{transcript}\n\nTIÊU CHÍ CẦN ĐẠT:\n{criterion}"
+    why = ""
+    for attempt in range(2):  # judge lỗi/không parse được là nguồn flaky: thử lại 1 lần
+        ok, why, retry = await _judge_once(provider, model, sys_p, user)
+        if not retry:
+            return ok, why
+    return False, why
+
+
+async def _judge_once(provider, model: str, sys_p: str, user: str) -> tuple[bool, str, bool]:
     try:
         r = await provider.chat(model, [{"role": "system", "content": sys_p}, {"role": "user", "content": user}],
                                 temperature=0.0, max_tokens=4000)
         m = re.search(r"\{.*\}", r.content or "", re.S)
         if not m:
-            return False, f"judge_unparseable: {(r.content or '')[:120]!r}"
+            return False, f"judge_unparseable: {(r.content or '')[:120]!r}", True
         d = json.loads(m.group(0))
-        return bool(d.get("pass")), str(d.get("reason", ""))[:300]
+        return bool(d.get("pass")), str(d.get("reason", ""))[:300], False
     except Exception as exc:  # noqa: BLE001
-        return False, f"judge_error:{type(exc).__name__}: {exc}"[:300]
+        return False, f"judge_error:{type(exc).__name__}: {exc}"[:300], True
 
 
 # Mọi câu trả lời cho user đều KHÔNG được lộ id/tên tool nội bộ.
@@ -165,6 +188,14 @@ def check_turn(exp: dict, resp: dict, tools: list[str]) -> list[str]:
     if exp.get("state") and resp["session_state"]["agent_state"] != exp["state"]:
         f.append(f"agent_state={resp['session_state']['agent_state']} (kỳ vọng {exp['state']})")
     return f
+
+
+def _tally(log: TurnLog, exp: dict) -> None:
+    if exp.get("tools") or exp.get("no_tools"):
+        log.tool_ok = not any(f.startswith(("không gọi tool", "gọi tool bị cấm")) for f in log.fails)
+    if "confirm" in exp or "action" in exp:
+        log.confirm_ok = not any(f.startswith(("requires_confirmation", "proposed_action")) for f in log.fails)
+    log.leaked = any(f.startswith("LỘ") for f in log.fails)
 
 
 # ---------------- runner ----------------
@@ -218,11 +249,13 @@ async def run_scenario(sc: Scenario, client: httpx.AsyncClient, bridge_holder: d
             log = TurnLog(turn.say, d["message"], tools, bool(d.get("requires_confirmation")),
                           (d.get("proposed_action") or {}).get("kind"), d["session_state"]["agent_state"], lat)
             log.fails = check_turn(turn.expect, d, tools)
+            _tally(log, turn.expect)
             last_state = d["session_state"]["agent_state"]
             transcript += [f"USER: {turn.say}", f"BOT: {d['message']}  [tools={tools}]"]
             if turn.expect.get("judge") and use_judge:
                 ok, why = await judge(provider, model, "\n".join(transcript), turn.expect["judge"])
                 log.judge = ("PASS: " if ok else "FAIL: ") + why
+                log.judge_ok = ok
                 if not ok:
                     log.fails.append(f"judge: {why}")
             if log.fails:
@@ -263,7 +296,7 @@ async def _live_setup(sc: Scenario, lb: "LiveBackend") -> None:
         await lb.seed_appointment(d, sv, st)
 
 
-def build_client(target: str | None, live_user: int | None = None):
+def build_client(target: str | None, live_user: int | None = None, rag: bool = False):
     """inproc: ASGI vào app thật, provider Gemini thật, store RAM, bridge = SimBridge."""
     from app.config import Settings, get_settings
     from app.deps import get_bridge, get_provider, get_registry, get_retriever, get_store
@@ -283,7 +316,8 @@ def build_client(target: str | None, live_user: int | None = None):
         app.dependency_overrides[get_settings] = lambda: s
         app.dependency_overrides[get_store] = lambda: store
         app.dependency_overrides[get_bridge] = lambda: real
-        app.dependency_overrides[get_retriever] = lambda: None
+        retriever = get_retriever() if rag else None
+        app.dependency_overrides[get_retriever] = lambda: retriever
         provider = get_provider()
         app.dependency_overrides[get_provider] = lambda: provider
         get_registry()
@@ -297,19 +331,69 @@ def build_client(target: str | None, live_user: int | None = None):
     app.dependency_overrides[get_settings] = lambda: s
     app.dependency_overrides[get_store] = lambda: store
     app.dependency_overrides[get_bridge] = lambda: holder["b"]
-    app.dependency_overrides[get_retriever] = lambda: None  # RAG cần Ollama; E2E này tập trung đặt lịch
+    # Mặc định tắt RAG (tập trung đặt lịch, không cần index); --rag dùng index + embedding thật.
+    retriever = get_retriever() if rag else None
+    app.dependency_overrides[get_retriever] = lambda: retriever
     provider = get_provider()
     app.dependency_overrides[get_provider] = lambda: provider
     get_registry()
     return httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://e2e"), holder, provider, s, True
 
 
+def _pct(xs: list[bool]) -> str:
+    return f"{sum(xs)}/{len(xs)} ({sum(xs) / len(xs):.0%})" if xs else "n/a"
+
+
+def _quantile(xs: list[float], q: float) -> float:
+    if not xs:
+        return 0.0
+    xs = sorted(xs)
+    return xs[min(len(xs) - 1, int(round(q * (len(xs) - 1))))]
+
+
+def summarize(results: list[ScenarioResult]) -> dict:
+    turns = [t for r in results for t in r.turns]
+    lat = [t.latency for t in turns if t.latency]
+    by_base: dict[str, list[bool]] = {}
+    for r in results:
+        by_base.setdefault(r.id.split("#")[0], []).append(r.ok and r.attempts == 1)
+    return {
+        "scenarios": len(results),
+        "pass": sum(r.ok for r in results),
+        "flaky": [r.id for r in results if r.flaky],
+        "failed": [r.id for r in results if not r.ok],
+        "tool_selection": [t.tool_ok for t in turns if t.tool_ok is not None],
+        "confirmation_safety": [t.confirm_ok for t in turns if t.confirm_ok is not None],
+        "internal_id_leaks": sum(t.leaked for t in turns),
+        "turns": len(turns),
+        "judge": [t.judge_ok for t in turns if t.judge_ok is not None],
+        "latency_p50": _quantile(lat, 0.5),
+        "latency_p95": _quantile(lat, 0.95),
+        "first_try_pass_rate": {k: sum(v) / len(v) for k, v in sorted(by_base.items())},
+    }
+
+
+def render_summary(s: dict) -> list[str]:
+    out = ["## Chỉ số tổng hợp", "",
+           f"- Kịch bản pass: {s['pass']}/{s['scenarios']}; FLAKY (pass sau retry): {s['flaky'] or 'không'}",
+           f"- Tool selection accuracy (turn có kỳ vọng tool): {_pct(s['tool_selection'])}",
+           f"- Confirmation safety (turn có kỳ vọng confirm/action): {_pct(s['confirmation_safety'])}",
+           f"- Lộ id/tên tool nội bộ: {s['internal_id_leaks']} trên {s['turns']} turn",
+           f"- LLM-judge (groundedness/safety/ngữ nghĩa): {_pct(s['judge'])}",
+           f"- Latency / turn: p50 {s['latency_p50']:.1f}s, p95 {s['latency_p95']:.1f}s"]
+    unstable = {k: v for k, v in s['first_try_pass_rate'].items() if v < 1.0}
+    if unstable:
+        out += ["- Pass lần đầu < 100%: " + ", ".join(f"{k} {v:.0%}" for k, v in unstable.items())]
+    return out + [""]
+
+
 def render(results: list[ScenarioResult], secs: float) -> str:
     n_ok = sum(r.ok for r in results)
     out = [f"# E2E report — {datetime.now():%Y-%m-%d %H:%M}", "",
            f"**{n_ok}/{len(results)} scenarios pass** ({secs:.0f}s)", "",
+           *render_summary(summarize(results)),
            "| id | kết quả | tiêu đề |", "|---|---|---|"]
-    out += [f"| {r.id} | {'PASS' if r.ok else '**FAIL**'} | {r.title} |" for r in results]
+    out += [f"| {r.id} | {'FLAKY' if r.flaky else 'PASS' if r.ok else '**FAIL**'} | {r.title} |" for r in results]
     for r in results:
         out += ["", f"## {'✅' if r.ok else '❌'} {r.id} — {r.title}"]
         if r.error:
@@ -327,13 +411,14 @@ def render(results: list[ScenarioResult], secs: float) -> str:
 
 
 async def amain(a: argparse.Namespace) -> int:
-    client, holder, provider, settings, inproc = build_client(a.target, a.user_id if a.live else None)
+    client, holder, provider, settings, inproc = build_client(a.target, a.user_id if a.live else None, a.rag)
     if a.live:
         SC.configure(**await discover_world(holder["lb"], a.doctor_id))
         print("live world:", {k: v for k, v in SC.W.items()}, flush=True)
     scs = [s for s in SC.build_scenarios()
            if (not (a.only or a.tag) or (a.only and s.id in a.only) or (a.tag and set(a.tag) & set(s.tags)))
-           and not (a.live and "sim_only" in s.tags)]
+           and not (a.live and "sim_only" in s.tags)
+           and (a.rag or "rag" not in s.tags)]
     if a.repeat > 1:  # đo độ ổn định của LLM (flaky)
         import copy
         scs = [dataclasses_replace(s, i) for s in scs for i in range(a.repeat)]
@@ -347,9 +432,13 @@ async def amain(a: argparse.Namespace) -> int:
 
     async def one(sc: Scenario) -> ScenarioResult:
         async with sem:
-            r = await run_scenario(sc, client, holder, inproc=inproc, provider=provider, model=model,
-                                   use_judge=not a.no_judge, user_id=a.user_id)
-            print(f"[{'PASS' if r.ok else 'FAIL'}] {sc.id}", flush=True)
+            for attempt in range(1, a.retries + 2):
+                r = await run_scenario(sc, client, holder, inproc=inproc, provider=provider, model=model,
+                                       use_judge=not a.no_judge, user_id=a.user_id)
+                r.attempts, r.tags = attempt, list(sc.tags)
+                if r.ok:
+                    break
+            print(f"[{'FLAKY' if r.flaky else 'PASS' if r.ok else 'FAIL'}] {sc.id}" + (f" (attempt {r.attempts})" if r.attempts > 1 else ""), flush=True)
             return r
 
     async with client:
@@ -359,12 +448,19 @@ async def amain(a: argparse.Namespace) -> int:
     md = render(list(results), time.perf_counter() - t0)
     (REPORTS / f"e2e-{stamp}.md").write_text(md, encoding="utf-8")
     (REPORTS / "e2e-latest.md").write_text(md, encoding="utf-8")
+    summ = summarize(list(results))
+    summ.update(mode="live" if a.live else "target" if a.target else "sim", rag=a.rag, retries=a.retries, seconds=round(time.perf_counter() - t0))
+    (REPORTS / "e2e-latest.json").write_text(json.dumps(summ, ensure_ascii=False, indent=2), encoding="utf-8")
     rate = sum(r.ok for r in results) / len(results)
-    print(f"\n{sum(r.ok for r in results)}/{len(results)} pass ({rate:.0%}) → eval/reports/e2e-latest.md")
+    print(f"\n{sum(r.ok for r in results)}/{len(results)} pass ({rate:.0%}), flaky={len(summ['flaky'])} → eval/reports/e2e-latest.md")
+    if len(summ["flaky"]) > a.max_flaky:
+        print(f"FLAKY vượt ngưỡng --max-flaky={a.max_flaky}")
+        return 1
     return 0 if rate >= a.fail_under else 1
 
 
 def main() -> None:
+    sys.stdout.reconfigure(encoding="utf-8")  # console Windows mặc định cp1252
     ap = argparse.ArgumentParser()
     ap.add_argument("--only", action="append")
     ap.add_argument("--tag", action="append")
@@ -373,6 +469,9 @@ def main() -> None:
     ap.add_argument("--live", action="store_true", help="dùng BE + DB thật (cần BE chạy ở AI_BE_BRIDGE_BASE_URL)")
     ap.add_argument("--doctor-id", type=int, default=4, help="bác sĩ dùng cho chế độ live")
     ap.add_argument("--no-judge", action="store_true")
+    ap.add_argument("--rag", action="store_true", help="bật retriever thật (cần index + embedding); chạy thêm kịch bản tag rag")
+    ap.add_argument("--retries", type=int, default=0, help="chạy lại kịch bản fail tối đa N lần; pass-sau-retry báo FLAKY")
+    ap.add_argument("--max-flaky", type=int, default=999, help="exit 1 nếu số kịch bản FLAKY vượt ngưỡng")
     ap.add_argument("--fail-under", type=float, default=1.0)
     ap.add_argument("--parallel", type=int, default=3)
     ap.add_argument("--user-id", type=int, default=121)

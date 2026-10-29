@@ -8,8 +8,7 @@
    để tiêu credit Google Cloud (Developer Program) — AI Studio prepay là ví khác.
 
 Cả 2 chế độ dùng CHUNG body generateContent nên phần convert messages/tools kiểu
-OpenAI sang format Gemini là chung. Embedding/RAG vẫn local trên Ollama — KHÔNG
-đụng tới. KHÔNG vá JSON: lỗi provider -> ProviderError.
+OpenAI sang format Gemini là chung. Embedding/RAG nằm ở app.rag.embedding. KHÔNG vá JSON: lỗi provider -> ProviderError.
 """
 from __future__ import annotations
 
@@ -354,6 +353,6 @@ class GeminiProvider(AIProvider):
                 await client.aclose()
 
     async def embed(self, model: str, texts: Sequence[str]) -> list[list[float]]:
-        # Embedding/RAG cố tình giữ local trên Ollama (KnowledgeRetriever tự dựng
-        # OllamaProvider). Chat provider không bao giờ được gọi embed.
-        raise NotImplementedError("GeminiProvider.embed không dùng — embedding chạy trên Ollama.")
+        # Embedding/RAG đi qua app.rag.embedding (VertexEmbedder/GeminiApiEmbedder);
+        # chat provider không được gọi embed.
+        raise NotImplementedError("GeminiProvider.embed không dùng — xem app.rag.embedding.")
