@@ -3,8 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 
 from app.config import get_settings
-from app.providers.ollama_provider import OllamaProvider
-from app.rag.indexer import COLLECTION_NAME
+from app.rag.embedding import Embedder, build_embedder
+from app.rag.indexer import collection_name_from_manifest, load_index_manifest
 from app.rag.models import KnowledgeType, RetrievedChunk
 from app.rag.policy import KnowledgePolicy
 
@@ -30,26 +30,37 @@ class KnowledgeRetriever:
         chroma_dir: str | Path | None = None,
         ollama_base_url: str | None = None,
         embedding_model: str | None = None,
+        embedder: Embedder | None = None,
     ) -> None:
         settings = get_settings()
         self.knowledge_dir = Path(knowledge_dir or settings.knowledge_dir)
         self.chroma_dir = str(chroma_dir or settings.chroma_dir)
-        self.embedding_model = embedding_model or settings.embedding_model
-        self.provider = OllamaProvider(ollama_base_url or settings.ollama_base_url)
+        if embedder is None:
+            # Ollama URL/model override chỉ để tương thích ngược (test/script cũ).
+            overrides = {}
+            if ollama_base_url:
+                overrides["ollama_base_url"] = ollama_base_url
+            if embedding_model:
+                overrides["embedding_model"] = embedding_model
+            embedder = build_embedder(settings.model_copy(update=overrides) if overrides else settings)
+        self.embedder = embedder
         self.policy = KnowledgePolicy(self.knowledge_dir)
         self._collection = None  # lazy + cached giữa các lần retrieve
+        self._collection_name = ""
 
     def _get_collection(self):
         """Lấy collection đã index. Không get_or_create rỗng (giả ready)."""
         if self._collection is None:
             chromadb = _load_chromadb()
             client = chromadb.PersistentClient(path=self.chroma_dir)
+            name = collection_name_from_manifest(load_index_manifest(self.chroma_dir))
             try:
-                self._collection = client.get_collection(COLLECTION_NAME)
+                self._collection = client.get_collection(name)
+                self._collection_name = name
             except Exception as exc:  # noqa: BLE001
                 raise RuntimeError(
-                    f"RAG collection '{COLLECTION_NAME}' missing. "
-                    "Run: python -m app.rag.indexer --rebuild"
+                    f"RAG collection '{name}' missing. "
+                    "Run: python -m app.rag.indexer --ensure"
                 ) from exc
         return self._collection
 
@@ -77,7 +88,7 @@ class KnowledgeRetriever:
             raise RetrievalUnavailableError("RAG collection unavailable") from exc
 
         try:
-            query_embedding = (await self.provider.embed(self.embedding_model, [query]))[0]
+            query_embedding = await self.embedder.embed_query(query)
         except Exception as exc:
             raise RetrievalUnavailableError("Embedding provider unavailable") from exc
 

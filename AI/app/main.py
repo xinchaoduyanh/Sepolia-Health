@@ -1,6 +1,7 @@
 """FastAPI entry. Chạy dev: uvicorn app.main:app --reload --port 8088."""
 from __future__ import annotations
 
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 
@@ -13,7 +14,22 @@ from app.deps import get_store, require_internal_token
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    settings = get_settings()
+    build_task = None
+    if settings.rag_auto_build:
+        # Build nền (có file lock): /ready giữ 503 tới khi index đúng version.
+        from app.rag.indexer import ensure_index
+
+        async def _build() -> None:
+            try:
+                logging.getLogger(__name__).info("RAG ensure_index: %s", await ensure_index(settings))
+            except Exception:  # noqa: BLE001
+                logging.getLogger(__name__).exception("RAG ensure_index thất bại")
+
+        build_task = asyncio.create_task(_build())
     yield
+    if build_task is not None and not build_task.done():
+        build_task.cancel()
     # Đóng connection pool của session store lúc shutdown.
     store = get_store()
     dispose = getattr(store, "dispose", None)

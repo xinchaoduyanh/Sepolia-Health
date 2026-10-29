@@ -25,7 +25,13 @@ class Settings(BaseSettings):
     default_model_decision: str = "qwen2.5:3b-instruct-q4_K_M"
     default_model_response: str = "qwen2.5:3b-instruct-q4_K_M"
     default_model_summarization: str = "qwen2.5:3b-instruct-q4_K_M"
+    # Embedding cho RAG. provider=auto đi theo chat provider (Vertex/Gemini/Ollama);
+    # `embedding_model` chỉ dùng cho Ollama, `cloud_embedding_model` cho Vertex/Gemini.
+    # Đổi provider/model/dimension => index cũ stale, phải rebuild (xem manifest).
+    embedding_provider: str = "auto"
     embedding_model: str = "bge-m3"
+    cloud_embedding_model: str = "text-multilingual-embedding-002"
+    embedding_dimension: int = 0  # 0 = mặc định của model
 
     # Gemini (cloud) — nếu bật (api_key HOẶC use_vertex), chat/tool-calling dùng
     # Gemini thay Ollama (xem deps.get_provider + ModelRouter). Embedding/RAG vẫn local.
@@ -63,6 +69,11 @@ class Settings(BaseSettings):
     # Readiness: require non-empty RAG collection (manifest + chroma count).
     # Default false for local/dev; set true (or AI_ENV=production) in deploy.
     rag_require_index: bool = False
+    # Tự build index lúc khởi động nếu thiếu/stale (có file lock). Bật ở deploy.
+    rag_auto_build: bool = False
+    # Chỉ index tài liệu có review_status=reviewed (governance). Bật khi đã có
+    # clinical review thật; mặc định tắt vì knowledge seed chưa được duyệt.
+    rag_require_reviewed: bool = False
     max_message_chars: int = 2000
 
     # Rate limits (per acting user_id). 0 = disabled.
