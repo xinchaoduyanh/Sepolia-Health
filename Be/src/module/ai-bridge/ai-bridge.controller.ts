@@ -40,7 +40,18 @@ export class AiBridgeController {
   private numOrUndef(v?: string): number | undefined {
     if (v === undefined || v === '') return undefined;
     const n = Number(v);
-    return Number.isNaN(n) ? undefined : n;
+    // Id sai không được âm thầm thành "không lọc" (vd clinicId rác -> trả mọi service).
+    if (!Number.isInteger(n) || n <= 0) {
+      throw new BadRequestException('invalid_query_param');
+    }
+    return n;
+  }
+
+  private isoDate(v?: string): string {
+    if (!v || !/^\d{4}-\d{2}-\d{2}$/.test(v) || Number.isNaN(Date.parse(v))) {
+      throw new BadRequestException('invalid_date');
+    }
+    return v;
   }
 
   // ---- public data ----
@@ -78,7 +89,7 @@ export class AiBridgeController {
     @Query('timePreference') timePreference?: string,
   ) {
     return this.bridge.findAvailableDoctors(
-      date,
+      this.isoDate(date),
       this.numOrUndef(serviceId),
       this.numOrUndef(clinicId),
       timePreference,
@@ -96,7 +107,7 @@ export class AiBridgeController {
     @Query('date') date: string,
     @Query('serviceId') serviceId?: string,
   ) {
-    return this.bridge.getDoctorAvailability(id, date, this.numOrUndef(serviceId));
+    return this.bridge.getDoctorAvailability(id, this.isoDate(date), this.numOrUndef(serviceId));
   }
 
   // ---- personal data (ownership) ----
