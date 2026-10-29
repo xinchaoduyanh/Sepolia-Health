@@ -30,6 +30,8 @@ from app.deps import (
     get_retriever,
     get_store,
 )
+from app.observability.guards import record_guard
+from app.observability.redact import redact_obj, redact_text
 from app.observability.tracing import log_event, new_trace_id
 from app.prompts.loader import PromptRegistry
 from app.providers.base import AIProvider
@@ -62,7 +64,7 @@ def _enforce_rate_limit(user_id: int, settings: Settings) -> None:
     )
     decision = limiter.check(user_id)
     if not decision.allowed:
-        log_event("rate_limited", user_id=user_id, reason=decision.reason)
+        record_guard("rate_limit", "reject", user_id=user_id, rules=[decision.reason or "rate_limited"])
         raise HTTPException(
             status_code=429,
             detail={
@@ -260,10 +262,10 @@ async def _run_turn(
                     await store.record_turn(
                         session_id=session_id,
                         trace_id=trace_id,
-                        user_message=message,
-                        ai_message=resp.message,
-                        tool_results=[s.model_dump() for s in resp.tool_results_summary],
-                        tool_calls=[c.model_dump() for c in resp.tool_calls_audit],
+                        user_message=redact_text(message),
+                        ai_message=redact_text(resp.message),
+                        tool_results=redact_obj([s.model_dump() for s in resp.tool_results_summary]),
+                        tool_calls=redact_obj([c.model_dump() for c in resp.tool_calls_audit]),
                         model=ModelRouter(settings).select("response"),
                         latency_ms=latency_ms,
                         policy_violations={

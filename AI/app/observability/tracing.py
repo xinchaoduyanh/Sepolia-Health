@@ -5,6 +5,8 @@ import json
 import logging
 import uuid
 
+from app.observability.redact import redact_obj
+
 logger = logging.getLogger("ai")
 
 
@@ -14,4 +16,4 @@ def new_trace_id() -> str:
 
 def log_event(event: str, **fields) -> None:
     """Log 1 dòng JSON: {event, trace_id, session_id, model, latency_ms, ...}."""
-    logger.info(json.dumps({"event": event, **fields}, default=str, ensure_ascii=False))
+    logger.info(json.dumps({"event": event, **redact_obj(fields)}, default=str, ensure_ascii=False))
