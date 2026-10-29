@@ -106,6 +106,10 @@ class Settings(BaseSettings):
             )
         if self.gemini_use_vertex and not self.gemini_project:
             raise RuntimeError("AI_GEMINI_PROJECT is required when AI_GEMINI_USE_VERTEX=true")
+        if self.gemini_use_vertex and self.google_credentials and not Path(
+            self.google_credentials
+        ).is_file():
+            raise RuntimeError("AI_GOOGLE_CREDENTIALS points to a missing file")
         if not self.rag_require_index:
             raise RuntimeError(
                 "AI_RAG_REQUIRE_INDEX=true is required in production"
